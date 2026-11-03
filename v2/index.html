@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0a12">
+<title>Призванный: Башня Гачи — Прототип 0.1</title>
+<style>
+  :root {
+    --bg1: #0d0a12;
+    --bg2: #1e1329;
+    --text: #efe6f5;
+    --muted: #9a8aa8;
+    --hp: #c23a4a;
+    --hp-dark: #5a1820;
+    --accent: #b98cff;
+    --gold: #ffd36b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: var(--bg1);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* Игровой экран 9:16, вписывается в любой телефон */
+  #game {
+    position: relative;
+    height: 100%;
+    max-width: calc(100vh * 9 / 16);
+    margin: 0 auto;
+    background: radial-gradient(ellipse at 50% 60%, var(--bg2) 0%, var(--bg1) 70%);
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow: hidden;
+  }
+  /* Верхний HUD */
+  #hud { padding: 16px 16px 8px; text-align: center; }
+  #enemyName { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+  #hpBar {
+    position: relative;
+    margin-top: 8px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--hp-dark);
+    border: 1px solid #00000080;
+    overflow: hidden;
+  }
+  #hpFill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(180deg, #e65566, var(--hp));
+    transition: width .12s ease-out;
+  }
+  #hpText {
+    position: absolute; inset: 0;
+    font-size: 12px; line-height: 18px; font-weight: 700;
+    text-shadow: 0 1px 2px #000;
+  }
+  #stats { margin-top: 6px; font-size: 13px; color: var(--muted); }
+
+  /* Область боя — вся середина экрана принимает тапы */
+  #arena {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #enemy {
+    width: 62%;
+    max-width: 280px;
+    aspect-ratio: 1 / 1.15;
+    transform-origin: 50% 90%;
+    animation: idle 2.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  #enemy svg { width: 100%; height: 100%; overflow: visible; }
+  #enemy.hit { animation: hit .14s ease-out; }
+  #enemy.hit .body { filter: brightness(2.2) saturate(.4); }
+  #enemy.dead { animation: death .6s ease-in forwards; }
+  @keyframes idle {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.01, .99); }
+  }
+  @keyframes hit {
+    0% { transform: translate(0,0) scale(1); }
+    30% { transform: translate(-6px, 2px) scale(.94, 1.04); }
+    60% { transform: translate(5px, -1px) scale(1.03, .97); }
+    100% { transform: translate(0,0) scale(1); }
+  }
+  @keyframes death {
+    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+    30% { transform: scale(1.08, .9); filter: brightness(2.5); }
+    100% { transform: scale(.6, .1) translateY(40px); opacity: 0; filter: brightness(3); }
+  }
+  /* Всплывающие числа урона */
+  .dmg {
+    position: absolute;
+    font-weight: 800;
+    font-size: 26px;
+    color: #fff;
+    text-shadow: 0 2px 0 #000, 0 0 8px var(--accent);
+    pointer-events: none;
+    animation: float .7s ease-out forwards;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes float {
+    0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); }
+    15% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -180%) scale(1); }
+  }
+  /* Искра удара в точке тапа */
+  .spark {
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(.2);
+    animation: spark .3s ease-out forwards;
+  }
+  @keyframes spark { to { transform: translate(-50%, -50%) scale(1.3); opacity: 0; } }
+
+  #hint {
+    position: absolute; bottom: 12px; left: 0; right: 0;
+    text-align: center; font-size: 13px; color: var(--muted);
+    pointer-events: none;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* Экран победы */
+  #victory {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: #0d0a12b0;
+    backdrop-filter: blur(2px);
+  }
+  #victory.show { display: flex; animation: fadeIn .4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  #victory h2 { font-size: 32px; color: var(--gold); text-shadow: 0 0 16px #ffd36b80; }
+  #victory p { color: var(--muted); font-size: 14px; }
+  #restart {
+    padding: 14px 36px;
+    font-size: 17px; font-weight: 700;
+    color: var(--text);
+    background: linear-gradient(180deg, #7a4fc4, #4b2c86);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  #restart:active { transform: scale(.96); }
+  #version { position: absolute; top: 4px; right: 8px; font-size: 10px; color: #ffffff40; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="version">v0.1</div>
+
+  <div id="hud">
+    <div id="enemyName">Страж Башни</div>
+    <div id="hpBar">
+      <div id="hpFill"></div>
+      <div id="hpText"></div>
+    </div>
+    <div id="stats">Урон за тап: <b id="tapDmg"></b> · Тапов: <b id="tapCount">0</b></div>
+  </div>
+
+  <div id="arena">
+    <!-- Временная заглушка врага (не финальный ассет) -->
+    <div id="enemy">
+      <svg viewBox="0 0 200 230">
+        <ellipse cx="100" cy="222" rx="70" ry="8" fill="#00000070"/>
+        <g class="body">
+          <path d="M40 215 Q30 140 55 95 Q70 60 100 55 Q130 60 145 95 Q170 140 160 215 Q130 200 100 210 Q70 200 40 215Z" fill="#3b2550" stroke="#140a1d" stroke-width="4"/>
+          <path d="M65 90 L55 40 L80 75Z M135 90 L145 40 L120 75Z" fill="#2a1a3a" stroke="#140a1d" stroke-width="4" stroke-linejoin="round"/>
+          <ellipse cx="80" cy="110" rx="11" ry="8" fill="#ff4d6a"/>
+          <ellipse cx="120" cy="110" rx="11" ry="8" fill="#ff4d6a"/>
+          <circle cx="80" cy="110" r="3.5" fill="#fff"/>
+          <circle cx="120" cy="110" r="3.5" fill="#fff"/>
+          <path d="M78 145 Q100 160 122 145 L115 152 L108 146 L100 154 L92 146 L85 152Z" fill="#140a1d"/>
+          <path d="M60 170 Q100 185 140 170" fill="none" stroke="#5c3b7a" stroke-width="4" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div id="hint">Тапай по врагу!</div>
+
+    <div id="victory">
+      <h2>Победа!</h2>
+      <p id="victoryInfo"></p>
+      <button id="restart">Сразиться снова</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Временные значения для прототипа — не балансные числа из GDD
+const CONFIG = { enemyMaxHp: 100, tapDamage: 5 };
+
+const state = { hp: 0, taps: 0, alive: true };
+
+const el = {
+  arena: document.getElementById('arena'),
+  enemy: document.getElementById('enemy'),
+  hpFill: document.getElementById('hpFill'),
+  hpText: document.getElementById('hpText'),
+  tapDmg: document.getElementById('tapDmg'),
+  tapCount: document.getElementById('tapCount'),
+  hint: document.getElementById('hint'),
+  victory: document.getElementById('victory'),
+  victoryInfo: document.getElementById('victoryInfo'),
+  restart: document.getElementById('restart'),
+};
+
+function render() {
+  const pct = Math.max(0, state.hp / CONFIG.enemyMaxHp * 100);
+  el.hpFill.style.width = pct + '%';
+  el.hpText.textContent = `${Math.max(0, state.hp)} / ${CONFIG.enemyMaxHp}`;
+  el.tapDmg.textContent = CONFIG.tapDamage;
+  el.tapCount.textContent = state.taps;
+}
+
+function reset() {
+  state.hp = CONFIG.enemyMaxHp;
+  state.taps = 0;
+  state.alive = true;
+  el.enemy.classList.remove('dead', 'hit');
+  el.victory.classList.remove('show');
+  el.hint.style.display = '';
+  render();
+}
+
+function spawnFx(x, y, amount) {
+  const spark = document.createElement('div');
+  spark.className = 'spark';
+  spark.style.left = x + 'px';
+  spark.style.top = y + 'px';
+  el.arena.appendChild(spark);
+  setTimeout(() => spark.remove(), 300);
+
+  const dmg = document.createElement('div');
+  dmg.className = 'dmg';
+  dmg.textContent = amount;
+  dmg.style.left = (x + (Math.random() * 30 - 15)) + 'px';
+  dmg.style.top = y + 'px';
+  el.arena.appendChild(dmg);
+  setTimeout(() => dmg.remove(), 700);
+}
+
+function playHit() {
+  el.enemy.classList.remove('hit');
+  void el.enemy.offsetWidth; // перезапуск анимации
+  el.enemy.classList.add('hit');
+}
+
+function onTap(e) {
+  if (!state.alive) return;               // после победы урон не наносится
+  if (e.target.closest('#victory')) return;
+  e.preventDefault();
+
+  const rect = el.arena.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  state.hp = Math.max(0, state.hp - CONFIG.tapDamage);
+  state.taps++;
+  el.hint.style.display = 'none';
+  spawnFx(x, y, CONFIG.tapDamage);
+  if (navigator.vibrate) navigator.vibrate(10);
+
+  if (state.hp <= 0) {
+    state.alive = false;
+    el.enemy.classList.remove('hit');
+    el.enemy.classList.add('dead');
+    el.victoryInfo.textContent = `Тапов: ${state.taps}`;
+    setTimeout(() => el.victory.classList.add('show'), 550);
+  } else {
+    playHit();
+  }
+  render();
+}
+
+el.arena.addEventListener('pointerdown', onTap);
+el.restart.addEventListener('click', reset);
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+reset();
+</script>
+</body>
+</html>
