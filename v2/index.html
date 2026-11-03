@@ -4,180 +4,162 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d0a12">
-<title>Призванный: Башня Гачи — Прототип 0.1</title>
+<title>Призванный: Башня Гачи</title>
 <style>
   :root {
-    --bg1: #0d0a12;
-    --bg2: #1e1329;
-    --text: #efe6f5;
-    --muted: #9a8aa8;
-    --hp: #c23a4a;
-    --hp-dark: #5a1820;
-    --accent: #b98cff;
-    --gold: #ffd36b;
+    --bg1: #0d0a12; --bg2: #1e1329; --panel: #170f20; --panel2: #23172f;
+    --text: #efe6f5; --muted: #9a8aa8; --line: #3a2a4a;
+    --hp: #c23a4a; --hp-dark: #5a1820;
+    --accent: #b98cff; --gold: #ffd36b; --boss: #ff6b4a; --ok: #6be3a0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
-    height: 100%;
-    background: var(--bg1);
-    color: var(--text);
+    height: 100%; background: var(--bg1); color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    overflow: hidden;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
+    overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none;
   }
-  /* Игровой экран 9:16, вписывается в любой телефон */
+  button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
   #game {
-    position: relative;
-    height: 100%;
-    max-width: calc(100vh * 9 / 16);
-    margin: 0 auto;
-    background: radial-gradient(ellipse at 50% 60%, var(--bg2) 0%, var(--bg1) 70%);
-    display: flex;
-    flex-direction: column;
+    position: relative; height: 100%; max-width: calc(100vh * 9 / 16); margin: 0 auto;
+    background: radial-gradient(ellipse at 50% 45%, var(--bg2) 0%, var(--bg1) 70%);
+    display: flex; flex-direction: column; overflow: hidden;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    overflow: hidden;
   }
-  /* Верхний HUD */
-  #hud { padding: 16px 16px 8px; text-align: center; }
-  #enemyName { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
-  #hpBar {
-    position: relative;
-    margin-top: 8px;
-    height: 18px;
-    border-radius: 9px;
-    background: var(--hp-dark);
-    border: 1px solid #00000080;
-    overflow: hidden;
-  }
-  #hpFill {
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(180deg, #e65566, var(--hp));
-    transition: width .12s ease-out;
-  }
-  #hpText {
-    position: absolute; inset: 0;
-    font-size: 12px; line-height: 18px; font-weight: 700;
-    text-shadow: 0 1px 2px #000;
-  }
-  #stats { margin-top: 6px; font-size: 13px; color: var(--muted); }
 
-  /* Область боя — вся середина экрана принимает тапы */
-  #arena {
-    position: relative;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  /* ---------- верхний HUD ---------- */
+  #hud { padding: 10px 16px 6px; text-align: center; position: relative; z-index: 2; }
+  #floorRow { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .navBtn {
+    width: 34px; height: 34px; border-radius: 10px; font-size: 18px;
+    background: var(--panel2); border: 1px solid var(--line);
   }
+  .navBtn:disabled { opacity: .25; }
+  #floorLabel { font-size: 17px; font-weight: 800; min-width: 100px; }
+  #settingsBtn { position: absolute; right: 12px; top: 10px; font-size: 18px; opacity: .6; width: 34px; height: 34px; }
+  #dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+  .dot { width: 18px; height: 6px; border-radius: 3px; background: var(--line); }
+  .dot.done { background: var(--accent); }
+  .dot.cur { background: var(--text); }
+  .dot.boss { width: 26px; background: #5a2a24; }
+  .dot.boss.cur { background: var(--boss); }
+  #enemyName { margin-top: 8px; font-size: 15px; font-weight: 700; }
+  #enemyName.boss { color: var(--boss); }
+  #hpBar {
+    position: relative; margin-top: 6px; height: 18px; border-radius: 9px;
+    background: var(--hp-dark); border: 1px solid #00000080; overflow: hidden;
+  }
+  #hpFill { height: 100%; width: 100%; background: linear-gradient(180deg, #e65566, var(--hp)); transition: width .1s ease-out; }
+  #hpText { position: absolute; inset: 0; font-size: 12px; line-height: 18px; font-weight: 700; text-shadow: 0 1px 2px #000; }
+  #timerBar { margin-top: 5px; height: 5px; border-radius: 3px; background: #2a1c1c; overflow: hidden; visibility: hidden; }
+  #timerBar.show { visibility: visible; }
+  #timerFill { height: 100%; width: 100%; background: var(--boss); }
+  #timerFill.low { background: #ff3030; }
+  #stats { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  #stats b { color: var(--text); }
+
+  /* ---------- арена ---------- */
+  #arena { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 0; }
   #enemy {
-    width: 62%;
-    max-width: 280px;
-    aspect-ratio: 1 / 1.15;
-    transform-origin: 50% 90%;
-    animation: idle 2.4s ease-in-out infinite;
-    pointer-events: none;
+    width: 54%; max-width: 250px; aspect-ratio: 1 / 1.15; transform-origin: 50% 90%;
+    animation: idle 2.4s ease-in-out infinite; pointer-events: none;
   }
+  #enemy.boss { width: 66%; max-width: 300px; }
   #enemy svg { width: 100%; height: 100%; overflow: visible; }
+  #enemy .crown { display: none; }
+  #enemy.boss .crown { display: inline; }
   #enemy.hit { animation: hit .14s ease-out; }
   #enemy.hit .body { filter: brightness(2.2) saturate(.4); }
-  #enemy.dead { animation: death .6s ease-in forwards; }
-  @keyframes idle {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-6px) scale(1.01, .99); }
-  }
-  @keyframes hit {
-    0% { transform: translate(0,0) scale(1); }
-    30% { transform: translate(-6px, 2px) scale(.94, 1.04); }
-    60% { transform: translate(5px, -1px) scale(1.03, .97); }
-    100% { transform: translate(0,0) scale(1); }
-  }
-  @keyframes death {
-    0% { transform: scale(1); opacity: 1; filter: brightness(1); }
-    30% { transform: scale(1.08, .9); filter: brightness(2.5); }
-    100% { transform: scale(.6, .1) translateY(40px); opacity: 0; filter: brightness(3); }
-  }
-  /* Всплывающие числа урона */
-  .dmg {
-    position: absolute;
-    font-weight: 800;
-    font-size: 26px;
-    color: #fff;
-    text-shadow: 0 2px 0 #000, 0 0 8px var(--accent);
-    pointer-events: none;
-    animation: float .7s ease-out forwards;
-    transform: translate(-50%, -50%);
-  }
-  @keyframes float {
-    0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); }
-    15% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
-    100% { opacity: 0; transform: translate(-50%, -180%) scale(1); }
-  }
-  /* Искра удара в точке тапа */
-  .spark {
-    position: absolute;
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    border: 3px solid var(--accent);
-    pointer-events: none;
-    transform: translate(-50%, -50%) scale(.2);
-    animation: spark .3s ease-out forwards;
-  }
-  @keyframes spark { to { transform: translate(-50%, -50%) scale(1.3); opacity: 0; } }
+  #enemy.dead { animation: death .35s ease-in forwards; }
+  #enemy.spawn { animation: spawn .25s ease-out; }
+  @keyframes idle { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.01,.99); } }
+  @keyframes hit { 0% { transform: none; } 30% { transform: translate(-6px,2px) scale(.94,1.04); } 60% { transform: translate(5px,-1px) scale(1.03,.97); } 100% { transform: none; } }
+  @keyframes death { 30% { transform: scale(1.08,.9); filter: brightness(2.5); } 100% { transform: scale(.6,.1) translateY(40px); opacity: 0; filter: brightness(3); } }
+  @keyframes spawn { from { transform: scale(.7) translateY(20px); opacity: 0; } }
 
-  #hint {
-    position: absolute; bottom: 12px; left: 0; right: 0;
-    text-align: center; font-size: 13px; color: var(--muted);
-    pointer-events: none;
-    animation: pulse 1.6s ease-in-out infinite;
+  .dmg {
+    position: absolute; font-weight: 800; font-size: 24px; color: #fff; pointer-events: none;
+    text-shadow: 0 2px 0 #000, 0 0 8px var(--accent); animation: float .7s ease-out forwards;
+    transform: translate(-50%,-50%); white-space: nowrap;
   }
+  .dmg.gold { color: var(--gold); font-size: 18px; text-shadow: 0 2px 0 #000; }
+  @keyframes float { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 15% { opacity: 1; transform: translate(-50%,-60%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%,-180%) scale(1); } }
+  .spark {
+    position: absolute; width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--accent);
+    pointer-events: none; transform: translate(-50%,-50%) scale(.2); animation: spark .3s ease-out forwards;
+  }
+  @keyframes spark { to { transform: translate(-50%,-50%) scale(1.3); opacity: 0; } }
+  #hint { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .35; } }
 
-  /* Экран победы */
-  #victory {
-    position: absolute; inset: 0;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    background: #0d0a12b0;
-    backdrop-filter: blur(2px);
+  #farmBar {
+    position: absolute; top: 8px; left: 16px; right: 16px; display: none;
+    align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 10px 8px 14px; border-radius: 12px; background: #2a1720e6; border: 1px solid #5a2a34;
+    font-size: 13px; z-index: 3;
   }
-  #victory.show { display: flex; animation: fadeIn .4s ease-out; }
-  @keyframes fadeIn { from { opacity: 0; } }
-  #victory h2 { font-size: 32px; color: var(--gold); text-shadow: 0 0 16px #ffd36b80; }
-  #victory p { color: var(--muted); font-size: 14px; }
-  #restart {
-    padding: 14px 36px;
-    font-size: 17px; font-weight: 700;
-    color: var(--text);
-    background: linear-gradient(180deg, #7a4fc4, #4b2c86);
-    border: 1px solid var(--accent);
-    border-radius: 12px;
-    cursor: pointer;
+  #farmBar.show { display: flex; }
+  #bossBtn { padding: 8px 12px; border-radius: 9px; font-weight: 700; background: var(--boss); color: #1a0a08; }
+
+  #toast {
+    position: absolute; top: 16%; left: 50%; transform: translate(-50%,-50%);
+    padding: 12px 18px; border-radius: 14px; background: #1a1024f0; border: 1px solid var(--gold);
+    text-align: center; font-weight: 700; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 4;
   }
-  #restart:active { transform: scale(.96); }
-  #version { position: absolute; top: 4px; right: 8px; font-size: 10px; color: #ffffff40; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  #toast small { display: block; color: var(--gold); margin-top: 4px; font-size: 14px; }
+
+  /* ---------- нижняя панель ---------- */
+  #panel { background: var(--panel); border-top: 1px solid var(--line); padding: 10px 12px 12px; position: relative; z-index: 2; }
+  #goldRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  #gold { font-size: 20px; font-weight: 800; color: var(--gold); }
+  #gold::before { content: "◆ "; font-size: 15px; }
+  #mult { display: flex; gap: 4px; }
+  .multBtn { padding: 5px 9px; border-radius: 8px; font-size: 12px; font-weight: 700; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); }
+  .multBtn.on { color: var(--text); border-color: var(--accent); }
+  .card { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); }
+  .cardIcon { width: 42px; height: 42px; border-radius: 10px; flex: none; display: grid; place-items: center; font-size: 22px; background: #3b2550; }
+  .cardInfo { flex: 1; min-width: 0; }
+  .cardTitle { font-weight: 700; font-size: 14px; }
+  .cardSub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .cardSub b { color: var(--ok); }
+  #buyBtn {
+    min-width: 104px; padding: 9px 10px; border-radius: 10px; font-weight: 800; font-size: 13px; line-height: 1.25;
+    background: linear-gradient(180deg, #7a4fc4, #4b2c86); border: 1px solid var(--accent);
+  }
+  #buyBtn span { display: block; font-size: 12px; font-weight: 700; color: var(--gold); }
+  #buyBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  #buyBtn:disabled span { color: var(--muted); }
+  #buyBtn:not(:disabled):active { transform: scale(.96); }
+
+  /* ---------- настройки ---------- */
+  #modal { position: absolute; inset: 0; background: #000a; display: none; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
+  #modal.show { display: flex; }
+  #modalBox { width: 100%; max-width: 320px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  #modalBox h3 { margin-bottom: 10px; }
+  #modalBox p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
+  .mBtn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; margin-top: 8px; background: var(--panel2); border: 1px solid var(--line); }
+  .mBtn.danger { background: #4a1820; border-color: #8a2a3a; }
+  #version { position: absolute; bottom: 2px; left: 8px; font-size: 10px; color: #ffffff30; pointer-events: none; }
 </style>
 </head>
 <body>
 <div id="game">
-  <div id="version">v0.1</div>
-
   <div id="hud">
-    <div id="enemyName">Страж Башни</div>
-    <div id="hpBar">
-      <div id="hpFill"></div>
-      <div id="hpText"></div>
+    <button id="settingsBtn" aria-label="Настройки">⚙</button>
+    <div id="floorRow">
+      <button class="navBtn" id="prevFloor" aria-label="Этаж ниже">‹</button>
+      <div id="floorLabel">Этаж 1</div>
+      <button class="navBtn" id="nextFloor" aria-label="Этаж выше">›</button>
     </div>
-    <div id="stats">Урон за тап: <b id="tapDmg"></b> · Тапов: <b id="tapCount">0</b></div>
+    <div id="dots"></div>
+    <div id="enemyName"></div>
+    <div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div>
+    <div id="timerBar"><div id="timerFill"></div></div>
+    <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b></div>
   </div>
 
   <div id="arena">
+    <div id="farmBar"><span>Фарм этажа</span><button id="bossBtn">Вызвать босса</button></div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
       <svg viewBox="0 0 200 230">
@@ -185,117 +167,461 @@
         <g class="body">
           <path d="M40 215 Q30 140 55 95 Q70 60 100 55 Q130 60 145 95 Q170 140 160 215 Q130 200 100 210 Q70 200 40 215Z" fill="#3b2550" stroke="#140a1d" stroke-width="4"/>
           <path d="M65 90 L55 40 L80 75Z M135 90 L145 40 L120 75Z" fill="#2a1a3a" stroke="#140a1d" stroke-width="4" stroke-linejoin="round"/>
+          <path class="crown" d="M70 62 L76 30 L88 50 L100 22 L112 50 L124 30 L130 62Z" fill="#c9962e" stroke="#140a1d" stroke-width="4" stroke-linejoin="round"/>
           <ellipse cx="80" cy="110" rx="11" ry="8" fill="#ff4d6a"/>
           <ellipse cx="120" cy="110" rx="11" ry="8" fill="#ff4d6a"/>
-          <circle cx="80" cy="110" r="3.5" fill="#fff"/>
-          <circle cx="120" cy="110" r="3.5" fill="#fff"/>
+          <circle cx="80" cy="110" r="3.5" fill="#fff"/><circle cx="120" cy="110" r="3.5" fill="#fff"/>
           <path d="M78 145 Q100 160 122 145 L115 152 L108 146 L100 154 L92 146 L85 152Z" fill="#140a1d"/>
           <path d="M60 170 Q100 185 140 170" fill="none" stroke="#5c3b7a" stroke-width="4" stroke-linecap="round"/>
         </g>
       </svg>
     </div>
     <div id="hint">Тапай по врагу!</div>
+    <div id="toast"></div>
+  </div>
 
-    <div id="victory">
-      <h2>Победа!</h2>
-      <p id="victoryInfo"></p>
-      <button id="restart">Сразиться снова</button>
+  <div id="panel">
+    <div id="goldRow">
+      <div id="gold">0</div>
+      <div id="mult">
+        <button class="multBtn on" data-n="1">×1</button>
+        <button class="multBtn" data-n="10">×10</button>
+        <button class="multBtn" data-n="100">×100</button>
+        <button class="multBtn" data-n="max">MAX</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cardIcon">⚔</div>
+      <div class="cardInfo">
+        <div class="cardTitle">Сила удара · ур. <span id="tapLvl">1</span></div>
+        <div class="cardSub" id="tapSub"></div>
+      </div>
+      <button id="buyBtn"></button>
     </div>
   </div>
+
+  <div id="modal">
+    <div id="modalBox">
+      <h3>Настройки</h3>
+      <p id="saveInfo"></p>
+      <button class="mBtn" id="closeModal">Закрыть</button>
+      <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
+    </div>
+  </div>
+  <div id="version">v0.2</div>
 </div>
 
 <script>
-// Временные значения для прототипа — не балансные числа из GDD
-const CONFIG = { enemyMaxHp: 100, tapDamage: 5 };
+// Ядро игры: только логика, без интерфейса. Работает в браузере и в Node (тесты).
+(function (root) {
+  'use strict';
 
-const state = { hp: 0, taps: 0, alive: true };
+  // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
+  const CONFIG = {
+    saveVersion: 1,
+    enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
+    enemyBaseHp: 10,
+    enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
+    bossHpMult: 6,
+    bossTimeSec: 30,              // таймер босса (TBD)
+    goldBase: 1,
+    goldGrowth: 1.15,
+    bossGoldMult: 8,
+    firstClearGoldMult: 20,       // разовая награда за первое прохождение этажа
+    tapBaseDamage: 1,
+    tapUpgradeBaseCost: 5,
+    tapUpgradeCostGrowth: 1.08,
+    respawnDelaySec: 0.35,
+  };
 
-const el = {
-  arena: document.getElementById('arena'),
-  enemy: document.getElementById('enemy'),
-  hpFill: document.getElementById('hpFill'),
-  hpText: document.getElementById('hpText'),
-  tapDmg: document.getElementById('tapDmg'),
-  tapCount: document.getElementById('tapCount'),
-  hint: document.getElementById('hint'),
-  victory: document.getElementById('victory'),
-  victoryInfo: document.getElementById('victoryInfo'),
-  restart: document.getElementById('restart'),
-};
+  const ENEMY_NAMES = [
+    'Гоблин-падальщик', 'Костяной страж', 'Тень Башни', 'Пустотный бес',
+    'Каменный голем', 'Кровавый слизень', 'Призрачный рыцарь', 'Пепельный волк',
+    'Слепой культист', 'Ржавый механоид', 'Болотный упырь', 'Кристальный паук',
+  ];
+  const BOSS_NAMES = [
+    'Хранитель Врат', 'Владыка Пепла', 'Королева Теней', 'Пожиратель Душ',
+    'Железный Тиран', 'Око Бездны',
+  ];
 
-function render() {
-  const pct = Math.max(0, state.hp / CONFIG.enemyMaxHp * 100);
-  el.hpFill.style.width = pct + '%';
-  el.hpText.textContent = `${Math.max(0, state.hp)} / ${CONFIG.enemyMaxHp}`;
-  el.tapDmg.textContent = CONFIG.tapDamage;
-  el.tapCount.textContent = state.taps;
-}
+  // ---------- формулы ----------
+  function enemyMaxHp(floor, isBoss) {
+    const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1);
+    return Math.ceil(isBoss ? hp * CONFIG.bossHpMult : hp);
+  }
+  function killGold(floor, isBoss) {
+    const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1);
+    return Math.ceil(isBoss ? g * CONFIG.bossGoldMult : g);
+  }
+  function firstClearGold(floor) {
+    return Math.ceil(CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * CONFIG.firstClearGoldMult);
+  }
+  function tapDamage(s) { return CONFIG.tapBaseDamage * s.tapLevel; }
+  function enemyName(floor, index, isBoss) {
+    if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
+    return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
+  }
 
-function reset() {
-  state.hp = CONFIG.enemyMaxHp;
-  state.taps = 0;
-  state.alive = true;
-  el.enemy.classList.remove('dead', 'hit');
-  el.victory.classList.remove('show');
-  el.hint.style.display = '';
-  render();
-}
+  // Стоимость n уровней начиная с текущего уровня (геометрическая сумма)
+  function upgradeCost(level, n) {
+    if (n <= 0) return 0;
+    const b = CONFIG.tapUpgradeBaseCost, g = CONFIG.tapUpgradeCostGrowth;
+    return Math.ceil(b * Math.pow(g, level - 1) * (Math.pow(g, n) - 1) / (g - 1));
+  }
+  function maxAffordable(level, gold) {
+    const b = CONFIG.tapUpgradeBaseCost, g = CONFIG.tapUpgradeCostGrowth;
+    const first = b * Math.pow(g, level - 1);
+    let n = Math.floor(Math.log(gold * (g - 1) / first + 1) / Math.log(g));
+    if (!isFinite(n) || n < 0) n = 0;
+    while (n > 0 && upgradeCost(level, n) > gold) n--;      // защита от округления
+    while (upgradeCost(level, n + 1) <= gold) n++;
+    return n;
+  }
 
-function spawnFx(x, y, amount) {
-  const spark = document.createElement('div');
-  spark.className = 'spark';
-  spark.style.left = x + 'px';
-  spark.style.top = y + 'px';
-  el.arena.appendChild(spark);
-  setTimeout(() => spark.remove(), 300);
+  // ---------- состояние ----------
+  function newState() {
+    const s = {
+      floor: 1,            // текущий этаж
+      maxFloor: 1,         // самый высокий открытый этаж
+      highestCleared: 0,   // самый высокий этаж, где побеждён босс (для разовых наград)
+      enemyIndex: 1,
+      farming: false,
+      gold: 0,
+      tapLevel: 1,
+      stats: { taps: 0, kills: 0, bossKills: 0 },
+      // не сохраняется:
+      enemy: null,
+      bossTimeLeft: 0,
+      respawn: 0,
+    };
+    spawn(s);
+    return s;
+  }
 
-  const dmg = document.createElement('div');
-  dmg.className = 'dmg';
-  dmg.textContent = amount;
-  dmg.style.left = (x + (Math.random() * 30 - 15)) + 'px';
-  dmg.style.top = y + 'px';
-  el.arena.appendChild(dmg);
-  setTimeout(() => dmg.remove(), 700);
-}
+  function spawn(s) {
+    const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
+    const hp = enemyMaxHp(s.floor, isBoss);
+    s.enemy = { hp, maxHp: hp, isBoss, alive: true, name: enemyName(s.floor, s.enemyIndex, isBoss) };
+    s.bossTimeLeft = isBoss ? CONFIG.bossTimeSec : 0;
+    s.respawn = 0;
+  }
 
-function playHit() {
-  el.enemy.classList.remove('hit');
-  void el.enemy.offsetWidth; // перезапуск анимации
-  el.enemy.classList.add('hit');
-}
+  // ---------- действия ----------
+  function tap(s) {
+    const events = [];
+    if (!s.enemy.alive) return events;           // нельзя бить мёртвого
+    const dmg = tapDamage(s);
+    s.stats.taps++;
+    s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
+    events.push({ type: 'hit', dmg });
+    if (s.enemy.hp <= 0) kill(s, events);
+    return events;
+  }
 
-function onTap(e) {
-  if (!state.alive) return;               // после победы урон не наносится
-  if (e.target.closest('#victory')) return;
-  e.preventDefault();
+  function kill(s, events) {
+    const isBoss = s.enemy.isBoss;
+    s.enemy.alive = false;
+    s.respawn = CONFIG.respawnDelaySec;
+    const gold = killGold(s.floor, isBoss);
+    s.gold += gold;
+    s.stats.kills++;
+    events.push({ type: 'kill', gold, boss: isBoss });
 
-  const rect = el.arena.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+    if (isBoss) {
+      s.stats.bossKills++;
+      if (s.floor > s.highestCleared) {
+        s.highestCleared = s.floor;
+        const bonus = firstClearGold(s.floor);
+        s.gold += bonus;
+        events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
+      }
+      s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
+      s.floor += 1;
+      s.enemyIndex = 1;
+      events.push({ type: 'floor', floor: s.floor });
+    } else if (s.farming && s.enemyIndex === CONFIG.enemiesPerFloor - 1) {
+      s.enemyIndex = 1;                          // фарм: крутим обычных врагов без босса
+    } else {
+      s.enemyIndex += 1;
+    }
+  }
 
-  state.hp = Math.max(0, state.hp - CONFIG.tapDamage);
-  state.taps++;
-  el.hint.style.display = 'none';
-  spawnFx(x, y, CONFIG.tapDamage);
-  if (navigator.vibrate) navigator.vibrate(10);
+  // Фиксированный шаг симуляции
+  function tick(s, dt) {
+    const events = [];
+    if (!s.enemy.alive) {
+      s.respawn -= dt;
+      if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
+      return events;
+    }
+    if (s.enemy.isBoss) {
+      s.bossTimeLeft -= dt;
+      if (s.bossTimeLeft <= 0) {
+        s.farming = true;
+        s.enemyIndex = 1;
+        spawn(s);
+        events.push({ type: 'bossFail' }, { type: 'spawn' });
+      }
+    }
+    return events;
+  }
 
-  if (state.hp <= 0) {
-    state.alive = false;
-    el.enemy.classList.remove('hit');
-    el.enemy.classList.add('dead');
-    el.victoryInfo.textContent = `Тапов: ${state.taps}`;
-    setTimeout(() => el.victory.classList.add('show'), 550);
-  } else {
-    playHit();
+  function challengeBoss(s) {
+    s.farming = false;
+    s.enemyIndex = CONFIG.enemiesPerFloor;
+    spawn(s);
+    return [{ type: 'spawn' }];
+  }
+
+  function goToFloor(s, floor) {
+    if (!Number.isInteger(floor) || floor < 1 || floor > s.maxFloor || floor === s.floor) return [];
+    s.floor = floor;
+    s.enemyIndex = 1;
+    s.farming = floor < s.maxFloor ? s.farming : false;
+    spawn(s);
+    return [{ type: 'floor', floor }, { type: 'spawn' }];
+  }
+
+  // n: число уровней или 'max'
+  function buyTap(s, n) {
+    const count = n === 'max' ? maxAffordable(s.tapLevel, s.gold) : n;
+    if (!Number.isInteger(count) || count <= 0) return false;
+    const cost = upgradeCost(s.tapLevel, count);
+    if (cost > s.gold) return false;
+    s.gold -= cost;
+    s.tapLevel += count;
+    return true;
+  }
+
+  // ---------- сохранение ----------
+  function serialize(s) {
+    return JSON.stringify({
+      v: CONFIG.saveVersion,
+      floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
+      enemyIndex: s.enemyIndex, farming: s.farming,
+      gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
+      savedAt: Date.now(),
+    });
+  }
+
+  function deserialize(str) {
+    let d;
+    try { d = JSON.parse(str); } catch (e) { return null; }
+    if (!d || d.v !== CONFIG.saveVersion) return null;
+    const int = (x, min) => Number.isInteger(x) && x >= min;
+    if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
+        !int(d.enemyIndex, 1) || d.enemyIndex > CONFIG.enemiesPerFloor ||
+        !int(d.tapLevel, 1) || typeof d.gold !== 'number' || !isFinite(d.gold) || d.gold < 0 ||
+        d.floor > d.maxFloor) return null;
+    const s = newState();
+    s.floor = d.floor; s.maxFloor = d.maxFloor; s.highestCleared = d.highestCleared;
+    s.enemyIndex = d.enemyIndex; s.farming = !!d.farming;
+    s.gold = d.gold; s.tapLevel = d.tapLevel;
+    if (d.stats) s.stats = {
+      taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0,
+    };
+    spawn(s);                                     // враг появляется с полным HP
+    return s;
+  }
+
+  // ---------- форматирование чисел ----------
+  function fmt(n) {
+    n = Math.floor(n);
+    if (Math.abs(n) < 1e6) return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return n.toExponential(2).replace('e+', 'e');
+  }
+
+  const Core = {
+    CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
+    tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
+    serialize, deserialize, fmt,
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = Core;
+  else root.Core = Core;
+})(this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const C = Core, CFG = Core.CONFIG, fmt = Core.fmt;
+  const SAVE_KEY = 'prizvannyy_v2_save';
+  const STEP = 1 / 30;                 // фиксированный шаг логики
+  const DPS_WINDOW = 5;                // период усреднения DPS, сек (TBD)
+
+  const $ = id => document.getElementById(id);
+  const el = {
+    arena: $('arena'), enemy: $('enemy'), hpFill: $('hpFill'), hpText: $('hpText'),
+    enemyName: $('enemyName'), dots: $('dots'), floorLabel: $('floorLabel'),
+    prev: $('prevFloor'), next: $('nextFloor'), timerBar: $('timerBar'), timerFill: $('timerFill'),
+    tapDmg: $('tapDmg'), dps: $('dps'), hint: $('hint'), farmBar: $('farmBar'), bossBtn: $('bossBtn'),
+    toast: $('toast'), gold: $('gold'), tapLvl: $('tapLvl'), tapSub: $('tapSub'), buyBtn: $('buyBtn'),
+    modal: $('modal'), saveInfo: $('saveInfo'),
+  };
+
+  // ---------- сохранение ----------
+  function load() {
+    try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = C.deserialize(raw); if (s) return s; } } catch (e) {}
+    return C.newState();
+  }
+  let lastSave = 0;
+  function save() {
+    try { localStorage.setItem(SAVE_KEY, C.serialize(s)); lastSave = Date.now(); } catch (e) {}
+  }
+
+  let s = load();
+  let mult = 1;
+  const dmgLog = [];                    // [время, урон] для DPS
+  let tapped = s.stats.taps > 0;
+
+  for (let i = 1; i <= CFG.enemiesPerFloor; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === CFG.enemiesPerFloor ? ' boss' : '');
+    el.dots.appendChild(d);
+  }
+
+  // ---------- эффекты ----------
+  function fx(cls, x, y, text, life) {
+    const n = document.createElement('div');
+    n.className = cls; n.style.left = x + 'px'; n.style.top = y + 'px';
+    if (text != null) n.textContent = text;
+    el.arena.appendChild(n);
+    setTimeout(() => n.remove(), life);
+  }
+  function restartAnim(cls) {
+    el.enemy.classList.remove('hit', 'spawn', 'dead');
+    void el.enemy.offsetWidth;
+    if (cls) el.enemy.classList.add(cls);
+  }
+  let toastTimer = 0;
+  function toast(html) {
+    el.toast.innerHTML = html; el.toast.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1600);
+  }
+
+  // ---------- обработка событий ядра ----------
+  function handle(events, x, y) {
+    const r = el.arena.getBoundingClientRect();
+    for (const e of events) {
+      if (e.type === 'hit') {
+        dmgLog.push([performance.now(), e.dmg]);
+        fx('spark', x, y, null, 300);
+        fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
+        restartAnim('hit');
+      } else if (e.type === 'kill') {
+        restartAnim('dead');
+        fx('dmg gold', r.width / 2, r.height * 0.35, '+' + fmt(e.gold) + ' ◆', 700);
+        if (e.boss) save();
+      } else if (e.type === 'firstClear') {
+        toast('Этаж ' + e.floor + ' пройден впервые!<small>+' + fmt(e.gold) + ' ◆</small>');
+      } else if (e.type === 'bossFail') {
+        toast('Время вышло!<small style="color:var(--muted)">Усились и вызови босса снова</small>');
+        save();
+      } else if (e.type === 'spawn') {
+        restartAnim('spawn');
+      }
+    }
+  }
+
+  // ---------- ввод ----------
+  el.arena.addEventListener('pointerdown', e => {
+    if (e.target.closest('#farmBar')) return;
+    e.preventDefault();
+    const r = el.arena.getBoundingClientRect();
+    const ev = C.tap(s);
+    if (!ev.length) return;
+    if (!tapped) { tapped = true; }
+    if (navigator.vibrate) navigator.vibrate(8);
+    handle(ev, e.clientX - r.left, e.clientY - r.top);
+    render();
+  });
+  el.bossBtn.addEventListener('click', () => { handle(C.challengeBoss(s)); render(); });
+  el.prev.addEventListener('click', () => { handle(C.goToFloor(s, s.floor - 1)); render(); save(); });
+  el.next.addEventListener('click', () => { handle(C.goToFloor(s, s.floor + 1)); render(); save(); });
+  document.querySelectorAll('.multBtn').forEach(b => b.addEventListener('click', () => {
+    mult = b.dataset.n === 'max' ? 'max' : +b.dataset.n;
+    document.querySelectorAll('.multBtn').forEach(x => x.classList.toggle('on', x === b));
+    render();
+  }));
+  el.buyBtn.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
+  $('settingsBtn').addEventListener('click', () => {
+    el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
+      (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
+    el.modal.classList.add('show');
+  });
+  $('closeModal').addEventListener('click', () => el.modal.classList.remove('show'));
+  $('resetBtn').addEventListener('click', () => {
+    if (!confirm('Сбросить весь прогресс? Это нельзя отменить.')) return;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    s = C.newState(); tapped = false; dmgLog.length = 0;
+    el.modal.classList.remove('show'); restartAnim('spawn'); render();
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  window.addEventListener('pagehide', save);
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // ---------- отрисовка ----------
+  function render() {
+    const en = s.enemy;
+    el.floorLabel.textContent = 'Этаж ' + s.floor;
+    el.prev.disabled = s.floor <= 1;
+    el.next.disabled = s.floor >= s.maxFloor;
+    [...el.dots.children].forEach((d, i) => {
+      const idx = i + 1;
+      d.classList.toggle('done', idx < s.enemyIndex);
+      d.classList.toggle('cur', idx === s.enemyIndex);
+    });
+    el.enemyName.textContent = en.isBoss ? 'БОСС · ' + en.name : en.name;
+    el.enemyName.classList.toggle('boss', en.isBoss);
+    el.enemy.classList.toggle('boss', en.isBoss);
+    el.enemy.style.filter = en.isBoss ? 'hue-rotate(130deg) saturate(1.3)' : 'hue-rotate(' + ((s.floor * 37 + s.enemyIndex * 11) % 360) + 'deg)';
+    el.hpFill.style.width = (en.hp / en.maxHp * 100) + '%';
+    el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp);
+    el.timerBar.classList.toggle('show', en.isBoss);
+    el.farmBar.classList.toggle('show', s.farming);
+    el.hint.style.display = tapped ? 'none' : '';
+    el.tapDmg.textContent = fmt(C.tapDamage(s));
+    el.gold.textContent = fmt(s.gold);
+    el.tapLvl.textContent = fmt(s.tapLevel);
+
+    const n = mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : mult;
+    const cost = C.upgradeCost(s.tapLevel, n);
+    const can = cost <= s.gold;
+    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(CFG.tapBaseDamage * (s.tapLevel + n)) + '</b>';
+    el.buyBtn.disabled = !can;
+    el.buyBtn.innerHTML = can ? '+' + fmt(n) + ' ур.<span>◆ ' + fmt(cost) + '</span>'
+                              : 'Не хватает<span>◆ ' + fmt(cost - s.gold) + '</span>';
+  }
+
+  function renderLive() {
+    if (s.enemy.isBoss) {
+      const p = Math.max(0, s.bossTimeLeft / CFG.bossTimeSec);
+      el.timerFill.style.width = (p * 100) + '%';
+      el.timerFill.classList.toggle('low', s.bossTimeLeft < 5);
+    }
+    const now = performance.now();
+    while (dmgLog.length && now - dmgLog[0][0] > DPS_WINDOW * 1000) dmgLog.shift();
+    const sum = dmgLog.reduce((a, d) => a + d[1], 0);
+    el.dps.textContent = fmt(sum / DPS_WINDOW);
+  }
+
+  // ---------- игровой цикл ----------
+  let acc = 0, last = performance.now();
+  function loop(now) {
+    acc += Math.min(0.25, (now - last) / 1000); last = now;
+    let changed = false;
+    while (acc >= STEP) {
+      const ev = C.tick(s, STEP); acc -= STEP;
+      if (ev.length) { handle(ev); changed = true; }
+    }
+    if (changed) render();
+    renderLive();
+    if (Date.now() - lastSave > 5000) save();
+    requestAnimationFrame(loop);
   }
   render();
-}
-
-el.arena.addEventListener('pointerdown', onTap);
-el.restart.addEventListener('click', reset);
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-reset();
+  requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
