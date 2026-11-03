@@ -167,6 +167,21 @@
   #hero svg { width: 100%; height: 100%; overflow: visible; }
   #hero .allyTag { color: var(--gold); bottom: -13px; }
   @keyframes heroAtk { 35% { transform: translateY(-14px) scale(1.04) rotate(-3deg); } 100% { transform: none; } }
+  /* ультимейты */
+  .ultBar { position: absolute; left: 18%; right: 18%; bottom: -4px; height: 4px; border-radius: 2px; background: #00000080; overflow: hidden; }
+  .ultBar i { display: block; height: 100%; width: 0; background: currentColor; }
+  .ultBar.ready i { box-shadow: 0 0 6px currentColor; }
+  .ally.ulting .fig { animation: ultPulse .5s ease-out; }
+  @keyframes ultPulse { 0% { filter: brightness(1); } 30% { filter: brightness(2.4) drop-shadow(0 0 10px currentColor); transform: scale(1.12); } 100% { filter: none; transform: none; } }
+  #ultBanner { position: absolute; top: 46px; left: 0; right: 0; text-align: center; font-weight: 800; font-size: 16px; letter-spacing: .5px; pointer-events: none; opacity: 0; z-index: 4; text-shadow: 0 2px 0 #000, 0 0 12px currentColor; }
+  #ultBanner.show { animation: banner 1.1s ease-out; }
+  @keyframes banner { 0% { opacity: 0; transform: scale(.7); } 15% { opacity: 1; transform: scale(1.08); } 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .dmg.nuke { font-size: 34px; text-shadow: 0 3px 0 #000, 0 0 14px currentColor; }
+  #arena.fury::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 40%, #ff3b2a33 100%); }
+  #enemy.marked .body { filter: drop-shadow(0 0 10px #ff8a3d) drop-shadow(0 0 3px #ffd36b); }
+  #hero.empowered svg { filter: drop-shadow(0 0 10px #b98cff); }
+  #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
+  .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -198,9 +213,11 @@
     <div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div>
     <div id="timerBar"><div id="timerFill"></div></div>
     <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b> ⓘ<div id="statsMore"></div></div>
+    <div id="buffs"></div>
   </div>
 
   <div id="arena">
+    <div id="ultBanner"></div>
     <div id="farmBar"><span>Фарм этажа</span><button id="bossBtn">Вызвать босса</button></div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
@@ -272,7 +289,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.4</div>
+  <div id="version">v0.5</div>
 </div>
 
 <script>
@@ -310,7 +327,7 @@
       const sp = document.createElement('div');
       sp.className = 'ally ' + v.side + (v.back ? ' back' : '');
       sp.style.cssText = v.pos;
-      sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div>';
+      sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div><div class="ultBar" style="color:' + v.eye + '"><i></i></div>';
       layer.appendChild(sp);
       const card = document.createElement('div');
       card.className = 'card';
@@ -319,7 +336,7 @@
       cards.appendChild(card);
       const btn = card.querySelector('.buy');
       btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, mult)) { save(); render(); } });
-      allyUi[a.id] = { sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+      allyUi[a.id] = { ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
   const SAVE_KEY = 'prizvannyy_v2_save';
@@ -400,8 +417,12 @@
           fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
-          const u = allyUi[e.source];
-          if (u) {
+          const isUlt = e.source.startsWith('ult:');
+          const u = allyUi[isUlt ? e.source.slice(4) : e.source];
+          if (u && isUlt) {
+            const d = fx('dmg nuke', r.width / 2, r.height * 0.4, fmt(e.dmg), 900);
+            d.style.color = u.color;
+          } else if (u) {
             u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
             const d = fx('dmg auto', r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
             d.style.color = u.color;
@@ -417,6 +438,13 @@
       } else if (e.type === 'bossFail') {
         toast('Время вышло!<small style="color:var(--muted)">Усились и вызови босса снова</small>');
         save();
+      } else if (e.type === 'ult') {
+        const u = allyUi[e.id];
+        u.sprite.classList.remove('ulting'); void u.sprite.offsetWidth; u.sprite.classList.add('ulting');
+        const b = $('ultBanner');
+        b.textContent = CFG.allies.find(a => a.id === e.id).name + ' · ' + e.name + '!';
+        b.style.color = u.color;
+        b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
       } else if (e.type === 'spawn') {
         restartAnim('spawn');
       }
@@ -518,7 +546,33 @@
                               : 'Не хватает<span>◆ ' + fmt(cost - s.gold) + '</span>';
   }
 
+  const BUFF_UI = [
+    { key: 'team', kind: 'teamBuff', color: '#ff8a6b' },
+    { key: 'tap', kind: 'tapBuff', color: '#c8b8ff' },
+  ];
+  let lastBuffHtml = '';
+  function renderUlts() {
+    for (const a of CFG.allies) {
+      const u = allyUi[a.id], st = s.allies[a.id];
+      const p = st.level > 0 ? st.ult / a.ult.charge : 0;
+      u.ultFill.style.width = (p * 100) + '%';
+      u.ultBar.classList.toggle('ready', p >= 1);
+    }
+    const parts = [];
+    for (const b of BUFF_UI) {
+      const left = s.buffs[b.key];
+      if (left > 0) parts.push('<span class="buff" style="color:' + b.color + '">' + CFG.allies.find(a => a.ult.kind === b.kind).ult.name + ' ' + Math.ceil(left) + 'с</span>');
+    }
+    if (s.enemy.mark > 0) parts.push('<span class="buff" style="color:#ffb36b">Метка ' + Math.ceil(s.enemy.mark) + 'с</span>');
+    const html = parts.join('');
+    if (html !== lastBuffHtml) { $('buffs').innerHTML = html; lastBuffHtml = html; }
+    el.arena.classList.toggle('fury', s.buffs.team > 0);
+    el.enemy.classList.toggle('marked', s.enemy.mark > 0 && s.enemy.alive);
+    heroEl.classList.toggle('empowered', s.buffs.tap > 0);
+  }
+
   function renderLive() {
+    renderUlts();
     if (s.enemy.isBoss) {
       const p = Math.max(0, s.bossTimeLeft / CFG.bossTimeSec);
       el.timerFill.style.width = (p * 100) + '%';
