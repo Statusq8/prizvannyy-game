@@ -26,13 +26,17 @@
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
-        hireCost: 25, costGrowth: 1.05 },
+        hireCost: 25, costGrowth: 1.05,
+        ult: { name: 'Ливень стрел', kind: 'nuke', charge: 12, power: 20 } },
       { id: 'borg', name: 'Борг', role: 'Берсерк', baseDps: 120, attackInterval: 1.6,
-        hireCost: 400, costGrowth: 1.05 },
+        hireCost: 400, costGrowth: 1.05,
+        ult: { name: 'Ярость', kind: 'teamBuff', charge: 20, power: 2, duration: 6 } },
       { id: 'lia', name: 'Лиа', role: 'Пиромантка', baseDps: 4000, attackInterval: 1.1,
-        hireCost: 7000, costGrowth: 1.05 },
+        hireCost: 7000, costGrowth: 1.05,
+        ult: { name: 'Метка пламени', kind: 'mark', charge: 18, power: 1.5, duration: 8 } },
       { id: 'kael', name: 'Каэль', role: 'Клинок бездны', baseDps: 150000, attackInterval: 0.45,
-        hireCost: 120000, costGrowth: 1.05 },
+        hireCost: 120000, costGrowth: 1.05,
+        ult: { name: 'Разрез бездны', kind: 'tapBuff', charge: 25, power: 3, duration: 8 } },
     ],
   };
 
@@ -121,6 +125,7 @@
       tapLevel: 1,
       stats: { taps: 0, kills: 0, bossKills: 0 },
       allies: newAllies(),
+      buffs: { team: 0, tap: 0 },  // оставшееся время баффов, с (не сохраняется)
       // не сохраняется:
       enemy: null,
       bossTimeLeft: 0,
@@ -132,20 +137,32 @@
 
   function newAllies() {
     const o = {};
-    for (const a of CONFIG.allies) o[a.id] = { level: 0, cd: a.attackInterval };   // cd не сохраняется
+    // cd — перезарядка атаки, ult — накопленный заряд ультимейта, с (оба не сохраняются)
+    for (const a of CONFIG.allies) o[a.id] = { level: 0, cd: a.attackInterval, ult: 0 };
     return o;
   }
 
   function spawn(s) {
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const hp = enemyMaxHp(s.floor, isBoss);
-    s.enemy = { hp, maxHp: hp, isBoss, alive: true, name: enemyName(s.floor, s.enemyIndex, isBoss) };
+    s.enemy = { hp, maxHp: hp, isBoss, alive: true, mark: 0, name: enemyName(s.floor, s.enemyIndex, isBoss) };
     s.bossTimeLeft = isBoss ? CONFIG.bossTimeSec : 0;
     s.respawn = 0;
   }
 
   // ---------- действия ----------
+  // Множители от ультимейтов: Ярость — весь урон отряда, Разрез — тапы, Метка — урон по врагу
+  function buffDef(kind) { return CONFIG.allies.find(a => a.ult.kind === kind).ult; }
+  function damageMult(s, source) {
+    let m = 1;
+    if (s.buffs.team > 0) m *= buffDef('teamBuff').power;
+    if (source === 'tap' && s.buffs.tap > 0) m *= buffDef('tapBuff').power;
+    if (s.enemy.mark > 0) m *= buffDef('mark').power;
+    return m;
+  }
+
   function dealDamage(s, dmg, source, events) {
+    dmg *= damageMult(s, source);
     s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
     events.push({ type: 'hit', dmg, source });
     if (s.enemy.hp <= 0) kill(s, events);
@@ -190,11 +207,26 @@
   // Фиксированный шаг симуляции
   function tick(s, dt) {
     const events = [];
+    s.buffs.team = Math.max(0, s.buffs.team - dt);
+    s.buffs.tap = Math.max(0, s.buffs.tap - dt);
+    if (s.enemy.alive) s.enemy.mark = Math.max(0, s.enemy.mark - dt);
+    for (const a of CONFIG.allies) {
+      const st = s.allies[a.id];
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
+    }
     if (!s.enemy.alive) {
       s.respawn -= dt;
       if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
       return events;
     }
+    // Ультимейты срабатывают автоматически, как только заряжены и враг жив
+    for (const a of CONFIG.allies) {
+      const st = s.allies[a.id];
+      if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
+      st.ult = 0;
+      fireUlt(s, a, events);
+    }
+    if (!s.enemy.alive) return events;
     // Автоатаки союзников: перезарядка идёт только пока враг жив
     for (const a of CONFIG.allies) {
       const st = s.allies[a.id];
@@ -216,6 +248,15 @@
       }
     }
     return events;
+  }
+
+  function fireUlt(s, a, events) {
+    const u = a.ult;
+    events.push({ type: 'ult', id: a.id, name: u.name, kind: u.kind });
+    if (u.kind === 'nuke') dealDamage(s, allyDps(s, a.id) * u.power, 'ult:' + a.id, events);
+    else if (u.kind === 'teamBuff') s.buffs.team = u.duration;
+    else if (u.kind === 'tapBuff') s.buffs.tap = u.duration;
+    else if (u.kind === 'mark') s.enemy.mark = u.duration;
   }
 
   function challengeBoss(s) {
@@ -307,7 +348,7 @@
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
-    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
+    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone, damageMult,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };

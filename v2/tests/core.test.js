@@ -273,3 +273,84 @@ test('сохранение всех союзников', () => {
   const t = C.deserialize(C.serialize(s));
   CFG.allies.forEach((a, i) => assert.strictEqual(t.allies[a.id].level, i * 3 + 1));
 });
+
+// ---------- ультимейты союзников ----------
+const ultOf = kind => CFG.allies.find(a => a.ult.kind === kind);
+function runFor(s, sec) { const ev = []; const step = 1 / 30; for (let t = 0; t < sec; t += step) ev.push(...C.tick(s, step)); return ev; }
+function tough(s) { s.enemy.hp = s.enemy.maxHp = 1e18; }
+
+test('ультимейт не копится у ненанятого союзника', () => {
+  const s = C.newState(); tough(s);
+  const ev = runFor(s, 60);
+  assert.ok(!ev.some(e => e.type === 'ult'));
+});
+
+test('ультимейт срабатывает автоматически по заряду', () => {
+  const a = ultOf('nuke');
+  const s = C.newState(); tough(s);
+  s.allies[a.id].level = 10;
+  const ev = runFor(s, a.ult.charge * 2 + 0.5);
+  assert.strictEqual(ev.filter(e => e.type === 'ult' && e.id === a.id).length, 2);
+});
+
+test('Ливень стрел наносит прямой урон, кратный DPS союзника', () => {
+  const a = ultOf('nuke');
+  const s = C.newState(); tough(s);
+  s.allies[a.id].level = 10;
+  s.allies[a.id].ult = a.ult.charge;
+  const ev = C.tick(s, 1 / 30);
+  const hit = ev.find(e => e.type === 'hit' && e.source === 'ult:' + a.id);
+  assert.ok(hit);
+  assert.strictEqual(hit.dmg, C.allyDps(s, a.id) * a.ult.power);
+});
+
+test('Ярость умножает урон тапа и союзников на время действия', () => {
+  const a = ultOf('teamBuff');
+  const s = C.newState(); tough(s);
+  s.allies[a.id].level = 1;
+  s.allies[a.id].ult = a.ult.charge;
+  C.tick(s, 1 / 30);
+  assert.ok(s.buffs.team > 0);
+  const hit = C.tap(s).find(e => e.type === 'hit');
+  assert.strictEqual(hit.dmg, C.tapDamage(s) * a.ult.power);
+  runFor(s, a.ult.duration + 0.1);
+  assert.strictEqual(s.buffs.team, 0);
+  assert.strictEqual(C.tap(s).find(e => e.type === 'hit').dmg, C.tapDamage(s));
+});
+
+test('Метка пламени усиливает урон по врагу и пропадает с новым врагом', () => {
+  const a = ultOf('mark');
+  const s = C.newState();
+  s.allies[a.id].level = 1;
+  s.allies[a.id].ult = a.ult.charge;
+  s.enemy.hp = s.enemy.maxHp = 1e9;
+  C.tick(s, 1 / 30);
+  assert.ok(s.enemy.mark > 0);
+  assert.strictEqual(C.tap(s).find(e => e.type === 'hit').dmg, C.tapDamage(s) * a.ult.power);
+  s.enemy.hp = 1; C.tap(s);                 // добиваем
+  C.tick(s, CFG.respawnDelaySec + 0.01);    // новый враг
+  assert.strictEqual(s.enemy.mark, 0);
+});
+
+test('Разрез бездны усиливает только тапы', () => {
+  const a = ultOf('tapBuff');
+  const s = C.newState(); tough(s);
+  s.buffs.tap = a.ult.duration;
+  assert.strictEqual(C.damageMult(s, 'tap'), a.ult.power);
+  assert.strictEqual(C.damageMult(s, 'irene'), 1);
+});
+
+test('готовность ультимейта сохраняется между врагами: не тратится на мёртвого', () => {
+  const a = ultOf('nuke');
+  const s = C.newState();
+  s.allies[a.id].level = 1;
+  while (s.enemy.alive) C.tap(s);           // враг мёртв, идёт пауза до нового
+  s.allies[a.id].ult = a.ult.charge;
+  const ev = C.tick(s, 0.01);
+  assert.ok(!ev.some(e => e.type === 'ult'));
+  assert.strictEqual(s.allies[a.id].ult, a.ult.charge);
+  const ev2 = C.tick(s, CFG.respawnDelaySec);
+  assert.ok(ev2.some(e => e.type === 'spawn'));
+  const ev3 = C.tick(s, 1 / 30);
+  assert.ok(ev3.some(e => e.type === 'ult' && e.id === a.id));
+});
