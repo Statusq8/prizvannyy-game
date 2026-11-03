@@ -17,12 +17,24 @@ const assets = {};
 for (const id of used) {
   const p = path.join(expDir, id + '.webp');
   if (fs.existsSync(p)) assets[id] = 'data:image/webp;base64,' + fs.readFileSync(p).toString('base64');
-  else console.warn('нет ассета', id);
+  else if (!id.startsWith('h_')) console.warn('нет ассета', id);
 }
 // Зоны: все кадры из assets/zones (ключи строятся в коде динамически: z{N}_m{M}_{кадр}, z{N}_bg)
 const zDir = path.join(ROOT, 'assets', 'zones');
 if (fs.existsSync(zDir)) for (const f of fs.readdirSync(zDir).filter(f => f.endsWith('.webp')))
   assets[f.replace('.webp', '')] = 'data:image/webp;base64,' + fs.readFileSync(path.join(zDir, f)).toString('base64');
+// Покадровые герои: assets/heroes/<id>/<вид>_NN.webp → A.h_<id>_<вид>_NN, avatar.webp → A.h_<id>_avatar.
+// PZ.HF[id][вид] = число кадров — по нему UI понимает, что у героя есть свой арт.
+const hDir = path.join(ROOT, 'assets', 'heroes'), HF = {};
+if (fs.existsSync(hDir)) for (const id of fs.readdirSync(hDir)) {
+  const d = path.join(hDir, id); if (!fs.statSync(d).isDirectory()) continue;
+  HF[id] = {};
+  for (const f of fs.readdirSync(d).filter(f => f.endsWith('.webp')).sort()) {
+    const stem = f.replace('.webp', ''), kind = stem.replace(/_\d+$/, '');
+    HF[id][kind] = (HF[id][kind] || 0) + 1;
+    assets['h_' + id + '_' + stem] = 'data:image/webp;base64,' + fs.readFileSync(path.join(d, f)).toString('base64');
+  }
+}
 const css = fs.existsSync(path.join(ROOT, 'src/ui/styles.css')) ? read('ui/styles.css') : '';
 const shell = fs.existsSync(path.join(ROOT, 'src/ui/shell.html')) ? read('ui/shell.html') : '<div id="app"></div>';
 
@@ -34,7 +46,7 @@ const html = `<!doctype html>
 <style>${css}</style></head>
 <body>${shell}
 <script>globalThis.PZ={};PZ.VERSION=${JSON.stringify(version)};PZ.BUILT=${JSON.stringify(new Date().toISOString())};
-const A=${JSON.stringify(assets)};PZ.A=A;</script>
+const A=${JSON.stringify(assets)};PZ.A=A;PZ.HF=${JSON.stringify(HF)};</script>
 <script>
 ${js}
 </script></body></html>`;
@@ -44,7 +56,7 @@ const art = `<title>Призванный: Башня Гачи</title>
 <style>:root{color-scheme:dark}html,body{height:100%;background:#000}#app{height:100%!important}${css}</style>
 ${shell}
 <script>globalThis.PZ={};PZ.VERSION=${JSON.stringify(version)};PZ.BUILT=${JSON.stringify(new Date().toISOString())};PZ.HOSTED=true;
-const A=${JSON.stringify(assets)};PZ.A=A;</script>
+const A=${JSON.stringify(assets)};PZ.A=A;PZ.HF=${JSON.stringify(HF)};</script>
 <script>
 ${js}
 </script>`;

@@ -25,8 +25,8 @@ test('M1 мастерство (У): 200→×1, 225→×1.25, 250→×1.5625, 300
   close(B.mastery(250), 1.5625); close(B.mastery(300), 2.44140625);
 });
 
-test('M1 паритет с game_core.py: личный DPS, цена уровня, DPS армии', () => {
-  const PZ = load();
+test('M1 паритет с game_core.py: личный DPS, цена уровня, DPS армии (на старом каталоге)', () => {
+  const PZ = load.useLegacyHeroes(load());
   for (const c of parity.personal) close(PZ.heroes.personalDps(c.id, c.lv, 1), c.dps);
   for (const c of parity.levelCost) assert.strictEqual(PZ.B.heroLevelCost(PZ.HERO_BY_ID[c.id].hire, c.lv), c.cost);
   for (const c of parity.army) {
@@ -49,25 +49,25 @@ test('M1 новая игра валидна; SS/БОГ не в коллекци�
   const s = PZ.state.newGame(0);
   assert.deepStrictEqual(PZ.state.validate(s), []);
   const ss = PZ.HEROES.filter(h => h.rarity === 'SS' || h.rarity === 'БОГ');
-  assert.strictEqual(ss.length, 10);
+  assert.strictEqual(ss.length, 8);   // новый ростер: SS 4 + БОГ 4
   for (const h of ss) { assert.ok(!s.account.owned[h.id]); assert.ok(!PZ.heroes.canObtain(s, h.id)); }
 });
 
 test('M1 найм и уровни: списание золота атомарно', () => {
   const PZ = load();
   const s = PZ.state.newGame(0);
-  assert.strictEqual(PZ.heroes.hire(s, 'e_ash_recruit').ok, false);   // нет золота
+  assert.strictEqual(PZ.heroes.hire(s, 'lumi').ok, false);   // нет золота
   assert.strictEqual(s.run.gold, 0);
   PZ.state.addGold(s, 1000, 'test');
-  assert.ok(PZ.heroes.hire(s, 'e_ash_recruit').ok);
+  assert.ok(PZ.heroes.hire(s, 'lumi').ok);
   assert.strictEqual(s.run.gold, 975);
-  assert.strictEqual(PZ.heroes.hire(s, 'e_ash_recruit').ok, false);   // повторный найм
+  assert.strictEqual(PZ.heroes.hire(s, 'lumi').ok, false);   // повторный найм
   const before = s.run.gold;
-  const r = PZ.heroes.levelUp(s, 'e_ash_recruit', 'max');
+  const r = PZ.heroes.levelUp(s, 'lumi', 'max');
   assert.ok(r.ok && r.levels > 1);
   close(before - s.run.gold, r.cost);
-  assert.ok(s.run.gold < PZ.heroes.levelCost(s, 'e_ash_recruit', s.run.hired.e_ash_recruit));
-  assert.strictEqual(PZ.heroes.hire(s, 'ss_void_king').ok, false);    // гейт
+  assert.ok(s.run.gold < PZ.heroes.levelCost(s, 'lumi', s.run.hired.lumi));
+  assert.strictEqual(PZ.heroes.hire(s, 'astrael').ok, false);    // гейт
   assert.throws(() => PZ.state.addGold(s, NaN, 'x'));
   assert.throws(() => PZ.state.addGold(s, -5, 'x'));
 });
@@ -75,14 +75,14 @@ test('M1 найм и уровни: списание золота атомарн�
 test('M1/QA-05 все нанятые входят в DPS, видимых не больше мест на сцене', () => {
   const PZ = load();
   const s = PZ.state.newGame(0);
-  const ids = ['e_ash_recruit', 'e_bone_servant', 'e_forest_hunter', 'e_swamp_thief', 'e_light_acolyte', 'd_lane', 'd_sand_wanderer'];
+  const ids = ['lumi', 'kostik', 'shmyg', 'shorokh', 'morgul', 'zlatokryl', 'krag'];
   for (const id of ids) s.run.hired[id] = 10;
   const br = PZ.heroes.armyBreakdown(s, 'normal');
   assert.strictEqual(br.parts.length, 8);
   close(br.total, br.parts.reduce((a, p) => a + p.dps, 0));
   assert.strictEqual(PZ.heroes.visibleAllies(s).length, PZ.B.scene.allySlots);
   const six = PZ.heroes.armyDps(s, 'normal');
-  delete s.run.hired.d_lane;
+  delete s.run.hired.zlatokryl;
   assert.ok(PZ.heroes.armyDps(s, 'normal') < six);
 });
 
@@ -118,7 +118,7 @@ test('QA-02/03/04 Башня: фарм 230 при рекорде 250, 252 зак
   assert.strictEqual(s.run.gold, g0);
   assert.ok(PZ.combat.selectFloor(s, 230).ok);
   assert.strictEqual(PZ.combat.currentFloor(s), 230);
-  s.run.hired = { s_bone_lord: 300 };   // сильная армия — фарм идёт быстро
+  s.run.hired = { vargos: 300 };   // сильная армия — фарм идёт быстро
   PZ.combat.tick(s, 120);
   assert.ok(s.run.gold > g0);
   assert.strictEqual(s.account.record, 250); assert.strictEqual(s.run.cleared, 250);
@@ -133,7 +133,7 @@ test('QA-02/03/04 Башня: фарм 230 при рекорде 250, 252 зак
 test('QA-01 сохранение → загрузка даёт тот же стейт; битый основной → резерв', () => {
   const PZ = load(); const st = load.memStorage();
   const s = PZ.state.newGame(1000);
-  PZ.state.addGold(s, 777, 't'); s.run.cleared = 12; s.account.record = 12; s.run.hired.e_ash_recruit = 5;
+  PZ.state.addGold(s, 777, 't'); s.run.cleared = 12; s.account.record = 12; s.run.hired.lumi = 5;
   PZ.save.save(st, s);
   const r = PZ.save.load(st);
   assert.strictEqual(r.from, 'main');
@@ -171,7 +171,7 @@ test('Импорт: мусор отклоняется, текущий сейв �
 test('QA-15 офлайн: лимит 8 ч, 50%, рекорд не растёт, <60 с не начисляется', () => {
   const PZ = load();
   const s = PZ.state.newGame(0);
-  s.run.cleared = 20; s.account.record = 20; s.run.hired.d_lane = 50;
+  s.run.cleared = 20; s.account.record = 20; s.run.hired.zlatokryl = 50;
   const r1 = PZ.offline.apply(s, 30 * 1000);
   assert.strictEqual(r1.gold, 0);
   const e8 = PZ.offline.estimate(s, 8 * 3600), e20 = PZ.offline.estimate(s, 20 * 3600);
@@ -245,7 +245,7 @@ test('M5 выпадение: босс зоны всегда, гарантия н
 
 test('M5 бой выдаёт кости за пройденные этажи', () => {
   const PZ = load(); const s = PZ.state.newGame(0);
-  s.run.hired = { s_bone_lord: 200 };
+  s.run.hired = { vargos: 200 };
   const ev = PZ.combat.events; ev.length = 0;
   PZ.combat.tick(s, 600);
   const total = Object.values(s.account.bones).reduce((a, b) => a + b, 0);
@@ -254,7 +254,7 @@ test('M5 бой выдаёт кости за пройденные этажи', (
 });
 
 test('QA-07 6 костей нужной редкости: ранг повышен, кости потрачены, слоты очищены', () => {
-  const PZ = load(); const s = PZ.state.newGame(0); const id = 'e_ash_recruit';
+  const PZ = load(); const s = PZ.state.newGame(0); const id = 'lumi';
   giveBones(PZ, s, 2, 1);                                 // не та редкость
   assert.strictEqual(PZ.bones.absorb(s, id, 'head').ok, false);
   giveBones(PZ, s, 1, 1);
@@ -275,7 +275,7 @@ test('QA-07 6 костей нужной редкости: ранг повыше�
 });
 
 test('QA-08/09 SS до рекорда 1000 и БОГ до 4000 — блокировка', () => {
-  const PZ = load(); const s = PZ.state.newGame(0); const id = 's_sion';
+  const PZ = load(); const s = PZ.state.newGame(0); const id = 'valtar';
   s.account.owned[id] = true;
   giveBones(PZ, s, 6, 1);
   assert.strictEqual(PZ.bones.absorbAll(s, id), 6);
@@ -288,28 +288,28 @@ test('QA-08/09 SS до рекорда 1000 и БОГ до 4000 — блокир�
   s.account.record = 4000; assert.ok(PZ.bones.promote(s, id).ok); assert.strictEqual(PZ.bones.rankOf(s, id), 'БОГ');
   assert.strictEqual(PZ.bones.promote(s, id).ok, false);   // максимум
   // подделанное сохранение с рангом SS без рекорда не проходит проверку
-  const bad = PZ.state.newGame(0); bad.account.boneSets.s_sion = { rank: 'SS', slots: { head: 0, back: 0, left_arm: 0, right_arm: 0, left_leg: 0, right_leg: 0 } };
+  const bad = PZ.state.newGame(0); bad.account.boneSets.valtar = { rank: 'SS', slots: { head: 0, back: 0, left_arm: 0, right_arm: 0, left_leg: 0, right_leg: 0 } };
   assert.ok(PZ.state.validate(bad).some(e => e.startsWith('rank gate')));
 });
 
 test('M5 ранг и кости хранятся в аккаунте и переживают сохранение', () => {
   const PZ = load(); const st = load.memStorage(); const s = PZ.state.newGame(0);
-  giveBones(PZ, s, 1, 2); PZ.bones.absorbAll(s, 'e_ash_recruit'); PZ.bones.promote(s, 'e_ash_recruit');
+  giveBones(PZ, s, 1, 2); PZ.bones.absorbAll(s, 'lumi'); PZ.bones.promote(s, 'lumi');
   PZ.save.save(st, s);
   const r = PZ.save.load(st).state;
-  assert.strictEqual(PZ.bones.rankOf(r, 'e_ash_recruit'), 'D');
+  assert.strictEqual(PZ.bones.rankOf(r, 'lumi'), 'D');
   assert.strictEqual(PZ.bones.count(r, 'head', 1), 1);
 });
 
 // ===== M6 Портал и звёзды =====
 const pyPortal = require('./fixtures/python_portal.json');
 
-test('M6 стартовая коллекция: только E и D, 10 свитков', () => {
+test('M6 стартовая коллекция: 8 героев E и D, 10 свитков', () => {
   const PZ = load(); const s = PZ.state.newGame(0);
   const owned = Object.keys(s.account.owned).map(id => PZ.HERO_BY_ID[id].rarity);
-  assert.strictEqual(owned.length, 10); assert.ok(owned.every(r => r === 'E' || r === 'D'));
+  assert.strictEqual(owned.length, 8); assert.ok(owned.every(r => r === 'E' || r === 'D'));
   assert.strictEqual(s.account.scrolls, 10);
-  assert.strictEqual(PZ.heroes.hire(s, 'c_shadow_raven').ok, false);
+  assert.strictEqual(PZ.heroes.hire(s, 'auron').ok, false);
 });
 
 test('M6 шансы 1:1 с portal_v01.py; SS/БОГ исключены до рекорда', () => {
@@ -348,7 +348,7 @@ test('M6 гарантия: A+ не позже 100-го, S+ не позже 500-�
 });
 
 test('M6 звёзды: полная цена 1→15 как в stars.py; повышение атомарно; множитель в DPS', () => {
-  const PZ = load(); const s = PZ.state.newGame(0); const id = 'e_ash_recruit';
+  const PZ = load(); const s = PZ.state.newGame(0); const id = 'lumi';
   const sum = { fragments: 0, essence: 0, core: 0, seal: 0 };
   for (let c = 1; c < 15; c++) { const k = PZ.portal.starCost(c); for (const x in sum) sum[x] += k[x]; }
   assert.deepStrictEqual(sum, pyPortal.cum);
@@ -372,24 +372,57 @@ test('M6 награды за первое прохождение боссов в
   PZ.portal.onFirstClear(s, 10); PZ.portal.onFirstClear(s, 50); PZ.portal.onFirstClear(s, 200);
   assert.strictEqual(s.account.scrolls, sc + 2 + 8 + 8);
   assert.strictEqual(s.account.materials.core, 2); assert.strictEqual(s.account.materials.seal, 1);
-  s.run.hired = { d_spirit_huntress: 300 }; s.account.owned.d_spirit_huntress = true;
+  s.run.hired = { nokt: 300 }; s.account.owned.nokt = true;
   PZ.combat.tick(s, 300);
   assert.ok(s.run.cleared >= 10 && s.account.scrolls > sc + 18);
 });
 
-test('M6 миграция сохранения v1 → v2: временная коллекция убрана, нанятые сохранены', () => {
+// Старое сохранение строим вручную со СТАРЫМИ id героев (как оно лежит у игрока в телефоне).
+function oldSave(PZ, ver) {
+  const g = PZ.state.newGame(0);
+  g.meta.saveVersion = ver; g.account.owned = {}; g.account.stars = {}; g.account.fragments = {}; g.account.boneSets = {}; g.account.visible = [];
+  return g;
+}
+
+test('Миграция v1 → v3: временная коллекция убрана, нанятые сохранены и перенесены на новых героев', () => {
   const PZ = load(); const st = load.memStorage();
-  const old = PZ.state.newGame(0); old.meta.saveVersion = 1;
+  const old = oldSave(PZ, 1);
   old.account.ownAllTemp = true;
-  for (const h of PZ.HEROES) if (!PZ.B.heroes.gates[h.rarity]) old.account.owned[h.id] = true;
+  for (const r of ['E', 'D', 'C', 'B', 'A', 'S']) for (const id of ['e_ash_recruit', 'd_lane', 'c_shadow_raven', 'a_ariel', 's_sion']) old.account.owned[id] = true;
   old.run.hired = { c_shadow_raven: 12, e_ash_recruit: 3 };
   delete old.account.scrolls;
   st.setItem(PZ.save.KEY, JSON.stringify(old));
   const r = PZ.save.load(st);
-  assert.ok(r.migrated); assert.strictEqual(r.state.meta.saveVersion, 2);
-  assert.ok(r.state.account.owned.c_shadow_raven); assert.ok(!r.state.account.owned.a_ariel);
-  assert.ok(r.state.account.owned.d_lane); assert.strictEqual(r.state.account.scrolls, 10);
+  assert.ok(r.migrated); assert.strictEqual(r.state.meta.saveVersion, 3);
+  assert.ok(r.state.account.owned.auron, 'нанятый C-герой перенесён');
+  assert.strictEqual(r.state.run.hired.auron, 12); assert.strictEqual(r.state.run.hired.lumi, 3);
+  assert.ok(!r.state.account.owned.eliriya, 'не нанятый A-герой из временной коллекции убран');
+  assert.ok(r.state.account.owned.zlatokryl); assert.strictEqual(r.state.account.scrolls, 10);
   assert.ok(st.getItem(PZ.save.PREMIG));
+  assert.deepStrictEqual(PZ.state.validate(r.state), []);
+});
+
+test('Миграция v2 → v3: звёзды, фрагменты, ранги, уровни переходят к новым героям; двое старых → лучшее', () => {
+  const PZ = load(); const st = load.memStorage();
+  const old = oldSave(PZ, 2);
+  old.account.record = 500; old.run.cleared = 500;
+  Object.assign(old.account.owned, { e_forest_hunter: true, e_swamp_thief: true, a_chain_lord: true, d_lane: true });
+  Object.assign(old.account.stars, { e_forest_hunter: 3, e_swamp_thief: 7, a_chain_lord: 4 });
+  Object.assign(old.account.fragments, { e_forest_hunter: 10, e_swamp_thief: 5 });
+  const slots = { head: 0, back: 0, left_arm: 0, right_arm: 0, left_leg: 0, right_leg: 0 };
+  old.account.boneSets = { e_forest_hunter: { rank: 'D', slots }, e_swamp_thief: { rank: 'C', slots } };
+  old.run.hired = { e_forest_hunter: 40, e_swamp_thief: 25, a_chain_lord: 120 };
+  old.account.visible = ['e_forest_hunter', 'e_swamp_thief', 'a_chain_lord'];
+  st.setItem(PZ.save.KEY, JSON.stringify(old));
+  const r = PZ.save.load(st), a = r.state.account;
+  // e_forest_hunter и e_swamp_thief → оба в Шмыга (3-й по цене E)
+  assert.strictEqual(PZ.save.newIdFor('e_forest_hunter'), 'shmyg'); assert.strictEqual(PZ.save.newIdFor('e_swamp_thief'), 'shmyg');
+  assert.strictEqual(a.stars.shmyg, 7); assert.strictEqual(a.fragments.shmyg, 15); assert.strictEqual(a.boneSets.shmyg.rank, 'C');
+  assert.strictEqual(r.state.run.hired.shmyg, 40);
+  const aNew = PZ.save.newIdFor('a_chain_lord');
+  assert.strictEqual(PZ.HERO_BY_ID[aNew].rarity, 'A'); assert.strictEqual(a.stars[aNew], 4); assert.strictEqual(r.state.run.hired[aNew], 120);
+  assert.deepStrictEqual(a.visible, ['shmyg', aNew]);
+  for (const h of PZ.HEROES) if (h.rarity === 'E' || h.rarity === 'D') assert.ok(a.owned[h.id], 'стартовый ' + h.id);
   assert.deepStrictEqual(PZ.state.validate(r.state), []);
 });
 
@@ -411,9 +444,9 @@ test('QA-11 перерождение до 400 недоступно, ничего
 
 test('QA-12 после 400: временное сброшено, постоянное сохранено', () => {
   const PZ = load(); const s = PZ.state.newGame(0);
-  s.run.cleared = 420; s.account.record = 420; s.run.gold = 1e12; s.run.mainLevel = 300; s.run.hired = { e_ash_recruit: 250, d_lane: 100 };
-  s.run.farmFloor = 300; s.account.owned.c_shadow_raven = true; s.account.stars.e_ash_recruit = 5; s.account.fragments.e_ash_recruit = 7;
-  s.account.boneSets.e_ash_recruit = { rank: 'C', slots: { head: 3, back: 0, left_arm: 0, right_arm: 0, left_leg: 0, right_leg: 0 } };
+  s.run.cleared = 420; s.account.record = 420; s.run.gold = 1e12; s.run.mainLevel = 300; s.run.hired = { lumi: 250, zlatokryl: 100 };
+  s.run.farmFloor = 300; s.account.owned.auron = true; s.account.stars.lumi = 5; s.account.fragments.lumi = 7;
+  s.account.boneSets.lumi = { rank: 'C', slots: { head: 3, back: 0, left_arm: 0, right_arm: 0, left_leg: 0, right_leg: 0 } };
   s.account.bones.head_2 = 4; s.account.scrolls = 33; s.account.relics.heart = 2; s.account.materials.core = 3;
   const r = PZ.meta.rebirth(s);
   assert.ok(r.ok); assert.strictEqual(r.shards, PZ.B.rebirthShards(0, 420));
@@ -421,9 +454,9 @@ test('QA-12 после 400: временное сброшено, постоян�
   assert.strictEqual(s.run.gold, 0); assert.strictEqual(s.run.mainLevel, 1); assert.deepStrictEqual(s.run.hired, {});
   assert.strictEqual(s.run.cleared, 0); assert.strictEqual(s.run.farmFloor, null);
   // сохранено
-  assert.strictEqual(s.account.record, 420); assert.ok(s.account.owned.c_shadow_raven);
-  assert.strictEqual(s.account.stars.e_ash_recruit, 5); assert.strictEqual(s.account.fragments.e_ash_recruit, 7);
-  assert.strictEqual(s.account.boneSets.e_ash_recruit.rank, 'C'); assert.strictEqual(s.account.bones.head_2, 4);
+  assert.strictEqual(s.account.record, 420); assert.ok(s.account.owned.auron);
+  assert.strictEqual(s.account.stars.lumi, 5); assert.strictEqual(s.account.fragments.lumi, 7);
+  assert.strictEqual(s.account.boneSets.lumi.rank, 'C'); assert.strictEqual(s.account.bones.head_2, 4);
   assert.strictEqual(s.account.scrolls, 33); assert.strictEqual(s.account.relics.heart, 2); assert.strictEqual(s.account.materials.core, 3);
   assert.strictEqual(s.account.shards, r.shards); assert.strictEqual(s.account.rebirths, 1); assert.strictEqual(s.run.startRecord, 420);
   assert.deepStrictEqual(PZ.state.validate(s), []);
@@ -437,10 +470,10 @@ test('M7 реликвии: цена Base×2^(n−1), до 10 ур., эффект
   s.account.shards = 15 + 30 + 60;
   assert.ok(PZ.relics.buyRelic(s, 'heart').ok); assert.ok(PZ.relics.buyRelic(s, 'heart').ok); assert.ok(PZ.relics.buyRelic(s, 'heart').ok);
   assert.strictEqual(s.account.shards, 0); assert.strictEqual(PZ.relics.lvl(s, 'heart'), 3);
-  s.run.hired = { e_ash_recruit: 10 };
+  s.run.hired = { lumi: 10 };
   const d = PZ.heroes.armyDps(s, 'normal'); s.account.relics.heart = 0; close(d / PZ.heroes.armyDps(s, 'normal'), Math.pow(1.25, 3));
   s.account.relics.knowledge = 10; close(PZ.relics.discount(s, 'level'), 0.4);
-  const full = PZ.B.heroLevelCost(25, 10); assert.strictEqual(PZ.heroes.levelCost(s, 'e_ash_recruit', 10), Math.ceil(full * 0.6));
+  const full = PZ.B.heroLevelCost(25, 10); assert.strictEqual(PZ.heroes.levelCost(s, 'lumi', 10), Math.ceil(full * 0.6));
   s.account.relics.gold = 1; close(PZ.heroes.goldMult(s, false), 1.35);
   s.account.relics.heart = 10; s.account.shards = 1e9; assert.strictEqual(PZ.relics.buyRelic(s, 'heart').ok, false);
   assert.deepStrictEqual(PZ.state.validate(s), []);
@@ -479,15 +512,15 @@ test('M4 класс с ур. 100, подкласс с 250; один раз; пе
 });
 
 test('M4 эффекты классов в уроне, золоте, тапе и таймере босса; класс переживает перерождение', () => {
-  const PZ = load(); const s = PZ.state.newGame(0); s.run.mainLevel = 300; s.run.hired = { e_forest_hunter: 50 };
+  const PZ = load(); const s = PZ.state.newGame(0); s.run.mainLevel = 300; s.run.hired = { shmyg: 50 };
   const m0 = PZ.heroes.mainDps(s), g0 = PZ.heroes.goldMult(s, false);
   s.account.mainClass = 'warrior'; close(PZ.heroes.mainDps(s) / m0, 2);
   s.account.mainSubclass = 'berserk'; close(PZ.heroes.mainDps(s) / m0, 4);
   s.account.mainClass = 'necro'; s.account.mainSubclass = 'lich'; close(PZ.heroes.goldMult(s, false) / g0, 1.4 * 1.5);
   s.account.mainClass = 'archer'; s.account.mainSubclass = 'beastmaster';
-  const p = PZ.heroes.armyBreakdown(s, 'normal').parts.find(x => x.id === 'e_forest_hunter').dps;
+  const p = PZ.heroes.armyBreakdown(s, 'normal').parts.find(x => x.id === 'shmyg').dps;
   s.account.mainClass = null; s.account.mainSubclass = null;
-  close(p / PZ.heroes.armyBreakdown(s, 'normal').parts.find(x => x.id === 'e_forest_hunter').dps, 1.5 * 2);
+  close(p / PZ.heroes.armyBreakdown(s, 'normal').parts.find(x => x.id === 'shmyg').dps, 1.5 * 2);
   s.account.mainClass = 'warrior'; s.account.mainSubclass = 'abyss_knight';
   s.run.cleared = 9; s.account.record = 9; PZ.combat.goToRecord(s);
   assert.strictEqual(PZ.combat.ensureBattle(s).timer, PZ.B.floors.bossTimer + 10);
@@ -497,12 +530,41 @@ test('M4 эффекты классов в уроне, золоте, тапе и 
 
 test('M4 видимые герои: выбор до 4, остальные всё равно в DPS', () => {
   const PZ = load(); const s = PZ.state.newGame(0);
-  const ids = ['e_ash_recruit', 'e_bone_servant', 'e_forest_hunter', 'e_swamp_thief', 'e_light_acolyte', 'd_lane'];
+  const ids = ['lumi', 'kostik', 'shmyg', 'shorokh', 'morgul', 'zlatokryl'];
   for (const id of ids) s.run.hired[id] = 5;
   for (const id of ids.slice(0, 4)) assert.ok(PZ.classes.toggleVisible(s, id).ok);
-  assert.strictEqual(PZ.classes.toggleVisible(s, 'd_lane').ok, false);
+  assert.strictEqual(PZ.classes.toggleVisible(s, 'zlatokryl').ok, false);
   assert.deepStrictEqual(PZ.heroes.visibleAllies(s), ids.slice(0, 4));
   assert.strictEqual(PZ.heroes.armyBreakdown(s, 'normal').parts.length, 7);
-  assert.ok(PZ.classes.toggleVisible(s, 'e_ash_recruit').ok && PZ.classes.toggleVisible(s, 'd_lane').ok);
-  assert.deepStrictEqual(PZ.heroes.visibleAllies(s), ['e_bone_servant', 'e_forest_hunter', 'e_swamp_thief', 'd_lane']);
+  assert.ok(PZ.classes.toggleVisible(s, 'lumi').ok && PZ.classes.toggleVisible(s, 'zlatokryl').ok);
+  assert.deepStrictEqual(PZ.heroes.visibleAllies(s), ['kostik', 'shmyg', 'shorokh', 'zlatokryl']);
+});
+
+// ===== Энергия и авто-ульта (концепт 03.11.2026) =====
+test('Ульта: 10 атак → ульта ×8; средний урон героя не меняется', () => {
+  const PZ = load(); const s = PZ.state.newGame(0);
+  s.run.mainLevel = 1; PZ.B.main.baseDps = 0;             // только герой
+  s.run.hired = { kaeron: 50 }; s.account.owned.kaeron = true;
+  const D = PZ.heroes.armyDps(s, 'normal');
+  const fl = PZ.combat.heroFlows(s, 'normal');
+  close(fl.rate + fl.ults[0].burst / 10, D);               // обычные удары + ульта раз в 10 с = средний урон
+  close(fl.ults[0].burst / (fl.rate * 1), 8);              // ульта = ×8 обычного удара
+  // бой: огромный HP, 25 секунд → 2 ульты
+  PZ.combat.ensureBattle(s); s.run.battle.hp = s.run.battle.maxHp = 1e12;
+  const ev = PZ.combat.events; ev.length = 0;
+  PZ.combat.tick(s, 25);
+  const ults = ev.filter(e => e.t === 'ult');
+  assert.strictEqual(ults.length, 2); assert.strictEqual(ults[0].id, 'kaeron');
+  close(1e12 - s.run.battle.hp, fl.rate * 25 + 2 * fl.ults[0].burst, 1e-6);
+  close(s.run.energy.kaeron, 50, 1e-6);
+});
+
+test('Ульта: энергия не копится в паузе между врагами и сохраняется между врагами', () => {
+  const PZ = load(); const s = PZ.state.newGame(0);
+  s.run.hired = { lumi: 10 };
+  PZ.combat.ensureBattle(s); s.run.battle.spawnWait = 5;
+  PZ.combat.tick(s, 4);
+  assert.strictEqual(s.run.energy.lumi || 0, 0);
+  s.run.battle.hp = s.run.battle.maxHp = 1e30; s.run.battle.spawnWait = 0;
+  PZ.combat.tick(s, 3); close(s.run.energy.lumi, 30, 1e-6);
 });

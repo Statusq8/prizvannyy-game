@@ -25,6 +25,7 @@
         kv('Золото заработано', fmt(st.goldEarned)), kv('Неудач на боссах', st.bossFails), kv('Время в игре', Math.floor(st.playSeconds / 60) + ' мин'),
         kv('Перерождений', s.account.rebirths || 0), kv('Осколки', s.account.shards || 0)),
       settingsBlock(s),
+      testerBlock(s),
       h('div', { class: 'section' }, h('h3', null, 'Склад костей'), PZ.bonesUi.inventory(s)),
       h('div', { class: 'section' }, h('h3', null, 'Сохранение'),
         h('div', { class: 'sub', style: 'margin-bottom:8px' }, 'Автосохранение каждые 10 с и при сворачивании. Хранится основная копия и резервная. Экспорт — ваша личная копия на случай очистки браузера.'),
@@ -59,6 +60,36 @@
       row('Эффекты', seg('effects', [['full', 'Полные'], ['low', 'Сниженные']])),
       row('Кадров в секунду', seg('fps', [[60, '60'], [30, '30']])),
       h('div', { class: 'sub', style: 'margin-top:6px' }, 'Звук включается после первого касания экрана. «Сниженные» эффекты и 30 кадров экономят батарею на слабых телефонах.'));
+  }
+
+  // «Тестирование»: ресурсы, прыжок по этажам, скорость ×10/×50. Сейв помечается как тестовый.
+  function testerBlock(s) {
+    const T = PZ.tester, st = s.account.settings;
+    const box = h('div', { class: 'section tester' + (st.tester ? ' on' : '') });
+    const act = (t, f) => h('button', { class: 'btn', onclick: () => { const m = f(); PZ.app.saveNow(); toast(m); build(); } }, t);
+    box.append(h('div', { class: 'row' }, h('h3', { style: 'flex:1;margin:0' }, 'Тестирование'),
+      h('div', { class: 'mode' }, ...[[false, 'Выкл'], [true, 'Вкл']].map(([v, t]) => h('button', { class: !!st.tester === v ? 'on' : '', onclick: () => { st.tester = v; if (!v && st.speed > 4) st.speed = 1; PZ.app.saveNow(); build(); } }, t)))));
+    if (!st.tester) { box.append(h('div', { class: 'sub' }, 'Режим для проверки игры: ресурсы, прыжок на любой этаж, скорость ×10 и ×50.' + (s.account.tester ? ' Этот сейв уже помечен как тестовый.' : ''))); return box; }
+    const floor = h('input', { type: 'number', min: 1, max: 5000, value: Math.max(1, s.run.cleared + 1), style: 'width:90px' });
+    box.append(
+      h('div', { class: 'sub', style: 'margin:4px 0 8px' }, 'Сейв помечен как тестовый. Кнопка скорости в бою теперь ходит по ×1 → ×2 → ×4 → ×10 → ×50.'),
+      h('div', { class: 'btnrow' },
+        act('Золото', () => '+' + fmt(T.gold(s, 1000)) + ' золота'),
+        act('Золото ×1M', () => '+' + fmt(T.gold(s, 1e6)) + ' золота'),
+        act('+100 свитков', () => '+' + T.scrolls(s, 100) + ' свитков')),
+      h('div', { class: 'btnrow', style: 'margin-top:6px' },
+        act('+1000 осколков', () => '+' + T.shards(s, 1000) + ' осколков'),
+        act('+100 материалов', () => '+' + T.materials(s, 100) + ' каждого'),
+        act('Призванный +100', () => 'Ур. Призванного ' + T.mainLevels(s, 100))),
+      h('div', { class: 'btnrow', style: 'margin-top:6px' },
+        act('Все герои', () => '+' + T.allHeroes(s) + ' в коллекцию'),
+        act('Нанять всех', () => 'Нанято ' + T.hireAll(s)),
+        act('Энергия 100%', () => (T.fillEnergy(s), 'Ульты сейчас сработают'))),
+      h('div', { style: 'margin-top:8px' }, h('div', { class: 'sub' }, 'Кости (по 6 каждого слота):'),
+        h('div', { class: 'chips', style: 'flex-wrap:wrap;padding:4px 0' }, ...PZ.bones.QUALITY.map((q, i) => h('button', { onclick: () => { T.bones(s, i + 1, 6); PZ.app.saveNow(); toast('+36 костей: ' + q); build(); } }, q)))),
+      h('div', { class: 'row', style: 'margin-top:8px;gap:8px' }, h('span', { class: 'sub' }, 'Этаж'), floor,
+        h('button', { class: 'btn gold', onclick: () => { const f = T.jump(s, +floor.value); PZ.app.saveNow(); toast('Прыжок на этаж ' + f); PZ.app.go('battle'); } }, 'Прыгнуть')));
+    return box;
   }
 
   function downloadSave(s) {

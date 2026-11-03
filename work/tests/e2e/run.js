@@ -53,7 +53,13 @@ const results = []; const ok = (name, cond, info) => { results.push({ name, ok: 
   await page.click('#drawer-handle'); await page.waitForTimeout(300);
   // тап запускает анимацию удара Призванного
   await page.mouse.click(195, 330);
-  ok('Тап → анимация удара Призванного', await page.evaluate(() => document.querySelector('#main').classList.contains('strike')));
+  await page.waitForTimeout(250);
+  ok('Тап → кадры удара Призванного и вспышка на враге', await page.evaluate(() => /h_summoned_battle|data:image/.test(document.querySelector('#main img').src) && PZ.A.h_summoned_battle_00 !== document.querySelector('#main img').src && !!document.querySelector('.vfx')));
+  // энергия и ульта союзников (без летящих снарядов)
+  await page.evaluate(() => { const s = PZ.game.s; PZ.state.addGold(s, 1e4, 'e2e'); PZ.heroes.hire(s, PZ.HEROES[0].id); });
+  await page.waitForTimeout(1500);
+  ok('Полоска энергии у союзника растёт', await page.evaluate(() => [...document.querySelectorAll('.slot.busy .en i')].some(i => /scaleX\(0\.[1-9]|scaleX\(1/.test(i.style.transform))));
+  ok('Нет летящих снарядов', await page.evaluate(() => !document.querySelector('.bolt')));
 
   // нанять 5+ героев и проверить 4 видимых (QA-05)
   await page.evaluate(() => { const s = PZ.game.s; PZ.state.addGold(s, 1e6, 'e2e'); for (const h of PZ.HEROES.slice(0, 8)) PZ.heroes.hire(s, h.id); });
@@ -69,26 +75,26 @@ const results = []; const ok = (name, cond, info) => { results.push({ name, ok: 
   await page.screenshot({ path: path.join(out, '05_heroes.png') });
   // Регресс (замечание автора 03.11.2026): нажатие на кнопку уровня не должно открывать карточку героя
   await page.evaluate(() => PZ.state.addGold(PZ.game.s, 1e7, 'e2e'));
-  const lv0 = await page.evaluate(() => PZ.game.s.run.hired.e_ash_recruit || 0);
+  const lv0 = await page.evaluate(() => PZ.game.s.run.hired.lumi || 0);
   for (let i = 0; i < 15; i++) { await page.click('#scr-heroes .card:nth-child(2) .btn', { force: true }); await page.waitForTimeout(90); }
-  const lv1 = await page.evaluate(() => PZ.game.s.run.hired.e_ash_recruit || 0);
+  const lv1 = await page.evaluate(() => PZ.game.s.run.hired.lumi || 0);
   ok('Кнопка уровня: 15 нажатий → +15 уровней, карточка не открылась', lv1 - lv0 === 15 && !(await page.isVisible('#modal.on')), { lv0, lv1 });
   const nCards = await page.evaluate(() => document.querySelectorAll('#scr-heroes .card').length);
   ok('Каталог: 40 героев + Призванный', nCards === 41, nCards);
   await page.click('#scr-heroes .card:nth-child(2) .info'); await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(out, '06_hero_card.png') });
   await page.click('#mtabs button:nth-child(3)'); await page.waitForTimeout(200);
-  ok('Вкладка «Звёзды» того же героя', (await page.textContent('#mtitle')) === 'Пепельный рекрут');
+  ok('Вкладка «Звёзды» того же героя', (await page.textContent('#mtitle')) === 'Люми');
   // M5: вкладка «Кости» — поглощение по точкам на силуэте и повышение ранга (QA-07 в интерфейсе)
   await page.evaluate(() => { const s = PZ.game.s; for (const sl of PZ.bones.SLOTS) s.account.bones[sl + '_1'] = 2; });
   await page.click('#mtabs button:nth-child(2)'); await page.waitForTimeout(250);
   await page.screenshot({ path: path.join(out, '06b_bones_empty.png') });
   for (let i = 0; i < 3; i++) await page.click('.bslot >> nth=' + i);
-  ok('Поглощение по тапу на точку', (await page.evaluate(() => PZ.bones.filled(PZ.game.s, 'e_ash_recruit'))) === 3);
+  ok('Поглощение по тапу на точку', (await page.evaluate(() => PZ.bones.filled(PZ.game.s, 'lumi'))) === 3);
   await page.click('text=Поглотить всё'); await page.waitForTimeout(150);
   await page.screenshot({ path: path.join(out, '06c_bones_full.png') });
   await page.click('.btn.gold:has-text("Повысить ранг")'); await page.waitForTimeout(250);
-  ok('QA-07 в интерфейсе: ранг E→D, слоты очищены', await page.evaluate(() => PZ.bones.rankOf(PZ.game.s, 'e_ash_recruit') === 'D' && PZ.bones.filled(PZ.game.s, 'e_ash_recruit') === 0));
+  ok('QA-07 в интерфейсе: ранг E→D, слоты очищены', await page.evaluate(() => PZ.bones.rankOf(PZ.game.s, 'lumi') === 'D' && PZ.bones.filled(PZ.game.s, 'lumi') === 0));
   await page.screenshot({ path: path.join(out, '06d_bones_promoted.png') });
   await page.click('#mclose');
   await page.click('#scr-heroes .chips button[data-f=SS]'); await page.waitForTimeout(200);
@@ -129,11 +135,11 @@ const results = []; const ok = (name, cond, info) => { results.push({ name, ok: 
   await page.screenshot({ path: path.join(out, '13_portal_results.png') });
   ok('После призыва коллекция не уменьшилась', (await page.evaluate(() => Object.keys(PZ.game.s.account.owned).length)) >= own0);
   await page.click('#mclose');
-  await page.evaluate(() => { const s = PZ.game.s; s.account.stars.e_ash_recruit = 12; PZ.heroesUi.openHero('e_ash_recruit', 'stars'); });
+  await page.evaluate(() => { const s = PZ.game.s; s.account.stars.lumi = 12; PZ.heroesUi.openHero('lumi', 'stars'); });
   await page.waitForTimeout(300);
   ok('QA-10 12★ → одна крылатая звезда с числом 12', await page.evaluate(() => { const w = document.querySelectorAll('#mbody .starbig .starsign i'); return w.length === 1 && w[0].classList.contains('w') && w[0].textContent === '12'; }));
   await page.screenshot({ path: path.join(out, '14_stars.png') });
-  await page.evaluate(() => { const s = PZ.game.s; s.account.stars.e_ash_recruit = 7; PZ.heroesUi.openHero('e_ash_recruit', 'stars'); });
+  await page.evaluate(() => { const s = PZ.game.s; s.account.stars.lumi = 7; PZ.heroesUi.openHero('lumi', 'stars'); });
   ok('7★ → две фиолетовые звезды', await page.evaluate(() => document.querySelectorAll('#mbody .starbig .starsign i.p').length === 2));
   await page.click('#mclose');
 
@@ -165,11 +171,26 @@ const results = []; const ok = (name, cond, info) => { results.push({ name, ok: 
   await page.screenshot({ path: path.join(out, '18_class_chosen.png') });
   await page.click('#mclose');
   // видимые герои
-  await page.evaluate(() => { const s = PZ.game.s; s.run.hired.d_lane = 5; PZ.heroesUi.openHero('d_lane', 'hero'); });
+  await page.evaluate(() => { const s = PZ.game.s; s.run.hired.zlatokryl = 5; PZ.heroesUi.openHero('zlatokryl', 'hero'); });
   await page.waitForTimeout(250);
   await page.click('#mbody .btn:has-text("сцене")'); await page.waitForTimeout(200);
-  ok('«Показывать на сцене» добавляет героя в отряд на поле', await page.evaluate(() => PZ.heroes.visibleAllies(PZ.game.s)[0] === 'd_lane'));
+  ok('«Показывать на сцене» добавляет героя в отряд на поле', await page.evaluate(() => PZ.heroes.visibleAllies(PZ.game.s)[0] === 'zlatokryl'));
   await page.click('#mclose');
+
+  // Режим тестировщика
+  await page.click('#nav button[data-s=more]'); await page.waitForTimeout(300);
+  await page.click('.tester .mode button:has-text("Вкл")'); await page.waitForTimeout(200);
+  const tsc0 = await page.evaluate(() => PZ.game.s.account.scrolls);
+  await page.click('.tester button:has-text("+100 свитков")'); await page.waitForTimeout(150);
+  ok('Тестер: +100 свитков, сейв помечен', await page.evaluate(n => PZ.game.s.account.scrolls === n + 100 && PZ.game.s.account.tester === true, tsc0));
+  await page.fill('.tester input[type=number]', '120'); await page.click('.tester button:has-text("Прыгнуть")'); await page.waitForTimeout(300);
+  ok('Тестер: прыжок на этаж 120', await page.evaluate(() => PZ.combat.currentFloor(PZ.game.s) === 120 && document.querySelector('#scr-battle').classList.contains('on')));
+  for (let i = 0; i < 4; i++) { await page.click('#btn-speed'); await page.waitForTimeout(60); }
+  ok('Тестер: скорость ×50', await page.evaluate(() => PZ.game.s.account.settings.speed === 50));
+  await page.screenshot({ path: path.join(out, '20_tester_x50.png') });
+  await page.click('#nav button[data-s=more]'); await page.waitForTimeout(300);
+  await page.click('.tester .mode button:has-text("Выкл")'); await page.waitForTimeout(200);
+  await page.click('#nav button[data-s=battle]'); await page.waitForTimeout(200);
 
   // M9: настройки звука и эффектов
   await page.click('#nav button[data-s=more]'); await page.waitForTimeout(300);
