@@ -28,6 +28,13 @@ const results = []; const ok = (name, cond, info) => { results.push({ name, ok: 
   for (let i = 0; i < 25; i++) { await page.mouse.click(195, 330); await page.waitForTimeout(40); }
   ok('Звук включился после первого касания', (await page.evaluate(() => PZ.audio.state())) === 'running');
   ok('Все звуки проигрываются без ошибок', await page.evaluate(() => { try { for (const k of ['hit','slash','bolt','kill','coin','bone','click','levelup','reward','fanfare','bossStart','fail']) PZ.audio[k](true); PZ.audio.summon('S'); PZ.audio.setZone(3); PZ.audio.setZone(1); return true; } catch (e) { return String(e); } }));
+  // Замечание автора 03.11.2026: после сворачивания звук продолжал играть
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForTimeout(300);
+  ok('Свернули → звук на паузе', (await page.evaluate(() => PZ.audio.state())) === 'suspended');
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForTimeout(300);
+  ok('Вернулись → звук снова идёт', (await page.evaluate(() => PZ.audio.state())) === 'running');
   ok('Тап наносит урон', (await page.evaluate(() => PZ.game.s.run.stats.taps)) - g0 === 25);
   await page.waitForTimeout(6000);
   const st1 = await page.evaluate(() => ({ gold: PZ.game.s.run.gold, cleared: PZ.game.s.run.cleared, kills: PZ.game.s.run.stats.kills }));
