@@ -2,6 +2,8 @@ name: Сборка APK
 on:
   push:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,3 +31,12 @@ jobs:
           echo "V=$V" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         with: { name: 'Prizvannyy-${{ env.V }}-apk', path: 'Prizvannyy-*.apk' }
+      - name: Выпуск на странице Releases (скачать APK прямо на телефон)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.V }}
+          name: Призванный ${{ env.V }}
+          body: APK для Android. Ставится поверх прошлой версии без потери прогресса (один ключ подписи).
+          files: Prizvannyy-*.apk
+          make_latest: true
