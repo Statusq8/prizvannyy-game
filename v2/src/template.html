@@ -61,10 +61,11 @@
   #arena { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 0; }
   #enemy {
     position: relative; z-index: 1;
-    width: 54%; max-width: 250px; aspect-ratio: 1 / 1.15; transform-origin: 50% 90%;
+    /* размер по высоте арены; враг приподнят, чтобы впереди было место главному герою */
+    height: min(44%, 280px); aspect-ratio: 1 / 1.15; transform-origin: 50% 90%; margin-bottom: min(24%, 120px);
     animation: idle 2.4s ease-in-out infinite; pointer-events: none;
   }
-  #enemy.boss { width: 66%; max-width: 300px; }
+  #enemy.boss { height: min(52%, 330px); }
   #enemy svg { width: 100%; height: 100%; overflow: visible; }
   #enemy .crown { display: none; }
   #enemy.boss .crown { display: inline; }
@@ -159,6 +160,13 @@
   /* союзник на арене (временная заглушка) */
   #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
+  /* главный герой — впереди по центру, вид со спины (временная заглушка) */
+  #hero { position: absolute; left: 50%; bottom: 14px; height: min(34%, 150px); aspect-ratio: 1 / 1.15; transform: translateX(-50%); z-index: 2; pointer-events: none; }
+  #hero .fig { width: 100%; height: 100%; animation: allyIdle 3s ease-in-out infinite; transform-origin: 50% 100%; }
+  #hero.attack .fig { animation: heroAtk .18s ease-out; }
+  #hero svg { width: 100%; height: 100%; overflow: visible; }
+  #hero .allyTag { color: var(--gold); bottom: -13px; }
+  @keyframes heroAtk { 35% { transform: translateY(-14px) scale(1.04) rotate(-3deg); } 100% { transform: none; } }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -211,6 +219,23 @@
       </svg>
     </div>
     <div id="allyLayer"></div>
+    <div id="hero">
+      <div class="fig">
+        <svg viewBox="0 0 120 138">
+          <ellipse cx="60" cy="133" rx="44" ry="6" fill="#00000080"/>
+          <path d="M18 132 Q22 80 40 66 L80 66 Q98 80 102 132 Q60 122 18 132Z" fill="#3a1a1a" stroke="#0a0608" stroke-width="3"/>
+          <path d="M34 72 Q60 58 86 72 L84 96 Q60 104 36 96Z" fill="#4a4f5a" stroke="#0a0608" stroke-width="3"/>
+          <path d="M28 74 Q30 62 42 64 L40 80 Q32 82 28 74Z M92 74 Q90 62 78 64 L80 80 Q88 82 92 74Z" fill="#6a707c" stroke="#0a0608" stroke-width="2.5"/>
+          <path d="M46 62 Q44 36 60 32 Q76 36 74 62 Q60 68 46 62Z" fill="#1a1014" stroke="#0a0608" stroke-width="3"/>
+          <path d="M48 44 Q52 30 62 31 Q72 32 73 46 Q66 38 60 40 Q54 38 48 44Z" fill="#2a1a22"/>
+          <path d="M86 70 L104 8" stroke="#c9d2dc" stroke-width="6" stroke-linecap="round"/>
+          <path d="M86 70 L104 8" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
+          <path d="M78 72 L96 78" stroke="#c9962e" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="84" cy="76" r="4" fill="#ff4d6a" stroke="#0a0608" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="allyTag">Призванный</div>
+    </div>
     <div id="hint">Тапай по врагу!</div>
     <div id="toast"></div>
   </div>
@@ -325,6 +350,7 @@
   let s = load();
   let mult = 1;
   let anyAffordable = false;
+  const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
@@ -369,6 +395,7 @@
       if (e.type === 'hit') {
         if (e.source === 'tap') {
           dmgLog.push([performance.now(), e.dmg, 'tap']);
+          heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
           fx('spark', x, y, null, 300);
           fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
         } else {
