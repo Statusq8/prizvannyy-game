@@ -11,6 +11,7 @@
     "core/classes.js",
     "core/combat.js",
     "core/save.js",
+    "core/tester.js",
     "core/offline.js"
   ],
   "ui": [

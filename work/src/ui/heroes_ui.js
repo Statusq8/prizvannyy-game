@@ -53,7 +53,7 @@
 
   function mainRow() {
     const n = h('div', { class: 'card' },
-      h('div', { class: 'pic', onclick: openMain }, img(A.hero_main_portrait)),
+      h('div', { class: 'pic', onclick: openMain }, img(heroArt('main').pic)),
       h('div', { class: 'info', onclick: openMain }, h('div', { class: 't' }, 'Призванный'), h('div', { class: 's', id: 'mainrow-s' })),
       h('button', { class: 'btn', id: 'mainrow-b', onclick: e => { e.stopPropagation(); const r = PZ.heroes.mainLevelUp(PZ.game.s, PZ.game.mode); if (!r.ok) PZ.ui.toast(r.err); update(true); } }));
     return n;
@@ -131,6 +131,11 @@
     }
   }
 
+  // Карточка героя: бесконечная анимация стойки из menu-кадров; останавливается, когда картинку убрали со страницы.
+  function loopFrames(el, seq, fps) {
+    if (!seq || seq.length < 2) return;
+    let i = 0; const t = setInterval(() => { if (!el.isConnected && i > 0) return clearInterval(t); i = (i + 1) % seq.length; el.src = seq[i]; }, 1000 / fps);
+  }
   function openHero(id, tab) {
     const s = PZ.game.s, hero = PZ.HERO_BY_ID[id], art = heroArt(id);
     tab = tab || 'hero';
@@ -140,10 +145,13 @@
     const lv = s.run.hired[id] || 0, stars = PZ.heroes.heroStars(s, id);
     if (tab === 'hero') {
       const br = PZ.heroes.armyBreakdown(s, 'normal'); const part = br.parts.find(p => p.id === id);
-      const a = h('div', { class: 'heroart' + (art.real ? '' : ' sil') }, img(A.ring_purple, 'ring'), img(art.big, 'big'));
+      const big = img(art.big, 'big');
+      const a = h('div', { class: 'heroart' + (art.real ? '' : ' sil') }, img(A.ring_purple, 'ring'), big);
+      if (art.anim) loopFrames(big, art.anim.menu.length ? art.anim.menu : art.anim.idle, 10);
       body.append(a,
         h('div', { style: 'text-align:center;margin-top:6px' }, h('img', { src: gem(PZ.bones.rankOf(s, id)), style: 'width:26px;vertical-align:middle' }), ' ', h('b', { style: 'font-size:18px' }, hero.name), ' ', starSign(stars)),
         h('div', { class: 'sub', style: 'text-align:center' }, 'Ранг ' + PZ.bones.rankOf(s, id) + (PZ.bones.rankOf(s, id) !== hero.rarity ? ' (изначально ' + hero.rarity + ')' : '') + ' · ' + FACTION[hero.faction] + (hero.tags.includes('undead') ? ' · нежить' : '')),
+        hero.desc ? h('div', { class: 'sub hdesc', style: 'text-align:center;margin:6px 8px 0;font-style:italic' }, hero.desc) : '',
         h('div', { class: 'stats' },
           h('div', { class: 'stat' }, h('div', { class: 'k' }, 'Уровень'), h('div', { class: 'v' }, lv || '—')),
           h('div', { class: 'stat' }, h('div', { class: 'k' }, 'Урон в бою (вклад)'), h('div', { class: 'v' }, part ? fmt(part.dps) + ' · ' + (part.dps / br.total * 100).toFixed(1) + '%' : 'не нанят'))),
@@ -191,7 +199,7 @@
     const draw = () => {
       body.innerHTML = '';
       body.append(
-        h('div', { class: 'heroart' }, img(A.ring_purple, 'ring'), img(A.hero_main_front, 'big')),
+        (() => { const art = heroArt('main'), big = img(art.big, 'big'); if (art.anim) loopFrames(big, art.anim.menu, 10); return h('div', { class: 'heroart' }, img(A.ring_purple, 'ring'), big); })(),
         h('div', { style: 'text-align:center;margin-top:4px' }, h('b', { style: 'font-size:18px' }, 'Призванный'), h('div', { class: 'sub' }, PZ.classes.title(s))),
         h('div', { class: 'stats' },
           h('div', { class: 'stat' }, h('div', { class: 'k' }, 'Уровень'), h('div', { class: 'v' }, s.run.mainLevel)),

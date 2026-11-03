@@ -1,12 +1,12 @@
 /* Экран «Бой» по эталонному скриншоту 03.11.2026: сцена на весь экран, враг по центру, Призванный со спины внизу,
    4 места отряда (фланги и передний ряд) — силуэты, пока у героя нет арта. Прокачка — в шторке. */
 (function (PZ) {
-  const { $, fmt, h, img, heroArt, setBtn } = PZ.ui;
+  const { $, fmt, h, img, heroArt, setBtn, player } = PZ.ui;
   const A = PZ.A, B = PZ.B;
   const ROLES = ['УБИЙЦА', 'МАГ', 'ТАНК', 'ПОДДЕРЖКА'];   // 4 места (решение автора 03.11.2026, MASTER 1.2)
   const fr = (en, k) => A['z' + en.zone + '_m' + en.mob + '_' + k];
 
-  let el = {}, shown = { key: '', en: null, dyingUntil: 0 }, slotKey = '', units = [], lastHp = null, dmgAcc = 0, dmgT = 0, lastDps = -1, zoneShown = 0, mAtkT = 2;
+  let mainP = null, fxs = [], lastNow = 0, el = {}, shown = { key: '', en: null, dyingUntil: 0 }, slotKey = '', units = [], lastHp = null, dmgAcc = 0, dmgT = 0, lastDps = -1, zoneShown = 0, mAtkT = 2;
 
   function init() {
     el = {
@@ -17,13 +17,15 @@
       slots: [...document.querySelectorAll('#scene .slot')],
     };
     $('#hpframe').src = A.bar_hp;
-    el.mspr.src = A.hero_main_front;
+    const mart = heroArt('main');
+    if (mart.anim) mainP = player(el.mspr, mart.anim.idle, 5); else el.mspr.src = mart.back;
+    el.main.classList.toggle('framed', !!mart.anim);
     $('#ico-speed').src = A.ico_speed; $('#ico-auto').src = A.ico_time; $('#ico-up').src = A.ico_upgrade;
-    for (const [i, n] of el.slots.entries()) { n.append(img(A.hero_main_front, 'spr'), h('span', { class: 'nm' }, ROLES[i])); n.className = 'slot sil empty'; }
+    for (const [i, n] of el.slots.entries()) { n.append(img(heroArt(null, i).back, 'spr'), h('div', { class: 'en' }, h('i')), h('span', { class: 'nm' }, ROLES[i])); n.className = 'slot sil empty'; }
     el.scene.addEventListener('pointerdown', onTap);
     el.speed.addEventListener('click', () => {
-      const s = PZ.game.s, order = [1, 2, 4];
-      s.account.settings.speed = order[(order.indexOf(s.account.settings.speed) + 1) % order.length]; render(0);
+      const s = PZ.game.s, order = s.account.settings.tester ? PZ.tester.SPEEDS : [1, 2, 4];
+      s.account.settings.speed = order[(Math.max(0, order.indexOf(s.account.settings.speed)) + 1) % order.length]; render(0);
     });
     el.auto.addEventListener('click', () => {
       const s = PZ.game.s;
@@ -60,12 +62,26 @@
       hurt();
     }
   }
-  function strike() {
-    el.main.classList.remove('strike'); void el.main.offsetWidth; el.main.classList.add('strike'); au('slash');
+  // Удар Призванного: кадры замаха/удара + вспышка удара прямо на враге (без летящих снарядов — концепт).
+  function strike(big) {
+    au('slash');
+    const an = heroArt('main').anim;
+    if (mainP && an) mainP.play(an.attack, 34);
+    else { el.main.classList.remove('strike'); void el.main.offsetWidth; el.main.classList.add('strike'); }
+    setTimeout(() => hitFx(an && (big ? an.crit : an.hit), big ? 1.0 : 0.75), 170);
+  }
+  // VFX-кадры поверх врага (листы на чёрном → режим наложения screen).
+  function vfx(seq, x, y, size, fps, filter) {
+    if (!seq || !seq.length || !full()) return;
+    const n = img(seq[0], 'fx vfx'); Object.assign(n.style, { left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px' });
+    if (filter) n.style.filter = filter;
+    el.scene.append(n);
+    const p = player(n, null, fps); p.play(seq, fps, () => n.remove()); fxs.push(p);
+  }
+  function hitFx(seq, scale, filter) {
     const c = enemyCenter();
-    const sl = h('div', { class: 'fx slash' });
-    Object.assign(sl.style, { left: c.x + 'px', top: c.y + 'px', width: c.w * 0.7 + 'px', height: c.h * 0.45 + 'px' });
-    setTimeout(() => { el.scene.append(sl); setTimeout(() => sl.remove(), 300); }, 140);
+    if (seq) vfx(seq, c.x + (Math.random() - .5) * c.w * .25, c.y + (Math.random() - .5) * c.h * .2, Math.max(c.w, c.h) * (scale || .75), 40, filter);
+    else { const sl = h('div', { class: 'fx slash' }); Object.assign(sl.style, { left: c.x + 'px', top: c.y + 'px', width: c.w * 0.6 + 'px', height: c.h * 0.4 + 'px' }); el.scene.append(sl); setTimeout(() => sl.remove(), 300); }
   }
 
   function fxText(t, cls, x, y) {
@@ -101,28 +117,45 @@
     el.slots.forEach((n, i) => {
       const id = vis[i], art = heroArt(id || null, i);
       n.className = 'slot ' + (id ? 'busy' : 'empty') + (id && art.real ? '' : ' sil');
-      n.querySelector('.spr').src = id ? art.back : A.hero_main_front;
-      n.querySelector('.nm').textContent = ROLES[i];
+      const spr = n.querySelector('.spr');
+      spr.src = art.back;
+      n.querySelector('.nm').textContent = id ? PZ.HERO_BY_ID[id].name.toUpperCase() : ROLES[i];
       n.title = id ? PZ.HERO_BY_ID[id].name : '';
-      if (id) units.push({ id, slot: i, node: n, cd: 0.4 + i * 0.23 });
+      n.classList.toggle('framed', !!(id && art.anim));
+      if (id) units.push({ id, slot: i, node: n, art, bar: n.querySelector('.en i'), lastE: (PZ.game.s.run.energy || {})[id] || 0,
+        p: art.anim ? player(spr, art.anim.idle, 6) : null });
     });
   }
+  // Тон вспышки для героев без своих VFX: общий удар Призванного, перекрашенный под роль места.
+  const TINT = ['hue-rotate(-60deg) saturate(1.4)', 'none', 'hue-rotate(160deg)', 'hue-rotate(90deg)'];
+  const genericFx = () => heroArt('main').anim || {};
   function allyAttack(u) {
-    const art = heroArt(u.id, u.slot), c = enemyCenter(), sr = el.scene.getBoundingClientRect(), ur = u.node.getBoundingClientRect();
-    u.node.classList.remove('lunge'); void u.node.offsetWidth; u.node.classList.add('lunge');
+    const an = u.art.anim;
+    if (u.p && an) u.p.play(an.attack, 12);
+    else { u.node.classList.remove('lunge'); void u.node.offsetWidth; u.node.classList.add('lunge'); }
     if (!full()) return;
-    au(art.melee ? 'slash' : 'bolt');
-    if (art.melee) {
-      const sl = h('div', { class: 'fx slash' });
-      Object.assign(sl.style, { left: c.x + (Math.random() - .5) * c.w * .3 + 'px', top: c.y + 'px', width: c.w * 0.45 + 'px', height: c.h * 0.3 + 'px', borderTopColor: art.fx });
-      el.scene.append(sl); setTimeout(() => sl.remove(), 300);
-    } else {
-      const b = h('div', { class: 'fx bolt' }); b.style.color = art.fx;
-      b.style.left = (ur.left - sr.left + ur.width / 2) + 'px'; b.style.top = (ur.top - sr.top + ur.height * 0.35) + 'px';
-      el.scene.append(b);
-      requestAnimationFrame(() => requestAnimationFrame(() => { b.style.left = c.x + (Math.random() - .5) * c.w * .3 + 'px'; b.style.top = c.y + 'px'; }));
-      setTimeout(() => b.remove(), 320);
-    }
+    au('slash');
+    setTimeout(() => hitFx(an ? an.hit : genericFx().hit, .55, an ? null : TINT[u.slot]), 160);
+  }
+  // Ульта: кадры ульты у героя, большая вспышка на враге, крупная цифра урона.
+  let ultT = 0;
+  function allyUlt(id, dmg) {
+    const u = units.find(x => x.id === id), hero = PZ.HERO_BY_ID[id], now = performance.now();
+    // на ×10/×50 ульт много — показываем не чаще раза в 0,45 с, иначе экран превращается в кашу
+    if (!u && now - ultT < 450) return;
+    if (u && now - ultT < 200) return;
+    ultT = now;
+    const an = u ? u.art.anim : heroArt(id).anim, c = enemyCenter();
+    if (u && u.p && an) u.p.play(an.ult, 12);
+    if (u) { u.node.classList.remove('ultflash'); void u.node.offsetWidth; u.node.classList.add('ultflash'); }
+    au('kill', true);
+    setTimeout(() => {
+      hitFx(an ? an.ultFx : genericFx().crit, 1.25, an ? null : TINT[u ? u.slot : 1]);
+      fxText(fmt(dmg), 'ult', c.x, c.y - c.h * 0.1);
+      if (full() && PZ.game.s.account.settings.speed <= 4) shake();
+    }, an ? 380 : 120);
+    const sw = el.scene.clientWidth || 390;
+    if (hero) fxText('УЛЬТА · ' + hero.name, 'ultname', Math.min(sw * 0.7, Math.max(sw * 0.3, c.x)), c.y - c.h * 0.42);
   }
 
   function showEnemy(b, now) {
@@ -164,6 +197,7 @@
       for (const [k, v] of Object.entries(e.got)) parts.push('+' + v + ' ' + N[k]);
       const d = h('div', { class: 'rewardfx' }, img(A.ico_crystal), parts.join(' · ')); el.scene.append(d); setTimeout(() => d.remove(), 2300); au('reward');
     }
+    else if (e.t === 'ult') allyUlt(e.id, e.dmg);
     else if (e.t === 'rebirth') { banner('Перерождение! +' + e.shards + ' осколков'); au('fanfare'); }
     else if (e.t === 'bossFail') { banner('Босс устоял — фарм этажа ' + (s.run.farmFloor || 1), 'bad'); au('fail'); }
   }
@@ -171,6 +205,10 @@
 
   function render(dt) {
     const s = PZ.game.s, b = PZ.combat.ensureBattle(s), now = performance.now();
+    const rdt = lastNow ? Math.min(0.1, (now - lastNow) / 1000) : 0; lastNow = now;   // реальное время для кадров (не зависит от ×скорости)
+    if (mainP) mainP.tick(rdt);
+    for (const u of units) if (u.p) u.p.tick(rdt);
+    for (let i = fxs.length - 1; i >= 0; i--) { fxs[i].tick(rdt); if (!fxs[i].img.isConnected) fxs.splice(i, 1); }
     const ev = PZ.combat.events; while (ev.length) onEvent(ev.shift(), now);
     setZone(b.floor); setSlots(s); showEnemy(b, now);
 
@@ -204,10 +242,17 @@
     if (live) {
       const sp = s.account.settings.speed;
       for (const u of units) {
-        u.cd -= dt * sp;
-        if (u.cd <= 0) { u.cd = (u.id === 'main' ? 1.2 : 1.4) + Math.random() * 0.5; if (u.id === 'main') strike(); else allyAttack(u); }
+        if (u.id === 'main') { u.cd -= dt * sp; if (u.cd <= 0) { u.cd = 1.3 + Math.random() * 0.5; strike(); } continue; }
+        // удар союзника = прирост энергии на одну атаку (+10): анимация совпадает с полоской
+        const e = (s.run.energy || {})[u.id] || 0, per = (PZ.HERO_BY_ID[u.id].ult || B.ult.default).perAttack;
+        if (e > u.lastE && Math.floor(e / per) > Math.floor(u.lastE / per)) allyAttack(u);
+        u.lastE = e;
       }
       mAtkT -= dt * sp; if (mAtkT <= 0) { mAtkT = 2.2 + Math.random() * 1.2; enemyAttack(); }
+    }
+    for (const u of units) if (u.bar) {
+      const e = (s.run.energy || {})[u.id] || 0, max = (PZ.HERO_BY_ID[u.id].ult || B.ult.default).energy, f = Math.min(1, e / max);
+      if (u.bf !== f) { u.bar.style.transform = `scaleX(${f})`; u.bf = f; u.node.classList.toggle('charged', f >= 0.9); }
     }
     renderQuick();
   }
@@ -225,7 +270,7 @@
     q.mode = mode;
     el.quick.append(
       h('div', { class: 'row', style: 'margin-bottom:6px' }, h('b', { style: 'flex:1' }, 'Усиление'), mode),
-      h('div', { class: 'card', style: 'margin-bottom:6px' }, h('div', { class: 'pic' }, img(A.hero_main_portrait)), q.mainInfo, q.mainBtn),
+      h('div', { class: 'card', style: 'margin-bottom:6px' }, h('div', { class: 'pic' }, img(heroArt('main').pic)), q.mainInfo, q.mainBtn),
       h('div', { class: 'card' }, q.heroPic, q.heroInfo, q.heroBtn));
   }
   let qT = 0;

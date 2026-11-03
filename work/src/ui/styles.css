@@ -65,7 +65,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 
 .unit{position:absolute;transform:translate(-50%,-100%);pointer-events:none;will-change:transform}
 .unit img.spr{display:block;filter:drop-shadow(0 8px 6px #000b);transform-origin:50% 100%}
-#main{left:50%;top:97%;height:34%;z-index:4}
+#main{left:50%;top:97%;height:30%;z-index:4}
 #main img.spr{height:100%;width:auto;animation:breathe 2.6s ease-in-out infinite}
 #main.strike img.spr{animation:strike .36s cubic-bezier(.3,.7,.4,1)}
 @keyframes strike{0%{transform:none}22%{transform:translateY(3%) scale(.97) rotate(-4deg)}50%{transform:translateY(-16%) scale(1.07) rotate(5deg)}100%{transform:none}}
@@ -290,3 +290,17 @@ b.bad{color:var(--bad)} b.good{color:var(--good)}
 @keyframes bflash{from{opacity:1}to{opacity:0}}
 input[type=range]{accent-color:var(--accent)}
 @media (prefers-reduced-motion: reduce){#scene .fog,#main img.spr,#enemy img.spr,.slot.busy img.spr{animation:none!important}}
+
+/* v0.12: покадровые герои, VFX на враге, энергия и ульты */
+#main.framed img.spr,.slot.framed img.spr{animation:none}
+.slot.framed img.spr{filter:none;opacity:1}
+.vfx{position:absolute;transform:translate(-50%,-50%);mix-blend-mode:screen;pointer-events:none;object-fit:contain;z-index:7}
+.slot .en{position:absolute;top:100%;margin-top:17px;width:62px;height:5px;border-radius:3px;background:#0009;box-shadow:0 0 0 1px #ffffff26;overflow:hidden}
+.slot .en i{display:block;height:100%;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#4bb8ff,#b38bff);transition:transform .15s linear}
+.slot.empty .en{display:none}
+.slot.charged .en i{background:linear-gradient(90deg,#ffd36b,#ff8a3d);box-shadow:0 0 8px #ffb04a}
+.slot.ultflash img.spr{animation:ultglow .7s ease-out}
+@keyframes ultglow{0%{filter:brightness(1)}30%{filter:brightness(1.9) drop-shadow(0 0 14px #ffcf6b)}100%{filter:brightness(1)}}
+.slot.sil.ultflash img.spr{animation:none}
+.dmg.ult{font-size:34px;color:#ffd86b;text-shadow:0 0 12px #ff8a3d,0 2px 0 #5a2200;z-index:9}
+.dmg.ultname{font-size:13px;letter-spacing:1.5px;color:#fff1c9;text-shadow:0 0 8px #ff9a3d,0 1px 2px #000;z-index:9;white-space:nowrap}

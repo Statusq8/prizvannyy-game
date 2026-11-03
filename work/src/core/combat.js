@@ -63,7 +63,7 @@
   }
 
   function onBossFail(s, b) {
-    s.run.stats.bossFails++;
+    s.run.stats.bossFails++; s.run.ultCarry = 0;
     emit({ t: 'bossFail', floor: b.floor });
     s.run.autoAdvance = false;
     s.run.farmFloor = s.run.cleared >= 1 ? s.run.cleared : null;
@@ -71,28 +71,63 @@
     if (s.run.farmFloor === null) { s.run.autoAdvance = true; }  // на 1-м этаже некуда отступать: просто повтор
   }
 
+  // --- Энергия и авто-ульта (концепт 03.11.2026): каждая атака героя даёт энергию; при полной шкале — ульта.
+  // Средний урон героя не меняется (баланс B-002 сохраняется): часть урона идёт обычными ударами,
+  // часть копится и выходит всплеском. d = D·n/(n+mult), ульта = mult·d, где n — атак до ульты.
+  function heroFlows(s, target) {
+    const br = H().armyBreakdown(s, target), T = B.ult.attackPeriod;
+    let rate = 0; const ults = [];
+    for (const p of br.parts) {
+      if (p.id === 'main' || !(p.dps > 0)) { rate += p.dps; continue; }
+      const u = PZ.HERO_BY_ID[p.id].ult || B.ult.default, n = u.energy / u.perAttack;
+      const d = p.dps * T * n / (n + u.mult);
+      rate += d / T;
+      ults.push({ id: p.id, energyRate: u.perAttack / T, max: u.energy, burst: d * u.mult });
+    }
+    return { rate, ults, total: br.total };
+  }
+
   // dt в секундах игрового времени (скорость ×1/×2/×4 умножает dt снаружи).
   function tick(s, dt) {
     if (!(dt > 0)) return;
     s.run.stats.playSeconds += dt;
+    if (!s.run.energy) s.run.energy = {};
+    const E = s.run.energy;
     let left = dt;
     let guard = 0;
-    while (left > 1e-9 && guard++ < 10000) {
+    while (left > 1e-9 && guard++ < 20000) {
       const b = ensureBattle(s);
       if (b.spawnWait > 0) {
         const w = Math.min(b.spawnWait, left); b.spawnWait -= w; left -= w; continue;
       }
-      const dps = H().armyDps(s, b.boss ? 'boss' : 'normal');
-      if (!(dps > 0)) { left = 0; break; }
-      const toKill = b.hp / dps;
-      const limit = b.timer !== null ? Math.min(left, b.timer) : left;
-      if (toKill <= limit) {
-        left -= toKill; if (b.timer !== null) b.timer -= toKill;
-        b.hp = 0; onKill(s, b);
-      } else {
-        b.hp -= dps * limit; left -= limit;
-        if (b.timer !== null) { b.timer -= limit; if (b.timer <= 1e-9) onBossFail(s, b); }
+      // Перелёт ульты: урон сверх добивания переходит на следующего врага (иначе ульта на слабых волнах
+      // сгорала бы впустую и средний DPS падал; проверено симулятором B-002).
+      if (s.run.ultCarry > 0) {
+        const c = Math.min(b.hp, s.run.ultCarry); s.run.ultCarry -= c; b.hp -= c;
+        if (s.run.ultCarry < 1e-9 * c) s.run.ultCarry = 0;
+        if (b.hp <= 1e-9) { b.hp = 0; onKill(s, b); continue; }
       }
+      const fl = heroFlows(s, b.boss ? 'boss' : 'normal');
+      if (!(fl.total > 0)) { left = 0; break; }
+      let next = Infinity, who = null;
+      for (const u of fl.ults) { const t = Math.max(0, (u.max - (E[u.id] || 0)) / u.energyRate); if (t < next) { next = t; who = u; } }
+      const toKill = fl.rate > 0 ? b.hp / fl.rate : Infinity;
+      const limit = b.timer !== null ? Math.min(left, b.timer) : left;
+      const step = Math.min(toKill, next, limit);
+      b.hp -= fl.rate * step; left -= step;
+      if (b.timer !== null) b.timer -= step;
+      for (const u of fl.ults) E[u.id] = Math.min(u.max, (E[u.id] || 0) + u.energyRate * step);
+      if (step === toKill || b.hp <= 1e-9) { b.hp = 0; onKill(s, b); continue; }
+      if (step === next && who) {
+        E[who.id] = 0;
+        const dealt = Math.min(b.hp, who.burst);
+        emit({ t: 'ult', id: who.id, dmg: who.burst });
+        b.hp -= dealt;
+        if (who.burst > dealt) s.run.ultCarry = (s.run.ultCarry || 0) + (who.burst - dealt);
+        if (b.hp <= 1e-9) { b.hp = 0; onKill(s, b); }
+        continue;
+      }
+      if (b.timer !== null && b.timer <= 1e-9) onBossFail(s, b);
     }
   }
 
@@ -109,11 +144,11 @@
     if (!(f >= 1)) return { ok: false, err: 'Нет такого этажа' };
     if (f > s.run.cleared + 1) return { ok: false, err: 'Этаж ещё закрыт' };
     if (f === s.run.cleared + 1) return goToRecord(s);
-    s.run.farmFloor = f; s.run.autoAdvance = false; s.run.battle = makeBattle(s);
+    s.run.farmFloor = f; s.run.autoAdvance = false; s.run.ultCarry = 0; s.run.battle = makeBattle(s);
     return { ok: true, floor: f };
   }
   function goToRecord(s) {
-    s.run.farmFloor = null; s.run.autoAdvance = true; s.run.battle = makeBattle(s);
+    s.run.farmFloor = null; s.run.autoAdvance = true; s.run.ultCarry = 0; s.run.battle = makeBattle(s);
     return { ok: true, floor: currentFloor(s) };
   }
   function floorStatus(s, f) {
@@ -122,5 +157,5 @@
     return 'locked';
   }
 
-  PZ.combat = { currentFloor, isFarming, ensureBattle, tick, tap, damage, selectFloor, goToRecord, floorStatus, events, makeBattle };
+  PZ.combat = { heroFlows, currentFloor, isFarming, ensureBattle, tick, tap, damage, selectFloor, goToRecord, floorStatus, events, makeBattle };
 })(globalThis.PZ = globalThis.PZ || {});
