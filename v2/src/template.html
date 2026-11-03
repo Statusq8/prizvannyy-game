@@ -639,7 +639,7 @@
       u.card.style.display = unlocked ? '' : 'none';
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
       u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role) +
-        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв ' + Math.round(CFG.reserveShare * 100) + '%</span>');
+        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>');
       // фигура на арене — только у героя в отряде и нанятого
       const slot = SLOTS[sq];
       u.sprite.classList.toggle('on', sq >= 0 && lv > 0);
@@ -705,8 +705,8 @@
       if (ua !== ub) return ua ? -1 : 1;
       return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
     });
-    let html = '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — в бою. Нанятые вне отряда дают ' +
-      Math.round(CFG.reserveShare * 100) + '% урона. Звёзды — за дубликаты из портала.</div>';
+    let html = '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
+      'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала.</div>';
     for (const a of list) {
       const h = s.heroes[a.id], v = ALLY_VIS[a.id];
       if (!h.unlocked) {
