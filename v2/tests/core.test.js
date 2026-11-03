@@ -161,10 +161,29 @@ test('повреждённое сохранение не загружается'
   assert.strictEqual(C.deserialize(JSON.stringify(bad2)), null);
 });
 
-test('формат чисел: обычные и научная нотация', () => {
-  assert.strictEqual(C.fmt(999), '999');
-  assert.strictEqual(C.fmt(12345.9), '12 345');
-  assert.strictEqual(C.fmt(1.25e30), '1.25e30');
+test('формат чисел: K, M, B, T, затем буквы aa, ab…', () => {
+  assert.strictEqual(C.fmt(0), '0');
+  assert.strictEqual(C.fmt(999.9), '999');
+  assert.strictEqual(C.fmt(1000), '1K');
+  assert.strictEqual(C.fmt(1500), '1.5K');
+  assert.strictEqual(C.fmt(12345.9), '12.3K');
+  assert.strictEqual(C.fmt(999999), '999K');                 // не округляем вверх
+  assert.strictEqual(C.fmt(2.3e6), '2.3M');
+  assert.strictEqual(C.fmt(4.1e9), '4.1B');
+  assert.strictEqual(C.fmt(7.77e12), '7.77T');
+  assert.strictEqual(C.fmt(1.2e15), '1.2aa');
+  assert.strictEqual(C.fmt(3.4e18), '3.4ab');
+  assert.strictEqual(C.fmt(9e90), '9az');
+  assert.strictEqual(C.fmt(1e93), '1ba');
+  assert.strictEqual(C.fmt(1.25e30), '1.25af');
+});
+
+test('формат чисел: суффикс не меняется внутри одного разряда', () => {
+  const suf = x => x.replace(/^[\d.]+/, '');
+  for (let e = 3; e < 300; e += 3) {
+    const a = C.fmt(Math.pow(10, e)), b = C.fmt(Math.pow(10, e) * 999.9);
+    assert.strictEqual(suf(a), suf(b), e + ': ' + a + ' / ' + b);
+  }
 });
 
 // ---------- союзники (этап 3) ----------

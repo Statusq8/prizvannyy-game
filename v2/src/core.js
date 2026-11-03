@@ -434,11 +434,29 @@
   }
 
   // ---------- форматирование чисел ----------
-  function fmt(n) {
-    n = Math.floor(n);
-    if (Math.abs(n) < 1e6) return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return n.toExponential(2).replace('e+', 'e');
+  // Большие числа: K, M, B, T, дальше буквы aa, ab … az, ba … (решение пользователя).
+  // Три значащие цифры, отбрасываем лишнее вниз, чтобы не показывать больше, чем есть.
+  const SHORT = ['', 'K', 'M', 'B', 'T'];
+  function suffix(tier) {
+    if (tier < SHORT.length) return SHORT[tier];
+    const i = tier - SHORT.length;
+    return String.fromCharCode(97 + Math.floor(i / 26) % 26) + String.fromCharCode(97 + i % 26);
   }
+  function fmt(n) {
+    if (!isFinite(n)) return '∞';
+    const neg = n < 0; n = Math.abs(n);
+    if (n < 1000) return (neg ? '-' : '') + Math.floor(n);
+    let tier = Math.floor(Math.log10(n) / 3);
+    let v = n / Math.pow(10, tier * 3);
+    if (v >= 1000) { tier++; v /= 1000; }          // защита от погрешности log10
+    if (v < 1) { tier--; v *= 1000; }
+    const dec = v < 10 ? 2 : v < 100 ? 1 : 0;
+    const k = Math.pow(10, dec);
+    let txt = (Math.floor(v * k + 1e-9) / k).toFixed(dec);
+    if (dec) txt = txt.replace(/\.?0+$/, '');
+    return (neg ? '-' : '') + txt + suffix(tier);
+  }
+
 
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
