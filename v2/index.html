@@ -20,7 +20,7 @@
   }
   button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
   #game {
-    position: relative; height: 100%; max-width: calc(100vh * 9 / 16); margin: 0 auto;
+    position: relative; height: 100%; height: 100dvh; max-width: calc(100dvh * 9 / 16); margin: 0 auto;
     background: radial-gradient(ellipse at 50% 45%, var(--bg2) 0%, var(--bg1) 70%);
     display: flex; flex-direction: column; overflow: hidden;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -110,7 +110,16 @@
   #toast small { display: block; color: var(--gold); margin-top: 4px; font-size: 14px; }
 
   /* ---------- нижняя панель ---------- */
-  #panel { background: var(--panel); border-top: 1px solid var(--line); padding: 10px 12px 12px; position: relative; z-index: 2; }
+  #panel { background: var(--panel); border-top: 1px solid var(--line); padding: 0 12px 10px; position: relative; z-index: 2; }
+  /* ручка сворачивания панели */
+  #panelToggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 26px; font-size: 12px; color: var(--muted); }
+  #panelToggle .bar { width: 36px; height: 4px; border-radius: 2px; background: var(--line); }
+  #panelToggle .chev { transition: transform .2s; }
+  #panel.collapsed .chev { transform: rotate(180deg); }
+  #panel.collapsed #cards, #panel.collapsed #mult { display: none; }
+  #panel.collapsed #goldRow { margin-bottom: 0; }
+  #canBuy { display: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  #panel.collapsed #canBuy.on { display: inline-block; }
   #goldRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   #gold { font-size: 20px; font-weight: 800; color: var(--gold); }
   #gold::before { content: "◆ "; font-size: 15px; }
@@ -148,11 +157,12 @@
   #statsMore.show { display: block; }
   .dmg.auto { font-size: 18px; text-shadow: 0 2px 0 #000, 0 0 6px currentColor; }
   /* союзник на арене (временная заглушка) */
-  #cards { max-height: 34vh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+  #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
-  .ally { position: absolute; width: 22%; max-width: 100px; aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; }
-  .ally.back { width: 18%; max-width: 82px; filter: brightness(.8); }
+  /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
+  .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
+  .ally.back { height: min(28%, 106px); bottom: calc(18px + min(36%, 130px) + 16px); filter: brightness(.8); }
   .ally.on { display: block; }
   .ally .fig { width: 100%; height: 100%; animation: allyIdle 2.8s ease-in-out infinite; }
   .ally.R .fig svg { transform: scaleX(-1); }
@@ -206,6 +216,7 @@
   </div>
 
   <div id="panel">
+    <button id="panelToggle" aria-label="Свернуть или развернуть улучшения"><span class="bar"></span><span id="toggleLabel">Свернуть</span><span class="chev">▼</span><span id="canBuy"></span></button>
     <div id="goldRow">
       <div id="gold">0</div>
       <div id="mult">
@@ -570,10 +581,10 @@
     blades: '<path d="M70 70 L98 44" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/><path d="M68 84 L100 72" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>',
   };
   const ALLY_VIS = {
-    irene: { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow',    pos: 'left:2%;bottom:5%',   side: 'L', back: false },
-    borg:  { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe',    pos: 'right:2%;bottom:5%',  side: 'R', back: false },
-    lia:   { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff',  pos: 'left:7%;bottom:40%',  side: 'L', back: true },
-    kael:  { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades', pos: 'right:7%;bottom:40%', side: 'R', back: true },
+    irene: { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow',    pos: 'left:2%',   side: 'L', back: false },
+    borg:  { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe',    pos: 'right:2%',  side: 'R', back: false },
+    lia:   { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff',  pos: 'left:7%',  side: 'L', back: true },
+    kael:  { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades', pos: 'right:7%', side: 'R', back: true },
   };
   function allySvg(v) {
     return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' +
@@ -629,6 +640,15 @@
 
   let s = load();
   let mult = 1;
+  let anyAffordable = false;
+  const UI_KEY = 'prizvannyy_v2_ui';
+  function setCollapsed(on) {
+    $('panel').classList.toggle('collapsed', on);
+    $('toggleLabel').textContent = on ? 'Улучшения' : 'Свернуть';
+    try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
+  }
+  try { setCollapsed(!!(JSON.parse(localStorage.getItem(UI_KEY) || '{}').collapsed)); } catch (e) { setCollapsed(false); }
+  $('panelToggle').addEventListener('click', () => setCollapsed(!$('panel').classList.contains('collapsed')));
   const dmgLog = [];                    // [время, урон] для DPS
   let tapped = s.stats.taps > 0;
 
@@ -758,6 +778,7 @@
     const cost = C.upgradeCost(s.tapLevel, n);
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
+    anyAffordable = false;
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -771,6 +792,7 @@
       setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
       u.sprite.classList.toggle('on', lv > 0);
     }
+    $('canBuy').classList.toggle('on', anyAffordable);
   }
 
   // Подсказка о следующей вехе уровня
@@ -780,6 +802,7 @@
 
   function setBuy(btn, can, n, cost, label) {
     btn.disabled = !can;
+    if (can) anyAffordable = true;
     btn.innerHTML = can ? label + '<span>◆ ' + fmt(cost) + '</span>'
                               : 'Не хватает<span>◆ ' + fmt(cost - s.gold) + '</span>';
   }
