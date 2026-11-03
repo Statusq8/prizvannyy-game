@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 /** Обёртка игры: WebView с index.html из assets. Сохранение — localStorage + копия в файле приложения. */
 public class MainActivity extends Activity {
     private WebView web;
+    private boolean paused = false;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -52,9 +53,21 @@ public class MainActivity extends Activity {
     @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); }
 
     @Override protected void onPause() {
-        // Сохранить прогресс при сворачивании (страница сама кладёт копию в файл через PZNative.backup)
-        if (web != null) web.evaluateJavascript("window.PZ&&PZ.app&&PZ.app.saveNow()", null);
+        // Свернули: сохранить прогресс, заглушить звук, остановить игру (офлайн-награда начислится при возвращении)
+        if (web != null) {
+            web.evaluateJavascript("try{PZ.app.saveNow()}catch(e){};try{PZ.audio.suspend()}catch(e){}", v -> { if (paused) { web.onPause(); web.pauseTimers(); } });
+        }
+        paused = true;
         super.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (web != null && paused) {
+            web.onResume(); web.resumeTimers();
+            web.evaluateJavascript("try{PZ.audio.resume()}catch(e){}", null);
+        }
+        paused = false;
     }
 
     @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }

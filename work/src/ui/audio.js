@@ -99,6 +99,15 @@
     setZone(z) { if (z !== music.zone) { music.zone = z; music.step = 0; music.chord(); } },
   };
 
-  if (typeof document !== 'undefined') ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, unlock, { capture: true }));
-  PZ.audio = Object.assign({ unlock, apply, setZone: z => music.setZone(z), state: () => ctx ? ctx.state : 'none' }, sfx);
+  // Свернули игру / ушли на другую вкладку — звук и музыка замолкают; вернулись — продолжаются.
+  let hiddenPaused = false;
+  function suspend() { if (ctx && ctx.state === 'running') { ctx.suspend(); hiddenPaused = true; } }
+  function resume() { if (ctx && hiddenPaused && !document.hidden) { ctx.resume(); hiddenPaused = false; } }
+  if (typeof document !== 'undefined') {
+    ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, unlock, { capture: true }));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) suspend(); else resume(); });
+    window.addEventListener('pagehide', suspend);
+    window.addEventListener('blur', () => { if (document.hidden) suspend(); });
+  }
+  PZ.audio = Object.assign({ unlock, apply, suspend, resume, setZone: z => music.setZone(z), state: () => ctx ? ctx.state : 'none' }, sfx);
 })(globalThis.PZ);
