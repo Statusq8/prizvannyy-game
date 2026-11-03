@@ -602,3 +602,90 @@ test('сохранение коллекции и миграция с верси�
   assert.strictEqual(m.allies.irene.level, 50);
   assert.deepStrictEqual(m.squad, ['irene', 'borg', 'lia', 'kael']);
 });
+
+// ---------- Алтарь (этап 4, шаг 2) ----------
+test('пожертвование: копии исчезают навсегда, эссенция по редкости', () => {
+  const s = C.newState(NOCRIT);
+  s.heroes.irene.copies = 5; s.heroes.kael.copies = 2;
+  const r = C.sacrifice(s, { irene: 3, kael: 1 });
+  assert.ok(r);
+  assert.strictEqual(r.essence, 3 * CFG.altar.essence.E + 1 * CFG.altar.essence.B);
+  assert.strictEqual(s.essence, r.essence);
+  assert.strictEqual(s.heroes.irene.copies, 2);
+  assert.strictEqual(s.heroes.kael.copies, 1);
+  assert.strictEqual(s.heroes.irene.unlocked, true);    // сам герой остаётся открытым
+});
+
+test('нельзя пожертвовать больше копий, чем есть, и заблокированные', () => {
+  const s = C.newState(NOCRIT);
+  s.heroes.irene.copies = 2;
+  assert.strictEqual(C.sacrifice(s, { irene: 3 }), null);
+  C.setLock(s, 'irene', true);
+  assert.strictEqual(C.sacrifice(s, { irene: 1 }), null);
+  assert.strictEqual(s.heroes.irene.copies, 2);
+  C.setLock(s, 'irene', false);
+  assert.ok(C.sacrifice(s, { irene: 1 }));
+  assert.strictEqual(C.sacrifice(s, {}), null);
+});
+
+test('массовый выбор берёт все незаблокированные копии', () => {
+  const s = C.newState(NOCRIT);
+  s.heroes.irene.copies = 4; s.heroes.borg.copies = 2; s.heroes.lia.copies = 1;
+  C.setLock(s, 'borg', true);
+  assert.deepStrictEqual(C.selectAllUnlocked(s), { irene: 4, lia: 1 });
+});
+
+test('редкие герои требуют дополнительного подтверждения', () => {
+  assert.strictEqual(C.needsRareConfirm({ irene: 3, kael: 1 }), false);
+  assert.strictEqual(C.needsRareConfirm({ velma: 1 }), true);
+  assert.strictEqual(C.needsRareConfirm({ azrael: 1 }), true);
+});
+
+test('рецепты: Слеза портала (эссенция → билет) и След героя (копия выбранного)', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.tearOfPortal(s, 1), false);
+  s.essence = CFG.altar.ticketCost * 2;
+  assert.ok(C.tearOfPortal(s, 2));
+  assert.strictEqual(s.tickets, 2);
+  assert.strictEqual(s.essence, 0);
+  s.essence = 1000;
+  assert.ok(C.heroTrace(s, 'lia'));
+  assert.strictEqual(s.heroes.lia.copies, 1);
+  assert.strictEqual(s.essence, 1000 - C.traceCost('lia'));
+  assert.strictEqual(C.heroTrace(s, 'velma'), false);   // закрытого героя нельзя
+});
+
+test('скрытый герой не выпадает в портале и открывается скрытым рецептом, рецепт повторяемый', () => {
+  const morra = CFG.allies.find(a => a.hidden);
+  assert.ok(morra);
+  const s = C.newState(); s.tickets = 5000; s.pity = { a: -1e9, s: -1e9 };
+  assert.ok(!C.summon(s, 5000).some(x => x.id === morra.id));
+
+  const t = C.newState(NOCRIT);
+  for (const id of morra.recipe) t.heroes[id].copies = 2;
+  const sel = Object.fromEntries(morra.recipe.map(id => [id, 1]));
+  const r1 = C.sacrifice(t, sel);
+  assert.deepStrictEqual(r1.found, [{ id: morra.id, sets: 1, isNew: true }]);
+  assert.strictEqual(t.heroes[morra.id].unlocked, true);
+  assert.strictEqual(t.discovered[morra.id], true);
+  const r2 = C.sacrifice(t, sel);                         // повтор — копия скрытой героини
+  assert.strictEqual(r2.found[0].isNew, false);
+  assert.strictEqual(t.heroes[morra.id].copies, 1);
+  // неполный набор ничего скрытого не даёт
+  for (const id of morra.recipe) t.heroes[id].copies = 1;
+  assert.deepStrictEqual(C.sacrifice(t, { irene: 1, borg: 1 }).found, []);
+});
+
+test('сохранение Алтаря и миграция с 0.7', () => {
+  const s = C.newState(NOCRIT);
+  s.essence = 42; C.setLock(s, 'kael', true); s.discovered.morra = true; s.heroes.morra.unlocked = true;
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.essence, 42);
+  assert.strictEqual(t.locks.kael, true);
+  assert.strictEqual(t.discovered.morra, true);
+  assert.strictEqual(t.heroes.morra.unlocked, true);
+  const old = JSON.parse(C.serialize(s)); old.v = 4; delete old.essence; delete old.locks; delete old.discovered;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m);
+  assert.strictEqual(m.essence, 0);
+});

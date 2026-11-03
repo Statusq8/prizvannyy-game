@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 4,
+    saveVersion: 5,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -51,7 +51,15 @@
       pityA: 30, pityS: 90,
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
     },
+    // Алтарь (GDD §5): пожертвованные копии исчезают навсегда и дают эссенцию по редкости (TBD)
+    altar: {
+      essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
+      ticketCost: 30,                                              // «Слеза портала»: эссенция → 1 билет
+      traceCost: { E: 10, D: 20, C: 40, B: 80, A: 160, S: 400, GOD: 1000 },   // «След героя»: копия выбранного открытого
+      rareConfirmFrom: 'A',                                        // для A, S, GOD — дополнительное подтверждение
+    },
     // Каталог героев. Уровень 0 = не нанят в этом забеге. starter — открыт с начала игры.
+    // hidden — не выпадает в портале, открывается скрытым рецептом Алтаря (повторяемый бесплатный путь).
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', rarity: 'E', starter: true, baseDps: 4, attackInterval: 0.8,
         hireCost: 25, costGrowth: 1.05,
@@ -82,6 +90,10 @@
         hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
       { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
         hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд пепла', kind: 'nuke', charge: 15, power: 40 } },
+      // скрытая: рецепт — пожертвовать за раз по копии всех четырёх героев стартового отряда
+      { id: 'morra', name: 'Морра', role: 'Хранительница Алтаря', rarity: 'A', hidden: true, baseDps: 1e8, attackInterval: 1.2,
+        hireCost: 2e7, costGrowth: 1.05, ult: { name: 'Печать жертвы', kind: 'teamBuff', charge: 20, power: 2.2, duration: 7 },
+        recipe: ['irene', 'borg', 'lia', 'kael'] },
     ],
   };
 
@@ -195,6 +207,9 @@
       tickets: 0,
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
       pity: { a: 0, s: 0 },
+      essence: 0,
+      locks: {},                                 // id → true: копии защищены от пожертвования
+      discovered: {},                            // id скрытого героя → рецепт найден
       reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
@@ -446,7 +461,7 @@
       const rarity = rollRarity(s, min);
       if (RANK(rarity) >= RANK('A')) s.pity.a = 0;
       if (RANK(rarity) >= RANK('S')) s.pity.s = 0;
-      const pool = CONFIG.allies.filter(a => a.rarity === rarity);
+      const pool = CONFIG.allies.filter(a => a.rarity === rarity && !a.hidden);
       const hero = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
       const h = s.heroes[hero.id];
       const isNew = !h.unlocked;
@@ -478,6 +493,73 @@
     return true;
   }
 
+  // ---------- Алтарь ----------
+  function setLock(s, id, on) {
+    if (!allyDef(id)) return false;
+    if (on) s.locks[id] = true; else delete s.locks[id];
+    return true;
+  }
+  // Эссенция за выбор {id: копий}
+  function sacrificeValue(sel) {
+    let e = 0;
+    for (const id in sel) e += CONFIG.altar.essence[allyDef(id).rarity] * sel[id];
+    return e;
+  }
+  function needsRareConfirm(sel) {
+    const min = RANK(CONFIG.altar.rareConfirmFrom);
+    return Object.keys(sel).some(id => sel[id] > 0 && RANK(allyDef(id).rarity) >= min);
+  }
+  // Все незаблокированные копии (массовый выбор)
+  function selectAllUnlocked(s) {
+    const sel = {};
+    for (const a of CONFIG.allies) if (!s.locks[a.id] && s.heroes[a.id].copies > 0) sel[a.id] = s.heroes[a.id].copies;
+    return sel;
+  }
+  // Пожертвовать копии. Скрытые рецепты: если в одной жертве есть копии всех героев рецепта —
+  // за каждый полный набор выдаётся скрытый герой (первый раз — открытие).
+  function sacrifice(s, sel) {
+    if (!sel || typeof sel !== 'object') return null;
+    const clean = {};
+    for (const id in sel) {
+      const n = sel[id];
+      if (!allyDef(id) || !Number.isInteger(n) || n < 0) return null;
+      if (n === 0) continue;
+      if (s.locks[id] || n > s.heroes[id].copies) return null;   // заблокированные и несуществующие копии нельзя
+      clean[id] = n;
+    }
+    if (!Object.keys(clean).length) return null;
+    const essence = sacrificeValue(clean);
+    for (const id in clean) s.heroes[id].copies -= clean[id];   // исчезают навсегда
+    s.essence += essence;
+    const found = [];
+    for (const h of CONFIG.allies.filter(a => a.hidden && a.recipe)) {
+      const sets = Math.min(...h.recipe.map(id => clean[id] || 0));
+      if (sets <= 0) continue;
+      const st = s.heroes[h.id];
+      const isNew = !st.unlocked;
+      if (isNew) st.unlocked = true; else st.copies++;
+      if (sets > 1) st.copies += sets - 1;
+      s.discovered[h.id] = true;
+      found.push({ id: h.id, sets, isNew });
+    }
+    return { essence, found };
+  }
+  function tearOfPortal(s, n) {
+    const cost = CONFIG.altar.ticketCost * n;
+    if (!Number.isInteger(n) || n <= 0 || s.essence < cost) return false;
+    s.essence -= cost; s.tickets += n;
+    return true;
+  }
+  function traceCost(id) { const a = allyDef(id); return a && CONFIG.altar.traceCost[a.rarity]; }
+  function heroTrace(s, id) {
+    const a = allyDef(id);
+    if (!a || !s.heroes[id].unlocked) return false;
+    const cost = traceCost(id);
+    if (s.essence < cost) return false;
+    s.essence -= cost; s.heroes[id].copies++;
+    return true;
+  }
+
   // ---------- сохранение ----------
   function serialize(s) {
     return JSON.stringify({
@@ -489,6 +571,7 @@
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars }])),
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
+      essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       savedAt: Date.now(),
     });
   }
@@ -506,6 +589,7 @@
       let t = 0; for (let f = 1; f <= (d.highestCleared | 0); f++) t += ticketsForFloor(f);   // билеты за уже пройденных боссов
       d.tickets = t; d.ticketFloor = d.highestCleared | 0; d.pity = { a: 0, s: 0 };
     }
+    if (d.v === 4) { d.v = 5; d.essence = 0; d.locks = []; d.discovered = []; }   // 0.7 → 0.8: Алтарь
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -553,6 +637,10 @@
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
+    if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
+    s.essence = d.essence;
+    for (const id of d.locks) if (allyDef(id)) s.locks[id] = true;
+    for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
     spawn(s);                                     // враг появляется с полным HP
     return s;
@@ -589,6 +677,7 @@
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult,
     useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
+    setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
