@@ -158,6 +158,8 @@
   #statsMore.show { display: block; }
   .dmg.auto { font-size: 18px; text-shadow: 0 2px 0 #000, 0 0 6px currentColor; }
   /* союзник на арене (временная заглушка) */
+  #allyCards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  #allyCards .card + .card { margin-top: 0; }
   #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
   /* главный герой — впереди по центру, вид со спины (временная заглушка) */
@@ -183,7 +185,7 @@
   #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
   .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
   /* криты */
-  .dmg.crit { font-size: 30px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
+  .dmg.crit { font-size: 27px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
   .dmg.auto.crit { font-size: 22px; }
   /* панель способностей главного героя — вне арены, чтобы не перехватывать тапы */
   #abilityBar { display: flex; gap: 8px; padding: 6px 12px; background: var(--bg1); border-top: 1px solid var(--line); position: relative; z-index: 2; }
@@ -200,6 +202,52 @@
   .abilCd { position: absolute; left: 0; top: 0; bottom: 0; background: #00000055; pointer-events: none; }
   .abilAuto { width: 40px; flex: none; font-size: 10px; font-weight: 800; color: var(--muted); border-left: 1px solid var(--line); }
   .abilAuto.on { color: #1a0a08; background: var(--ok); }
+  /* вспышка крита — коротко и без перегрузки */
+  .critFlash { position: absolute; width: 70px; height: 70px; border-radius: 50%; pointer-events: none; transform: translate(-50%,-50%) scale(.3);
+    background: radial-gradient(circle, #fff6 0%, #ffd36b55 40%, transparent 70%); animation: cflash .16s ease-out forwards; z-index: 3; }
+  @keyframes cflash { to { transform: translate(-50%,-50%) scale(1.2); opacity: 0; } }
+  /* вкладки панели */
+  #tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tab { flex: 1; padding: 7px 4px; border-radius: 9px; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--panel2); border: 1px solid var(--line); }
+  .tab.on { color: var(--text); border-color: var(--accent); }
+  #ticketDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); vertical-align: middle; }
+  #ticketDot.on { display: inline-block; }
+  #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
+  .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab { display: block; }
+  #panel[data-tab="heroes"] #cards, #panel[data-tab="portal"] #cards,
+  #panel[data-tab="heroes"] #mult, #panel[data-tab="portal"] #mult { display: none; }
+  /* редкости */
+  .r-E { --r: #9a9aa8; } .r-D { --r: #6be3a0; } .r-C { --r: #6bb8ff; } .r-B { --r: #b98cff; }
+  .r-A { --r: #ffa64a; } .r-S { --r: #ff5a6a; } .r-GOD { --r: #ffd36b; }
+  .rar { display: inline-block; min-width: 22px; padding: 0 4px; border-radius: 5px; font-size: 10px; font-weight: 800; text-align: center; color: #120a18; background: var(--r); }
+  .badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-left: 4px; vertical-align: middle; }
+  .badge.sq { background: #6be3a033; color: var(--ok); } .badge.rs { background: #ffffff14; color: var(--muted); }
+  .hRow { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 11px; background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--r); }
+  .hRow + .hRow { margin-top: 6px; }
+  .hRow.locked { opacity: .5; }
+  .hIcon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; flex: none; }
+  .hInfo { flex: 1; min-width: 0; }
+  .hName { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hSub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .stars { color: var(--gold); letter-spacing: -1px; }
+  .hBtn { padding: 6px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; background: var(--panel); border: 1px solid var(--line); white-space: nowrap; }
+  .hBtn.go { border-color: var(--accent); color: var(--text); }
+  .hBtn:disabled { opacity: .4; }
+  .hint2 { font-size: 11px; color: var(--muted); margin: 0 2px 6px; }
+  /* портал */
+  .portalHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tickets { font-size: 15px; font-weight: 700; } .tickets b { color: var(--gold); }
+  .pity { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .portalBtns { display: flex; gap: 6px; }
+  .pBtn { padding: 10px 14px; border-radius: 10px; font-weight: 800; background: linear-gradient(180deg, #7a4fc4, #4b2c86); border: 1px solid var(--accent); }
+  .pBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  .odds { font-size: 10px; color: var(--muted); margin: 8px 0; line-height: 1.6; }
+  .results { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .res { border-radius: 9px; padding: 6px 2px; text-align: center; background: var(--panel2); border: 1px solid var(--r); font-size: 10px; animation: pop .3s ease-out backwards; }
+  .res .ri { font-size: 18px; } .res .rn { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .new { color: var(--gold); font-weight: 800; }
+  @keyframes pop { from { transform: scale(.5); opacity: 0; } }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -287,6 +335,11 @@
         <button class="multBtn" data-n="max">MAX</button>
       </div>
     </div>
+    <div id="tabs">
+      <button class="tab on" data-tab="up">Улучшения</button>
+      <button class="tab" data-tab="heroes">Герои</button>
+      <button class="tab" data-tab="portal">Портал <span id="ticketDot"></span></button>
+    </div>
     <div id="cards">
     <div class="card">
       <div class="cardIcon">⚔</div>
@@ -296,17 +349,16 @@
       </div>
       <button class="buy" id="buyTap"></button>
     </div>
-    <div class="card">
-      <div class="cardIcon" style="background:#46381e">🎯</div>
-      <div class="cardInfo"><div class="cardTitle" id="chanceTitle"></div><div class="cardSub" id="chanceSub"></div></div>
-      <button class="buy" id="buyChance"></button>
-    </div>
-    <div class="card">
-      <div class="cardIcon" style="background:#461e24">💥</div>
-      <div class="cardInfo"><div class="cardTitle" id="multTitle"></div><div class="cardSub" id="multSub"></div></div>
-      <button class="buy" id="buyMult"></button>
-    </div>
     <div id="allyCards"></div>
+    </div>
+    <div id="heroesTab" class="tabBody"></div>
+    <div id="portalTab" class="tabBody">
+      <div class="portalHead">
+        <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
+        <div class="portalBtns"><button class="pBtn" id="pull1">×1</button><button class="pBtn" id="pull10">×10</button></div>
+      </div>
+      <div class="odds" id="oddsInfo"></div>
+      <div class="results" id="pullResults"></div>
     </div>
   </div>
 
@@ -318,7 +370,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.6</div>
+  <div id="version">v0.7</div>
 </div>
 
 <script>
@@ -328,7 +380,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 3,
+    saveVersion: 4,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -347,31 +399,64 @@
     milestones: [10, 25, 50, 75, 100],
     milestoneEvery: 25,
     milestoneMult: 3,
-    // Криты — единственные прокачиваемые вторичные статы (GDD §3). Действуют на любой урон.
-    crit: {
-      baseChance: 0.05, chancePerLevel: 0.01, maxChanceLevel: 45,   // потолок шанса 50% от уровней
-      chanceCost: 100, chanceGrowth: 1.22,
-      baseMult: 2, multPerLevel: 0.1, multCost: 150, multGrowth: 1.16,
-    },
+    // Криты — единственные вторичные боевые статы (GDD §3). Действуют на любой урон.
+    // Прокачиваются ТОЛЬКО артефактами (решение пользователя: нет отдельных веток критов за золото,
+    // в дереве душ, рунах, костях и эволюции). Артефакты появятся на этапе 4.
+    // Потолок шанса крита 50% для всех источников вместе (обычные удары остаются всегда). Одинаков для героя,
+    // союзников и питомца; каждый удар проверяется отдельно. Крит-урон растёт отдельно, тоже только от артефактов.
+    crit: { baseChance: 0.05, maxChance: 0.5, baseMult: 2 },
+    // Цены старой прокачки критов (0.6) — только для возврата золота при переносе сохранения
+    legacyCritRefund: { chanceCost: 100, chanceGrowth: 1.22, multCost: 150, multGrowth: 1.16 },
     // Активные способности главного героя: по умолчанию ручные, у каждой свой переключатель автоиспользования (GDD §3)
     abilities: [
       { id: 'flurry', name: 'Шквал ударов', unlockFloor: 5, cooldown: 60, duration: 5, tapsPerSec: 10 },
-      { id: 'hunt', name: 'Клеймо охотника', unlockFloor: 15, cooldown: 90, duration: 10, critChanceBonus: 0.5 },
+      { id: 'hunt', name: 'Клеймо охотника', unlockFloor: 15, cooldown: 90, duration: 10, critChanceBonus: 0.25 },
     ],
-    // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
+    // Герои (GDD §4): редкость E → GOD, портал открывает навсегда, в бою отряд из squadSize,
+    // нанятые резервные дают долю reserveShare, ненанятые — ничего. Звёзды повышают только индивидуальный DPS.
+    rarities: ['E', 'D', 'C', 'B', 'A', 'S', 'GOD'],
+    squadSize: 4,
+    reserveShare: 0.25,                       // TBD
+    maxStars: 10,
+    starDpsBonus: 0.5,                        // +50% индивидуального DPS за звезду (TBD)
+    starCopies: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5], // копий на 1-ю … 10-ю звезду (TBD)
+    // Портал: обычный баннер. Шансы в %, гарантии (pity) раздельные: A+ и S+ (TBD)
+    portal: {
+      odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, GOD: 0.3 },
+      pityA: 30, pityS: 90,
+      ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
+    },
+    // Каталог героев. Уровень 0 = не нанят в этом забеге. starter — открыт с начала игры.
     allies: [
-      { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
+      { id: 'irene', name: 'Ирэн', role: 'Лучница теней', rarity: 'E', starter: true, baseDps: 4, attackInterval: 0.8,
         hireCost: 25, costGrowth: 1.05,
         ult: { name: 'Ливень стрел', kind: 'nuke', charge: 12, power: 20 } },
-      { id: 'borg', name: 'Борг', role: 'Берсерк', baseDps: 120, attackInterval: 1.6,
+      { id: 'borg', name: 'Борг', role: 'Берсерк', rarity: 'D', starter: true, baseDps: 120, attackInterval: 1.6,
         hireCost: 400, costGrowth: 1.05,
         ult: { name: 'Ярость', kind: 'teamBuff', charge: 20, power: 2, duration: 6 } },
-      { id: 'lia', name: 'Лиа', role: 'Пиромантка', baseDps: 4000, attackInterval: 1.1,
+      { id: 'lia', name: 'Лиа', role: 'Пиромантка', rarity: 'C', starter: true, baseDps: 4000, attackInterval: 1.1,
         hireCost: 7000, costGrowth: 1.05,
         ult: { name: 'Метка пламени', kind: 'mark', charge: 18, power: 1.5, duration: 8 } },
-      { id: 'kael', name: 'Каэль', role: 'Клинок бездны', baseDps: 150000, attackInterval: 0.45,
+      { id: 'kael', name: 'Каэль', role: 'Клинок бездны', rarity: 'B', starter: true, baseDps: 150000, attackInterval: 0.45,
         hireCost: 120000, costGrowth: 1.05,
         ult: { name: 'Разрез бездны', kind: 'tapBuff', charge: 25, power: 3, duration: 8 } },
+      // открываются порталом
+      { id: 'garret', name: 'Гаррет', role: 'Ополченец', rarity: 'E', baseDps: 18, attackInterval: 1.0,
+        hireCost: 100, costGrowth: 1.05, ult: { name: 'Удар щитом', kind: 'nuke', charge: 15, power: 15 } },
+      { id: 'saya', name: 'Сая', role: 'Метательница ножей', rarity: 'D', baseDps: 900, attackInterval: 0.6,
+        hireCost: 2000, costGrowth: 1.05, ult: { name: 'Ядовитые клинки', kind: 'mark', charge: 16, power: 1.4, duration: 6 } },
+      { id: 'drake', name: 'Дрейк', role: 'Копейщик', rarity: 'C', baseDps: 40000, attackInterval: 1.2,
+        hireCost: 40000, costGrowth: 1.05, ult: { name: 'Боевой клич', kind: 'teamBuff', charge: 22, power: 1.8, duration: 6 } },
+      { id: 'noa', name: 'Ноа', role: 'Громовой маг', rarity: 'B', baseDps: 4e6, attackInterval: 1.4,
+        hireCost: 2e6, costGrowth: 1.05, ult: { name: 'Цепная молния', kind: 'nuke', charge: 14, power: 25 } },
+      { id: 'velma', name: 'Вельма', role: 'Некромантка', rarity: 'A', baseDps: 2e8, attackInterval: 1.0,
+        hireCost: 5e7, costGrowth: 1.05, ult: { name: 'Проклятие плоти', kind: 'mark', charge: 18, power: 2, duration: 8 } },
+      { id: 'ragnar', name: 'Рагнар', role: 'Рыцарь смерти', rarity: 'A', baseDps: 6e9, attackInterval: 1.5,
+        hireCost: 1e9, costGrowth: 1.05, ult: { name: 'Знамя мёртвых', kind: 'teamBuff', charge: 20, power: 2.5, duration: 6 } },
+      { id: 'seiren', name: 'Сэйрен', role: 'Повелительница бурь', rarity: 'S', baseDps: 3e11, attackInterval: 0.7,
+        hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
+      { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
+        hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд пепла', kind: 'nuke', charge: 15, power: 40 } },
     ],
   };
 
@@ -416,34 +501,13 @@
 
   // ---------- криты ----------
   function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
+  // Сюда же добавятся бонусы артефактов (этап 4); временный бонус даёт способность «Клеймо охотника»
   function critChance(s) {
-    const c = CONFIG.crit;
-    let ch = c.baseChance + s.critChanceLevel * c.chancePerLevel;
+    let ch = CONFIG.crit.baseChance;
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
-    return Math.min(1, ch);
+    return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { return CONFIG.crit.baseMult + s.critMultLevel * CONFIG.crit.multPerLevel; }
-  function critCost(s, kind, n) {
-    const c = CONFIG.crit;
-    return kind === 'chance' ? seriesCost(c.chanceCost, c.chanceGrowth, s.critChanceLevel, n)
-                             : seriesCost(c.multCost, c.multGrowth, s.critMultLevel, n);
-  }
-  function critMax(s, kind) {
-    const c = CONFIG.crit;
-    if (kind === 'chance') return Math.min(seriesMax(c.chanceCost, c.chanceGrowth, s.critChanceLevel, s.gold), c.maxChanceLevel - s.critChanceLevel);
-    return seriesMax(c.multCost, c.multGrowth, s.critMultLevel, s.gold);
-  }
-  function buyCrit(s, kind, n) {
-    if (kind !== 'chance' && kind !== 'mult') return false;
-    const count = n === 'max' ? critMax(s, kind) : n;
-    if (!Number.isInteger(count) || count <= 0) return false;
-    if (kind === 'chance' && s.critChanceLevel + count > CONFIG.crit.maxChanceLevel) return false;
-    const cost = critCost(s, kind, count);
-    if (cost > s.gold) return false;
-    s.gold -= cost;
-    if (kind === 'chance') s.critChanceLevel += count; else s.critMultLevel += count;
-    return true;
-  }
+  function critMult(s) { return CONFIG.crit.baseMult; }
   function enemyName(floor, index, isBoss) {
     if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
@@ -473,8 +537,15 @@
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
   function allyDpsAt(id, level) { return allyDef(id).baseDps * level * milestoneMultAt(level); }
-  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level); }
-  function autoDps(s) { return CONFIG.allies.reduce((sum, a) => sum + allyDps(s, a.id), 0); }
+  function starMult(s, id) { return 1 + CONFIG.starDpsBonus * s.heroes[id].stars; }
+  // Индивидуальный DPS героя (со звёздами), как если бы он был в отряде
+  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level) * starMult(s, id); }
+  function inSquad(s, id) { return s.squad.includes(id); }
+  // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
+  function contribDps(s, id) { return allyDps(s, id) * (inSquad(s, id) ? 1 : CONFIG.reserveShare); }
+  function autoDps(s) { return CONFIG.allies.reduce((sum, a) => sum + contribDps(s, a.id), 0); }
+  function reserveDps(s) { return CONFIG.allies.reduce((sum, a) => sum + (inSquad(s, a.id) ? 0 : contribDps(s, a.id)), 0); }
+  function squadDefs(s) { return s.squad.map(allyDef); }
   // Уровень 0 → первая покупка = найм по hireCost
   function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
   function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
@@ -491,10 +562,15 @@
       tapLevel: 1,
       stats: { taps: 0, kills: 0, bossKills: 0 },
       allies: newAllies(),
-      buffs: { team: 0, tap: 0 },  // оставшееся время баффов, с (не сохраняется)
-      critChanceLevel: 0,
-      critMultLevel: 0,
+      buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
       abilities: newAbilities(),
+      // постоянное (переживёт ритуал): коллекция, билеты, гарантии, отряд
+      heroes: newHeroes(),
+      squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
+      tickets: 0,
+      ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
+      pity: { a: 0, s: 0 },
+      reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
       enemy: null,
@@ -511,6 +587,11 @@
     for (const a of CONFIG.abilities) o[a.id] = { cd: 0, active: 0, auto: false, acc: 0 };
     return o;
   }
+  function newHeroes() {
+    const o = {};
+    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0 };
+    return o;
+  }
   function newAllies() {
     const o = {};
     // cd — перезарядка атаки, ult — накопленный заряд ультимейта, с (оба не сохраняются)
@@ -521,19 +602,18 @@
   function spawn(s) {
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const hp = enemyMaxHp(s.floor, isBoss);
-    s.enemy = { hp, maxHp: hp, isBoss, alive: true, mark: 0, name: enemyName(s.floor, s.enemyIndex, isBoss) };
+    s.enemy = { hp, maxHp: hp, isBoss, alive: true, mark: 0, markPower: 1, name: enemyName(s.floor, s.enemyIndex, isBoss) };
     s.bossTimeLeft = isBoss ? CONFIG.bossTimeSec : 0;
     s.respawn = 0;
   }
 
   // ---------- действия ----------
   // Множители от ультимейтов: Ярость — весь урон отряда, Разрез — тапы, Метка — урон по врагу
-  function buffDef(kind) { return CONFIG.allies.find(a => a.ult.kind === kind).ult; }
   function damageMult(s, source) {
     let m = 1;
-    if (s.buffs.team > 0) m *= buffDef('teamBuff').power;
-    if (source === 'tap' && s.buffs.tap > 0) m *= buffDef('tapBuff').power;
-    if (s.enemy.mark > 0) m *= buffDef('mark').power;
+    if (s.buffs.team > 0) m *= s.buffs.teamPower;
+    if (source === 'tap' && s.buffs.tap > 0) m *= s.buffs.tapPower;
+    if (s.enemy.mark > 0) m *= s.enemy.markPower;
     return m;
   }
 
@@ -571,6 +651,12 @@
         s.gold += bonus;
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
+      if (s.floor > s.ticketFloor) {
+        s.ticketFloor = s.floor;
+        const n = ticketsForFloor(s.floor);
+        s.tickets += n;
+        if (n) events.push({ type: 'tickets', n, floor: s.floor });
+      }
       s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
       s.floor += 1;
       s.enemyIndex = 1;
@@ -588,7 +674,7 @@
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
     if (s.enemy.alive) s.enemy.mark = Math.max(0, s.enemy.mark - dt);
-    for (const a of CONFIG.allies) {
+    for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
     }
@@ -599,15 +685,15 @@
       return events;
     }
     // Ультимейты срабатывают автоматически, как только заряжены и враг жив
-    for (const a of CONFIG.allies) {
+    for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
       st.ult = 0;
       fireUlt(s, a, events);
     }
     if (!s.enemy.alive) return events;
-    // Автоатаки союзников: перезарядка идёт только пока враг жив
-    for (const a of CONFIG.allies) {
+    // Автоатаки отряда: перезарядка идёт только пока враг жив
+    for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level <= 0) continue;
       st.cd -= dt;
@@ -616,6 +702,12 @@
         dealDamage(s, allyDps(s, a.id) * a.attackInterval, a.id, events);
       }
       if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
+    }
+    // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
+    const rd = reserveDps(s);
+    if (rd > 0) {
+      s.reserveAcc += dt;
+      if (s.reserveAcc >= 1) { s.reserveAcc -= 1; dealDamage(s, rd, 'reserve', events); if (!s.enemy.alive) return events; }
     }
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
@@ -633,9 +725,9 @@
     const u = a.ult;
     events.push({ type: 'ult', id: a.id, name: u.name, kind: u.kind });
     if (u.kind === 'nuke') dealDamage(s, allyDps(s, a.id) * u.power, 'ult:' + a.id, events);
-    else if (u.kind === 'teamBuff') s.buffs.team = u.duration;
-    else if (u.kind === 'tapBuff') s.buffs.tap = u.duration;
-    else if (u.kind === 'mark') s.enemy.mark = u.duration;
+    else if (u.kind === 'teamBuff') { s.buffs.team = u.duration; s.buffs.teamPower = u.power; }
+    else if (u.kind === 'tapBuff') { s.buffs.tap = u.duration; s.buffs.tapPower = u.power; }
+    else if (u.kind === 'mark') { s.enemy.mark = u.duration; s.enemy.markPower = u.power; }
   }
 
   function challengeBoss(s) {
@@ -693,13 +785,71 @@
   }
 
   function buyAlly(s, id, n) {
-    if (!allyDef(id)) return false;
+    if (!allyDef(id) || !s.heroes[id].unlocked) return false;
     const count = n === 'max' ? allyMax(s, id) : n;
     if (!Number.isInteger(count) || count <= 0) return false;
     const cost = allyCost(s, id, count);
     if (cost > s.gold) return false;
     s.gold -= cost;
     s.allies[id].level += count;
+    return true;
+  }
+
+  // ---------- портал, звёзды, отряд ----------
+  function ticketsForFloor(f) {
+    const p = CONFIG.portal;
+    return f % 10 === 0 ? p.ticketsPerTenth : f % 5 === 0 ? p.ticketsPerFifth : 0;
+  }
+  const RANK = r => CONFIG.rarities.indexOf(r);
+  function rollRarity(s, minRank) {
+    const odds = CONFIG.portal.odds;
+    const pool = CONFIG.rarities.filter(r => RANK(r) >= minRank);
+    const total = pool.reduce((x, r) => x + odds[r], 0);
+    let roll = s.rng() * total;
+    for (const r of pool) { roll -= odds[r]; if (roll < 0) return r; }
+    return pool[pool.length - 1];
+  }
+  // n призывов за n билетов. Гарантии: S+ каждые pityS, A+ каждые pityA призывов без них.
+  function summon(s, n) {
+    const p = CONFIG.portal;
+    if (!Number.isInteger(n) || n <= 0 || s.tickets < n) return null;
+    s.tickets -= n;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      s.pity.a++; s.pity.s++;
+      const min = s.pity.s >= p.pityS ? RANK('S') : s.pity.a >= p.pityA ? RANK('A') : 0;
+      const rarity = rollRarity(s, min);
+      if (RANK(rarity) >= RANK('A')) s.pity.a = 0;
+      if (RANK(rarity) >= RANK('S')) s.pity.s = 0;
+      const pool = CONFIG.allies.filter(a => a.rarity === rarity);
+      const hero = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
+      const h = s.heroes[hero.id];
+      const isNew = !h.unlocked;
+      if (isNew) h.unlocked = true; else h.copies++;
+      out.push({ id: hero.id, rarity, isNew });
+    }
+    return out;
+  }
+  function starCost(s, id) {
+    const st = s.heroes[id].stars;
+    return st >= CONFIG.maxStars ? null : CONFIG.starCopies[st];
+  }
+  function starUp(s, id) {
+    const h = s.heroes[id], need = h && starCost(s, id);
+    if (!h || !h.unlocked || need == null || h.copies < need) return false;
+    h.copies -= need; h.stars++;
+    return true;
+  }
+  function squadAdd(s, id) {
+    if (!allyDef(id) || !s.heroes[id].unlocked || inSquad(s, id) || s.squad.length >= CONFIG.squadSize) return false;
+    s.squad.push(id);
+    const a = s.allies[id]; a.cd = allyDef(id).attackInterval;
+    return true;
+  }
+  function squadRemove(s, id) {
+    const i = s.squad.indexOf(id);
+    if (i < 0) return false;
+    s.squad.splice(i, 1);
     return true;
   }
 
@@ -711,8 +861,9 @@
       enemyIndex: s.enemyIndex, farming: s.farming,
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
-      critChanceLevel: s.critChanceLevel, critMultLevel: s.critMultLevel,
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
+      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars }])),
+      squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       savedAt: Date.now(),
     });
   }
@@ -723,6 +874,13 @@
     if (!d || typeof d !== 'object') return null;
     if (d.v === 1) { d.v = 2; d.allies = {}; }          // миграция 0.2 → 0.3: союзников ещё не было
     if (d.v === 2) { d.v = 3; d.critChanceLevel = 0; d.critMultLevel = 0; d.abilities = {}; }   // 0.5 → 0.6
+    if (d.v === 3) {                                       // 0.6 → 0.7: коллекция героев и портал
+      d.v = 4;
+      d.heroes = Object.fromEntries(CONFIG.allies.filter(a => a.starter).map(a => [a.id, { copies: 0, stars: 0 }]));
+      d.squad = CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize);
+      let t = 0; for (let f = 1; f <= (d.highestCleared | 0); f++) t += ticketsForFloor(f);   // билеты за уже пройденных боссов
+      d.tickets = t; d.ticketFloor = d.highestCleared | 0; d.pity = { a: 0, s: 0 };
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -743,8 +901,10 @@
       if (!int(lv, 0)) return null;
       s.allies[a.id].level = lv;
     }
-    if (!int(d.critChanceLevel, 0) || d.critChanceLevel > CONFIG.crit.maxChanceLevel || !int(d.critMultLevel, 0)) return null;
-    s.critChanceLevel = d.critChanceLevel; s.critMultLevel = d.critMultLevel;
+    // Прокачка критов за золото убрана: возвращаем потраченное золото (сохранения 0.6)
+    const rf = CONFIG.legacyCritRefund;
+    if (int(d.critChanceLevel, 1)) s.gold += seriesCost(rf.chanceCost, rf.chanceGrowth, 0, d.critChanceLevel);
+    if (int(d.critMultLevel, 1)) s.gold += seriesCost(rf.multCost, rf.multGrowth, 0, d.critMultLevel);
     const ab = d.abilities && typeof d.abilities === 'object' ? d.abilities : {};
     for (const a of CONFIG.abilities) {
       const x = ab[a.id];
@@ -753,6 +913,22 @@
       s.abilities[a.id].cd = isFinite(cd) ? Math.min(Math.max(0, cd), a.cooldown) : 0;
       s.abilities[a.id].auto = !!x.auto;
     }
+    // коллекция
+    if (!d.heroes || typeof d.heroes !== 'object') return null;
+    for (const a of CONFIG.allies) {
+      const h = d.heroes[a.id];
+      s.heroes[a.id] = { unlocked: !!h || !!a.starter, copies: 0, stars: 0 };
+      if (!h) continue;
+      if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars) return null;
+      s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars;
+    }
+    if (!Array.isArray(d.squad) || d.squad.length > CONFIG.squadSize) return null;
+    s.squad = [];
+    for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
+    if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
+    s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
+    for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
@@ -786,8 +962,9 @@
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
-    damageMult, critChance, critMult, critCost, critMax, buyCrit,
+    damageMult, critChance, critMult,
     useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
+    summon, starUp, starCost, starMult, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };
@@ -808,11 +985,25 @@
     blades: '<path d="M70 70 L98 44" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/><path d="M68 84 L100 72" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>',
   };
   const ALLY_VIS = {
-    irene: { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow',    pos: 'left:2%',   side: 'L', back: false },
-    borg:  { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe',    pos: 'right:2%',  side: 'R', back: false },
-    lia:   { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff',  pos: 'left:7%',  side: 'L', back: true },
-    kael:  { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades', pos: 'right:7%', side: 'R', back: true },
+    irene:  { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow' },
+    borg:   { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe' },
+    lia:    { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff' },
+    kael:   { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades' },
+    garret: { body: '#3a3a2a', hood: '#2c2c1e', eye: '#e6e6b0', icon: '🛡', iconBg: '#36361e', weapon: 'axe' },
+    saya:   { body: '#1f4a2c', hood: '#163a20', eye: '#9dffb8', icon: '🔪', iconBg: '#1e4628', weapon: 'blades' },
+    drake:  { body: '#1f2c4a', hood: '#16203a', eye: '#8fb8ff', icon: '🔱', iconBg: '#1e2a46', weapon: 'staff' },
+    noa:    { body: '#2a2a4a', hood: '#1f1f3a', eye: '#d8e6ff', icon: '⚡', iconBg: '#24244a', weapon: 'staff' },
+    velma:  { body: '#2a3a2a', hood: '#1e2c1e', eye: '#b8ff8f', icon: '💀', iconBg: '#223a22', weapon: 'staff' },
+    ragnar: { body: '#3a2a3a', hood: '#2c1e2c', eye: '#ff8fb8', icon: '⚔', iconBg: '#3a223a', weapon: 'axe' },
+    seiren: { body: '#1f3a4a', hood: '#16303a', eye: '#8fffff', icon: '🌪', iconBg: '#1e3a46', weapon: 'staff' },
+    azrael: { body: '#4a3a1f', hood: '#3a2c16', eye: '#fff0a0', icon: '🪽', iconBg: '#46381e', weapon: 'blades' },
   };
+  // Слоты отряда: двое по бокам впереди, двое позади
+  const SLOTS = [
+    { pos: 'left:2%', side: 'L', back: false }, { pos: 'right:2%', side: 'R', back: false },
+    { pos: 'left:7%', side: 'L', back: true },  { pos: 'right:7%', side: 'R', back: true },
+  ];
+
   function allySvg(v) {
     return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' +
       '<path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="' + v.body + '" stroke="#0a0a10" stroke-width="3"/>' +
@@ -826,8 +1017,7 @@
     for (const a of CFG.allies) {
       const v = ALLY_VIS[a.id];
       const sp = document.createElement('div');
-      sp.className = 'ally ' + v.side + (v.back ? ' back' : '');
-      sp.style.cssText = v.pos;
+      sp.className = 'ally';
       sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div><div class="ultBar" style="color:' + v.eye + '"><i></i></div>';
       layer.appendChild(sp);
       const card = document.createElement('div');
@@ -837,7 +1027,7 @@
       cards.appendChild(card);
       const btn = card.querySelector('.buy');
       btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, mult)) { save(); render(); } });
-      allyUi[a.id] = { ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+      allyUi[a.id] = { card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
   const SAVE_KEY = 'prizvannyy_v2_save';
@@ -915,6 +1105,7 @@
           dmgLog.push([performance.now(), e.dmg, 'tap']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
           fx('spark', x, y, null, 300);
+          if (e.crit) fx('critFlash', x, y, null, 160);
           fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
@@ -925,7 +1116,9 @@
             d.style.color = u.color;
           } else if (u) {
             u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
-            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
+            const dx = r.width * (0.38 + Math.random() * 0.24), dy = r.height * (0.42 + Math.random() * 0.14);
+            if (e.crit) fx('critFlash', dx, dy, null, 160);
+            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), dx, dy, fmt(e.dmg), 700);
             if (!e.crit) d.style.color = u.color;
           }
         }
@@ -934,6 +1127,8 @@
         restartAnim('dead');
         fx('dmg gold', r.width / 2, r.height * 0.35, '+' + fmt(e.gold) + ' ◆', 700);
         if (e.boss) save();
+      } else if (e.type === 'tickets') {
+        setTimeout(() => toast('Билеты портала<small>+' + e.n + ' 🎟</small>'), 1700);
       } else if (e.type === 'firstClear') {
         toast('Этаж ' + e.floor + ' пройден впервые!<small>+' + fmt(e.gold) + ' ◆</small>');
       } else if (e.type === 'bossFail') {
@@ -981,8 +1176,6 @@
   }));
   el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
-  $('buyChance').addEventListener('click', () => { if (C.buyCrit(s, 'chance', mult)) { save(); render(); } });
-  $('buyMult').addEventListener('click', () => { if (C.buyCrit(s, 'mult', mult)) { save(); render(); } });
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
@@ -1028,7 +1221,7 @@
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
     anyAffordable = false;
-    renderCrits();
+    renderTabs();
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -1036,11 +1229,21 @@
       const u = allyUi[a.id], lv = s.allies[a.id].level;
       const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : mult;
       const acost = C.allyCost(s, a.id, an);
-      u.title.textContent = a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role);
       u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id)) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an)) + '</b>' + msHint(lv)
                            : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an)) + '</b>';
       setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
-      u.sprite.classList.toggle('on', lv > 0);
+      const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
+      u.card.style.display = unlocked ? '' : 'none';
+      u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
+      u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role) +
+        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв ' + Math.round(CFG.reserveShare * 100) + '%</span>');
+      // фигура на арене — только у героя в отряде и нанятого
+      const slot = SLOTS[sq];
+      u.sprite.classList.toggle('on', sq >= 0 && lv > 0);
+      if (slot) {
+        u.sprite.className = 'ally ' + slot.side + (slot.back ? ' back' : '') + (sq >= 0 && lv > 0 ? ' on' : '');
+        u.sprite.style.cssText = slot.pos;
+      }
     }
     $('canBuy').classList.toggle('on', anyAffordable);
   }
@@ -1082,28 +1285,82 @@
     heroEl.classList.toggle('empowered', s.buffs.tap > 0);
   }
 
-  function renderCrits() {
-    const c = CFG.crit;
-    const pct = x => Math.round(x * 100) + '%';
-    const baseCh = c.baseChance + s.critChanceLevel * c.chancePerLevel;
-    $('chanceTitle').textContent = 'Шанс крита · ' + pct(baseCh);
-    const left = c.maxChanceLevel - s.critChanceLevel;
-    if (left <= 0) {
-      $('chanceSub').innerHTML = '<span class="dim">Максимум от прокачки</span>';
-      const b = $('buyChance'); b.disabled = true; b.innerHTML = 'Максимум';
-    } else {
-      const n = Math.min(left, mult === 'max' ? Math.max(1, C.critMax(s, 'chance')) : mult);
-      const cost = C.critCost(s, 'chance', n);
-      $('chanceSub').innerHTML = pct(baseCh) + ' → <b>' + pct(baseCh + n * c.chancePerLevel) + '</b><span class="dim"> · потолок ' + pct(c.baseChance + c.maxChanceLevel * c.chancePerLevel) + '</span>';
-      setBuy($('buyChance'), cost <= s.gold, n, cost, '+' + fmt(n) + ' ур.');
-    }
-    const m = C.critMult(s);
-    const mn = mult === 'max' ? Math.max(1, C.critMax(s, 'mult')) : mult;
-    const mcost = C.critCost(s, 'mult', mn);
-    $('multTitle').textContent = 'Крит-урон · ×' + m.toFixed(1);
-    $('multSub').innerHTML = '×' + m.toFixed(1) + ' → <b>×' + (m + mn * c.multPerLevel).toFixed(1) + '</b>';
-    setBuy($('buyMult'), mcost <= s.gold, mn, mcost, '+' + fmt(mn) + ' ур.');
+  // ---------- вкладки: коллекция героев и портал ----------
+  let tab = 'up';
+  let lastPull = [], pullShown = null, heroesHtml = '';
+  const RANKS = CFG.rarities;
+  function renderTabs() {
+    $('panel').dataset.tab = tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    $('ticketDot').classList.toggle('on', s.tickets > 0);
+    if (tab === 'heroes') renderHeroes();
+    if (tab === 'portal') renderPortal();
   }
+  function renderHeroes() {
+    const list = CFG.allies.slice().sort((a, b) => {
+      const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
+      if (ua !== ub) return ua ? -1 : 1;
+      return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
+    });
+    let html = '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — в бою. Нанятые вне отряда дают ' +
+      Math.round(CFG.reserveShare * 100) + '% урона. Звёзды — за дубликаты из портала.</div>';
+    for (const a of list) {
+      const h = s.heroes[a.id], v = ALLY_VIS[a.id];
+      if (!h.unlocked) {
+        html += '<div class="hRow locked r-' + a.rarity + '"><div class="hIcon" style="background:#1a1420">?</div><div class="hInfo">' +
+          '<div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ???</div><div class="hSub">Откройте в портале</div></div></div>';
+        continue;
+      }
+      const sq = C.inSquad(s, a.id), need = C.starCost(s, a.id);
+      const stars = '★ ' + h.stars + '/' + CFG.maxStars;
+      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
+        '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
+        (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
+        '<div class="hSub"><span class="stars">' + stars + '</span> · копий ' + h.copies + ' · ' + a.ult.name + '</div></div>' +
+        (need == null ? '<button class="hBtn" disabled>★ max</button>'
+                      : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
+        (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'
+            : '<button class="hBtn go" data-in="' + a.id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
+        '</div>';
+    }
+    if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
+  }
+  function renderPortal() {
+    const P = CFG.portal;
+    $('ticketCount').textContent = fmt(s.tickets);
+    $('pityInfo').textContent = 'A+ гарантия через ' + (P.pityA - s.pity.a) + ' · S+ через ' + (P.pityS - s.pity.s);
+    $('pull1').disabled = s.tickets < 1;
+    $('pull10').disabled = s.tickets < 10;
+    const total = Object.values(P.odds).reduce((a, b) => a + b, 0);
+    $('oddsInfo').innerHTML = 'Шансы: ' + RANKS.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+      '<br>Билеты: за первое прохождение босса каждого 5-го этажа, на 10-м — больше.';
+    if (pullShown === lastPull) return;
+    pullShown = lastPull;
+    $('pullResults').innerHTML = lastPull.map((x, i) => {
+      const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id];
+      return '<div class="res r-' + x.rarity + '" style="animation-delay:' + (i * 0.05) + 's"><div class="ri">' + v.icon + '</div><div class="rn">' + a.name +
+        '</div><div>' + (x.isNew ? '<span class="new">НОВЫЙ</span>' : '+1 копия') + '</div></div>';
+    }).join('');
+  }
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+  $('heroesTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    let ok = false;
+    if (b.dataset.star) ok = C.starUp(s, b.dataset.star);
+    if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
+    if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
+    if (ok) { save(); render(); }
+  });
+  function pull(n) {
+    const r = C.summon(s, n);
+    if (!r) return;
+    lastPull = r; save(); render();
+    const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);
+    if (RANKS.indexOf(best.rarity) >= RANKS.indexOf('A')) toast('Редкий герой!<small>' + best.rarity + ' · ' + CFG.allies.find(a => a.id === best.id).name + '</small>');
+  }
+  $('pull1').addEventListener('click', () => pull(1));
+  $('pull10').addEventListener('click', () => pull(10));
+
 
   // ---------- способности главного героя ----------
   const ABIL_ICON = { flurry: '⚔', hunt: '🎯' };

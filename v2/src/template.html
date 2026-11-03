@@ -158,6 +158,8 @@
   #statsMore.show { display: block; }
   .dmg.auto { font-size: 18px; text-shadow: 0 2px 0 #000, 0 0 6px currentColor; }
   /* союзник на арене (временная заглушка) */
+  #allyCards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  #allyCards .card + .card { margin-top: 0; }
   #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
   /* главный герой — впереди по центру, вид со спины (временная заглушка) */
@@ -183,7 +185,7 @@
   #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
   .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
   /* криты */
-  .dmg.crit { font-size: 30px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
+  .dmg.crit { font-size: 27px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
   .dmg.auto.crit { font-size: 22px; }
   /* панель способностей главного героя — вне арены, чтобы не перехватывать тапы */
   #abilityBar { display: flex; gap: 8px; padding: 6px 12px; background: var(--bg1); border-top: 1px solid var(--line); position: relative; z-index: 2; }
@@ -200,6 +202,52 @@
   .abilCd { position: absolute; left: 0; top: 0; bottom: 0; background: #00000055; pointer-events: none; }
   .abilAuto { width: 40px; flex: none; font-size: 10px; font-weight: 800; color: var(--muted); border-left: 1px solid var(--line); }
   .abilAuto.on { color: #1a0a08; background: var(--ok); }
+  /* вспышка крита — коротко и без перегрузки */
+  .critFlash { position: absolute; width: 70px; height: 70px; border-radius: 50%; pointer-events: none; transform: translate(-50%,-50%) scale(.3);
+    background: radial-gradient(circle, #fff6 0%, #ffd36b55 40%, transparent 70%); animation: cflash .16s ease-out forwards; z-index: 3; }
+  @keyframes cflash { to { transform: translate(-50%,-50%) scale(1.2); opacity: 0; } }
+  /* вкладки панели */
+  #tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tab { flex: 1; padding: 7px 4px; border-radius: 9px; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--panel2); border: 1px solid var(--line); }
+  .tab.on { color: var(--text); border-color: var(--accent); }
+  #ticketDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); vertical-align: middle; }
+  #ticketDot.on { display: inline-block; }
+  #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
+  .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab { display: block; }
+  #panel[data-tab="heroes"] #cards, #panel[data-tab="portal"] #cards,
+  #panel[data-tab="heroes"] #mult, #panel[data-tab="portal"] #mult { display: none; }
+  /* редкости */
+  .r-E { --r: #9a9aa8; } .r-D { --r: #6be3a0; } .r-C { --r: #6bb8ff; } .r-B { --r: #b98cff; }
+  .r-A { --r: #ffa64a; } .r-S { --r: #ff5a6a; } .r-GOD { --r: #ffd36b; }
+  .rar { display: inline-block; min-width: 22px; padding: 0 4px; border-radius: 5px; font-size: 10px; font-weight: 800; text-align: center; color: #120a18; background: var(--r); }
+  .badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-left: 4px; vertical-align: middle; }
+  .badge.sq { background: #6be3a033; color: var(--ok); } .badge.rs { background: #ffffff14; color: var(--muted); }
+  .hRow { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 11px; background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--r); }
+  .hRow + .hRow { margin-top: 6px; }
+  .hRow.locked { opacity: .5; }
+  .hIcon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; flex: none; }
+  .hInfo { flex: 1; min-width: 0; }
+  .hName { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hSub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .stars { color: var(--gold); letter-spacing: -1px; }
+  .hBtn { padding: 6px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; background: var(--panel); border: 1px solid var(--line); white-space: nowrap; }
+  .hBtn.go { border-color: var(--accent); color: var(--text); }
+  .hBtn:disabled { opacity: .4; }
+  .hint2 { font-size: 11px; color: var(--muted); margin: 0 2px 6px; }
+  /* портал */
+  .portalHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tickets { font-size: 15px; font-weight: 700; } .tickets b { color: var(--gold); }
+  .pity { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .portalBtns { display: flex; gap: 6px; }
+  .pBtn { padding: 10px 14px; border-radius: 10px; font-weight: 800; background: linear-gradient(180deg, #7a4fc4, #4b2c86); border: 1px solid var(--accent); }
+  .pBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  .odds { font-size: 10px; color: var(--muted); margin: 8px 0; line-height: 1.6; }
+  .results { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .res { border-radius: 9px; padding: 6px 2px; text-align: center; background: var(--panel2); border: 1px solid var(--r); font-size: 10px; animation: pop .3s ease-out backwards; }
+  .res .ri { font-size: 18px; } .res .rn { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .new { color: var(--gold); font-weight: 800; }
+  @keyframes pop { from { transform: scale(.5); opacity: 0; } }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -287,6 +335,11 @@
         <button class="multBtn" data-n="max">MAX</button>
       </div>
     </div>
+    <div id="tabs">
+      <button class="tab on" data-tab="up">Улучшения</button>
+      <button class="tab" data-tab="heroes">Герои</button>
+      <button class="tab" data-tab="portal">Портал <span id="ticketDot"></span></button>
+    </div>
     <div id="cards">
     <div class="card">
       <div class="cardIcon">⚔</div>
@@ -296,17 +349,16 @@
       </div>
       <button class="buy" id="buyTap"></button>
     </div>
-    <div class="card">
-      <div class="cardIcon" style="background:#46381e">🎯</div>
-      <div class="cardInfo"><div class="cardTitle" id="chanceTitle"></div><div class="cardSub" id="chanceSub"></div></div>
-      <button class="buy" id="buyChance"></button>
-    </div>
-    <div class="card">
-      <div class="cardIcon" style="background:#461e24">💥</div>
-      <div class="cardInfo"><div class="cardTitle" id="multTitle"></div><div class="cardSub" id="multSub"></div></div>
-      <button class="buy" id="buyMult"></button>
-    </div>
     <div id="allyCards"></div>
+    </div>
+    <div id="heroesTab" class="tabBody"></div>
+    <div id="portalTab" class="tabBody">
+      <div class="portalHead">
+        <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
+        <div class="portalBtns"><button class="pBtn" id="pull1">×1</button><button class="pBtn" id="pull10">×10</button></div>
+      </div>
+      <div class="odds" id="oddsInfo"></div>
+      <div class="results" id="pullResults"></div>
     </div>
   </div>
 
@@ -318,7 +370,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.6</div>
+  <div id="version">v0.7</div>
 </div>
 
 <script>
@@ -336,11 +388,25 @@
     blades: '<path d="M70 70 L98 44" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/><path d="M68 84 L100 72" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>',
   };
   const ALLY_VIS = {
-    irene: { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow',    pos: 'left:2%',   side: 'L', back: false },
-    borg:  { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe',    pos: 'right:2%',  side: 'R', back: false },
-    lia:   { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff',  pos: 'left:7%',  side: 'L', back: true },
-    kael:  { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades', pos: 'right:7%', side: 'R', back: true },
+    irene:  { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow' },
+    borg:   { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe' },
+    lia:    { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff' },
+    kael:   { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades' },
+    garret: { body: '#3a3a2a', hood: '#2c2c1e', eye: '#e6e6b0', icon: '🛡', iconBg: '#36361e', weapon: 'axe' },
+    saya:   { body: '#1f4a2c', hood: '#163a20', eye: '#9dffb8', icon: '🔪', iconBg: '#1e4628', weapon: 'blades' },
+    drake:  { body: '#1f2c4a', hood: '#16203a', eye: '#8fb8ff', icon: '🔱', iconBg: '#1e2a46', weapon: 'staff' },
+    noa:    { body: '#2a2a4a', hood: '#1f1f3a', eye: '#d8e6ff', icon: '⚡', iconBg: '#24244a', weapon: 'staff' },
+    velma:  { body: '#2a3a2a', hood: '#1e2c1e', eye: '#b8ff8f', icon: '💀', iconBg: '#223a22', weapon: 'staff' },
+    ragnar: { body: '#3a2a3a', hood: '#2c1e2c', eye: '#ff8fb8', icon: '⚔', iconBg: '#3a223a', weapon: 'axe' },
+    seiren: { body: '#1f3a4a', hood: '#16303a', eye: '#8fffff', icon: '🌪', iconBg: '#1e3a46', weapon: 'staff' },
+    azrael: { body: '#4a3a1f', hood: '#3a2c16', eye: '#fff0a0', icon: '🪽', iconBg: '#46381e', weapon: 'blades' },
   };
+  // Слоты отряда: двое по бокам впереди, двое позади
+  const SLOTS = [
+    { pos: 'left:2%', side: 'L', back: false }, { pos: 'right:2%', side: 'R', back: false },
+    { pos: 'left:7%', side: 'L', back: true },  { pos: 'right:7%', side: 'R', back: true },
+  ];
+
   function allySvg(v) {
     return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' +
       '<path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="' + v.body + '" stroke="#0a0a10" stroke-width="3"/>' +
@@ -354,8 +420,7 @@
     for (const a of CFG.allies) {
       const v = ALLY_VIS[a.id];
       const sp = document.createElement('div');
-      sp.className = 'ally ' + v.side + (v.back ? ' back' : '');
-      sp.style.cssText = v.pos;
+      sp.className = 'ally';
       sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div><div class="ultBar" style="color:' + v.eye + '"><i></i></div>';
       layer.appendChild(sp);
       const card = document.createElement('div');
@@ -365,7 +430,7 @@
       cards.appendChild(card);
       const btn = card.querySelector('.buy');
       btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, mult)) { save(); render(); } });
-      allyUi[a.id] = { ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+      allyUi[a.id] = { card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
   const SAVE_KEY = 'prizvannyy_v2_save';
@@ -443,6 +508,7 @@
           dmgLog.push([performance.now(), e.dmg, 'tap']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
           fx('spark', x, y, null, 300);
+          if (e.crit) fx('critFlash', x, y, null, 160);
           fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
@@ -453,7 +519,9 @@
             d.style.color = u.color;
           } else if (u) {
             u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
-            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
+            const dx = r.width * (0.38 + Math.random() * 0.24), dy = r.height * (0.42 + Math.random() * 0.14);
+            if (e.crit) fx('critFlash', dx, dy, null, 160);
+            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), dx, dy, fmt(e.dmg), 700);
             if (!e.crit) d.style.color = u.color;
           }
         }
@@ -462,6 +530,8 @@
         restartAnim('dead');
         fx('dmg gold', r.width / 2, r.height * 0.35, '+' + fmt(e.gold) + ' ◆', 700);
         if (e.boss) save();
+      } else if (e.type === 'tickets') {
+        setTimeout(() => toast('Билеты портала<small>+' + e.n + ' 🎟</small>'), 1700);
       } else if (e.type === 'firstClear') {
         toast('Этаж ' + e.floor + ' пройден впервые!<small>+' + fmt(e.gold) + ' ◆</small>');
       } else if (e.type === 'bossFail') {
@@ -509,8 +579,6 @@
   }));
   el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
-  $('buyChance').addEventListener('click', () => { if (C.buyCrit(s, 'chance', mult)) { save(); render(); } });
-  $('buyMult').addEventListener('click', () => { if (C.buyCrit(s, 'mult', mult)) { save(); render(); } });
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
@@ -556,7 +624,7 @@
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
     anyAffordable = false;
-    renderCrits();
+    renderTabs();
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -564,11 +632,21 @@
       const u = allyUi[a.id], lv = s.allies[a.id].level;
       const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : mult;
       const acost = C.allyCost(s, a.id, an);
-      u.title.textContent = a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role);
       u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id)) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an)) + '</b>' + msHint(lv)
                            : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an)) + '</b>';
       setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
-      u.sprite.classList.toggle('on', lv > 0);
+      const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
+      u.card.style.display = unlocked ? '' : 'none';
+      u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
+      u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role) +
+        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв ' + Math.round(CFG.reserveShare * 100) + '%</span>');
+      // фигура на арене — только у героя в отряде и нанятого
+      const slot = SLOTS[sq];
+      u.sprite.classList.toggle('on', sq >= 0 && lv > 0);
+      if (slot) {
+        u.sprite.className = 'ally ' + slot.side + (slot.back ? ' back' : '') + (sq >= 0 && lv > 0 ? ' on' : '');
+        u.sprite.style.cssText = slot.pos;
+      }
     }
     $('canBuy').classList.toggle('on', anyAffordable);
   }
@@ -610,28 +688,82 @@
     heroEl.classList.toggle('empowered', s.buffs.tap > 0);
   }
 
-  function renderCrits() {
-    const c = CFG.crit;
-    const pct = x => Math.round(x * 100) + '%';
-    const baseCh = c.baseChance + s.critChanceLevel * c.chancePerLevel;
-    $('chanceTitle').textContent = 'Шанс крита · ' + pct(baseCh);
-    const left = c.maxChanceLevel - s.critChanceLevel;
-    if (left <= 0) {
-      $('chanceSub').innerHTML = '<span class="dim">Максимум от прокачки</span>';
-      const b = $('buyChance'); b.disabled = true; b.innerHTML = 'Максимум';
-    } else {
-      const n = Math.min(left, mult === 'max' ? Math.max(1, C.critMax(s, 'chance')) : mult);
-      const cost = C.critCost(s, 'chance', n);
-      $('chanceSub').innerHTML = pct(baseCh) + ' → <b>' + pct(baseCh + n * c.chancePerLevel) + '</b><span class="dim"> · потолок ' + pct(c.baseChance + c.maxChanceLevel * c.chancePerLevel) + '</span>';
-      setBuy($('buyChance'), cost <= s.gold, n, cost, '+' + fmt(n) + ' ур.');
-    }
-    const m = C.critMult(s);
-    const mn = mult === 'max' ? Math.max(1, C.critMax(s, 'mult')) : mult;
-    const mcost = C.critCost(s, 'mult', mn);
-    $('multTitle').textContent = 'Крит-урон · ×' + m.toFixed(1);
-    $('multSub').innerHTML = '×' + m.toFixed(1) + ' → <b>×' + (m + mn * c.multPerLevel).toFixed(1) + '</b>';
-    setBuy($('buyMult'), mcost <= s.gold, mn, mcost, '+' + fmt(mn) + ' ур.');
+  // ---------- вкладки: коллекция героев и портал ----------
+  let tab = 'up';
+  let lastPull = [], pullShown = null, heroesHtml = '';
+  const RANKS = CFG.rarities;
+  function renderTabs() {
+    $('panel').dataset.tab = tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    $('ticketDot').classList.toggle('on', s.tickets > 0);
+    if (tab === 'heroes') renderHeroes();
+    if (tab === 'portal') renderPortal();
   }
+  function renderHeroes() {
+    const list = CFG.allies.slice().sort((a, b) => {
+      const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
+      if (ua !== ub) return ua ? -1 : 1;
+      return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
+    });
+    let html = '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — в бою. Нанятые вне отряда дают ' +
+      Math.round(CFG.reserveShare * 100) + '% урона. Звёзды — за дубликаты из портала.</div>';
+    for (const a of list) {
+      const h = s.heroes[a.id], v = ALLY_VIS[a.id];
+      if (!h.unlocked) {
+        html += '<div class="hRow locked r-' + a.rarity + '"><div class="hIcon" style="background:#1a1420">?</div><div class="hInfo">' +
+          '<div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ???</div><div class="hSub">Откройте в портале</div></div></div>';
+        continue;
+      }
+      const sq = C.inSquad(s, a.id), need = C.starCost(s, a.id);
+      const stars = '★ ' + h.stars + '/' + CFG.maxStars;
+      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
+        '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
+        (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
+        '<div class="hSub"><span class="stars">' + stars + '</span> · копий ' + h.copies + ' · ' + a.ult.name + '</div></div>' +
+        (need == null ? '<button class="hBtn" disabled>★ max</button>'
+                      : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
+        (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'
+            : '<button class="hBtn go" data-in="' + a.id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
+        '</div>';
+    }
+    if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
+  }
+  function renderPortal() {
+    const P = CFG.portal;
+    $('ticketCount').textContent = fmt(s.tickets);
+    $('pityInfo').textContent = 'A+ гарантия через ' + (P.pityA - s.pity.a) + ' · S+ через ' + (P.pityS - s.pity.s);
+    $('pull1').disabled = s.tickets < 1;
+    $('pull10').disabled = s.tickets < 10;
+    const total = Object.values(P.odds).reduce((a, b) => a + b, 0);
+    $('oddsInfo').innerHTML = 'Шансы: ' + RANKS.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+      '<br>Билеты: за первое прохождение босса каждого 5-го этажа, на 10-м — больше.';
+    if (pullShown === lastPull) return;
+    pullShown = lastPull;
+    $('pullResults').innerHTML = lastPull.map((x, i) => {
+      const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id];
+      return '<div class="res r-' + x.rarity + '" style="animation-delay:' + (i * 0.05) + 's"><div class="ri">' + v.icon + '</div><div class="rn">' + a.name +
+        '</div><div>' + (x.isNew ? '<span class="new">НОВЫЙ</span>' : '+1 копия') + '</div></div>';
+    }).join('');
+  }
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+  $('heroesTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    let ok = false;
+    if (b.dataset.star) ok = C.starUp(s, b.dataset.star);
+    if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
+    if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
+    if (ok) { save(); render(); }
+  });
+  function pull(n) {
+    const r = C.summon(s, n);
+    if (!r) return;
+    lastPull = r; save(); render();
+    const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);
+    if (RANKS.indexOf(best.rarity) >= RANKS.indexOf('A')) toast('Редкий герой!<small>' + best.rarity + ' · ' + CFG.allies.find(a => a.id === best.id).name + '</small>');
+  }
+  $('pull1').addEventListener('click', () => pull(1));
+  $('pull10').addEventListener('click', () => pull(10));
+
 
   // ---------- способности главного героя ----------
   const ABIL_ICON = { flurry: '⚔', hunt: '🎯' };
