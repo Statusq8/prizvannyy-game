@@ -182,6 +182,24 @@
   #hero.empowered svg { filter: drop-shadow(0 0 10px #b98cff); }
   #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
   .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
+  /* криты */
+  .dmg.crit { font-size: 30px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
+  .dmg.auto.crit { font-size: 22px; }
+  /* панель способностей главного героя — вне арены, чтобы не перехватывать тапы */
+  #abilityBar { display: flex; gap: 8px; padding: 6px 12px; background: var(--bg1); border-top: 1px solid var(--line); position: relative; z-index: 2; }
+  .abil { flex: 1; display: flex; min-width: 0; height: 44px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); overflow: hidden; }
+  .abilUse { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; text-align: left; position: relative; }
+  .abilIcon { font-size: 18px; flex: none; }
+  .abilText { min-width: 0; }
+  .abilName { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .abilState { font-size: 11px; color: var(--muted); }
+  .abil.ready { border-color: var(--accent); }
+  .abil.ready .abilState { color: var(--ok); }
+  .abil.active { border-color: var(--gold); box-shadow: 0 0 10px #ffd36b40; }
+  .abil.locked { opacity: .45; }
+  .abilCd { position: absolute; left: 0; top: 0; bottom: 0; background: #00000055; pointer-events: none; }
+  .abilAuto { width: 40px; flex: none; font-size: 10px; font-weight: 800; color: var(--muted); border-left: 1px solid var(--line); }
+  .abilAuto.on { color: #1a0a08; background: var(--ok); }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -257,6 +275,7 @@
     <div id="toast"></div>
   </div>
 
+  <div id="abilityBar"></div>
   <div id="panel">
     <button id="panelToggle" aria-label="Свернуть или развернуть улучшения"><span class="bar"></span><span id="toggleLabel">Свернуть</span><span class="chev">▼</span><span id="canBuy"></span></button>
     <div id="goldRow">
@@ -277,6 +296,16 @@
       </div>
       <button class="buy" id="buyTap"></button>
     </div>
+    <div class="card">
+      <div class="cardIcon" style="background:#46381e">🎯</div>
+      <div class="cardInfo"><div class="cardTitle" id="chanceTitle"></div><div class="cardSub" id="chanceSub"></div></div>
+      <button class="buy" id="buyChance"></button>
+    </div>
+    <div class="card">
+      <div class="cardIcon" style="background:#461e24">💥</div>
+      <div class="cardInfo"><div class="cardTitle" id="multTitle"></div><div class="cardSub" id="multSub"></div></div>
+      <button class="buy" id="buyMult"></button>
+    </div>
     <div id="allyCards"></div>
     </div>
   </div>
@@ -289,7 +318,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.5</div>
+  <div id="version">v0.6</div>
 </div>
 
 <script>
@@ -299,7 +328,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 2,
+    saveVersion: 3,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -318,6 +347,17 @@
     milestones: [10, 25, 50, 75, 100],
     milestoneEvery: 25,
     milestoneMult: 3,
+    // Криты — единственные прокачиваемые вторичные статы (GDD §3). Действуют на любой урон.
+    crit: {
+      baseChance: 0.05, chancePerLevel: 0.01, maxChanceLevel: 45,   // потолок шанса 50% от уровней
+      chanceCost: 100, chanceGrowth: 1.22,
+      baseMult: 2, multPerLevel: 0.1, multCost: 150, multGrowth: 1.16,
+    },
+    // Активные способности главного героя: по умолчанию ручные, у каждой свой переключатель автоиспользования (GDD §3)
+    abilities: [
+      { id: 'flurry', name: 'Шквал ударов', unlockFloor: 5, cooldown: 60, duration: 5, tapsPerSec: 10 },
+      { id: 'hunt', name: 'Клеймо охотника', unlockFloor: 15, cooldown: 90, duration: 10, critChanceBonus: 0.5 },
+    ],
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
@@ -373,6 +413,37 @@
   }
   function tapDamageAt(level) { return CONFIG.tapBaseDamage * level * milestoneMultAt(level); }
   function tapDamage(s) { return tapDamageAt(s.tapLevel); }
+
+  // ---------- криты ----------
+  function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
+  function critChance(s) {
+    const c = CONFIG.crit;
+    let ch = c.baseChance + s.critChanceLevel * c.chancePerLevel;
+    if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
+    return Math.min(1, ch);
+  }
+  function critMult(s) { return CONFIG.crit.baseMult + s.critMultLevel * CONFIG.crit.multPerLevel; }
+  function critCost(s, kind, n) {
+    const c = CONFIG.crit;
+    return kind === 'chance' ? seriesCost(c.chanceCost, c.chanceGrowth, s.critChanceLevel, n)
+                             : seriesCost(c.multCost, c.multGrowth, s.critMultLevel, n);
+  }
+  function critMax(s, kind) {
+    const c = CONFIG.crit;
+    if (kind === 'chance') return Math.min(seriesMax(c.chanceCost, c.chanceGrowth, s.critChanceLevel, s.gold), c.maxChanceLevel - s.critChanceLevel);
+    return seriesMax(c.multCost, c.multGrowth, s.critMultLevel, s.gold);
+  }
+  function buyCrit(s, kind, n) {
+    if (kind !== 'chance' && kind !== 'mult') return false;
+    const count = n === 'max' ? critMax(s, kind) : n;
+    if (!Number.isInteger(count) || count <= 0) return false;
+    if (kind === 'chance' && s.critChanceLevel + count > CONFIG.crit.maxChanceLevel) return false;
+    const cost = critCost(s, kind, count);
+    if (cost > s.gold) return false;
+    s.gold -= cost;
+    if (kind === 'chance') s.critChanceLevel += count; else s.critMultLevel += count;
+    return true;
+  }
   function enemyName(floor, index, isBoss) {
     if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
@@ -409,7 +480,7 @@
   function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
 
   // ---------- состояние ----------
-  function newState() {
+  function newState(opts) {
     const s = {
       floor: 1,            // текущий этаж
       maxFloor: 1,         // самый высокий открытый этаж
@@ -421,6 +492,10 @@
       stats: { taps: 0, kills: 0, bossKills: 0 },
       allies: newAllies(),
       buffs: { team: 0, tap: 0 },  // оставшееся время баффов, с (не сохраняется)
+      critChanceLevel: 0,
+      critMultLevel: 0,
+      abilities: newAbilities(),
+      rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
       enemy: null,
       bossTimeLeft: 0,
@@ -430,6 +505,12 @@
     return s;
   }
 
+  function newAbilities() {
+    const o = {};
+    // cd — перезарядка, active — сколько ещё действует, auto — автоиспользование, acc — накопитель шквала
+    for (const a of CONFIG.abilities) o[a.id] = { cd: 0, active: 0, auto: false, acc: 0 };
+    return o;
+  }
   function newAllies() {
     const o = {};
     // cd — перезарядка атаки, ult — накопленный заряд ультимейта, с (оба не сохраняются)
@@ -458,8 +539,10 @@
 
   function dealDamage(s, dmg, source, events) {
     dmg *= damageMult(s, source);
+    const crit = s.rng() < critChance(s);
+    if (crit) dmg *= critMult(s);
     s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
-    events.push({ type: 'hit', dmg, source });
+    events.push({ type: 'hit', dmg, source, crit });
     if (s.enemy.hp <= 0) kill(s, events);
   }
 
@@ -509,6 +592,7 @@
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
     }
+    tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
       s.respawn -= dt;
       if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
@@ -581,6 +665,33 @@
     return true;
   }
 
+  // ---------- способности главного героя ----------
+  function abilityUnlocked(s, id) { return s.maxFloor >= abilityDef(id).unlockFloor; }
+  function abilityReady(s, id) { return abilityUnlocked(s, id) && s.abilities[id].cd <= 0; }
+  function useAbility(s, id) {
+    const def = abilityDef(id);
+    if (!def || !abilityReady(s, id)) return [];
+    const st = s.abilities[id];
+    st.cd = def.cooldown; st.active = def.duration; st.acc = 0;
+    return [{ type: 'ability', id, name: def.name }];
+  }
+  function setAbilityAuto(s, id, on) { if (abilityDef(id)) s.abilities[id].auto = !!on; }
+
+  function tickAbilities(s, dt, events) {
+    for (const def of CONFIG.abilities) {
+      const st = s.abilities[def.id];
+      st.cd = Math.max(0, st.cd - dt);
+      if (st.active > 0) {
+        if (def.id === 'flurry' && s.enemy.alive) {
+          st.acc += dt * def.tapsPerSec;
+          while (st.acc >= 1 && s.enemy.alive) { st.acc -= 1; dealDamage(s, tapDamage(s), 'tap', events); }
+        }
+        st.active = Math.max(0, st.active - dt);
+      }
+      if (st.auto && s.enemy.alive && abilityReady(s, def.id)) events.push(...useAbility(s, def.id));
+    }
+  }
+
   function buyAlly(s, id, n) {
     if (!allyDef(id)) return false;
     const count = n === 'max' ? allyMax(s, id) : n;
@@ -600,6 +711,8 @@
       enemyIndex: s.enemyIndex, farming: s.farming,
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
+      critChanceLevel: s.critChanceLevel, critMultLevel: s.critMultLevel,
+      abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       savedAt: Date.now(),
     });
   }
@@ -609,6 +722,7 @@
     try { d = JSON.parse(str); } catch (e) { return null; }
     if (!d || typeof d !== 'object') return null;
     if (d.v === 1) { d.v = 2; d.allies = {}; }          // миграция 0.2 → 0.3: союзников ещё не было
+    if (d.v === 2) { d.v = 3; d.critChanceLevel = 0; d.critMultLevel = 0; d.abilities = {}; }   // 0.5 → 0.6
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -629,6 +743,16 @@
       if (!int(lv, 0)) return null;
       s.allies[a.id].level = lv;
     }
+    if (!int(d.critChanceLevel, 0) || d.critChanceLevel > CONFIG.crit.maxChanceLevel || !int(d.critMultLevel, 0)) return null;
+    s.critChanceLevel = d.critChanceLevel; s.critMultLevel = d.critMultLevel;
+    const ab = d.abilities && typeof d.abilities === 'object' ? d.abilities : {};
+    for (const a of CONFIG.abilities) {
+      const x = ab[a.id];
+      if (!x) continue;
+      const cd = Number(x.cd);
+      s.abilities[a.id].cd = isFinite(cd) ? Math.min(Math.max(0, cd), a.cooldown) : 0;
+      s.abilities[a.id].auto = !!x.auto;
+    }
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
@@ -643,7 +767,9 @@
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
-    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone, damageMult,
+    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
+    damageMult, critChance, critMult, critCost, critMax, buyCrit,
+    useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };
@@ -771,7 +897,7 @@
           dmgLog.push([performance.now(), e.dmg, 'tap']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
           fx('spark', x, y, null, 300);
-          fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
+          fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const isUlt = e.source.startsWith('ult:');
@@ -781,8 +907,8 @@
             d.style.color = u.color;
           } else if (u) {
             u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
-            const d = fx('dmg auto', r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
-            d.style.color = u.color;
+            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
+            if (!e.crit) d.style.color = u.color;
           }
         }
         restartAnim('hit');
@@ -795,6 +921,13 @@
       } else if (e.type === 'bossFail') {
         toast('Время вышло!<small style="color:var(--muted)">Усились и вызови босса снова</small>');
         save();
+      } else if (e.type === 'ability') {
+        const b = $('ultBanner');
+        b.textContent = 'Призванный · ' + e.name + '!';
+        b.style.color = 'var(--gold)';
+        b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+        heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
+        renderAbilities();
       } else if (e.type === 'ult') {
         const u = allyUi[e.id];
         u.sprite.classList.remove('ulting'); void u.sprite.offsetWidth; u.sprite.classList.add('ulting');
@@ -830,6 +963,8 @@
   }));
   el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
+  $('buyChance').addEventListener('click', () => { if (C.buyCrit(s, 'chance', mult)) { save(); render(); } });
+  $('buyMult').addEventListener('click', () => { if (C.buyCrit(s, 'mult', mult)) { save(); render(); } });
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
@@ -875,6 +1010,7 @@
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
     anyAffordable = false;
+    renderCrits();
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -928,7 +1064,65 @@
     heroEl.classList.toggle('empowered', s.buffs.tap > 0);
   }
 
+  function renderCrits() {
+    const c = CFG.crit;
+    const pct = x => Math.round(x * 100) + '%';
+    const baseCh = c.baseChance + s.critChanceLevel * c.chancePerLevel;
+    $('chanceTitle').textContent = 'Шанс крита · ' + pct(baseCh);
+    const left = c.maxChanceLevel - s.critChanceLevel;
+    if (left <= 0) {
+      $('chanceSub').innerHTML = '<span class="dim">Максимум от прокачки</span>';
+      const b = $('buyChance'); b.disabled = true; b.innerHTML = 'Максимум';
+    } else {
+      const n = Math.min(left, mult === 'max' ? Math.max(1, C.critMax(s, 'chance')) : mult);
+      const cost = C.critCost(s, 'chance', n);
+      $('chanceSub').innerHTML = pct(baseCh) + ' → <b>' + pct(baseCh + n * c.chancePerLevel) + '</b><span class="dim"> · потолок ' + pct(c.baseChance + c.maxChanceLevel * c.chancePerLevel) + '</span>';
+      setBuy($('buyChance'), cost <= s.gold, n, cost, '+' + fmt(n) + ' ур.');
+    }
+    const m = C.critMult(s);
+    const mn = mult === 'max' ? Math.max(1, C.critMax(s, 'mult')) : mult;
+    const mcost = C.critCost(s, 'mult', mn);
+    $('multTitle').textContent = 'Крит-урон · ×' + m.toFixed(1);
+    $('multSub').innerHTML = '×' + m.toFixed(1) + ' → <b>×' + (m + mn * c.multPerLevel).toFixed(1) + '</b>';
+    setBuy($('buyMult'), mcost <= s.gold, mn, mcost, '+' + fmt(mn) + ' ур.');
+  }
+
+  // ---------- способности главного героя ----------
+  const ABIL_ICON = { flurry: '⚔', hunt: '🎯' };
+  const abilUi = {};
+  function buildAbilities() {
+    const bar = $('abilityBar');
+    for (const a of CFG.abilities) {
+      const w = document.createElement('div');
+      w.className = 'abil';
+      w.innerHTML = '<button class="abilUse"><div class="abilCd"></div><span class="abilIcon">' + ABIL_ICON[a.id] + '</span>' +
+        '<div class="abilText"><div class="abilName">' + a.name + '</div><div class="abilState"></div></div></button>' +
+        '<button class="abilAuto" aria-label="Автоиспользование">АВТО</button>';
+      bar.appendChild(w);
+      const use = w.querySelector('.abilUse'), auto = w.querySelector('.abilAuto');
+      use.addEventListener('click', () => { const ev = C.useAbility(s, a.id); if (ev.length) { handle(ev); save(); } });
+      auto.addEventListener('click', () => { C.setAbilityAuto(s, a.id, !s.abilities[a.id].auto); save(); renderAbilities(); });
+      abilUi[a.id] = { w, state: w.querySelector('.abilState'), cd: w.querySelector('.abilCd'), auto };
+    }
+  }
+  function renderAbilities() {
+    for (const a of CFG.abilities) {
+      const u = abilUi[a.id], st = s.abilities[a.id];
+      const unlocked = C.abilityUnlocked(s, a.id);
+      u.w.classList.toggle('locked', !unlocked);
+      u.w.classList.toggle('active', st.active > 0);
+      u.w.classList.toggle('ready', unlocked && st.cd <= 0 && st.active <= 0);
+      u.auto.classList.toggle('on', st.auto);
+      u.auto.style.visibility = unlocked ? '' : 'hidden';
+      u.state.textContent = !unlocked ? 'с этажа ' + a.unlockFloor
+        : st.active > 0 ? 'действует ' + Math.ceil(st.active) + 'с'
+        : st.cd > 0 ? 'через ' + Math.ceil(st.cd) + 'с' : 'готово';
+      u.cd.style.width = (unlocked && st.active <= 0 && st.cd > 0 ? st.cd / a.cooldown * 100 : 0) + '%';
+    }
+  }
+
   function renderLive() {
+    renderAbilities();
     renderUlts();
     if (s.enemy.isBoss) {
       const p = Math.max(0, s.bossTimeLeft / CFG.bossTimeSec);
@@ -942,7 +1136,7 @@
     const tapDps = tapSum / DPS_WINDOW, auto = C.autoDps(s);
     el.dps.textContent = fmt(tapDps + auto);                       // общий DPS
     if (el.statsMore.classList.contains('show'))
-      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с';
+      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с · Крит ' + Math.round(C.critChance(s) * 100) + '% ×' + C.critMult(s).toFixed(1);
   }
 
   // ---------- игровой цикл ----------
@@ -960,6 +1154,7 @@
     requestAnimationFrame(loop);
   }
   buildAllies();
+  buildAbilities();
   render();
   requestAnimationFrame(loop);
 })();

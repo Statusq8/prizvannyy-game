@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 2,
+    saveVersion: 3,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -23,6 +23,17 @@
     milestones: [10, 25, 50, 75, 100],
     milestoneEvery: 25,
     milestoneMult: 3,
+    // Криты — единственные прокачиваемые вторичные статы (GDD §3). Действуют на любой урон.
+    crit: {
+      baseChance: 0.05, chancePerLevel: 0.01, maxChanceLevel: 45,   // потолок шанса 50% от уровней
+      chanceCost: 100, chanceGrowth: 1.22,
+      baseMult: 2, multPerLevel: 0.1, multCost: 150, multGrowth: 1.16,
+    },
+    // Активные способности главного героя: по умолчанию ручные, у каждой свой переключатель автоиспользования (GDD §3)
+    abilities: [
+      { id: 'flurry', name: 'Шквал ударов', unlockFloor: 5, cooldown: 60, duration: 5, tapsPerSec: 10 },
+      { id: 'hunt', name: 'Клеймо охотника', unlockFloor: 15, cooldown: 90, duration: 10, critChanceBonus: 0.5 },
+    ],
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
@@ -78,6 +89,37 @@
   }
   function tapDamageAt(level) { return CONFIG.tapBaseDamage * level * milestoneMultAt(level); }
   function tapDamage(s) { return tapDamageAt(s.tapLevel); }
+
+  // ---------- криты ----------
+  function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
+  function critChance(s) {
+    const c = CONFIG.crit;
+    let ch = c.baseChance + s.critChanceLevel * c.chancePerLevel;
+    if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
+    return Math.min(1, ch);
+  }
+  function critMult(s) { return CONFIG.crit.baseMult + s.critMultLevel * CONFIG.crit.multPerLevel; }
+  function critCost(s, kind, n) {
+    const c = CONFIG.crit;
+    return kind === 'chance' ? seriesCost(c.chanceCost, c.chanceGrowth, s.critChanceLevel, n)
+                             : seriesCost(c.multCost, c.multGrowth, s.critMultLevel, n);
+  }
+  function critMax(s, kind) {
+    const c = CONFIG.crit;
+    if (kind === 'chance') return Math.min(seriesMax(c.chanceCost, c.chanceGrowth, s.critChanceLevel, s.gold), c.maxChanceLevel - s.critChanceLevel);
+    return seriesMax(c.multCost, c.multGrowth, s.critMultLevel, s.gold);
+  }
+  function buyCrit(s, kind, n) {
+    if (kind !== 'chance' && kind !== 'mult') return false;
+    const count = n === 'max' ? critMax(s, kind) : n;
+    if (!Number.isInteger(count) || count <= 0) return false;
+    if (kind === 'chance' && s.critChanceLevel + count > CONFIG.crit.maxChanceLevel) return false;
+    const cost = critCost(s, kind, count);
+    if (cost > s.gold) return false;
+    s.gold -= cost;
+    if (kind === 'chance') s.critChanceLevel += count; else s.critMultLevel += count;
+    return true;
+  }
   function enemyName(floor, index, isBoss) {
     if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
@@ -114,7 +156,7 @@
   function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
 
   // ---------- состояние ----------
-  function newState() {
+  function newState(opts) {
     const s = {
       floor: 1,            // текущий этаж
       maxFloor: 1,         // самый высокий открытый этаж
@@ -126,6 +168,10 @@
       stats: { taps: 0, kills: 0, bossKills: 0 },
       allies: newAllies(),
       buffs: { team: 0, tap: 0 },  // оставшееся время баффов, с (не сохраняется)
+      critChanceLevel: 0,
+      critMultLevel: 0,
+      abilities: newAbilities(),
+      rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
       enemy: null,
       bossTimeLeft: 0,
@@ -135,6 +181,12 @@
     return s;
   }
 
+  function newAbilities() {
+    const o = {};
+    // cd — перезарядка, active — сколько ещё действует, auto — автоиспользование, acc — накопитель шквала
+    for (const a of CONFIG.abilities) o[a.id] = { cd: 0, active: 0, auto: false, acc: 0 };
+    return o;
+  }
   function newAllies() {
     const o = {};
     // cd — перезарядка атаки, ult — накопленный заряд ультимейта, с (оба не сохраняются)
@@ -163,8 +215,10 @@
 
   function dealDamage(s, dmg, source, events) {
     dmg *= damageMult(s, source);
+    const crit = s.rng() < critChance(s);
+    if (crit) dmg *= critMult(s);
     s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
-    events.push({ type: 'hit', dmg, source });
+    events.push({ type: 'hit', dmg, source, crit });
     if (s.enemy.hp <= 0) kill(s, events);
   }
 
@@ -214,6 +268,7 @@
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
     }
+    tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
       s.respawn -= dt;
       if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
@@ -286,6 +341,33 @@
     return true;
   }
 
+  // ---------- способности главного героя ----------
+  function abilityUnlocked(s, id) { return s.maxFloor >= abilityDef(id).unlockFloor; }
+  function abilityReady(s, id) { return abilityUnlocked(s, id) && s.abilities[id].cd <= 0; }
+  function useAbility(s, id) {
+    const def = abilityDef(id);
+    if (!def || !abilityReady(s, id)) return [];
+    const st = s.abilities[id];
+    st.cd = def.cooldown; st.active = def.duration; st.acc = 0;
+    return [{ type: 'ability', id, name: def.name }];
+  }
+  function setAbilityAuto(s, id, on) { if (abilityDef(id)) s.abilities[id].auto = !!on; }
+
+  function tickAbilities(s, dt, events) {
+    for (const def of CONFIG.abilities) {
+      const st = s.abilities[def.id];
+      st.cd = Math.max(0, st.cd - dt);
+      if (st.active > 0) {
+        if (def.id === 'flurry' && s.enemy.alive) {
+          st.acc += dt * def.tapsPerSec;
+          while (st.acc >= 1 && s.enemy.alive) { st.acc -= 1; dealDamage(s, tapDamage(s), 'tap', events); }
+        }
+        st.active = Math.max(0, st.active - dt);
+      }
+      if (st.auto && s.enemy.alive && abilityReady(s, def.id)) events.push(...useAbility(s, def.id));
+    }
+  }
+
   function buyAlly(s, id, n) {
     if (!allyDef(id)) return false;
     const count = n === 'max' ? allyMax(s, id) : n;
@@ -305,6 +387,8 @@
       enemyIndex: s.enemyIndex, farming: s.farming,
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
+      critChanceLevel: s.critChanceLevel, critMultLevel: s.critMultLevel,
+      abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       savedAt: Date.now(),
     });
   }
@@ -314,6 +398,7 @@
     try { d = JSON.parse(str); } catch (e) { return null; }
     if (!d || typeof d !== 'object') return null;
     if (d.v === 1) { d.v = 2; d.allies = {}; }          // миграция 0.2 → 0.3: союзников ещё не было
+    if (d.v === 2) { d.v = 3; d.critChanceLevel = 0; d.critMultLevel = 0; d.abilities = {}; }   // 0.5 → 0.6
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -334,6 +419,16 @@
       if (!int(lv, 0)) return null;
       s.allies[a.id].level = lv;
     }
+    if (!int(d.critChanceLevel, 0) || d.critChanceLevel > CONFIG.crit.maxChanceLevel || !int(d.critMultLevel, 0)) return null;
+    s.critChanceLevel = d.critChanceLevel; s.critMultLevel = d.critMultLevel;
+    const ab = d.abilities && typeof d.abilities === 'object' ? d.abilities : {};
+    for (const a of CONFIG.abilities) {
+      const x = ab[a.id];
+      if (!x) continue;
+      const cd = Number(x.cd);
+      s.abilities[a.id].cd = isFinite(cd) ? Math.min(Math.max(0, cd), a.cooldown) : 0;
+      s.abilities[a.id].auto = !!x.auto;
+    }
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
@@ -348,7 +443,9 @@
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
-    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone, damageMult,
+    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
+    damageMult, critChance, critMult, critCost, critMax, buyCrit,
+    useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };
