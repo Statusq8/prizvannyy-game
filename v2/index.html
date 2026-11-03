@@ -214,9 +214,23 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab { display: block; }
-  #panel[data-tab="heroes"] #cards, #panel[data-tab="portal"] #cards,
-  #panel[data-tab="heroes"] #mult, #panel[data-tab="portal"] #mult { display: none; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab { display: block; }
+  #panel:not([data-tab="up"]) #cards, #panel:not([data-tab="up"]) #mult { display: none; }
+  /* Алтарь */
+  .altHead { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .ess { font-size: 15px; font-weight: 700; } .ess b { color: #8fe6ff; }
+  .altBtns { display: flex; gap: 5px; }
+  .step { display: flex; align-items: center; gap: 2px; }
+  .step button { width: 26px; height: 26px; border-radius: 7px; background: var(--panel); border: 1px solid var(--line); font-weight: 800; }
+  .step span { min-width: 22px; text-align: center; font-weight: 800; font-size: 12px; }
+  .lockBtn { width: 30px; height: 26px; border-radius: 7px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
+  .lockBtn.on { border-color: var(--gold); }
+  .sacBtn { width: 100%; margin: 8px 0; padding: 10px; border-radius: 10px; font-weight: 800; background: linear-gradient(180deg, #a83a4a, #6a1f2a); border: 1px solid #ff6b7a; }
+  .sacBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  .recipe { padding: 8px 10px; border-radius: 11px; background: #1a1424; border: 1px dashed var(--line); font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .recipe + .recipe { margin-top: 6px; }
+  .recipe small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .secTitle { font-size: 12px; font-weight: 800; color: var(--muted); margin: 10px 2px 6px; letter-spacing: .5px; }
   /* редкости */
   .r-E { --r: #9a9aa8; } .r-D { --r: #6be3a0; } .r-C { --r: #6bb8ff; } .r-B { --r: #b98cff; }
   .r-A { --r: #ffa64a; } .r-S { --r: #ff5a6a; } .r-GOD { --r: #ffd36b; }
@@ -339,6 +353,7 @@
       <button class="tab on" data-tab="up">Улучшения</button>
       <button class="tab" data-tab="heroes">Герои</button>
       <button class="tab" data-tab="portal">Портал <span id="ticketDot"></span></button>
+      <button class="tab" data-tab="altar">Алтарь</button>
     </div>
     <div id="cards">
     <div class="card">
@@ -352,6 +367,7 @@
     <div id="allyCards"></div>
     </div>
     <div id="heroesTab" class="tabBody"></div>
+    <div id="altarTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
@@ -370,7 +386,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.7</div>
+  <div id="version">v0.8</div>
 </div>
 
 <script>
@@ -380,7 +396,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 4,
+    saveVersion: 5,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -427,7 +443,15 @@
       pityA: 30, pityS: 90,
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
     },
+    // Алтарь (GDD §5): пожертвованные копии исчезают навсегда и дают эссенцию по редкости (TBD)
+    altar: {
+      essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
+      ticketCost: 30,                                              // «Слеза портала»: эссенция → 1 билет
+      traceCost: { E: 10, D: 20, C: 40, B: 80, A: 160, S: 400, GOD: 1000 },   // «След героя»: копия выбранного открытого
+      rareConfirmFrom: 'A',                                        // для A, S, GOD — дополнительное подтверждение
+    },
     // Каталог героев. Уровень 0 = не нанят в этом забеге. starter — открыт с начала игры.
+    // hidden — не выпадает в портале, открывается скрытым рецептом Алтаря (повторяемый бесплатный путь).
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', rarity: 'E', starter: true, baseDps: 4, attackInterval: 0.8,
         hireCost: 25, costGrowth: 1.05,
@@ -458,6 +482,10 @@
         hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
       { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
         hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд пепла', kind: 'nuke', charge: 15, power: 40 } },
+      // скрытая: рецепт — пожертвовать за раз по копии всех четырёх героев стартового отряда
+      { id: 'morra', name: 'Морра', role: 'Хранительница Алтаря', rarity: 'A', hidden: true, baseDps: 1e8, attackInterval: 1.2,
+        hireCost: 2e7, costGrowth: 1.05, ult: { name: 'Печать жертвы', kind: 'teamBuff', charge: 20, power: 2.2, duration: 7 },
+        recipe: ['irene', 'borg', 'lia', 'kael'] },
     ],
   };
 
@@ -571,6 +599,9 @@
       tickets: 0,
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
       pity: { a: 0, s: 0 },
+      essence: 0,
+      locks: {},                                 // id → true: копии защищены от пожертвования
+      discovered: {},                            // id скрытого героя → рецепт найден
       reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
@@ -822,7 +853,7 @@
       const rarity = rollRarity(s, min);
       if (RANK(rarity) >= RANK('A')) s.pity.a = 0;
       if (RANK(rarity) >= RANK('S')) s.pity.s = 0;
-      const pool = CONFIG.allies.filter(a => a.rarity === rarity);
+      const pool = CONFIG.allies.filter(a => a.rarity === rarity && !a.hidden);
       const hero = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
       const h = s.heroes[hero.id];
       const isNew = !h.unlocked;
@@ -854,6 +885,73 @@
     return true;
   }
 
+  // ---------- Алтарь ----------
+  function setLock(s, id, on) {
+    if (!allyDef(id)) return false;
+    if (on) s.locks[id] = true; else delete s.locks[id];
+    return true;
+  }
+  // Эссенция за выбор {id: копий}
+  function sacrificeValue(sel) {
+    let e = 0;
+    for (const id in sel) e += CONFIG.altar.essence[allyDef(id).rarity] * sel[id];
+    return e;
+  }
+  function needsRareConfirm(sel) {
+    const min = RANK(CONFIG.altar.rareConfirmFrom);
+    return Object.keys(sel).some(id => sel[id] > 0 && RANK(allyDef(id).rarity) >= min);
+  }
+  // Все незаблокированные копии (массовый выбор)
+  function selectAllUnlocked(s) {
+    const sel = {};
+    for (const a of CONFIG.allies) if (!s.locks[a.id] && s.heroes[a.id].copies > 0) sel[a.id] = s.heroes[a.id].copies;
+    return sel;
+  }
+  // Пожертвовать копии. Скрытые рецепты: если в одной жертве есть копии всех героев рецепта —
+  // за каждый полный набор выдаётся скрытый герой (первый раз — открытие).
+  function sacrifice(s, sel) {
+    if (!sel || typeof sel !== 'object') return null;
+    const clean = {};
+    for (const id in sel) {
+      const n = sel[id];
+      if (!allyDef(id) || !Number.isInteger(n) || n < 0) return null;
+      if (n === 0) continue;
+      if (s.locks[id] || n > s.heroes[id].copies) return null;   // заблокированные и несуществующие копии нельзя
+      clean[id] = n;
+    }
+    if (!Object.keys(clean).length) return null;
+    const essence = sacrificeValue(clean);
+    for (const id in clean) s.heroes[id].copies -= clean[id];   // исчезают навсегда
+    s.essence += essence;
+    const found = [];
+    for (const h of CONFIG.allies.filter(a => a.hidden && a.recipe)) {
+      const sets = Math.min(...h.recipe.map(id => clean[id] || 0));
+      if (sets <= 0) continue;
+      const st = s.heroes[h.id];
+      const isNew = !st.unlocked;
+      if (isNew) st.unlocked = true; else st.copies++;
+      if (sets > 1) st.copies += sets - 1;
+      s.discovered[h.id] = true;
+      found.push({ id: h.id, sets, isNew });
+    }
+    return { essence, found };
+  }
+  function tearOfPortal(s, n) {
+    const cost = CONFIG.altar.ticketCost * n;
+    if (!Number.isInteger(n) || n <= 0 || s.essence < cost) return false;
+    s.essence -= cost; s.tickets += n;
+    return true;
+  }
+  function traceCost(id) { const a = allyDef(id); return a && CONFIG.altar.traceCost[a.rarity]; }
+  function heroTrace(s, id) {
+    const a = allyDef(id);
+    if (!a || !s.heroes[id].unlocked) return false;
+    const cost = traceCost(id);
+    if (s.essence < cost) return false;
+    s.essence -= cost; s.heroes[id].copies++;
+    return true;
+  }
+
   // ---------- сохранение ----------
   function serialize(s) {
     return JSON.stringify({
@@ -865,6 +963,7 @@
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars }])),
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
+      essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       savedAt: Date.now(),
     });
   }
@@ -882,6 +981,7 @@
       let t = 0; for (let f = 1; f <= (d.highestCleared | 0); f++) t += ticketsForFloor(f);   // билеты за уже пройденных боссов
       d.tickets = t; d.ticketFloor = d.highestCleared | 0; d.pity = { a: 0, s: 0 };
     }
+    if (d.v === 4) { d.v = 5; d.essence = 0; d.locks = []; d.discovered = []; }   // 0.7 → 0.8: Алтарь
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -929,6 +1029,10 @@
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
+    if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
+    s.essence = d.essence;
+    for (const id of d.locks) if (allyDef(id)) s.locks[id] = true;
+    for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
     spawn(s);                                     // враг появляется с полным HP
     return s;
@@ -965,6 +1069,7 @@
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult,
     useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
+    setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
@@ -997,6 +1102,7 @@
     velma:  { body: '#2a3a2a', hood: '#1e2c1e', eye: '#b8ff8f', icon: '💀', iconBg: '#223a22', weapon: 'staff' },
     ragnar: { body: '#3a2a3a', hood: '#2c1e2c', eye: '#ff8fb8', icon: '⚔', iconBg: '#3a223a', weapon: 'axe' },
     seiren: { body: '#1f3a4a', hood: '#16303a', eye: '#8fffff', icon: '🌪', iconBg: '#1e3a46', weapon: 'staff' },
+    morra:  { body: '#3a1f2a', hood: '#2c1620', eye: '#ff6b9a', icon: '🕯', iconBg: '#3a1e2a', weapon: 'staff' },
     azrael: { body: '#4a3a1f', hood: '#3a2c16', eye: '#fff0a0', icon: '🪽', iconBg: '#46381e', weapon: 'blades' },
   };
   // Слоты отряда: двое по бокам впереди, двое позади
@@ -1296,6 +1402,7 @@
     $('ticketDot').classList.toggle('on', s.tickets > 0);
     if (tab === 'heroes') renderHeroes();
     if (tab === 'portal') renderPortal();
+    if (tab === 'altar') renderAltar();
   }
   function renderHeroes() {
     const list = CFG.allies.slice().sort((a, b) => {
@@ -1309,7 +1416,7 @@
       const h = s.heroes[a.id], v = ALLY_VIS[a.id];
       if (!h.unlocked) {
         html += '<div class="hRow locked r-' + a.rarity + '"><div class="hIcon" style="background:#1a1420">?</div><div class="hInfo">' +
-          '<div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ???</div><div class="hSub">Откройте в портале</div></div></div>';
+          '<div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ???</div><div class="hSub">' + (a.hidden ? 'Скрытый рецепт Алтаря' : 'Откройте в портале') + '</div></div></div>';
         continue;
       }
       const sq = C.inSquad(s, a.id), need = C.starCost(s, a.id);
@@ -1326,6 +1433,82 @@
     }
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
+  // ---------- Алтарь ----------
+  let altarSel = {}, altarHtml = '';
+  function cleanSel() {
+    for (const id in altarSel) {
+      const max = s.locks[id] ? 0 : s.heroes[id].copies;
+      altarSel[id] = Math.max(0, Math.min(altarSel[id], max));
+      if (!altarSel[id]) delete altarSel[id];
+    }
+  }
+  function renderAltar() {
+    cleanSel();
+    const A = CFG.altar;
+    const total = Object.values(altarSel).reduce((a, b) => a + b, 0);
+    const value = total ? C.sacrificeValue(altarSel) : 0;
+    let html = '<div class="altHead"><div class="ess">✦ <b>' + fmt(s.essence) + '</b> эссенции</div><div class="altBtns">' +
+      '<button class="hBtn go" data-act="all">Выбрать всё</button><button class="hBtn" data-act="none">Сброс</button></div></div>' +
+      '<div class="hint2">Пожертвованные копии исчезают навсегда. 🔒 защищает копии героя от выбора.</div>';
+    const list = CFG.allies.filter(a => s.heroes[a.id].unlocked)
+      .sort((a, b) => RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity));
+    for (const a of list) {
+      const h = s.heroes[a.id], v = ALLY_VIS[a.id], n = altarSel[a.id] || 0, locked = !!s.locks[a.id];
+      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
+        '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + '</div>' +
+        '<div class="hSub">копий ' + h.copies + ' · ✦' + A.essence[a.rarity] + ' за копию</div></div>' +
+        '<button class="lockBtn' + (locked ? ' on' : '') + '" data-lock="' + a.id + '">' + (locked ? '🔒' : '🔓') + '</button>' +
+        '<div class="step"><button data-minus="' + a.id + '"' + (n ? '' : ' disabled') + '>−</button><span>' + n + '</span>' +
+        '<button data-plus="' + a.id + '"' + (!locked && n < h.copies ? '' : ' disabled') + '>+</button></div></div>';
+    }
+    html += '<button class="sacBtn" data-act="sac"' + (total ? '' : ' disabled') + '>' +
+      (total ? 'Пожертвовать ' + total + ' коп. → +' + fmt(value) + ' ✦' : 'Выберите копии для жертвы') + '</button>';
+    html += '<div class="secTitle">РЕЦЕПТЫ</div>';
+    html += '<div class="recipe"><div>Слеза портала<small>✦' + A.ticketCost + ' → 1 билет</small></div>' +
+      '<button class="hBtn' + (s.essence >= A.ticketCost ? ' go' : '') + '" data-act="tear"' + (s.essence >= A.ticketCost ? '' : ' disabled') + '>Создать</button></div>';
+    html += '<div class="recipe"><div>След героя<small>Копия выбранного открытого героя (для звёзд). Цена по редкости: ' +
+      RANKS.map(r => r + ' ✦' + A.traceCost[r]).join(', ') + '</small></div></div>';
+    for (const a of list) {
+      const c = C.traceCost(a.id);
+      html += '<div class="recipe" style="border-style:solid"><div><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + '</div>' +
+        '<button class="hBtn' + (s.essence >= c ? ' go' : '') + '" data-trace="' + a.id + '"' + (s.essence >= c ? '' : ' disabled') + '>+1 копия ✦' + fmt(c) + '</button></div>';
+    }
+    for (const h of CFG.allies.filter(a => a.hidden)) {
+      html += s.discovered[h.id]
+        ? '<div class="recipe" style="border-color:var(--gold)"><div>' + ALLY_VIS[h.id].icon + ' ' + h.name + ' — скрытый рецепт<small>Пожертвовать за раз по копии: ' +
+          h.recipe.map(id => CFG.allies.find(a => a.id === id).name).join(', ') + '</small></div></div>'
+        : '<div class="recipe"><div>??? — скрытый рецепт<small>Говорят, Алтарь откликается, если отдать ему весь первый отряд разом…</small></div></div>';
+    }
+    if (html !== altarHtml) { $('altarTab').innerHTML = html; altarHtml = html; }
+  }
+  $('altarTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.plus) altarSel[d.plus] = (altarSel[d.plus] || 0) + 1;
+    else if (d.minus) altarSel[d.minus] = (altarSel[d.minus] || 0) - 1;
+    else if (d.lock) { C.setLock(s, d.lock, !s.locks[d.lock]); save(); }
+    else if (d.act === 'all') altarSel = C.selectAllUnlocked(s);
+    else if (d.act === 'none') altarSel = {};
+    else if (d.act === 'tear') { if (C.tearOfPortal(s, 1)) { toast('Слеза портала<small>+1 🎟</small>'); save(); } }
+    else if (d.trace) { if (C.heroTrace(s, d.trace)) { toast('След героя<small>+1 копия · ' + CFG.allies.find(a => a.id === d.trace).name + '</small>'); save(); } }
+    else if (d.act === 'sac') {
+      cleanSel();
+      const total = Object.values(altarSel).reduce((a, x) => a + x, 0);
+      if (!total) return;
+      if (!confirm('Пожертвовать ' + total + ' коп.? Они исчезнут навсегда.')) return;
+      if (C.needsRareConfirm(altarSel) && !confirm('Среди них есть редкие герои (A, S или GOD). Точно пожертвовать?')) return;
+      const r = C.sacrifice(s, altarSel);
+      if (r) {
+        altarSel = {};
+        const f = r.found[0];
+        if (f) toast((f.isNew ? 'Скрытое открытие!' : 'Скрытый рецепт') + '<small>' + CFG.allies.find(a => a.id === f.id).name + (f.isNew ? ' присоединилась' : ' +' + f.sets + ' коп.') + '</small>');
+        else toast('Алтарь принял жертву<small>+' + fmt(r.essence) + ' ✦</small>');
+        save();
+      }
+    }
+    render();
+  });
+
   function renderPortal() {
     const P = CFG.portal;
     $('ticketCount').textContent = fmt(s.tickets);
