@@ -11,8 +11,12 @@ function buyBest() {
     const opts = [{ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: (Core.tapDamageAt(s.tapLevel + 1) - Core.tapDamageAt(s.tapLevel)) * TPS }];
     for (const a of Core.CONFIG.allies) { const lv = s.allies[a.id].level; opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: Core.allyDpsAt(a.id, lv + 1) - Core.allyDpsAt(a.id, lv) }); }
     opts.sort((x, y) => y.gain / y.cost - x.gain / x.cost);
-    const o = opts[0];
-    if (o.cost > s.gold) return;
+    let o = opts[0];
+    if (o.cost > s.gold) {
+      // копим на лучшее, но берём дешёвое (<10% цены лучшего), если оно доступно
+      o = opts.find(x => x.cost <= s.gold && x.cost < opts[0].cost * 0.1);
+      if (!o) return;
+    }
     if (o.kind === 'tap') Core.buyTap(s, 1); else Core.buyAlly(s, o.kind, 1);
   }
 }

@@ -251,3 +251,25 @@ test('вехи уровней умножают урон удара и союзн
 test('урон не убывает с ростом уровня', () => {
   for (let l = 1; l < 400; l++) assert.ok(C.tapDamageAt(l + 1) > C.tapDamageAt(l), 'уровень ' + l);
 });
+
+// ---------- четыре союзника ----------
+test('четыре союзника с разными частотами атак, атакуют независимо', () => {
+  assert.strictEqual(CFG.allies.length, 4);
+  assert.strictEqual(new Set(CFG.allies.map(a => a.attackInterval)).size, 4);
+  const s = C.newState();
+  for (const a of CFG.allies) s.allies[a.id].level = 1;
+  s.enemy.hp = s.enemy.maxHp = 1e15;
+  const hits = {};
+  const step = 1 / 30;
+  for (let t = 0; t < 12; t += step) for (const e of C.tick(s, step)) if (e.type === 'hit') hits[e.source] = (hits[e.source] || 0) + 1;
+  for (const a of CFG.allies) assert.ok(Math.abs(hits[a.id] - 12 / a.attackInterval) <= 1, a.id + ': ' + hits[a.id]);
+  const total = CFG.allies.reduce((x, a) => x + C.allyDpsAt(a.id, 1), 0);
+  assert.strictEqual(C.autoDps(s), total);
+});
+
+test('сохранение всех союзников', () => {
+  const s = C.newState();
+  CFG.allies.forEach((a, i) => { s.allies[a.id].level = i * 3 + 1; });
+  const t = C.deserialize(C.serialize(s));
+  CFG.allies.forEach((a, i) => assert.strictEqual(t.allies[a.id].level, i * 3 + 1));
+});

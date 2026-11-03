@@ -60,6 +60,7 @@
   /* ---------- арена ---------- */
   #arena { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 0; }
   #enemy {
+    position: relative; z-index: 1;
     width: 54%; max-width: 250px; aspect-ratio: 1 / 1.15; transform-origin: 50% 90%;
     animation: idle 2.4s ease-in-out infinite; pointer-events: none;
   }
@@ -140,21 +141,28 @@
   .mBtn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; margin-top: 8px; background: var(--panel2); border: 1px solid var(--line); }
   .mBtn.danger { background: #4a1820; border-color: #8a2a3a; }
   .card + .card { margin-top: 8px; }
-  .cardIcon.allyIco { background: #1e3a46; }
   .cardSub .dim { color: var(--muted); }
   .cardSub .ms { color: var(--gold); opacity: .8; }
   #stats { cursor: pointer; }
   #statsMore { display: none; margin-top: 3px; font-size: 11px; color: var(--muted); }
   #statsMore.show { display: block; }
-  .dmg.auto { font-size: 18px; color: #8fe6ff; text-shadow: 0 2px 0 #000, 0 0 6px #2aa8d8; }
+  .dmg.auto { font-size: 18px; text-shadow: 0 2px 0 #000, 0 0 6px currentColor; }
   /* союзник на арене (временная заглушка) */
-  .ally { position: absolute; left: 4%; bottom: 6%; width: 24%; max-width: 110px; aspect-ratio: 1 / 1.3; pointer-events: none; display: none; transform-origin: 50% 100%; }
-  .ally.on { display: block; animation: allyIdle 2.8s ease-in-out infinite; }
-  .ally.attack { animation: allyAtk .2s ease-out; }
+  #cards { max-height: 34vh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+  /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
+  #allyLayer { position: absolute; inset: 0; pointer-events: none; }
+  .ally { position: absolute; width: 22%; max-width: 100px; aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; }
+  .ally.back { width: 18%; max-width: 82px; filter: brightness(.8); }
+  .ally.on { display: block; }
+  .ally .fig { width: 100%; height: 100%; animation: allyIdle 2.8s ease-in-out infinite; }
+  .ally.R .fig svg { transform: scaleX(-1); }
+  .ally.attack .fig { animation: allyAtkL .2s ease-out; }
+  .ally.R.attack .fig { animation: allyAtkR .2s ease-out; }
   .ally svg { width: 100%; height: 100%; overflow: visible; }
-  .allyTag { position: absolute; left: 0; right: 0; bottom: -16px; text-align: center; font-size: 10px; color: #8fe6ff; font-weight: 700; }
+  .allyTag { position: absolute; left: -10px; right: -10px; bottom: -15px; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap; }
   @keyframes allyIdle { 50% { transform: translateY(-3px); } }
-  @keyframes allyAtk { 40% { transform: translate(14px,-6px) rotate(6deg); } 100% { transform: none; } }
+  @keyframes allyAtkL { 40% { transform: translate(14px,-6px) rotate(6deg); } 100% { transform: none; } }
+  @keyframes allyAtkR { 40% { transform: translate(-14px,-6px) rotate(-6deg); } 100% { transform: none; } }
   #version { position: absolute; bottom: 2px; left: 8px; font-size: 10px; color: #ffffff30; pointer-events: none; }
 </style>
 </head>
@@ -192,18 +200,7 @@
         </g>
       </svg>
     </div>
-    <div class="ally" id="ally_irene">
-      <svg viewBox="0 0 100 130">
-        <ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>
-        <path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="#1f3c4a" stroke="#0a161c" stroke-width="3"/>
-        <path d="M32 52 Q32 22 50 18 Q68 22 68 52 Q60 60 50 60 Q40 60 32 52Z" fill="#163039" stroke="#0a161c" stroke-width="3"/>
-        <ellipse cx="44" cy="44" rx="3" ry="2.4" fill="#8fe6ff"/><ellipse cx="57" cy="44" rx="3" ry="2.4" fill="#8fe6ff"/>
-        <path d="M82 40 Q100 76 82 112" fill="none" stroke="#6b4a2a" stroke-width="4" stroke-linecap="round"/>
-        <path d="M82 40 L82 112" stroke="#cfd8dc" stroke-width="1.2"/>
-        <path d="M60 76 L96 76" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
-      <div class="allyTag">Ирэн</div>
-    </div>
+    <div id="allyLayer"></div>
     <div id="hint">Тапай по врагу!</div>
     <div id="toast"></div>
   </div>
@@ -218,6 +215,7 @@
         <button class="multBtn" data-n="max">MAX</button>
       </div>
     </div>
+    <div id="cards">
     <div class="card">
       <div class="cardIcon">⚔</div>
       <div class="cardInfo">
@@ -226,13 +224,7 @@
       </div>
       <button class="buy" id="buyTap"></button>
     </div>
-    <div class="card">
-      <div class="cardIcon allyIco">🏹</div>
-      <div class="cardInfo">
-        <div class="cardTitle" id="allyTitle"></div>
-        <div class="cardSub" id="allySub"></div>
-      </div>
-      <button class="buy" id="buyAlly"></button>
+    <div id="allyCards"></div>
     </div>
   </div>
 
@@ -244,7 +236,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.3</div>
+  <div id="version">v0.4</div>
 </div>
 
 <script>
@@ -276,7 +268,13 @@
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
-        hireCost: 25, costGrowth: 1.07 },
+        hireCost: 25, costGrowth: 1.05 },
+      { id: 'borg', name: 'Борг', role: 'Берсерк', baseDps: 120, attackInterval: 1.6,
+        hireCost: 400, costGrowth: 1.05 },
+      { id: 'lia', name: 'Лиа', role: 'Пиромантка', baseDps: 4000, attackInterval: 1.1,
+        hireCost: 7000, costGrowth: 1.05 },
+      { id: 'kael', name: 'Каэль', role: 'Клинок бездны', baseDps: 150000, attackInterval: 0.45,
+        hireCost: 120000, costGrowth: 1.05 },
     ],
   };
 
@@ -564,7 +562,46 @@
 (function () {
   'use strict';
   const C = Core, CFG = Core.CONFIG, fmt = Core.fmt;
-  const ALLY = CFG.allies[0];
+  // Внешний вид союзников (временные заглушки, не финальные ассеты)
+  const WEAPON = {
+    bow: '<path d="M82 40 Q100 76 82 112" fill="none" stroke="#6b4a2a" stroke-width="4" stroke-linecap="round"/><path d="M82 40 L82 112" stroke="#cfd8dc" stroke-width="1.2"/><path d="M60 76 L96 76" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round"/>',
+    axe: '<path d="M78 30 L84 118" stroke="#5a3a22" stroke-width="5" stroke-linecap="round"/><path d="M80 34 Q104 40 100 62 Q90 54 82 56Z" fill="#9aa4ab" stroke="#1a1a1a" stroke-width="2.5"/>',
+    staff: '<path d="M80 36 L84 120" stroke="#4a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="80" cy="30" r="9" fill="#ff8a3d" stroke="#5a1a0a" stroke-width="2"/><circle cx="80" cy="30" r="4" fill="#ffe08a"/>',
+    blades: '<path d="M70 70 L98 44" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/><path d="M68 84 L100 72" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>',
+  };
+  const ALLY_VIS = {
+    irene: { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow',    pos: 'left:2%;bottom:5%',   side: 'L', back: false },
+    borg:  { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe',    pos: 'right:2%;bottom:5%',  side: 'R', back: false },
+    lia:   { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff',  pos: 'left:7%;bottom:40%',  side: 'L', back: true },
+    kael:  { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades', pos: 'right:7%;bottom:40%', side: 'R', back: true },
+  };
+  function allySvg(v) {
+    return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' +
+      '<path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="' + v.body + '" stroke="#0a0a10" stroke-width="3"/>' +
+      '<path d="M32 52 Q32 22 50 18 Q68 22 68 52 Q60 60 50 60 Q40 60 32 52Z" fill="' + v.hood + '" stroke="#0a0a10" stroke-width="3"/>' +
+      '<ellipse cx="44" cy="44" rx="3" ry="2.4" fill="' + v.eye + '"/><ellipse cx="57" cy="44" rx="3" ry="2.4" fill="' + v.eye + '"/>' +
+      WEAPON[v.weapon] + '</svg>';
+  }
+  const allyUi = {};                 // id → { sprite, title, sub, btn }
+  function buildAllies() {
+    const layer = $('allyLayer'), cards = $('allyCards');
+    for (const a of CFG.allies) {
+      const v = ALLY_VIS[a.id];
+      const sp = document.createElement('div');
+      sp.className = 'ally ' + v.side + (v.back ? ' back' : '');
+      sp.style.cssText = v.pos;
+      sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div>';
+      layer.appendChild(sp);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="cardIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
+        '<div class="cardInfo"><div class="cardTitle"></div><div class="cardSub"></div></div><button class="buy"></button>';
+      cards.appendChild(card);
+      const btn = card.querySelector('.buy');
+      btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, mult)) { save(); render(); } });
+      allyUi[a.id] = { sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+    }
+  }
   const SAVE_KEY = 'prizvannyy_v2_save';
   const STEP = 1 / 30;                 // фиксированный шаг логики
   const DPS_WINDOW = 5;                // период усреднения DPS, сек (TBD)
@@ -575,8 +612,8 @@
     enemyName: $('enemyName'), dots: $('dots'), floorLabel: $('floorLabel'),
     prev: $('prevFloor'), next: $('nextFloor'), timerBar: $('timerBar'), timerFill: $('timerFill'),
     tapDmg: $('tapDmg'), dps: $('dps'), hint: $('hint'), farmBar: $('farmBar'), bossBtn: $('bossBtn'),
-    toast: $('toast'), gold: $('gold'), tapLvl: $('tapLvl'), tapSub: $('tapSub'), buyTap: $('buyTap'), buyAlly: $('buyAlly'), allyTitle: $('allyTitle'), allySub: $('allySub'),
-    allySprite: $('ally_irene'), statsMore: $('statsMore'),
+    toast: $('toast'), gold: $('gold'), tapLvl: $('tapLvl'), tapSub: $('tapSub'), buyTap: $('buyTap'),
+    statsMore: $('statsMore'),
     modal: $('modal'), saveInfo: $('saveInfo'),
   };
 
@@ -608,6 +645,7 @@
     if (text != null) n.textContent = text;
     el.arena.appendChild(n);
     setTimeout(() => n.remove(), life);
+    return n;
   }
   function restartAnim(cls) {
     el.enemy.classList.remove('hit', 'spawn', 'dead');
@@ -631,8 +669,12 @@
           fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
-          const sp = el.allySprite; sp.classList.remove('attack'); void sp.offsetWidth; sp.classList.add('attack');
-          fx('dmg auto', r.width * (0.45 + Math.random() * 0.15), r.height * (0.45 + Math.random() * 0.1), fmt(e.dmg), 700);
+          const u = allyUi[e.source];
+          if (u) {
+            u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
+            const d = fx('dmg auto', r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
+            d.style.color = u.color;
+          }
         }
         restartAnim('hit');
       } else if (e.type === 'kill') {
@@ -671,7 +713,6 @@
     render();
   }));
   el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
-  el.buyAlly.addEventListener('click', () => { if (C.buyAlly(s, ALLY.id, mult)) { save(); render(); } });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
@@ -720,19 +761,21 @@
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
-    const lv = s.allies[ALLY.id].level;
-    const an = mult === 'max' ? Math.max(1, C.allyMax(s, ALLY.id)) : mult;
-    const acost = C.allyCost(s, ALLY.id, an);
-    el.allyTitle.textContent = ALLY.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : ALLY.role);
-    el.allySub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, ALLY.id)) + ' → <b>' + fmt(C.allyDpsAt(ALLY.id, lv + an)) + '</b>' + msHint(lv)
-                              : '<span class="dim">Не нанята · автоатака</span> DPS <b>' + fmt(C.allyDpsAt(ALLY.id, an)) + '</b>';
-    setBuy(el.buyAlly, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
-    el.allySprite.classList.toggle('on', lv > 0);
+    for (const a of CFG.allies) {
+      const u = allyUi[a.id], lv = s.allies[a.id].level;
+      const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : mult;
+      const acost = C.allyCost(s, a.id, an);
+      u.title.textContent = a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role);
+      u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id)) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an)) + '</b>' + msHint(lv)
+                           : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an)) + '</b>';
+      setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
+      u.sprite.classList.toggle('on', lv > 0);
+    }
   }
 
   // Подсказка о следующей вехе уровня
   function msHint(level) {
-    return '<span class="ms"> · ×' + CFG.milestoneMult + ' на ур. ' + fmt(C.nextMilestone(level)) + '</span>';
+    return '<span class="ms"> · ×' + CFG.milestoneMult + ' на ' + fmt(C.nextMilestone(level)) + '</span>';
   }
 
   function setBuy(btn, can, n, cost, label) {
@@ -771,6 +814,7 @@
     if (Date.now() - lastSave > 5000) save();
     requestAnimationFrame(loop);
   }
+  buildAllies();
   render();
   requestAnimationFrame(loop);
 })();

@@ -26,7 +26,13 @@
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
-        hireCost: 25, costGrowth: 1.07 },
+        hireCost: 25, costGrowth: 1.05 },
+      { id: 'borg', name: 'Борг', role: 'Берсерк', baseDps: 120, attackInterval: 1.6,
+        hireCost: 400, costGrowth: 1.05 },
+      { id: 'lia', name: 'Лиа', role: 'Пиромантка', baseDps: 4000, attackInterval: 1.1,
+        hireCost: 7000, costGrowth: 1.05 },
+      { id: 'kael', name: 'Каэль', role: 'Клинок бездны', baseDps: 150000, attackInterval: 0.45,
+        hireCost: 120000, costGrowth: 1.05 },
     ],
   };
 
