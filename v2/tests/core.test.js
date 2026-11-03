@@ -183,7 +183,7 @@ test('найм союзника за золото и рост уровня', () 
   assert.strictEqual(C.buyAlly(s, a.id, 1), true);
   assert.strictEqual(s.allies[a.id].level, 1);
   assert.strictEqual(s.gold, 0);
-  assert.strictEqual(C.autoDps(s), a.baseDps);
+  assert.strictEqual(C.autoDps(s), C.allyDpsAt(a.id, 1));
   s.gold = 1e6;
   C.buyAlly(s, a.id, 'max');
   assert.ok(C.allyCost(s, a.id, 1) > s.gold);
@@ -230,4 +230,24 @@ test('сохранение союзников и миграция сохране
 
   const bad = JSON.parse(C.serialize(s)); bad.allies[CFG.allies[0].id] = -1;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
+
+// ---------- вехи уровней ----------
+test('вехи уровней умножают урон удара и союзника', () => {
+  const m = CFG.milestoneMult;
+  assert.strictEqual(C.milestonesReached(9), 0);
+  assert.strictEqual(C.milestonesReached(10), 1);
+  assert.strictEqual(C.milestonesReached(100), CFG.milestones.length);
+  assert.strictEqual(C.milestonesReached(100 + CFG.milestoneEvery), CFG.milestones.length + 1);
+  assert.strictEqual(C.tapDamageAt(10), CFG.tapBaseDamage * 10 * m);
+  assert.ok(C.tapDamageAt(10) > C.tapDamageAt(9) * 2);
+  const a = CFG.allies[0];
+  assert.strictEqual(C.allyDpsAt(a.id, 25), a.baseDps * 25 * m * m);
+  assert.strictEqual(C.nextMilestone(1), 10);
+  assert.strictEqual(C.nextMilestone(10), 25);
+  assert.strictEqual(C.nextMilestone(100), 100 + CFG.milestoneEvery);
+});
+
+test('урон не убывает с ростом уровня', () => {
+  for (let l = 1; l < 400; l++) assert.ok(C.tapDamageAt(l + 1) > C.tapDamageAt(l), 'уровень ' + l);
 });
