@@ -7,7 +7,7 @@
 ## Как продолжить работу (в том числе с другого аккаунта)
 
 1. Подключи репозиторий `Statusq8/prizvannyy-game`.
-2. Скажи Claude: «Продолжаем игру, прочитай `v2/README.md`, `v2/PROGRESS.md` и `v2/docs/GDD_v1.0.md`».
+2. Скажи Claude: «Продолжаем игру, прочитай `v2/README.md`, `v2/PROGRESS.md` и `v2/docs/GDD.md`».
 3. Claude продолжает со следующего шага из `PROGRESS.md`.
 
 ## Правила работы
@@ -23,4 +23,4 @@
 - `index.html` — текущая игра (один файл, собирается `npm run build` из `src/`).
 - `src/core.js` — логика, `src/template.html` — интерфейс, `tests/` — автотесты, `tools/sim.js` — симуляция баланса.
 - `PROGRESS.md` — что сделано и что дальше.
-- `docs/GDD_v1.0.md` — дизайн-документ.
+- `docs/GDD.md` — дизайн-документ.

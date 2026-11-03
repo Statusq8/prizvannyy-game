@@ -273,22 +273,24 @@ test('урон не убывает с ростом уровня', () => {
 });
 
 // ---------- четыре союзника ----------
-test('четыре союзника с разными частотами атак, атакуют независимо', () => {
-  assert.strictEqual(CFG.allies.length, 4);
-  assert.strictEqual(new Set(CFG.allies.map(a => a.attackInterval)).size, 4);
+test('отряд из четырёх с разными частотами атак, атакуют независимо', () => {
   const s = C.newState(NOCRIT);
-  for (const a of CFG.allies) s.allies[a.id].level = 1;
+  assert.strictEqual(s.squad.length, CFG.squadSize);
+  const squad = s.squad.map(id => CFG.allies.find(a => a.id === id));
+  assert.strictEqual(new Set(squad.map(a => a.attackInterval)).size, 4);
+  for (const a of squad) s.allies[a.id].level = 1;
   s.enemy.hp = s.enemy.maxHp = 1e15;
   const hits = {};
   const step = 1 / 30;
   for (let t = 0; t < 12; t += step) for (const e of C.tick(s, step)) if (e.type === 'hit') hits[e.source] = (hits[e.source] || 0) + 1;
-  for (const a of CFG.allies) assert.ok(Math.abs(hits[a.id] - 12 / a.attackInterval) <= 1, a.id + ': ' + hits[a.id]);
-  const total = CFG.allies.reduce((x, a) => x + C.allyDpsAt(a.id, 1), 0);
+  for (const a of squad) assert.ok(Math.abs(hits[a.id] - 12 / a.attackInterval) <= 1, a.id + ': ' + hits[a.id]);
+  const total = squad.reduce((x, a) => x + C.allyDpsAt(a.id, 1), 0);
   assert.strictEqual(C.autoDps(s), total);
 });
 
 test('сохранение всех союзников', () => {
   const s = C.newState(NOCRIT);
+  for (const a of CFG.allies) s.heroes[a.id].unlocked = true;
   CFG.allies.forEach((a, i) => { s.allies[a.id].level = i * 3 + 1; });
   const t = C.deserialize(C.serialize(s));
   CFG.allies.forEach((a, i) => assert.strictEqual(t.allies[a.id].level, i * 3 + 1));
@@ -355,7 +357,7 @@ test('Метка пламени усиливает урон по врагу и �
 test('Разрез бездны усиливает только тапы', () => {
   const a = ultOf('tapBuff');
   const s = C.newState(NOCRIT); tough(s);
-  s.buffs.tap = a.ult.duration;
+  s.buffs.tap = a.ult.duration; s.buffs.tapPower = a.ult.power;
   assert.strictEqual(C.damageMult(s, 'tap'), a.ult.power);
   assert.strictEqual(C.damageMult(s, 'irene'), 1);
 });
@@ -376,30 +378,15 @@ test('готовность ультимейта сохраняется межд�
 });
 
 // ---------- криты ----------
-test('крит умножает урон, шанс и множитель растут от прокачки', () => {
+test('крит умножает урон; прокачки критов за золото нет', () => {
   const s = C.newState({ rng: () => 0 });       // всегда крит
   const hit = C.tap(s).find(e => e.type === 'hit');
   assert.strictEqual(hit.crit, true);
   assert.strictEqual(hit.dmg, C.tapDamage(s) * CFG.crit.baseMult);
   const n = C.newState(NOCRIT);
   assert.strictEqual(C.tap(n).find(e => e.type === 'hit').crit, false);
-
   assert.strictEqual(C.critChance(s), CFG.crit.baseChance);
-  s.gold = 1e9;
-  assert.ok(C.buyCrit(s, 'chance', 5));
-  assert.ok(Math.abs(C.critChance(s) - (CFG.crit.baseChance + 5 * CFG.crit.chancePerLevel)) < 1e-9);
-  assert.ok(C.buyCrit(s, 'mult', 3));
-  assert.ok(Math.abs(C.critMult(s) - (CFG.crit.baseMult + 3 * CFG.crit.multPerLevel)) < 1e-9);
-  assert.strictEqual(C.buyCrit(s, 'speed', 1), false);   // других статов нет
-});
-
-test('шанс крита ограничен потолком уровней', () => {
-  const s = C.newState(NOCRIT);
-  s.gold = 1e300;
-  assert.ok(C.buyCrit(s, 'chance', 'max'));
-  assert.strictEqual(s.critChanceLevel, CFG.crit.maxChanceLevel);
-  assert.strictEqual(C.buyCrit(s, 'chance', 1), false);
-  assert.ok(C.critChance(s) <= 1);
+  assert.strictEqual(C.buyCrit, undefined);
 });
 
 test('криты срабатывают примерно с заданной вероятностью', () => {
@@ -440,7 +427,10 @@ test('Клеймо охотника временно повышает шанс �
   s.maxFloor = def.unlockFloor;
   const base = C.critChance(s);
   C.useAbility(s, 'hunt');
-  assert.ok(Math.abs(C.critChance(s) - Math.min(1, base + def.critChanceBonus)) < 1e-9);
+  assert.ok(Math.abs(C.critChance(s) - Math.min(CFG.crit.maxChance, base + def.critChanceBonus)) < 1e-9);
+  const save = def.critChanceBonus; def.critChanceBonus = 5;        // даже огромный бонус упирается в потолок
+  assert.strictEqual(C.critChance(s), CFG.crit.maxChance);
+  def.critChanceBonus = save;
   runFor(s, def.duration + 0.1);
   assert.strictEqual(C.critChance(s), base);
 });
@@ -456,22 +446,159 @@ test('по умолчанию способности ручные; автоис�
   assert.ok(!ev.some(e => e.type === 'ability' && e.id === 'hunt'));
 });
 
-test('сохранение критов и способностей, миграция с версии 0.5', () => {
+test('сохранение способностей, миграция с 0.5; золото за старую прокачку критов возвращается', () => {
   const s = C.newState(NOCRIT);
-  s.critChanceLevel = 7; s.critMultLevel = 4; s.maxFloor = 20;
+  s.maxFloor = 20;
   C.useAbility(s, 'hunt'); C.setAbilityAuto(s, 'flurry', true);
   const t = C.deserialize(C.serialize(s));
-  assert.strictEqual(t.critChanceLevel, 7);
-  assert.strictEqual(t.critMultLevel, 4);
   assert.strictEqual(t.abilities.flurry.auto, true);
   assert.ok(t.abilities.hunt.cd > 0);
 
-  const old = JSON.parse(C.serialize(s)); old.v = 2; delete old.critChanceLevel; delete old.critMultLevel; delete old.abilities;
+  const old = JSON.parse(C.serialize(s)); old.v = 2; delete old.abilities; delete old.heroes; delete old.squad;
+  delete old.tickets; delete old.ticketFloor; delete old.pity;
   const m = C.deserialize(JSON.stringify(old));
   assert.ok(m);
-  assert.strictEqual(m.critChanceLevel, 0);
   assert.strictEqual(m.abilities.flurry.auto, false);
 
-  const bad = JSON.parse(C.serialize(s)); bad.critChanceLevel = 999;
-  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+  const v3 = JSON.parse(C.serialize(s)); v3.v = 3; v3.gold = 0; v3.critChanceLevel = 2; v3.critMultLevel = 1;
+  delete v3.heroes; delete v3.squad; delete v3.tickets; delete v3.ticketFloor; delete v3.pity;
+  const r = C.deserialize(JSON.stringify(v3));
+  assert.strictEqual(r.gold, Math.ceil(100 + 100 * 1.22) + 150);
+});
+
+
+// ---------- коллекция, портал, звёзды, отряд (этап 4) ----------
+const H = id => CFG.allies.find(a => a.id === id);
+test('стартовый отряд открыт, остальные герои закрыты и не нанимаются', () => {
+  const s = C.newState(NOCRIT);
+  for (const a of CFG.allies) assert.strictEqual(s.heroes[a.id].unlocked, !!a.starter, a.id);
+  s.gold = 1e30;
+  const locked = CFG.allies.find(a => !a.starter);
+  assert.strictEqual(C.buyAlly(s, locked.id, 1), false);
+  assert.ok(C.buyAlly(s, s.squad[0], 1));
+});
+
+test('все редкости E → GOD представлены и все герои достижимы через портал', () => {
+  for (const r of CFG.rarities) assert.ok(CFG.allies.some(a => a.rarity === r), r);
+  for (const r of CFG.rarities) assert.ok(CFG.portal.odds[r] > 0, r);
+});
+
+test('билеты за первое в игре прохождение босса, каждый 10-й этаж — больше', () => {
+  const s = C.newState(NOCRIT);
+  s.tapLevel = 1e6;
+  for (let f = 1; f <= 10; f++) clearFloor(s);
+  let exp = 0; for (let f = 1; f <= 10; f++) exp += C.ticketsForFloor(f);
+  assert.strictEqual(s.tickets, exp);
+  assert.ok(C.ticketsForFloor(10) > C.ticketsForFloor(9));
+  C.goToFloor(s, 5); clearFloor(s);
+  assert.strictEqual(s.tickets, exp);                 // повтор не даёт билетов
+});
+
+test('портал тратит билеты, открывает героя навсегда, дубликаты копятся отдельно', () => {
+  const s = C.newState({ rng: () => 0 });             // всегда первая редкость (E) и первый герой в ней
+  assert.strictEqual(C.summon(s, 1), null);           // нет билетов
+  s.tickets = 3;
+  const r = C.summon(s, 3);
+  assert.strictEqual(r.length, 3);
+  assert.strictEqual(s.tickets, 0);
+  assert.strictEqual(r[0].id, 'irene');               // стартовый → сразу дубликат
+  assert.strictEqual(r[0].isNew, false);
+  assert.strictEqual(s.heroes.irene.copies, 3);
+});
+
+test('новый герой из портала открывается', () => {
+  let k = 0;
+  const seq = [0.0, 0.99];                             // редкость E, второй герой E (Гаррет)
+  const s = C.newState({ rng: () => seq[k++ % 2] });
+  s.tickets = 1;
+  const r = C.summon(s, 1);
+  assert.strictEqual(r[0].id, 'garret');
+  assert.strictEqual(r[0].isNew, true);
+  assert.strictEqual(s.heroes.garret.unlocked, true);
+});
+
+test('гарантии: A+ не позже pityA призывов, S+ не позже pityS', () => {
+  const s = C.newState({ rng: () => 0 });             // без гарантий всегда выпадала бы E
+  s.tickets = CFG.portal.pityS;
+  const r = C.summon(s, CFG.portal.pityS);
+  const rank = x => CFG.rarities.indexOf(x);
+  assert.ok(rank(r[CFG.portal.pityA - 1].rarity) >= rank('A'));
+  assert.ok(r.slice(0, CFG.portal.pityA - 1).every(x => x.rarity === 'E'));
+  assert.ok(rank(r[CFG.portal.pityS - 1].rarity) >= rank('S'));
+});
+
+test('шансы портала примерно соответствуют таблице', () => {
+  const s = C.newState();
+  s.tickets = 40000;
+  s.pity = { a: -1e9, s: -1e9 };                       // отключаем гарантии для замера
+  const r = C.summon(s, 40000);
+  const share = r.filter(x => x.rarity === 'E').length / r.length;
+  const total = Object.values(CFG.portal.odds).reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(share - CFG.portal.odds.E / total) < 0.02, 'E ' + share);
+});
+
+test('звёзды: за дубликаты, до 10, повышают только индивидуальный DPS', () => {
+  const s = C.newState(NOCRIT);
+  s.allies.irene.level = 10;
+  const before = C.allyDps(s, 'irene');
+  assert.strictEqual(C.starUp(s, 'irene'), false);   // нет копий
+  s.heroes.irene.copies = 1000;
+  assert.ok(C.starUp(s, 'irene'));
+  assert.strictEqual(C.allyDps(s, 'irene'), before * (1 + CFG.starDpsBonus));
+  while (C.starUp(s, 'irene'));
+  assert.strictEqual(s.heroes.irene.stars, CFG.maxStars);
+  const spent = CFG.starCopies.reduce((a, b) => a + b, 0);
+  assert.strictEqual(s.heroes.irene.copies, 1000 - spent);
+  assert.strictEqual(C.starCost(s, 'irene'), null);
+  assert.strictEqual(H('irene').ult.power, 20);       // ульт не меняется от звёзд
+});
+
+test('отряд: максимум четыре, резерв даёт долю DPS, ненанятые — ничего', () => {
+  const s = C.newState(NOCRIT);
+  s.heroes.garret.unlocked = true;
+  assert.strictEqual(C.squadAdd(s, 'garret'), false);  // отряд полон
+  s.allies.garret.level = 10;
+  assert.strictEqual(C.contribDps(s, 'garret'), C.allyDps(s, 'garret') * CFG.reserveShare);
+  assert.ok(C.squadRemove(s, 'irene'));
+  assert.ok(C.squadAdd(s, 'garret'));
+  assert.strictEqual(C.contribDps(s, 'garret'), C.allyDps(s, 'garret'));
+  assert.strictEqual(C.contribDps(s, 'irene'), 0);     // Ирэн не нанята
+  s.allies.irene.level = 5;
+  assert.strictEqual(C.reserveDps(s), C.allyDps(s, 'irene') * CFG.reserveShare);
+});
+
+test('резерв наносит урон сам, ульты и атаки — только у отряда', () => {
+  const s = C.newState(NOCRIT); tough(s);
+  s.heroes.garret.unlocked = true;
+  s.allies.garret.level = 10;                          // в резерве
+  const ev = runFor(s, 20);
+  const res = ev.filter(e => e.type === 'hit' && e.source === 'reserve');
+  assert.ok(Math.abs(res.length - 20) <= 1);
+  assert.ok(!ev.some(e => e.source === 'garret' || (e.type === 'ult' && e.id === 'garret')));
+});
+
+test('сохранение коллекции и миграция с версии 0.6 (билеты за пройденных боссов)', () => {
+  const s = C.newState(NOCRIT);
+  s.heroes.saya.unlocked = true; s.heroes.saya.copies = 3; s.heroes.irene.stars = 2;
+  C.squadRemove(s, 'kael'); C.squadAdd(s, 'saya');
+  s.tickets = 7; s.ticketFloor = 12; s.pity = { a: 5, s: 40 };
+  const t = C.deserialize(C.serialize(s));
+  assert.ok(t);
+  assert.strictEqual(t.heroes.saya.unlocked, true);
+  assert.strictEqual(t.heroes.saya.copies, 3);
+  assert.strictEqual(t.heroes.irene.stars, 2);
+  assert.strictEqual(t.heroes.velma.unlocked, false);
+  assert.deepStrictEqual(t.squad, s.squad);
+  assert.strictEqual(t.tickets, 7);
+  assert.deepStrictEqual(t.pity, { a: 5, s: 40 });
+
+  const old = JSON.parse(C.serialize(s));
+  old.v = 3; old.highestCleared = 20; delete old.heroes; delete old.squad; delete old.tickets; delete old.ticketFloor; delete old.pity;
+  old.allies = { irene: 50, borg: 20 };
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m);
+  let exp = 0; for (let f = 1; f <= 20; f++) exp += C.ticketsForFloor(f);
+  assert.strictEqual(m.tickets, exp);
+  assert.strictEqual(m.allies.irene.level, 50);
+  assert.deepStrictEqual(m.squad, ['irene', 'borg', 'lia', 'kael']);
 });
