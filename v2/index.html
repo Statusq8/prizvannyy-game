@@ -143,6 +143,11 @@
   .buy:not(:disabled):active { transform: scale(.96); }
 
   /* ---------- настройки ---------- */
+  .askWrap { position: absolute; inset: 0; background: #000b; display: none; align-items: center; justify-content: center; z-index: 20; padding: 20px; }
+  .askWrap.show { display: flex; }
+  .askBox { width: 100%; max-width: 320px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .askBox p { font-size: 14px; line-height: 1.45; margin-bottom: 6px; }
+  .askBtns { display: flex; gap: 8px; } .askBtns .mBtn { flex: 1; }
   #modal { position: absolute; inset: 0; background: #000a; display: none; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
   #modal.show { display: flex; }
   #modalBox { width: 100%; max-width: 320px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
@@ -384,6 +389,13 @@
       <p id="saveInfo"></p>
       <button class="mBtn" id="closeModal">Закрыть</button>
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
+    </div>
+  </div>
+  <!-- Своё окно подтверждения: системные confirm() в некоторых просмотрщиках заблокированы и молча отвечают «нет» -->
+  <div id="ask" class="askWrap">
+    <div class="askBox">
+      <p id="askText"></p>
+      <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
   <div id="version">v0.8</div>
@@ -1289,11 +1301,23 @@
     el.modal.classList.add('show');
   });
   $('closeModal').addEventListener('click', () => el.modal.classList.remove('show'));
+  // ---------- окно подтверждения ----------
+  let askYesFn = null;
+  function ask(text, yesLabel, onYes) {
+    $('askText').innerHTML = text;
+    $('askYes').textContent = yesLabel || 'Да';
+    askYesFn = onYes;
+    $('ask').classList.add('show');
+  }
+  $('askNo').addEventListener('click', () => { $('ask').classList.remove('show'); askYesFn = null; });
+  $('askYes').addEventListener('click', () => { $('ask').classList.remove('show'); const f = askYesFn; askYesFn = null; if (f) f(); });
+
   $('resetBtn').addEventListener('click', () => {
-    if (!confirm('Сбросить весь прогресс? Это нельзя отменить.')) return;
-    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-    s = C.newState(); tapped = false; dmgLog.length = 0;
-    el.modal.classList.remove('show'); restartAnim('spawn'); render();
+    ask('Сбросить весь прогресс? Это нельзя отменить.', 'Сбросить', () => {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      s = C.newState(); tapped = false; dmgLog.length = 0;
+      el.modal.classList.remove('show'); restartAnim('spawn'); render();
+    });
   });
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   window.addEventListener('pagehide', save);
@@ -1487,7 +1511,10 @@
     if (d.plus) altarSel[d.plus] = (altarSel[d.plus] || 0) + 1;
     else if (d.minus) altarSel[d.minus] = (altarSel[d.minus] || 0) - 1;
     else if (d.lock) { C.setLock(s, d.lock, !s.locks[d.lock]); save(); }
-    else if (d.act === 'all') altarSel = C.selectAllUnlocked(s);
+    else if (d.act === 'all') {
+      altarSel = C.selectAllUnlocked(s);
+      if (!Object.keys(altarSel).length) toast('Нечего выбрать<small style="color:var(--muted)">Нет копий без 🔒 — их дают повторы в портале</small>');
+    }
     else if (d.act === 'none') altarSel = {};
     else if (d.act === 'tear') { if (C.tearOfPortal(s, 1)) { toast('Слеза портала<small>+1 🎟</small>'); save(); } }
     else if (d.trace) { if (C.heroTrace(s, d.trace)) { toast('След героя<small>+1 копия · ' + CFG.allies.find(a => a.id === d.trace).name + '</small>'); save(); } }
@@ -1495,16 +1522,23 @@
       cleanSel();
       const total = Object.values(altarSel).reduce((a, x) => a + x, 0);
       if (!total) return;
-      if (!confirm('Пожертвовать ' + total + ' коп.? Они исчезнут навсегда.')) return;
-      if (C.needsRareConfirm(altarSel) && !confirm('Среди них есть редкие герои (A, S или GOD). Точно пожертвовать?')) return;
-      const r = C.sacrifice(s, altarSel);
-      if (r) {
-        altarSel = {};
-        const f = r.found[0];
-        if (f) toast((f.isNew ? 'Скрытое открытие!' : 'Скрытый рецепт') + '<small>' + CFG.allies.find(a => a.id === f.id).name + (f.isNew ? ' присоединилась' : ' +' + f.sets + ' коп.') + '</small>');
-        else toast('Алтарь принял жертву<small>+' + fmt(r.essence) + ' ✦</small>');
-        save();
-      }
+      const doSacrifice = () => {
+        const r = C.sacrifice(s, altarSel);
+        if (r) {
+          altarSel = {};
+          const f = r.found[0];
+          if (f) toast((f.isNew ? 'Скрытое открытие!' : 'Скрытый рецепт') + '<small>' + CFG.allies.find(a => a.id === f.id).name + (f.isNew ? ' присоединилась' : ' +' + f.sets + ' коп.') + ' · +' + fmt(r.essence) + ' ✦</small>');
+          else toast('Алтарь принял жертву<small>+' + fmt(r.essence) + ' ✦</small>');
+          save();
+        }
+        render();
+      };
+      const value = C.sacrificeValue(altarSel);
+      ask('Пожертвовать <b>' + total + '</b> коп. за <b>' + fmt(value) + ' ✦</b>?<br><span style="color:var(--muted)">Копии исчезнут навсегда.</span>', 'Пожертвовать', () => {
+        if (C.needsRareConfirm(altarSel))
+          ask('Среди них есть <b>редкие герои</b> (A, S или GOD). Точно пожертвовать?', 'Да, точно', doSacrifice);
+        else doSacrifice();
+      });
     }
     render();
   });
