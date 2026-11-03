@@ -2,7 +2,8 @@
 // при провале босса фармит 60 с и возвращается. Запуск: node tools/sim.js [тапов/с] [минут]
 const Core = require('../src/core.js');
 const TPS = +(process.argv[2] || 6), MIN = +(process.argv[3] || 30);
-const s = Core.newState(); const dt = 1 / 30;
+const s = Core.newState();
+for (const ab of Core.CONFIG.abilities) Core.setAbilityAuto(s, ab.id, true); const dt = 1 / 30;
 let t = 0, nextTap = 0, farmUntil = 0, fails = 0;
 const marks = new Set([1, 2, 5, 10, 15, 20, 30, 60].map(m => m * 60));
 
@@ -10,6 +11,10 @@ function buyBest() {
   for (;;) {
     const opts = [{ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: (Core.tapDamageAt(s.tapLevel + 1) - Core.tapDamageAt(s.tapLevel)) * TPS }];
     for (const a of Core.CONFIG.allies) { const lv = s.allies[a.id].level; opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: Core.allyDpsAt(a.id, lv + 1) - Core.allyDpsAt(a.id, lv) }); }
+    const base = Core.tapDamage(s) * TPS + Core.autoDps(s);
+    if (s.critChanceLevel < Core.CONFIG.crit.maxChanceLevel)
+      opts.push({ kind: 'chance', cost: Core.critCost(s, 'chance', 1), gain: base * (Core.critMult(s) - 1) * Core.CONFIG.crit.chancePerLevel });
+    opts.push({ kind: 'mult', cost: Core.critCost(s, 'mult', 1), gain: base * Core.critChance(s) * Core.CONFIG.crit.multPerLevel });
     opts.sort((x, y) => y.gain / y.cost - x.gain / x.cost);
     let o = opts[0];
     if (o.cost > s.gold) {
@@ -17,7 +22,7 @@ function buyBest() {
       o = opts.find(x => x.cost <= s.gold && x.cost < opts[0].cost * 0.1);
       if (!o) return;
     }
-    if (o.kind === 'tap') Core.buyTap(s, 1); else Core.buyAlly(s, o.kind, 1);
+    if (o.kind === 'tap') Core.buyTap(s, 1); else if (o.kind === 'chance' || o.kind === 'mult') Core.buyCrit(s, o.kind, 1); else Core.buyAlly(s, o.kind, 1);
   }
 }
 
@@ -28,6 +33,6 @@ while (t < MIN * 60) {
   if (s.farming && t > farmUntil) Core.challengeBoss(s);
   if ([...marks].some(m => t >= m && t - dt < m)) {
     const al = Core.CONFIG.allies.map(a => `${a.name} ур.${s.allies[a.id].level}`).join(', ');
-    console.log(`${Math.round(t / 60)} мин: этаж ${s.floor}, удар ур.${s.tapLevel}, ${al}, авто DPS ${Core.fmt(Core.autoDps(s))}, провалов ${fails}`);
+    console.log(`${Math.round(t / 60)} мин: этаж ${s.floor}, удар ур.${s.tapLevel}, ${al}, крит ${Math.round(Core.critChance(s) * 100)}%×${Core.critMult(s).toFixed(1)}, провалов ${fails}`);
   }
 }

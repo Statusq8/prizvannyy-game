@@ -182,6 +182,24 @@
   #hero.empowered svg { filter: drop-shadow(0 0 10px #b98cff); }
   #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
   .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
+  /* криты */
+  .dmg.crit { font-size: 30px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
+  .dmg.auto.crit { font-size: 22px; }
+  /* панель способностей главного героя — вне арены, чтобы не перехватывать тапы */
+  #abilityBar { display: flex; gap: 8px; padding: 6px 12px; background: var(--bg1); border-top: 1px solid var(--line); position: relative; z-index: 2; }
+  .abil { flex: 1; display: flex; min-width: 0; height: 44px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); overflow: hidden; }
+  .abilUse { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; text-align: left; position: relative; }
+  .abilIcon { font-size: 18px; flex: none; }
+  .abilText { min-width: 0; }
+  .abilName { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .abilState { font-size: 11px; color: var(--muted); }
+  .abil.ready { border-color: var(--accent); }
+  .abil.ready .abilState { color: var(--ok); }
+  .abil.active { border-color: var(--gold); box-shadow: 0 0 10px #ffd36b40; }
+  .abil.locked { opacity: .45; }
+  .abilCd { position: absolute; left: 0; top: 0; bottom: 0; background: #00000055; pointer-events: none; }
+  .abilAuto { width: 40px; flex: none; font-size: 10px; font-weight: 800; color: var(--muted); border-left: 1px solid var(--line); }
+  .abilAuto.on { color: #1a0a08; background: var(--ok); }
   #allyLayer { position: absolute; inset: 0; pointer-events: none; }
   /* размер зависит от высоты арены — на коротком экране фигуры меньше и не перекрываются */
   .ally { position: absolute; height: min(36%, 130px); aspect-ratio: 1 / 1.3; display: none; transform-origin: 50% 100%; bottom: 18px; }
@@ -257,6 +275,7 @@
     <div id="toast"></div>
   </div>
 
+  <div id="abilityBar"></div>
   <div id="panel">
     <button id="panelToggle" aria-label="Свернуть или развернуть улучшения"><span class="bar"></span><span id="toggleLabel">Свернуть</span><span class="chev">▼</span><span id="canBuy"></span></button>
     <div id="goldRow">
@@ -277,6 +296,16 @@
       </div>
       <button class="buy" id="buyTap"></button>
     </div>
+    <div class="card">
+      <div class="cardIcon" style="background:#46381e">🎯</div>
+      <div class="cardInfo"><div class="cardTitle" id="chanceTitle"></div><div class="cardSub" id="chanceSub"></div></div>
+      <button class="buy" id="buyChance"></button>
+    </div>
+    <div class="card">
+      <div class="cardIcon" style="background:#461e24">💥</div>
+      <div class="cardInfo"><div class="cardTitle" id="multTitle"></div><div class="cardSub" id="multSub"></div></div>
+      <button class="buy" id="buyMult"></button>
+    </div>
     <div id="allyCards"></div>
     </div>
   </div>
@@ -289,7 +318,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.5</div>
+  <div id="version">v0.6</div>
 </div>
 
 <script>
@@ -414,7 +443,7 @@
           dmgLog.push([performance.now(), e.dmg, 'tap']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
           fx('spark', x, y, null, 300);
-          fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
+          fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const isUlt = e.source.startsWith('ult:');
@@ -424,8 +453,8 @@
             d.style.color = u.color;
           } else if (u) {
             u.sprite.classList.remove('attack'); void u.sprite.offsetWidth; u.sprite.classList.add('attack');
-            const d = fx('dmg auto', r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
-            d.style.color = u.color;
+            const d = fx('dmg auto' + (e.crit ? ' crit' : ''), r.width * (0.38 + Math.random() * 0.24), r.height * (0.42 + Math.random() * 0.14), fmt(e.dmg), 700);
+            if (!e.crit) d.style.color = u.color;
           }
         }
         restartAnim('hit');
@@ -438,6 +467,13 @@
       } else if (e.type === 'bossFail') {
         toast('Время вышло!<small style="color:var(--muted)">Усились и вызови босса снова</small>');
         save();
+      } else if (e.type === 'ability') {
+        const b = $('ultBanner');
+        b.textContent = 'Призванный · ' + e.name + '!';
+        b.style.color = 'var(--gold)';
+        b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+        heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
+        renderAbilities();
       } else if (e.type === 'ult') {
         const u = allyUi[e.id];
         u.sprite.classList.remove('ulting'); void u.sprite.offsetWidth; u.sprite.classList.add('ulting');
@@ -473,6 +509,8 @@
   }));
   el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
+  $('buyChance').addEventListener('click', () => { if (C.buyCrit(s, 'chance', mult)) { save(); render(); } });
+  $('buyMult').addEventListener('click', () => { if (C.buyCrit(s, 'mult', mult)) { save(); render(); } });
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
@@ -518,6 +556,7 @@
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
     anyAffordable = false;
+    renderCrits();
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -571,7 +610,65 @@
     heroEl.classList.toggle('empowered', s.buffs.tap > 0);
   }
 
+  function renderCrits() {
+    const c = CFG.crit;
+    const pct = x => Math.round(x * 100) + '%';
+    const baseCh = c.baseChance + s.critChanceLevel * c.chancePerLevel;
+    $('chanceTitle').textContent = 'Шанс крита · ' + pct(baseCh);
+    const left = c.maxChanceLevel - s.critChanceLevel;
+    if (left <= 0) {
+      $('chanceSub').innerHTML = '<span class="dim">Максимум от прокачки</span>';
+      const b = $('buyChance'); b.disabled = true; b.innerHTML = 'Максимум';
+    } else {
+      const n = Math.min(left, mult === 'max' ? Math.max(1, C.critMax(s, 'chance')) : mult);
+      const cost = C.critCost(s, 'chance', n);
+      $('chanceSub').innerHTML = pct(baseCh) + ' → <b>' + pct(baseCh + n * c.chancePerLevel) + '</b><span class="dim"> · потолок ' + pct(c.baseChance + c.maxChanceLevel * c.chancePerLevel) + '</span>';
+      setBuy($('buyChance'), cost <= s.gold, n, cost, '+' + fmt(n) + ' ур.');
+    }
+    const m = C.critMult(s);
+    const mn = mult === 'max' ? Math.max(1, C.critMax(s, 'mult')) : mult;
+    const mcost = C.critCost(s, 'mult', mn);
+    $('multTitle').textContent = 'Крит-урон · ×' + m.toFixed(1);
+    $('multSub').innerHTML = '×' + m.toFixed(1) + ' → <b>×' + (m + mn * c.multPerLevel).toFixed(1) + '</b>';
+    setBuy($('buyMult'), mcost <= s.gold, mn, mcost, '+' + fmt(mn) + ' ур.');
+  }
+
+  // ---------- способности главного героя ----------
+  const ABIL_ICON = { flurry: '⚔', hunt: '🎯' };
+  const abilUi = {};
+  function buildAbilities() {
+    const bar = $('abilityBar');
+    for (const a of CFG.abilities) {
+      const w = document.createElement('div');
+      w.className = 'abil';
+      w.innerHTML = '<button class="abilUse"><div class="abilCd"></div><span class="abilIcon">' + ABIL_ICON[a.id] + '</span>' +
+        '<div class="abilText"><div class="abilName">' + a.name + '</div><div class="abilState"></div></div></button>' +
+        '<button class="abilAuto" aria-label="Автоиспользование">АВТО</button>';
+      bar.appendChild(w);
+      const use = w.querySelector('.abilUse'), auto = w.querySelector('.abilAuto');
+      use.addEventListener('click', () => { const ev = C.useAbility(s, a.id); if (ev.length) { handle(ev); save(); } });
+      auto.addEventListener('click', () => { C.setAbilityAuto(s, a.id, !s.abilities[a.id].auto); save(); renderAbilities(); });
+      abilUi[a.id] = { w, state: w.querySelector('.abilState'), cd: w.querySelector('.abilCd'), auto };
+    }
+  }
+  function renderAbilities() {
+    for (const a of CFG.abilities) {
+      const u = abilUi[a.id], st = s.abilities[a.id];
+      const unlocked = C.abilityUnlocked(s, a.id);
+      u.w.classList.toggle('locked', !unlocked);
+      u.w.classList.toggle('active', st.active > 0);
+      u.w.classList.toggle('ready', unlocked && st.cd <= 0 && st.active <= 0);
+      u.auto.classList.toggle('on', st.auto);
+      u.auto.style.visibility = unlocked ? '' : 'hidden';
+      u.state.textContent = !unlocked ? 'с этажа ' + a.unlockFloor
+        : st.active > 0 ? 'действует ' + Math.ceil(st.active) + 'с'
+        : st.cd > 0 ? 'через ' + Math.ceil(st.cd) + 'с' : 'готово';
+      u.cd.style.width = (unlocked && st.active <= 0 && st.cd > 0 ? st.cd / a.cooldown * 100 : 0) + '%';
+    }
+  }
+
   function renderLive() {
+    renderAbilities();
     renderUlts();
     if (s.enemy.isBoss) {
       const p = Math.max(0, s.bossTimeLeft / CFG.bossTimeSec);
@@ -585,7 +682,7 @@
     const tapDps = tapSum / DPS_WINDOW, auto = C.autoDps(s);
     el.dps.textContent = fmt(tapDps + auto);                       // общий DPS
     if (el.statsMore.classList.contains('show'))
-      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с';
+      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с · Крит ' + Math.round(C.critChance(s) * 100) + '% ×' + C.critMult(s).toFixed(1);
   }
 
   // ---------- игровой цикл ----------
@@ -603,6 +700,7 @@
     requestAnimationFrame(loop);
   }
   buildAllies();
+  buildAbilities();
   render();
   requestAnimationFrame(loop);
 })();

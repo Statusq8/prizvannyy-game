@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
+const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 
 function killCurrent(s) {
   let ev = [];
@@ -15,7 +16,7 @@ function clearFloor(s) {
 }
 
 test('новая игра: этаж 1, враг 1 из 10, полное HP', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   assert.strictEqual(s.floor, 1);
   assert.strictEqual(s.enemyIndex, 1);
   assert.strictEqual(s.enemy.hp, s.enemy.maxHp);
@@ -23,14 +24,14 @@ test('новая игра: этаж 1, враг 1 из 10, полное HP', () 
 });
 
 test('тап уменьшает HP на урон за тап', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const hp = s.enemy.hp;
   C.tap(s);
   assert.strictEqual(s.enemy.hp, hp - C.tapDamage(s));
 });
 
 test('после смерти врага урон не наносится до появления нового', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   killCurrent(s);
   assert.deepStrictEqual(C.tap(s), []);
   respawn(s);
@@ -38,7 +39,7 @@ test('после смерти врага урон не наносится до �
 });
 
 test('убийство даёт золото и продвигает врага', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const ev = killCurrent(s);
   assert.ok(ev.some(e => e.type === 'kill' && e.gold > 0));
   assert.strictEqual(s.gold, C.killGold(1, false));
@@ -47,7 +48,7 @@ test('убийство даёт золото и продвигает врага'
 });
 
 test('десятый враг — босс с таймером', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   for (let i = 0; i < 9; i++) { killCurrent(s); respawn(s); }
   assert.strictEqual(s.enemy.isBoss, true);
   assert.strictEqual(s.bossTimeLeft, CFG.bossTimeSec);
@@ -61,7 +62,7 @@ test('HP врагов растёт экспоненциально по этаж�
 });
 
 test('победа над боссом: следующий этаж и разовая награда первого прохождения', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.tapLevel = 1000;
   for (let i = 0; i < 9; i++) { killCurrent(s); respawn(s); }
   const ev = killCurrent(s);
@@ -78,7 +79,7 @@ test('победа над боссом: следующий этаж и разо�
 });
 
 test('провал по таймеру: фарм без босса, затем можно вызвать босса', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   for (let i = 0; i < 9; i++) { killCurrent(s); respawn(s); }
   const ev = C.tick(s, CFG.bossTimeSec + 0.1);
   assert.ok(ev.some(e => e.type === 'bossFail'));
@@ -95,14 +96,14 @@ test('провал по таймеру: фарм без босса, затем �
 });
 
 test('таймер босса не идёт у обычных врагов', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const ev = C.tick(s, 1000);
   assert.deepStrictEqual(ev, []);
   assert.strictEqual(s.enemyIndex, 1);
 });
 
 test('переход только на открытые этажи', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   assert.deepStrictEqual(C.goToFloor(s, 2), []);
   assert.deepStrictEqual(C.goToFloor(s, 0), []);
   s.tapLevel = 1000;
@@ -114,7 +115,7 @@ test('переход только на открытые этажи', () => {
 });
 
 test('покупка улучшения: ×1, ×10, MAX, нехватка золота', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   assert.strictEqual(C.buyTap(s, 1), false);           // нет золота
   s.gold = C.upgradeCost(1, 10);
   assert.strictEqual(C.buyTap(s, 10), true);
@@ -139,7 +140,7 @@ test('сумма стоимости ×N равна сумме N покупок �
 });
 
 test('сохранение и загрузка восстанавливают прогресс', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.tapLevel = 1000;
   clearFloor(s); clearFloor(s);
   s.gold = 1234.5;
@@ -153,7 +154,7 @@ test('сохранение и загрузка восстанавливают п
 test('повреждённое сохранение не загружается', () => {
   assert.strictEqual(C.deserialize('не json'), null);
   assert.strictEqual(C.deserialize('{}'), null);
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const bad = JSON.parse(C.serialize(s)); bad.gold = -5;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
   const bad2 = JSON.parse(C.serialize(s)); bad2.floor = 9; bad2.maxFloor = 3;
@@ -168,7 +169,7 @@ test('формат чисел: обычные и научная нотация',
 
 // ---------- союзники (этап 3) ----------
 test('союзник не нанят: не атакует', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const hp = s.enemy.hp;
   C.tick(s, 5);
   assert.strictEqual(s.enemy.hp, hp);
@@ -176,7 +177,7 @@ test('союзник не нанят: не атакует', () => {
 });
 
 test('найм союзника за золото и рост уровня', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const a = CFG.allies[0];
   assert.strictEqual(C.buyAlly(s, a.id, 1), false);    // нет золота
   s.gold = a.hireCost;
@@ -191,7 +192,7 @@ test('найм союзника за золото и рост уровня', () 
 });
 
 test('союзник атакует сам с фиксированной частотой и наносит свой DPS', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   const a = CFG.allies[0];
   s.allies[a.id].level = 1;
   s.enemy.hp = s.enemy.maxHp = 1e9;                    // живучий враг
@@ -203,7 +204,7 @@ test('союзник атакует сам с фиксированной час�
 });
 
 test('союзник убивает врага без тапов, не бьёт мёртвого, проходит этаж', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.allies[CFG.allies[0].id].level = 500;
   const step = 1 / 30;
   for (let t = 0; t < 60 && s.floor === 1; t += step) {
@@ -215,7 +216,7 @@ test('союзник убивает врага без тапов, не бьёт 
 });
 
 test('сохранение союзников и миграция сохранения версии 0.2', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.allies[CFG.allies[0].id].level = 7;
   const t = C.deserialize(C.serialize(s));
   assert.strictEqual(t.allies[CFG.allies[0].id].level, 7);
@@ -256,7 +257,7 @@ test('урон не убывает с ростом уровня', () => {
 test('четыре союзника с разными частотами атак, атакуют независимо', () => {
   assert.strictEqual(CFG.allies.length, 4);
   assert.strictEqual(new Set(CFG.allies.map(a => a.attackInterval)).size, 4);
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   for (const a of CFG.allies) s.allies[a.id].level = 1;
   s.enemy.hp = s.enemy.maxHp = 1e15;
   const hits = {};
@@ -268,7 +269,7 @@ test('четыре союзника с разными частотами ата�
 });
 
 test('сохранение всех союзников', () => {
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   CFG.allies.forEach((a, i) => { s.allies[a.id].level = i * 3 + 1; });
   const t = C.deserialize(C.serialize(s));
   CFG.allies.forEach((a, i) => assert.strictEqual(t.allies[a.id].level, i * 3 + 1));
@@ -280,14 +281,14 @@ function runFor(s, sec) { const ev = []; const step = 1 / 30; for (let t = 0; t 
 function tough(s) { s.enemy.hp = s.enemy.maxHp = 1e18; }
 
 test('ультимейт не копится у ненанятого союзника', () => {
-  const s = C.newState(); tough(s);
+  const s = C.newState(NOCRIT); tough(s);
   const ev = runFor(s, 60);
   assert.ok(!ev.some(e => e.type === 'ult'));
 });
 
 test('ультимейт срабатывает автоматически по заряду', () => {
   const a = ultOf('nuke');
-  const s = C.newState(); tough(s);
+  const s = C.newState(NOCRIT); tough(s);
   s.allies[a.id].level = 10;
   const ev = runFor(s, a.ult.charge * 2 + 0.5);
   assert.strictEqual(ev.filter(e => e.type === 'ult' && e.id === a.id).length, 2);
@@ -295,7 +296,7 @@ test('ультимейт срабатывает автоматически по 
 
 test('Ливень стрел наносит прямой урон, кратный DPS союзника', () => {
   const a = ultOf('nuke');
-  const s = C.newState(); tough(s);
+  const s = C.newState(NOCRIT); tough(s);
   s.allies[a.id].level = 10;
   s.allies[a.id].ult = a.ult.charge;
   const ev = C.tick(s, 1 / 30);
@@ -306,7 +307,7 @@ test('Ливень стрел наносит прямой урон, кратны
 
 test('Ярость умножает урон тапа и союзников на время действия', () => {
   const a = ultOf('teamBuff');
-  const s = C.newState(); tough(s);
+  const s = C.newState(NOCRIT); tough(s);
   s.allies[a.id].level = 1;
   s.allies[a.id].ult = a.ult.charge;
   C.tick(s, 1 / 30);
@@ -320,7 +321,7 @@ test('Ярость умножает урон тапа и союзников на
 
 test('Метка пламени усиливает урон по врагу и пропадает с новым врагом', () => {
   const a = ultOf('mark');
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.allies[a.id].level = 1;
   s.allies[a.id].ult = a.ult.charge;
   s.enemy.hp = s.enemy.maxHp = 1e9;
@@ -334,7 +335,7 @@ test('Метка пламени усиливает урон по врагу и �
 
 test('Разрез бездны усиливает только тапы', () => {
   const a = ultOf('tapBuff');
-  const s = C.newState(); tough(s);
+  const s = C.newState(NOCRIT); tough(s);
   s.buffs.tap = a.ult.duration;
   assert.strictEqual(C.damageMult(s, 'tap'), a.ult.power);
   assert.strictEqual(C.damageMult(s, 'irene'), 1);
@@ -342,7 +343,7 @@ test('Разрез бездны усиливает только тапы', () =>
 
 test('готовность ультимейта сохраняется между врагами: не тратится на мёртвого', () => {
   const a = ultOf('nuke');
-  const s = C.newState();
+  const s = C.newState(NOCRIT);
   s.allies[a.id].level = 1;
   while (s.enemy.alive) C.tap(s);           // враг мёртв, идёт пауза до нового
   s.allies[a.id].ult = a.ult.charge;
@@ -353,4 +354,105 @@ test('готовность ультимейта сохраняется межд�
   assert.ok(ev2.some(e => e.type === 'spawn'));
   const ev3 = C.tick(s, 1 / 30);
   assert.ok(ev3.some(e => e.type === 'ult' && e.id === a.id));
+});
+
+// ---------- криты ----------
+test('крит умножает урон, шанс и множитель растут от прокачки', () => {
+  const s = C.newState({ rng: () => 0 });       // всегда крит
+  const hit = C.tap(s).find(e => e.type === 'hit');
+  assert.strictEqual(hit.crit, true);
+  assert.strictEqual(hit.dmg, C.tapDamage(s) * CFG.crit.baseMult);
+  const n = C.newState(NOCRIT);
+  assert.strictEqual(C.tap(n).find(e => e.type === 'hit').crit, false);
+
+  assert.strictEqual(C.critChance(s), CFG.crit.baseChance);
+  s.gold = 1e9;
+  assert.ok(C.buyCrit(s, 'chance', 5));
+  assert.ok(Math.abs(C.critChance(s) - (CFG.crit.baseChance + 5 * CFG.crit.chancePerLevel)) < 1e-9);
+  assert.ok(C.buyCrit(s, 'mult', 3));
+  assert.ok(Math.abs(C.critMult(s) - (CFG.crit.baseMult + 3 * CFG.crit.multPerLevel)) < 1e-9);
+  assert.strictEqual(C.buyCrit(s, 'speed', 1), false);   // других статов нет
+});
+
+test('шанс крита ограничен потолком уровней', () => {
+  const s = C.newState(NOCRIT);
+  s.gold = 1e300;
+  assert.ok(C.buyCrit(s, 'chance', 'max'));
+  assert.strictEqual(s.critChanceLevel, CFG.crit.maxChanceLevel);
+  assert.strictEqual(C.buyCrit(s, 'chance', 1), false);
+  assert.ok(C.critChance(s) <= 1);
+});
+
+test('криты срабатывают примерно с заданной вероятностью', () => {
+  const s = C.newState();                        // настоящий Math.random
+  s.enemy.hp = s.enemy.maxHp = 1e18;
+  let crits = 0; const N = 20000;
+  for (let i = 0; i < N; i++) if (C.tap(s).find(e => e.type === 'hit').crit) crits++;
+  assert.ok(Math.abs(crits / N - CFG.crit.baseChance) < 0.01, 'доля ' + crits / N);
+});
+
+// ---------- способности главного героя ----------
+test('способности закрыты до нужного этажа', () => {
+  const s = C.newState(NOCRIT);
+  for (const a of CFG.abilities) {
+    s.maxFloor = a.unlockFloor - 1;
+    assert.deepStrictEqual(C.useAbility(s, a.id), []);
+    s.maxFloor = a.unlockFloor;
+    assert.ok(C.useAbility(s, a.id).some(e => e.type === 'ability'));
+  }
+});
+
+test('Шквал наносит удары тапом сам и уходит на перезарядку', () => {
+  const def = CFG.abilities.find(a => a.id === 'flurry');
+  const s = C.newState(NOCRIT); tough(s);
+  s.maxFloor = def.unlockFloor;
+  C.useAbility(s, 'flurry');
+  assert.deepStrictEqual(C.useAbility(s, 'flurry'), []);     // на перезарядке
+  const ev = runFor(s, def.duration + 1);
+  const taps = ev.filter(e => e.type === 'hit' && e.source === 'tap').length;
+  assert.ok(Math.abs(taps - def.duration * def.tapsPerSec) <= 2, 'ударов ' + taps);
+  runFor(s, def.cooldown);
+  assert.ok(C.abilityReady(s, 'flurry'));
+});
+
+test('Клеймо охотника временно повышает шанс крита', () => {
+  const def = CFG.abilities.find(a => a.id === 'hunt');
+  const s = C.newState(NOCRIT); tough(s);
+  s.maxFloor = def.unlockFloor;
+  const base = C.critChance(s);
+  C.useAbility(s, 'hunt');
+  assert.ok(Math.abs(C.critChance(s) - Math.min(1, base + def.critChanceBonus)) < 1e-9);
+  runFor(s, def.duration + 0.1);
+  assert.strictEqual(C.critChance(s), base);
+});
+
+test('по умолчанию способности ручные; автоиспользование включается отдельно для каждой', () => {
+  const s = C.newState(NOCRIT); tough(s);
+  s.maxFloor = 100;
+  let ev = runFor(s, 2);
+  assert.ok(!ev.some(e => e.type === 'ability'));
+  C.setAbilityAuto(s, 'flurry', true);
+  ev = runFor(s, 2);
+  assert.ok(ev.some(e => e.type === 'ability' && e.id === 'flurry'));
+  assert.ok(!ev.some(e => e.type === 'ability' && e.id === 'hunt'));
+});
+
+test('сохранение критов и способностей, миграция с версии 0.5', () => {
+  const s = C.newState(NOCRIT);
+  s.critChanceLevel = 7; s.critMultLevel = 4; s.maxFloor = 20;
+  C.useAbility(s, 'hunt'); C.setAbilityAuto(s, 'flurry', true);
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.critChanceLevel, 7);
+  assert.strictEqual(t.critMultLevel, 4);
+  assert.strictEqual(t.abilities.flurry.auto, true);
+  assert.ok(t.abilities.hunt.cd > 0);
+
+  const old = JSON.parse(C.serialize(s)); old.v = 2; delete old.critChanceLevel; delete old.critMultLevel; delete old.abilities;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m);
+  assert.strictEqual(m.critChanceLevel, 0);
+  assert.strictEqual(m.abilities.flurry.auto, false);
+
+  const bad = JSON.parse(C.serialize(s)); bad.critChanceLevel = 999;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
