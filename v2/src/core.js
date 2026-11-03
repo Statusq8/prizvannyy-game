@@ -18,6 +18,11 @@
     tapUpgradeBaseCost: 5,
     tapUpgradeCostGrowth: 1.08,
     respawnDelaySec: 0.35,
+    // Вехи уровней: на уровнях из списка, а дальше каждые milestoneEvery уровней,
+    // урон удара/союзника умножается на milestoneMult. Временные числа для испытаний.
+    milestones: [10, 25, 50, 75, 100],
+    milestoneEvery: 25,
+    milestoneMult: 3,
     // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
     allies: [
       { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
@@ -47,7 +52,22 @@
   function firstClearGold(floor) {
     return Math.ceil(CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * CONFIG.firstClearGoldMult);
   }
-  function tapDamage(s) { return CONFIG.tapBaseDamage * s.tapLevel; }
+  // Сколько вех пройдено на этом уровне
+  function milestonesReached(level) {
+    const list = CONFIG.milestones, last = list[list.length - 1];
+    let n = 0;
+    for (const m of list) if (level >= m) n++;
+    if (level > last) n += Math.floor((level - last) / CONFIG.milestoneEvery);
+    return n;
+  }
+  function milestoneMultAt(level) { return Math.pow(CONFIG.milestoneMult, milestonesReached(level)); }
+  function nextMilestone(level) {
+    for (const m of CONFIG.milestones) if (level < m) return m;
+    const last = CONFIG.milestones[CONFIG.milestones.length - 1];
+    return last + (Math.floor((level - last) / CONFIG.milestoneEvery) + 1) * CONFIG.milestoneEvery;
+  }
+  function tapDamageAt(level) { return CONFIG.tapBaseDamage * level * milestoneMultAt(level); }
+  function tapDamage(s) { return tapDamageAt(s.tapLevel); }
   function enemyName(floor, index, isBoss) {
     if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
@@ -76,7 +96,8 @@
 
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
-  function allyDps(s, id) { return allyDef(id).baseDps * s.allies[id].level; }
+  function allyDpsAt(id, level) { return allyDef(id).baseDps * level * milestoneMultAt(level); }
+  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level); }
   function autoDps(s) { return CONFIG.allies.reduce((sum, a) => sum + allyDps(s, a.id), 0); }
   // Уровень 0 → первая покупка = найм по hireCost
   function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
@@ -279,7 +300,8 @@
 
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
-    buyAlly, allyDps, autoDps, allyCost, allyMax,
+    buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
+    tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };

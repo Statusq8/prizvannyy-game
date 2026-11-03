@@ -142,6 +142,7 @@
   .card + .card { margin-top: 8px; }
   .cardIcon.allyIco { background: #1e3a46; }
   .cardSub .dim { color: var(--muted); }
+  .cardSub .ms { color: var(--gold); opacity: .8; }
   #stats { cursor: pointer; }
   #statsMore { display: none; margin-top: 3px; font-size: 11px; color: var(--muted); }
   #statsMore.show { display: block; }
@@ -405,7 +406,7 @@
     const n = mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : mult;
     const cost = C.upgradeCost(s.tapLevel, n);
     const can = cost <= s.gold;
-    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(CFG.tapBaseDamage * (s.tapLevel + n)) + '</b>';
+    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
 
     // союзник
@@ -413,10 +414,15 @@
     const an = mult === 'max' ? Math.max(1, C.allyMax(s, ALLY.id)) : mult;
     const acost = C.allyCost(s, ALLY.id, an);
     el.allyTitle.textContent = ALLY.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : ALLY.role);
-    el.allySub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, ALLY.id)) + ' → <b>' + fmt(ALLY.baseDps * (lv + an)) + '</b>'
-                              : '<span class="dim">Не нанята · автоатака</span> DPS <b>' + fmt(ALLY.baseDps * an) + '</b>';
+    el.allySub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, ALLY.id)) + ' → <b>' + fmt(C.allyDpsAt(ALLY.id, lv + an)) + '</b>' + msHint(lv)
+                              : '<span class="dim">Не нанята · автоатака</span> DPS <b>' + fmt(C.allyDpsAt(ALLY.id, an)) + '</b>';
     setBuy(el.buyAlly, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
     el.allySprite.classList.toggle('on', lv > 0);
+  }
+
+  // Подсказка о следующей вехе уровня
+  function msHint(level) {
+    return '<span class="ms"> · ×' + CFG.milestoneMult + ' на ур. ' + fmt(C.nextMilestone(level)) + '</span>';
   }
 
   function setBuy(btn, can, n, cost, label) {

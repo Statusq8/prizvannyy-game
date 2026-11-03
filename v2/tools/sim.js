@@ -8,8 +8,8 @@ const marks = new Set([1, 2, 5, 10, 15, 20, 30, 60].map(m => m * 60));
 
 function buyBest() {
   for (;;) {
-    const opts = [{ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: Core.CONFIG.tapBaseDamage * TPS }];
-    for (const a of Core.CONFIG.allies) opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: a.baseDps });
+    const opts = [{ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: (Core.tapDamageAt(s.tapLevel + 1) - Core.tapDamageAt(s.tapLevel)) * TPS }];
+    for (const a of Core.CONFIG.allies) { const lv = s.allies[a.id].level; opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: Core.allyDpsAt(a.id, lv + 1) - Core.allyDpsAt(a.id, lv) }); }
     opts.sort((x, y) => y.gain / y.cost - x.gain / x.cost);
     const o = opts[0];
     if (o.cost > s.gold) return;
