@@ -14,6 +14,7 @@ jobs:
           cd work
           node --test tests/*.test.js
           node build.js
+          mkdir -p ../android/app/src/main/assets
           cp dist/index.html ../android/app/src/main/assets/index.html
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
