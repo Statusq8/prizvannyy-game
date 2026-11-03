@@ -1,6 +1,6 @@
 name: Сборка APK
+# APK собирается ТОЛЬКО по команде (решение автора 03.11.2026): вкладка Actions → «Сборка APK» → Run workflow.
 on:
-  push:
   workflow_dispatch:
 permissions:
   contents: write
@@ -32,7 +32,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: 'Prizvannyy-${{ env.V }}-apk', path: 'Prizvannyy-*.apk' }
       - name: Выпуск на странице Releases (скачать APK прямо на телефон)
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.V }}
