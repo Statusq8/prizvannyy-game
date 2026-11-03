@@ -1,0 +1,4133 @@
+{
+  "schema_version": "0.2.0",
+  "source": "Prizvannyy_Tower_GDD 1.0 section 5.2",
+  "design_decisions": {
+    "factions": [
+      "light",
+      "shadow",
+      "wild"
+    ],
+    "undead_is_tag": true,
+    "class_selection_main_level": 100,
+    "subclass_selection_main_level": 250,
+    "mastery_multiplier": "1.25 ** max(0, floor((level-200)/25))",
+    "rarity_gates": {
+      "SS": 1000,
+      "БОГ": 4000
+    }
+  },
+  "notes": [
+    "Фракции и теги — предлагаемые назначения, требуют утверждения.",
+    "Индивидуальные личные пассивки D–БОГ — новые черновые коэффициенты, не прошли симуляцию.",
+    "Бонусы 100/500 перенесены из GDD как тестовые, не окончательный баланс.",
+    "Портал, шанс выпадения, pity и фрагменты пока не определены.",
+    "Пассивки D–БОГ получили 175 индивидуальных названий. Их текущий эффект — только личный множитель DPS, уникальные игровые механики ещё не разработаны."
+  ],
+  "heroes": [
+    {
+      "id": "e_ash_recruit",
+      "name": "Пепельный рекрут",
+      "rarity": "E",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 25,
+      "base_dps": 2,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Точная атака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Боевой инстинкт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Нарастающая мощь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Критическая подготовка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.005,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Предел силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.005,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "draft",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "e_bone_servant",
+      "name": "Костяной слуга",
+      "rarity": "E",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [
+        "undead"
+      ],
+      "base_hire_gold": 60,
+      "base_dps": 4,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Точная атака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Боевой инстинкт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Нарастающая мощь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Критическая подготовка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Предел силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "draft",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "e_forest_hunter",
+      "name": "Лесной охотник",
+      "rarity": "E",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 120,
+      "base_dps": 7,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Точная атака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Боевой инстинкт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Нарастающая мощь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Критическая подготовка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "normal",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Предел силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "normal",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "draft",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "e_swamp_thief",
+      "name": "Болотный вор",
+      "rarity": "E",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 220,
+      "base_dps": 10,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Точная атака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Боевой инстинкт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Нарастающая мощь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Критическая подготовка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "economy",
+            "target": "gold",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Предел силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "economy",
+            "target": "gold",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "draft",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "e_light_acolyte",
+      "name": "Послушник света",
+      "rarity": "E",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 400,
+      "base_dps": 14,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Точная атака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Боевой инстинкт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Нарастающая мощь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Критическая подготовка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Предел силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3
+          },
+          "status": "draft_from_gdd"
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "draft",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "d_lane",
+      "name": "Лейн",
+      "rarity": "D",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 800,
+      "base_dps": 24,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Стойка защитника",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Ответный выпад",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Железная дисциплина",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Страж авангарда",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Несокрушимая клятва",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.01,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "d_sand_wanderer",
+      "name": "Песчаный скиталец",
+      "rarity": "D",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 1600,
+      "base_dps": 40,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Песчаный укол",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Суховей",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Мираж клинка",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Буря дюн",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Глас пустыни",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "d_dark_acolyte",
+      "name": "Мрачный послушник",
+      "rarity": "D",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [
+        "undead"
+      ],
+      "base_hire_gold": 3000,
+      "base_dps": 65,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Тёмная искра",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Клятва теней",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Проклятая печать",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Чёрная молитва",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Служитель бездны",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "d_ruins_guard",
+      "name": "Страж руин",
+      "rarity": "D",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 6000,
+      "base_dps": 105,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Удар бастиона",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Древняя броня",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Каменный натиск",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Память руин",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Последний оплот",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "d_spirit_huntress",
+      "name": "Охотница на духов",
+      "rarity": "D",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 12000,
+      "base_dps": 170,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "След призрака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Призрачная стрела",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Чуткость охотницы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Оковы эфира",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "economy",
+            "target": "ghost_rewards",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Изгнание душ",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "economy",
+            "target": "ghost_rewards",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "c_shadow_raven",
+      "name": "Ворон Теней",
+      "rarity": "C",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 25000,
+      "base_dps": 350,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Клюв сумрака",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Чёрное перо",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Теневой налёт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Рой воронов",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Затмение крыла",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "c_ice_witch",
+      "name": "Ледяная ведьма",
+      "rarity": "C",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 50000,
+      "base_dps": 600,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Иней",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Ледяные иглы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Холодное сердце",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Снежный шквал",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.02,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Абсолютный ноль",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "c_beast_tamer",
+      "name": "Зверолов",
+      "rarity": "C",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 100000,
+      "base_dps": 1000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Охотничий капкан",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Зов стаи",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Рваная рана",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Инстинкт хищника",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Альфа-охота",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "c_grove_keeper",
+      "name": "Хранитель рощи",
+      "rarity": "C",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 200000,
+      "base_dps": 1700,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Шипастая лоза",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Корни стража",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Сила чащи",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Гнев дубравы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Сердце леса",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "c_sun_spearman",
+      "name": "Солнечный копейщик",
+      "rarity": "C",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 400000,
+      "base_dps": 2800,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Луч на острие",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Солнечный выпад",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Золотое копьё",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Полуденный натиск",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Кара рассвета",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "b_steel_shield",
+      "name": "Стальной Щит",
+      "rarity": "B",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 800000,
+      "base_dps": 5000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Стальной толчок",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Глухая оборона",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Таран щитом",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Непробиваемый строй",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Крепость воина",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "b_fire_inquisitor",
+      "name": "Огненный инквизитор",
+      "rarity": "B",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 1800000,
+      "base_dps": 9000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Искра суда",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Клеймо огня",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Пламя очищения",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Приговор еретику",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.03,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Костёр истины",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "b_venom_fang",
+      "name": "Ядовитый клык",
+      "rarity": "B",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 3500000,
+      "base_dps": 16000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Первый укус",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Ядовитая кровь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Глубокий прокол",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Смертельный токсин",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Последний яд",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.06,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "b_ash_necromancer",
+      "name": "Некромант пепла",
+      "rarity": "B",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [
+        "undead"
+      ],
+      "base_hire_gold": 7000000,
+      "base_dps": 28000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Пепельная искра",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Костяной ритуал",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Мёртвое пламя",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Прах легиона",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Жатва пепла",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.06,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "b_thunder_archer",
+      "name": "Грозовой стрелок",
+      "rarity": "B",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 12000000,
+      "base_dps": 48000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Искровой выстрел",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Заряженная тетива",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Громовой залп",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Цепная молния",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.04,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Шторм стрел",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "a_ariel",
+      "name": "Ариэль",
+      "rarity": "A",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 25000000,
+      "base_dps": 90000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Световой клинок",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Небесная поступь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Сияющая клятва",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Крылья зари",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Благословение Ариэль",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.05,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "a_white_paladin",
+      "name": "Белый паладин",
+      "rarity": "A",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 60000000,
+      "base_dps": 170000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Священный удар",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Молитва стали",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Щит правосудия",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Очищающий свет",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.07,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Суд паладина",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.08,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "a_thorn_queen",
+      "name": "Королева шипов",
+      "rarity": "A",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 120000000,
+      "base_dps": 300000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Корона лоз",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Кровавый шип",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Цветение боли",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Трон терний",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.06,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Владычица чащи",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.07,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "a_chain_lord",
+      "name": "Повелитель цепей",
+      "rarity": "A",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 250000000,
+      "base_dps": 550000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Первое звено",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Кандалы тьмы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Хлёсткая цепь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Железный плен",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.06,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Вечная неволя",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.09,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "a_moon_huntress",
+      "name": "Лунная охотница",
+      "rarity": "A",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 400000000,
+      "base_dps": 950000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Лунный след",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Серебряная стрела",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Тихая ночь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Затмение",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.06,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Охота полнолуния",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.07,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "s_sion",
+      "name": "Сион",
+      "rarity": "S",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 800000000,
+      "base_dps": 1800000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Клинок изгнанника",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Резонанс души",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Печать Сиона",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Разлом судьбы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "summoned",
+            "target": "main",
+            "value": 0.08,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Воля призванного",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "summoned",
+            "target": "main",
+            "value": 0.12,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "s_blood_reaper",
+      "name": "Кровавый жнец",
+      "rarity": "S",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [
+        "undead"
+      ],
+      "base_hire_gold": 2000000000,
+      "base_dps": 4000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Алый надрез",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Кровавая коса",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Пир жатвы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Танец смерти",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.1,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Последний урожай",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.1,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "s_ancient_druid",
+      "name": "Древний друид",
+      "rarity": "S",
+      "rarity_unlock_record_floor": 0,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 4000000000,
+      "base_dps": 8000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Семя силы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Звериный дух",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Древняя кора",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Гнев природы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.1,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Первый лес",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.1,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "s_thunderlord",
+      "name": "Громовержец",
+      "rarity": "S",
+      "rarity_unlock_record_floor": 0,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 8000000000,
+      "base_dps": 15000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Искра небес",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Раскат грома",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Молот бури",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Сердце шторма",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.08,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Гнев небосвода",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.12,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "s_bone_lord",
+      "name": "Владыка костей",
+      "rarity": "S",
+      "rarity_unlock_record_floor": 0,
+      "faction": "shadow",
+      "tags": [
+        "undead"
+      ],
+      "base_hire_gold": 12000000000,
+      "base_dps": 28000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Костяной трон",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Марш мёртвых",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Рёбра крепости",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Корона праха",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.12,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Повеление легиону",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "tag",
+            "target": "undead",
+            "value": 0.13,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "ss_void_king",
+      "name": "Король Пустоты",
+      "rarity": "SS",
+      "rarity_unlock_record_floor": 1000,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 25000000000,
+      "base_dps": 55000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Шёпот ничто",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Клинок пустоты",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Трещина реальности",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Пустотный престол",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.12,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Закон небытия",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "shadow",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "ss_dawn_archangel",
+      "name": "Архангел Рассвета",
+      "rarity": "SS",
+      "rarity_unlock_record_floor": 1000,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 60000000000,
+      "base_dps": 110000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Первый луч",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Перо праведника",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Светоч зари",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Небесный хор",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.1,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Суд рассвета",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "ss_primal_beast",
+      "name": "Первозданный зверь",
+      "rarity": "SS",
+      "rarity_unlock_record_floor": 1000,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 120000000000,
+      "base_dps": 210000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Древний коготь",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Рёв истоков",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Кровь прародителя",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Инстинкт мира",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Первобытная ярость",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "faction",
+            "target": "wild",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "ss_ice_empress",
+      "name": "Императрица льда",
+      "rarity": "SS",
+      "rarity_unlock_record_floor": 1000,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 250000000000,
+      "base_dps": 400000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Хрустальный мороз",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Ледяная диадема",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Зеркало метели",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Трон вечной зимы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.12,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Империя холода",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.13,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "ss_faceless_assassin",
+      "name": "Безликий убийца",
+      "rarity": "SS",
+      "rarity_unlock_record_floor": 1000,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 400000000000,
+      "base_dps": 750000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Невидимый разрез",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Стертое имя",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Удар без тени",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Пустая маска",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Последний свидетель",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "god_fallen_creator",
+      "name": "Падший Создатель",
+      "rarity": "БОГ",
+      "rarity_unlock_record_floor": 4000,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 800000000000,
+      "base_dps": 1500000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Искра творения",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Ошибка мироздания",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Разбитый замысел",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Переписанная судьба",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Падение создателя",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "god_astral_valkyrie",
+      "name": "Астральная Валькирия",
+      "rarity": "БОГ",
+      "rarity_unlock_record_floor": 4000,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 2000000000000,
+      "base_dps": 3500000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Звёздное копьё",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Крылья созвездий",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Небесный марш",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Приговор звёзд",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5999999999999996
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Последняя валькирия",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "god_world_tree_heart",
+      "name": "Сердце Мирового Древа",
+      "rarity": "БОГ",
+      "rarity_unlock_record_floor": 4000,
+      "faction": "wild",
+      "tags": [],
+      "base_hire_gold": 4000000000000,
+      "base_dps": 7000000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Росток вечности",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.6
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.6 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Сок миров",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.1
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.1 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Ветви эпох",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Корни измерений",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.3
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "all_factions",
+            "target": "all",
+            "value": 0.15,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Сердцебиение мира",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.1999999999999997
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "all_factions",
+            "target": "all",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "god_eternal_judge",
+      "name": "Вечный Судья",
+      "rarity": "БОГ",
+      "rarity_unlock_record_floor": 4000,
+      "faction": "light",
+      "tags": [],
+      "base_hire_gold": 8000000000000,
+      "base_dps": 14000000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Первый вердикт",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Весы судьбы",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.2
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 2.2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Печать закона",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Приговор времени",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.4
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.4 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.25,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Окончательный суд",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.8
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 2.8 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "target",
+            "target": "boss",
+            "value": 0.25,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    },
+    {
+      "id": "god_fate_devourer",
+      "name": "Пожиратель Судеб",
+      "rarity": "БОГ",
+      "rarity_unlock_record_floor": 4000,
+      "faction": "shadow",
+      "tags": [],
+      "base_hire_gold": 12000000000000,
+      "base_dps": 25000000000,
+      "passives": [
+        {
+          "level": 10,
+          "id": "personal_10",
+          "name": "Нить рока",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.55
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 10 усиливает личный DPS героя в 1.55 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 25,
+          "id": "personal_25",
+          "name": "Укус будущего",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 1.9
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 25 усиливает личный DPS героя в 1.9 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 50,
+          "id": "personal_50",
+          "name": "Разрыв вероятности",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 50 усиливает личный DPS героя в 2 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 75,
+          "id": "personal_75",
+          "name": "Поглощение выбора",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 2.5
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 75 усиливает личный DPS героя в 2.5 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 100,
+          "id": "legacy_100",
+          "name": "Наследие 100",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.2,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        },
+        {
+          "level": 150,
+          "id": "personal_150",
+          "name": "Конец всех путей",
+          "effect": {
+            "type": "personal_dps_multiplier",
+            "value": 3.0
+          },
+          "status": "proposal_unique_name_test_coefficient",
+          "description": "На уровне 150 усиливает личный DPS героя в 3 раза. Название тематическое; отдельный боевой эффект пока не реализован."
+        },
+        {
+          "level": 500,
+          "id": "legacy_500",
+          "name": "Наследие 500",
+          "effect": {
+            "type": "army",
+            "target": "all",
+            "value": 0.3,
+            "stack": "add_within_category"
+          },
+          "status": "gdd_test"
+        }
+      ],
+      "visual": {
+        "portrait_asset": null,
+        "combat_asset": null,
+        "attack_vfx": null
+      },
+      "data_status": {
+        "base_stats": "test",
+        "faction": "proposal",
+        "tags": "proposal",
+        "personal_passives": "unique_names_proposed_coefficients_test",
+        "level_100_500": "gdd_test"
+      }
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "version": "5.8b",
+  "policy": "buy cheapest available relic level (max 10) before each run",
+  "cycles": [
+    {
+      "run": 1,
+      "floor": 409,
+      "hours": 12.001,
+      "relic_levels": {
+        "heart": 0,
+        "seal": 0,
+        "spark": 0,
+        "gold": 0,
+        "knowledge": 0,
+        "boss": 0
+      },
+      "purchases": [],
+      "earned": 75,
+      "wallet": 75
+    },
+    {
+      "run": 2,
+      "floor": 559,
+      "hours": 12.002,
+      "relic_levels": {
+        "heart": 1,
+        "seal": 1,
+        "spark": 0,
+        "gold": 1,
+        "knowledge": 1,
+        "boss": 0
+      },
+      "purchases": [
+        {
+          "relic": "gold",
+          "level": 1,
+          "cost": 10
+        },
+        {
+          "relic": "heart",
+          "level": 1,
+          "cost": 15
+        },
+        {
+          "relic": "knowledge",
+          "level": 1,
+          "cost": 15
+        },
+        {
+          "relic": "seal",
+          "level": 1,
+          "cost": 20
+        }
+      ],
+      "earned": 65,
+      "wallet": 80
+    },
+    {
+      "run": 3,
+      "floor": 659,
+      "hours": 12.001,
+      "relic_levels": {
+        "heart": 1,
+        "seal": 1,
+        "spark": 1,
+        "gold": 2,
+        "knowledge": 1,
+        "boss": 1
+      },
+      "purchases": [
+        {
+          "relic": "gold",
+          "level": 2,
+          "cost": 20
+        },
+        {
+          "relic": "spark",
+          "level": 1,
+          "cost": 20
+        },
+        {
+          "relic": "boss",
+          "level": 1,
+          "cost": 20
+        }
+      ],
+      "earned": 55,
+      "wallet": 75
+    },
+    {
+      "run": 4,
+      "floor": 699,
+      "hours": 12.001,
+      "relic_levels": {
+        "heart": 2,
+        "seal": 1,
+        "spark": 1,
+        "gold": 2,
+        "knowledge": 2,
+        "boss": 1
+      },
+      "purchases": [
+        {
+          "relic": "heart",
+          "level": 2,
+          "cost": 30
+        },
+        {
+          "relic": "knowledge",
+          "level": 2,
+          "cost": 30
+        }
+      ],
+      "earned": 35,
+      "wallet": 50
+    },
+    {
+      "run": 5,
+      "floor": 729,
+      "hours": 12.002,
+      "relic_levels": {
+        "heart": 2,
+        "seal": 2,
+        "spark": 1,
+        "gold": 2,
+        "knowledge": 2,
+        "boss": 1
+      },
+      "purchases": [
+        {
+          "relic": "seal",
+          "level": 2,
+          "cost": 40
+        }
+      ],
+      "earned": 45,
+      "wallet": 55
+    },
+    {
+      "run": 6,
+      "floor": 769,
+      "hours": 12.001,
+      "relic_levels": {
+        "heart": 2,
+        "seal": 2,
+        "spark": 1,
+        "gold": 3,
+        "knowledge": 2,
+        "boss": 1
+      },
+      "purchases": [
+        {
+          "relic": "gold",
+          "level": 3,
+          "cost": 40
+        }
+      ],
+      "earned": 45,
+      "wallet": 60
+    },
+    {
+      "run": 7,
+      "floor": 789,
+      "hours": 12.0,
+      "relic_levels": {
+        "heart": 2,
+        "seal": 2,
+        "spark": 2,
+        "gold": 3,
+        "knowledge": 2,
+        "boss": 1
+      },
+      "purchases": [
+        {
+          "relic": "spark",
+          "level": 2,
+          "cost": 40
+        }
+      ],
+      "earned": 35,
+      "wallet": 55
+    },
+    {
+      "run": 8,
+      "floor": 809,
+      "hours": 12.001,
+      "relic_levels": {
+        "heart": 2,
+        "seal": 2,
+        "spark": 2,
+        "gold": 3,
+        "knowledge": 2,
+        "boss": 2
+      },
+      "purchases": [
+        {
+          "relic": "boss",
+          "level": 2,
+          "cost": 40
+        }
+      ],
+      "earned": 45,
+      "wallet": 60
+    }
+  ],
+  "record": 809
+}

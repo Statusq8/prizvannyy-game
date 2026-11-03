@@ -1,0 +1,34 @@
+{
+  "model": "v0.4 experimental",
+  "limitations": [
+    "No portal, equipment, stars, shards, offline progress or rebirth economy",
+    "Level purchase strategy greedy; results are not final game balance",
+    "D–БОГ passives are draft personal DPS multipliers"
+  ],
+  "runs": {
+    "first_400": {
+      "status": "completed",
+      "floor": 400,
+      "hours": 9.044,
+      "farm": 1736,
+      "hired": 30,
+      "total_levels": 5442,
+      "record": 400,
+      "checkpoints": {
+        "50": 0.42,
+        "100": 0.613,
+        "150": 0.896,
+        "200": 1.312,
+        "250": 2.077,
+        "300": 3.928,
+        "350": 6.561,
+        "400": 9.044
+      },
+      "wall_seconds": 24.39
+    }
+  },
+  "notes": [
+    "400 floor first run measured, subsequent runs not completed due to computational cost",
+    "200 floor runs previously measured in v0.4: first 1.312h, second .939h, third .853h"
+  ]
+}

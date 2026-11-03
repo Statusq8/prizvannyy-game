@@ -1,0 +1,162 @@
+[
+ {
+  "file": "base_game.html",
+  "kb": 100,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 1,
+  "canvas": 0,
+  "imgs": 15,
+  "text": "КРИТ 235 РАЗЛОМ ТЬМЫ 0 ЭТАЖ 1 1 УР. 1 · ОПЫТ 0 / 30 СТРАЖ · СПОРОВИК ТАПНИ НАЖМИ, ЧТОБЫ НАЧАТЬ ПРОКАЧКА ОТРЯД ПОРТАЛ БАШНЯ МАГАЗИН",
+  "errors": [
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+  ]
+ },
+ {
+  "file": "hero_screen_v02.html",
+  "kb": 16,
+  "title": "Призванный — Герой",
+  "buttons": 11,
+  "canvas": 0,
+  "imgs": 0,
+  "text": "ПРИЗВАННЫЙ БАШНЯ ГАЧИ Экран героя · демо Коллекция героев 40 героев [E] Пепельный рекрут [E] Костяной слуга [E] Лесной охотник [E] Болотный вор [E] Послушник св",
+  "errors": []
+ },
+ {
+  "file": "hero_screen_v03.html",
+  "kb": 16,
+  "title": "Призванный — Герой",
+  "buttons": 11,
+  "canvas": 0,
+  "imgs": 0,
+  "text": "ПРИЗВАННЫЙ БАШНЯ ГАЧИ Экран героя · демо Коллекция героев 40 героев [E] Пепельный рекрут [E] Костяной слуга [E] Лесной охотник [E] Болотный вор [E] Послушник св",
+  "errors": []
+ },
+ {
+  "file": "index.html",
+  "kb": 6,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 0,
+  "canvas": 0,
+  "imgs": 2,
+  "text": "",
+  "errors": [
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+  ]
+ },
+ {
+  "file": "prizvanny_dungeon_android_layout.html",
+  "kb": 3349,
+  "title": "Призванный — башня",
+  "buttons": 12,
+  "canvas": 0,
+  "imgs": 11,
+  "text": "1 Золото 0 + Руны 0 + Этаж 1 ⚔ Герои 🎒 Вещи ✦ Портал ✧ Навыки 🏺 Реликвии ♜ Башня Противник · 1/10 · 2 325 / 2 800 ⚔ Удар 1 ↑ Отряд ГЕРОИ · УЛУЧШЕНИЯ Все герои",
+  "errors": []
+ },
+ {
+  "file": "prizvanny_dungeon_prototype.html",
+  "kb": 1854,
+  "title": "Призванный — прототип интерфейса",
+  "buttons": 9,
+  "canvas": 0,
+  "imgs": 8,
+  "text": "🪙 ЗОЛОТО 120 ✦ РУНЫ 0 ⚔ УРОН 100 ЭТАЖ 1 · 1/10 ⚔ ГЕРОЙ ♟ ОТРЯД ✦ ПОРТАЛ ♜ БАШНЯ ▣ ВЕЩИ ПРОТОТИП · отдельное сохранение Лесной хищник · 2 400 / 2 800 ⚔ ГЕРОИ ОТ",
+  "errors": []
+ },
+ {
+  "file": "prizvanny_dungeon_redesign.html",
+  "kb": 15586,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 9,
+  "canvas": 0,
+  "imgs": 20,
+  "text": "КРИТ 225 РАЗЛОМ ТЬМЫ 0 ЭТАЖ 1 1 УР. 1 · ОПЫТ 0 / 30 СТРАЖ · КОРАПАУК ТАПНИ НАЖМИ, ЧТОБЫ НАЧАТЬ ⚔ БЕСКОНЕЧНАЯ БАШНЯ ⚔ РАЗДЕЛЫ УСИЛЕНИЯ ГЕРОИ ПОРТАЛ БАШНЯ МАГАЗИН",
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+  ]
+ },
+ {
+  "file": "prizvanny_dungeon_ui.html",
+  "kb": 15581,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 1,
+  "canvas": 0,
+  "imgs": 15,
+  "text": "92 82 РАЗЛОМ ТЬМЫ 0 ЭТАЖ 1 1 УР. 1 · ОПЫТ 0 / 30 СТРАЖ · КОРАПАУК ТАПНИ НАЖМИ, ЧТОБЫ НАЧАТЬ ПРОКАЧКА ОТРЯД ПОРТАЛ БАШНЯ МАГАЗИН",
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ]
+ },
+ {
+  "file": "prizvanny_reference_three_screens.html",
+  "kb": 2472,
+  "title": "Призванный — Башня Гачи",
+  "buttons": 26,
+  "canvas": 0,
+  "imgs": 2,
+  "text": "⚔️ 52 ✊ 20 🪙 129K Уровень 4 Бей босса ♜ 🎁 📜 Рюкзак 🎪 События 📖 Задания Лесной волк 5.6K ⚡ 🧭 Система: Добро пожаловать в Башню ⚔ Автобой активен ✨ Собирай ",
+  "errors": []
+ },
+ {
+  "file": "prizvanny_squad_play.html",
+  "kb": 4780,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 1,
+  "canvas": 0,
+  "imgs": 15,
+  "text": "86 101 РАЗЛОМ ТЬМЫ 0 ЭТАЖ 1 1 УР. 1 · ОПЫТ 0 / 30 СТРАЖ · СПОРОВИК ТАПНИ НАЖМИ, ЧТОБЫ НАЧАТЬ ПРОКАЧКА ОТРЯД ПОРТАЛ БАШНЯ МАГАЗИН",
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND",
+   "Failed to load resource: net::ERR_FILE_NOT_FOUND"
+  ]
+ },
+ {
+  "file": "prizvanny_squad_play_fixed.html",
+  "kb": 15578,
+  "title": "Призванный: Башня Гачи — сцена",
+  "buttons": 1,
+  "canvas": 0,
+  "imgs": 15,
+  "text": "74 КРИТ 240 РАЗЛОМ ТЬМЫ 0 ЭТАЖ 1 1 УР. 1 · ОПЫТ 0 / 30 СТРАЖ · СПОРОВИК ТАПНИ НАЖМИ, ЧТОБЫ НАЧАТЬ ПРОКАЧКА ОТРЯД ПОРТАЛ БАШНЯ МАГАЗИН",
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ]
+ },
+ {
+  "file": "prizvannyy_hero_idle_demo.html",
+  "kb": 1171,
+  "title": "Призванный — анимация героя",
+  "buttons": 6,
+  "canvas": 0,
+  "imgs": 1,
+  "text": "‹ Герои 🪙 1098K 💎 5378 Теневой Властелин Ранг B • Уровень 250 🪽⭐11⭐🪽 Урон героя 125,6K DPS (18,4%) Демонстрационные значения Мечник Маг Убийца Тест движения",
+  "errors": []
+ },
+ {
+  "file": "prizvannyy_playable_v01.html",
+  "kb": 186,
+  "title": "Призванный — игровой прототип",
+  "buttons": 15,
+  "canvas": 0,
+  "imgs": 0,
+  "text": "⚔️ ПРИЗВАННЫЙ 🪙 25 💎 0 Башня Испытаний Этаж 1 Рекорд 0 ⚔ DPS 8 🐉 Страж башни 20 / 40 🗡️ 🧙 −0 ⚡ Автобой ВКЛ ×1 ⬆ Прохождение этажа 1 Новый этаж Награда за п",
+  "errors": []
+ },
+ {
+  "file": "prizvannyy_tower_prototype.html",
+  "kb": 13,
+  "title": "Призванный — прототип",
+  "buttons": 9,
+  "canvas": 0,
+  "imgs": 0,
+  "text": "IDLE RPG · РАННИЙ ПРОТОТИП ПРИЗВАННЫЙ 💠 0 осколков Золото 0 DPS армии 1 Рекорд 1 ЭТАЖ 1 Враг 1 / 5 👹 Порождение Башни 317 / 320 🧙 Призванный ⚔ УДАРИТЬ ⏸ Авто",
+  "errors": []
+ }
+]

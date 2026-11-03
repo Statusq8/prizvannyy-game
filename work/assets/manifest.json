@@ -1,0 +1,380 @@
+{
+ "_note": "asset_id -> исходный файл из assets/extracted (извлечено из старых прототипов). role: назначение. max: макс. сторона при экспорте.",
+ "bg_zone1": {
+  "src": "3f7366e4fe_const.webp",
+  "role": "фон боя зона 1 (лесные руины)",
+  "max": 1280,
+  "q": 72
+ },
+ "logo": {
+  "src": "f03c5cf03d_webp.webp",
+  "role": "логотип",
+  "max": 640
+ },
+ "hero_main_back": {
+  "src": "1b298b33be_webp.webp",
+  "role": "Призванный (Теневой мечник), стойка со спины",
+  "max": 420
+ },
+ "hero_main_windup": {
+  "src": "7d73353a98_B6TYJQAAA.webp",
+  "role": "Призванный, замах",
+  "max": 420
+ },
+ "hero_main_slash": {
+  "src": "c2140f926e_webp.webp",
+  "role": "Призванный, удар",
+  "max": 420
+ },
+ "hero_main_lunge": {
+  "src": "3079465e62_R5hlcbLZzQOrIwSPJxooJwtmCHBKUHWVhzCAAA.webp",
+  "role": "Призванный, выпад",
+  "max": 420
+ },
+ "hero_main_aura": {
+  "src": "3c12e65f31_webp.webp",
+  "role": "Призванный, усиление/аура",
+  "max": 480
+ },
+ "hero_main_front": {
+  "src": "8b2d16537c_AAA.webp",
+  "role": "Призванный, вид 3/4 для экрана героя",
+  "max": 520
+ },
+ "hero_main_portrait": {
+  "src": "6ba53579db_portrait.webp",
+  "role": "портрет Призванного",
+  "max": 256,
+  "q": 80
+ },
+ "ally_archer_back": {
+  "src": "161dbcf9d8_arch0.webp",
+  "role": "лучник (Дикие), со спины",
+  "max": 420
+ },
+ "ally_archer_shot": {
+  "src": "f3b8eb5065_webp.webp",
+  "role": "лучник, выстрел",
+  "max": 460
+ },
+ "ally_archer_aura": {
+  "src": "eab2b33b1b_webp.webp",
+  "role": "лучник, аура",
+  "max": 480
+ },
+ "ally_assassin_back": {
+  "src": "45c2f00d04_asn0.webp",
+  "role": "убийца (Тень), со спины",
+  "max": 420
+ },
+ "ally_assassin_strike": {
+  "src": "42ea2c692d_webp.webp",
+  "role": "убийца, удар",
+  "max": 460
+ },
+ "ally_assassin_aura": {
+  "src": "66c5fbee6f_webp.webp",
+  "role": "убийца, аура",
+  "max": 480
+ },
+ "mon_spider": {
+  "src": "a785206bb3_webp.webp",
+  "role": "паук",
+  "max": 460
+ },
+ "mon_spider2": {
+  "src": "08526412bb_webp.webp",
+  "role": "паук 2",
+  "max": 460
+ },
+ "mon_spider3": {
+  "src": "b0e7a7ff3e_webp.webp",
+  "role": "паук 3",
+  "max": 460
+ },
+ "mon_spider_dead": {
+  "src": "da373998d9_webp.webp",
+  "role": "паук, труп",
+  "max": 460
+ },
+ "mon_wolf": {
+  "src": "0f43654361_HBtO3gAAAAAAAAAAAAA.webp",
+  "role": "теневой волк",
+  "max": 460
+ },
+ "mon_wolf2": {
+  "src": "d4e9117b4a_BgAIAAAAA.webp",
+  "role": "теневой волк 2",
+  "max": 460
+ },
+ "mon_wolf3": {
+  "src": "e54914d245_OkAAAAAA.webp",
+  "role": "теневой волк 3",
+  "max": 460
+ },
+ "mon_wolf_dead": {
+  "src": "efebfb3a42_Dsuy0gAAAAAAA.webp",
+  "role": "волк, труп",
+  "max": 460
+ },
+ "mon_shroom": {
+  "src": "16d6153772_wAAAAA.webp",
+  "role": "грибной зверь",
+  "max": 460
+ },
+ "mon_shroom2": {
+  "src": "d1bc038c80_webp.webp",
+  "role": "грибной зверь 2",
+  "max": 460
+ },
+ "mon_shroom3": {
+  "src": "b9665dd5e1_UVcVCIAAAAA.webp",
+  "role": "грибной зверь 3",
+  "max": 460
+ },
+ "mon_shroom_dead": {
+  "src": "f1e590a739_webp.webp",
+  "role": "грибной зверь, труп",
+  "max": 460
+ },
+ "mon_treant": {
+  "src": "172a40672e_webp.webp",
+  "role": "древесный страж",
+  "max": 480
+ },
+ "mon_treant2": {
+  "src": "2797b9b8e4_rlwAAAAAAA.webp",
+  "role": "древесный страж 2",
+  "max": 480
+ },
+ "mon_treant_boss": {
+  "src": "9c99dcce2e_webp.webp",
+  "role": "древесный страж, босс (аура)",
+  "max": 560
+ },
+ "mon_treant_dead": {
+  "src": "09d1ef5ba3_webp.webp",
+  "role": "страж, труп",
+  "max": 480
+ },
+ "boss_emblem": {
+  "src": "68c04df21d_webp.webp",
+  "role": "значок босса",
+  "max": 160
+ },
+ "ico_gold": {
+  "src": "a3a84ed815_webp.webp",
+  "role": "золото",
+  "max": 96
+ },
+ "ico_goldbag": {
+  "src": "d08cbf54fd_webp.webp",
+  "role": "офлайн-награда",
+  "max": 128
+ },
+ "ico_tower": {
+  "src": "b60e402084_webp.webp",
+  "role": "вкладка Башня",
+  "max": 96
+ },
+ "ico_towercoin": {
+  "src": "a2bae30b21_cur0.webp",
+  "role": "монета башни",
+  "max": 96
+ },
+ "ico_crystal": {
+  "src": "cca9348653_cur1.webp",
+  "role": "камень призыва",
+  "max": 96
+ },
+ "ico_portal": {
+  "src": "99e54a21e7_webp.webp",
+  "role": "вкладка Призыв",
+  "max": 96
+ },
+ "ico_heroes": {
+  "src": "717f2d0834_webp.webp",
+  "role": "вкладка Герои",
+  "max": 96
+ },
+ "ico_squad": {
+  "src": "de58f1c22e_webp.webp",
+  "role": "отряд",
+  "max": 96
+ },
+ "ico_battle": {
+  "src": "32103d1140_webp.webp",
+  "role": "вкладка Бой",
+  "max": 96
+ },
+ "ico_upgrade": {
+  "src": "84bc6b0ffc_webp.webp",
+  "role": "улучшение",
+  "max": 96
+ },
+ "ico_speed": {
+  "src": "77061dd2bd_webp.webp",
+  "role": "скорость/авто",
+  "max": 96
+ },
+ "ico_time": {
+  "src": "40b4d0ce07_webp.webp",
+  "role": "время/офлайн",
+  "max": 96
+ },
+ "ico_rebirth": {
+  "src": "3fb1456c51_webp.webp",
+  "role": "перерождение",
+  "max": 96
+ },
+ "ico_relic": {
+  "src": "fa2e71fdf2_webp.webp",
+  "role": "реликвии",
+  "max": 96
+ },
+ "ico_star": {
+  "src": "6efbc7a594_webp.webp",
+  "role": "звёзды",
+  "max": 96
+ },
+ "ico_fist": {
+  "src": "f9be53a6f4_webp.webp",
+  "role": "урон",
+  "max": 96
+ },
+ "ico_scythe": {
+  "src": "67f0b4e271_webp.webp",
+  "role": "кости/некро",
+  "max": 96
+ },
+ "ico_chain": {
+  "src": "57f3438d77_webp.webp",
+  "role": "цепь",
+  "max": 96
+ },
+ "ico_sound": {
+  "src": "150f06f1b6_webp.webp",
+  "role": "звук",
+  "max": 96
+ },
+ "ico_plus": {
+  "src": "1f2cf66a70_webp.webp",
+  "role": "плюс",
+  "max": 96
+ },
+ "ico_close": {
+  "src": "b6d725fef2_webp.webp",
+  "role": "закрыть",
+  "max": 96
+ },
+ "gem_E": {
+  "src": "ea13470725_webp.webp",
+  "role": "ранг E / обычная кость (белый)",
+  "max": 80
+ },
+ "gem_D": {
+  "src": "83d2368aa5_webp.webp",
+  "role": "ранг D / необычная (зелёный)",
+  "max": 80
+ },
+ "gem_C": {
+  "src": "4b017bd63c_webp.webp",
+  "role": "ранг C / редкая (синий)",
+  "max": 80
+ },
+ "gem_B": {
+  "src": "d24136321e_webp.webp",
+  "role": "ранг B / эпическая (фиолет.)",
+  "max": 80
+ },
+ "gem_A": {
+  "src": "81a32b9c89_webp.webp",
+  "role": "ранг A / легендарная (золото)",
+  "max": 80
+ },
+ "gem_S": {
+  "src": "328291560c_webp.webp",
+  "role": "ранг S / мифическая (красный)",
+  "max": 80
+ },
+ "gem_SS": {
+  "src": "f0ec997a66_webp.webp",
+  "role": "ранг SS / божественная (циан)",
+  "max": 80
+ },
+ "gem_GOD": {
+  "src": "f7ffb9c1fb_webp.webp",
+  "role": "ранг БОГ (розово-алый)",
+  "max": 80
+ },
+ "ring_gold": {
+  "src": "88e4f2a63c_fr0.webp",
+  "role": "кольцо под героем, золото",
+  "max": 300
+ },
+ "ring_purple": {
+  "src": "db8417e065_fr1.webp",
+  "role": "кольцо, фиолет",
+  "max": 300
+ },
+ "ring_red": {
+  "src": "821ad69eed_fr3.webp",
+  "role": "кольцо, красное",
+  "max": 300
+ },
+ "ring_blue": {
+  "src": "4cd72e26ef_fr4.webp",
+  "role": "кольцо, синее",
+  "max": 300
+ },
+ "ring_green": {
+  "src": "b7db63bc3d_fr5.webp",
+  "role": "кольцо, зелёное",
+  "max": 300
+ },
+ "frame_card": {
+  "src": "f12f9d0258_webp.webp",
+  "role": "рамка карточки героя",
+  "max": 260
+ },
+ "frame_card_gold": {
+  "src": "996f26b991_webp.webp",
+  "role": "рамка карточки, золото",
+  "max": 260
+ },
+ "frame_card_blue": {
+  "src": "9041472dd9_webp.webp",
+  "role": "рамка карточки, синяя",
+  "max": 260
+ },
+ "frame_card_silver": {
+  "src": "3e99e1f561_webp.webp",
+  "role": "рамка карточки, серебро",
+  "max": 260
+ },
+ "frame_avatar": {
+  "src": "f4191cb72d_webp.webp",
+  "role": "рамка аватара",
+  "max": 200
+ },
+ "bar_hp": {
+  "src": "14e88c5fa1_webp.webp",
+  "role": "рамка полосы HP",
+  "max": 600
+ },
+ "btn_gold": {
+  "src": "92f5123265_webp.webp",
+  "role": "кнопка золотая",
+  "max": 300
+ },
+ "btn_purple": {
+  "src": "9843ce1dbb_webp.webp",
+  "role": "кнопка фиолетовая",
+  "max": 300
+ },
+ "btn_dark": {
+  "src": "b56d606620_webp.webp",
+  "role": "кнопка тёмная",
+  "max": 300
+ }
+}
