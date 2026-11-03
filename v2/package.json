@@ -1,0 +1,9 @@
+{
+  "name": "prizvannyy-v2",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "test": "node --test tests/*.test.js",
+    "sim": "node tools/sim.js 6 30"
+  }
+}
