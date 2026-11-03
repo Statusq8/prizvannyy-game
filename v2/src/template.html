@@ -122,14 +122,14 @@
   .cardTitle { font-weight: 700; font-size: 14px; }
   .cardSub { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .cardSub b { color: var(--ok); }
-  #buyBtn {
+  .buy {
     min-width: 104px; padding: 9px 10px; border-radius: 10px; font-weight: 800; font-size: 13px; line-height: 1.25;
     background: linear-gradient(180deg, #7a4fc4, #4b2c86); border: 1px solid var(--accent);
   }
-  #buyBtn span { display: block; font-size: 12px; font-weight: 700; color: var(--gold); }
-  #buyBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
-  #buyBtn:disabled span { color: var(--muted); }
-  #buyBtn:not(:disabled):active { transform: scale(.96); }
+  .buy span { display: block; font-size: 12px; font-weight: 700; color: var(--gold); }
+  .buy:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  .buy:disabled span { color: var(--muted); }
+  .buy:not(:disabled):active { transform: scale(.96); }
 
   /* ---------- настройки ---------- */
   #modal { position: absolute; inset: 0; background: #000a; display: none; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
@@ -139,6 +139,21 @@
   #modalBox p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
   .mBtn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; margin-top: 8px; background: var(--panel2); border: 1px solid var(--line); }
   .mBtn.danger { background: #4a1820; border-color: #8a2a3a; }
+  .card + .card { margin-top: 8px; }
+  .cardIcon.allyIco { background: #1e3a46; }
+  .cardSub .dim { color: var(--muted); }
+  #stats { cursor: pointer; }
+  #statsMore { display: none; margin-top: 3px; font-size: 11px; color: var(--muted); }
+  #statsMore.show { display: block; }
+  .dmg.auto { font-size: 18px; color: #8fe6ff; text-shadow: 0 2px 0 #000, 0 0 6px #2aa8d8; }
+  /* союзник на арене (временная заглушка) */
+  .ally { position: absolute; left: 4%; bottom: 6%; width: 24%; max-width: 110px; aspect-ratio: 1 / 1.3; pointer-events: none; display: none; transform-origin: 50% 100%; }
+  .ally.on { display: block; animation: allyIdle 2.8s ease-in-out infinite; }
+  .ally.attack { animation: allyAtk .2s ease-out; }
+  .ally svg { width: 100%; height: 100%; overflow: visible; }
+  .allyTag { position: absolute; left: 0; right: 0; bottom: -16px; text-align: center; font-size: 10px; color: #8fe6ff; font-weight: 700; }
+  @keyframes allyIdle { 50% { transform: translateY(-3px); } }
+  @keyframes allyAtk { 40% { transform: translate(14px,-6px) rotate(6deg); } 100% { transform: none; } }
   #version { position: absolute; bottom: 2px; left: 8px; font-size: 10px; color: #ffffff30; pointer-events: none; }
 </style>
 </head>
@@ -155,7 +170,7 @@
     <div id="enemyName"></div>
     <div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div>
     <div id="timerBar"><div id="timerFill"></div></div>
-    <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b></div>
+    <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b> ⓘ<div id="statsMore"></div></div>
   </div>
 
   <div id="arena">
@@ -175,6 +190,18 @@
           <path d="M60 170 Q100 185 140 170" fill="none" stroke="#5c3b7a" stroke-width="4" stroke-linecap="round"/>
         </g>
       </svg>
+    </div>
+    <div class="ally" id="ally_irene">
+      <svg viewBox="0 0 100 130">
+        <ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>
+        <path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="#1f3c4a" stroke="#0a161c" stroke-width="3"/>
+        <path d="M32 52 Q32 22 50 18 Q68 22 68 52 Q60 60 50 60 Q40 60 32 52Z" fill="#163039" stroke="#0a161c" stroke-width="3"/>
+        <ellipse cx="44" cy="44" rx="3" ry="2.4" fill="#8fe6ff"/><ellipse cx="57" cy="44" rx="3" ry="2.4" fill="#8fe6ff"/>
+        <path d="M82 40 Q100 76 82 112" fill="none" stroke="#6b4a2a" stroke-width="4" stroke-linecap="round"/>
+        <path d="M82 40 L82 112" stroke="#cfd8dc" stroke-width="1.2"/>
+        <path d="M60 76 L96 76" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="allyTag">Ирэн</div>
     </div>
     <div id="hint">Тапай по врагу!</div>
     <div id="toast"></div>
@@ -196,7 +223,15 @@
         <div class="cardTitle">Сила удара · ур. <span id="tapLvl">1</span></div>
         <div class="cardSub" id="tapSub"></div>
       </div>
-      <button id="buyBtn"></button>
+      <button class="buy" id="buyTap"></button>
+    </div>
+    <div class="card">
+      <div class="cardIcon allyIco">🏹</div>
+      <div class="cardInfo">
+        <div class="cardTitle" id="allyTitle"></div>
+        <div class="cardSub" id="allySub"></div>
+      </div>
+      <button class="buy" id="buyAlly"></button>
     </div>
   </div>
 
@@ -208,7 +243,7 @@
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
   </div>
-  <div id="version">v0.2</div>
+  <div id="version">v0.3</div>
 </div>
 
 <script>
@@ -218,6 +253,7 @@
 (function () {
   'use strict';
   const C = Core, CFG = Core.CONFIG, fmt = Core.fmt;
+  const ALLY = CFG.allies[0];
   const SAVE_KEY = 'prizvannyy_v2_save';
   const STEP = 1 / 30;                 // фиксированный шаг логики
   const DPS_WINDOW = 5;                // период усреднения DPS, сек (TBD)
@@ -228,7 +264,8 @@
     enemyName: $('enemyName'), dots: $('dots'), floorLabel: $('floorLabel'),
     prev: $('prevFloor'), next: $('nextFloor'), timerBar: $('timerBar'), timerFill: $('timerFill'),
     tapDmg: $('tapDmg'), dps: $('dps'), hint: $('hint'), farmBar: $('farmBar'), bossBtn: $('bossBtn'),
-    toast: $('toast'), gold: $('gold'), tapLvl: $('tapLvl'), tapSub: $('tapSub'), buyBtn: $('buyBtn'),
+    toast: $('toast'), gold: $('gold'), tapLvl: $('tapLvl'), tapSub: $('tapSub'), buyTap: $('buyTap'), buyAlly: $('buyAlly'), allyTitle: $('allyTitle'), allySub: $('allySub'),
+    allySprite: $('ally_irene'), statsMore: $('statsMore'),
     modal: $('modal'), saveInfo: $('saveInfo'),
   };
 
@@ -277,9 +314,15 @@
     const r = el.arena.getBoundingClientRect();
     for (const e of events) {
       if (e.type === 'hit') {
-        dmgLog.push([performance.now(), e.dmg]);
-        fx('spark', x, y, null, 300);
-        fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
+        if (e.source === 'tap') {
+          dmgLog.push([performance.now(), e.dmg, 'tap']);
+          fx('spark', x, y, null, 300);
+          fx('dmg', x + Math.random() * 30 - 15, y, fmt(e.dmg), 700);
+        } else {
+          dmgLog.push([performance.now(), e.dmg, 'auto']);
+          const sp = el.allySprite; sp.classList.remove('attack'); void sp.offsetWidth; sp.classList.add('attack');
+          fx('dmg auto', r.width * (0.45 + Math.random() * 0.15), r.height * (0.45 + Math.random() * 0.1), fmt(e.dmg), 700);
+        }
         restartAnim('hit');
       } else if (e.type === 'kill') {
         restartAnim('dead');
@@ -316,7 +359,9 @@
     document.querySelectorAll('.multBtn').forEach(x => x.classList.toggle('on', x === b));
     render();
   }));
-  el.buyBtn.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
+  el.buyTap.addEventListener('click', () => { if (C.buyTap(s, mult)) { save(); render(); } });
+  el.buyAlly.addEventListener('click', () => { if (C.buyAlly(s, ALLY.id, mult)) { save(); render(); } });
+  $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
@@ -361,8 +406,22 @@
     const cost = C.upgradeCost(s.tapLevel, n);
     const can = cost <= s.gold;
     el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(CFG.tapBaseDamage * (s.tapLevel + n)) + '</b>';
-    el.buyBtn.disabled = !can;
-    el.buyBtn.innerHTML = can ? '+' + fmt(n) + ' ур.<span>◆ ' + fmt(cost) + '</span>'
+    setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
+
+    // союзник
+    const lv = s.allies[ALLY.id].level;
+    const an = mult === 'max' ? Math.max(1, C.allyMax(s, ALLY.id)) : mult;
+    const acost = C.allyCost(s, ALLY.id, an);
+    el.allyTitle.textContent = ALLY.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : ALLY.role);
+    el.allySub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, ALLY.id)) + ' → <b>' + fmt(ALLY.baseDps * (lv + an)) + '</b>'
+                              : '<span class="dim">Не нанята · автоатака</span> DPS <b>' + fmt(ALLY.baseDps * an) + '</b>';
+    setBuy(el.buyAlly, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
+    el.allySprite.classList.toggle('on', lv > 0);
+  }
+
+  function setBuy(btn, can, n, cost, label) {
+    btn.disabled = !can;
+    btn.innerHTML = can ? label + '<span>◆ ' + fmt(cost) + '</span>'
                               : 'Не хватает<span>◆ ' + fmt(cost - s.gold) + '</span>';
   }
 
@@ -374,8 +433,12 @@
     }
     const now = performance.now();
     while (dmgLog.length && now - dmgLog[0][0] > DPS_WINDOW * 1000) dmgLog.shift();
-    const sum = dmgLog.reduce((a, d) => a + d[1], 0);
-    el.dps.textContent = fmt(sum / DPS_WINDOW);
+    let tapSum = 0, allSum = 0;
+    for (const d of dmgLog) { allSum += d[1]; if (d[2] === 'tap') tapSum += d[1]; }
+    const tapDps = tapSum / DPS_WINDOW, auto = C.autoDps(s);
+    el.dps.textContent = fmt(tapDps + auto);                       // общий DPS
+    if (el.statsMore.classList.contains('show'))
+      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с';
   }
 
   // ---------- игровой цикл ----------

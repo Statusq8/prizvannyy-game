@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 1,
+    saveVersion: 2,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -18,6 +18,11 @@
     tapUpgradeBaseCost: 5,
     tapUpgradeCostGrowth: 1.08,
     respawnDelaySec: 0.35,
+    // Союзники: автоатака с фиксированной собственной частотой (GDD §3). Уровень 0 = не нанят.
+    allies: [
+      { id: 'irene', name: 'Ирэн', role: 'Лучница теней', baseDps: 4, attackInterval: 0.8,
+        hireCost: 25, costGrowth: 1.07 },
+    ],
   };
 
   const ENEMY_NAMES = [
@@ -48,21 +53,34 @@
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
   }
 
-  // Стоимость n уровней начиная с текущего уровня (геометрическая сумма)
-  function upgradeCost(level, n) {
+  // Стоимость n покупок, если уже куплено k (геометрическая сумма): base·g^k·(g^n−1)/(g−1)
+  function seriesCost(base, g, k, n) {
     if (n <= 0) return 0;
-    const b = CONFIG.tapUpgradeBaseCost, g = CONFIG.tapUpgradeCostGrowth;
-    return Math.ceil(b * Math.pow(g, level - 1) * (Math.pow(g, n) - 1) / (g - 1));
+    return Math.ceil(base * Math.pow(g, k) * (Math.pow(g, n) - 1) / (g - 1));
   }
-  function maxAffordable(level, gold) {
-    const b = CONFIG.tapUpgradeBaseCost, g = CONFIG.tapUpgradeCostGrowth;
-    const first = b * Math.pow(g, level - 1);
+  function seriesMax(base, g, k, gold) {
+    const first = base * Math.pow(g, k);
     let n = Math.floor(Math.log(gold * (g - 1) / first + 1) / Math.log(g));
     if (!isFinite(n) || n < 0) n = 0;
-    while (n > 0 && upgradeCost(level, n) > gold) n--;      // защита от округления
-    while (upgradeCost(level, n + 1) <= gold) n++;
+    while (n > 0 && seriesCost(base, g, k, n) > gold) n--;   // защита от округления
+    while (seriesCost(base, g, k, n + 1) <= gold) n++;
     return n;
   }
+  // Удар: уровень 1 — бесплатный стартовый, поэтому куплено (level − 1)
+  function upgradeCost(level, n) {
+    return seriesCost(CONFIG.tapUpgradeBaseCost, CONFIG.tapUpgradeCostGrowth, level - 1, n);
+  }
+  function maxAffordable(level, gold) {
+    return seriesMax(CONFIG.tapUpgradeBaseCost, CONFIG.tapUpgradeCostGrowth, level - 1, gold);
+  }
+
+  // ---------- союзники ----------
+  function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
+  function allyDps(s, id) { return allyDef(id).baseDps * s.allies[id].level; }
+  function autoDps(s) { return CONFIG.allies.reduce((sum, a) => sum + allyDps(s, a.id), 0); }
+  // Уровень 0 → первая покупка = найм по hireCost
+  function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
+  function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
 
   // ---------- состояние ----------
   function newState() {
@@ -75,6 +93,7 @@
       gold: 0,
       tapLevel: 1,
       stats: { taps: 0, kills: 0, bossKills: 0 },
+      allies: newAllies(),
       // не сохраняется:
       enemy: null,
       bossTimeLeft: 0,
@@ -82,6 +101,12 @@
     };
     spawn(s);
     return s;
+  }
+
+  function newAllies() {
+    const o = {};
+    for (const a of CONFIG.allies) o[a.id] = { level: 0, cd: a.attackInterval };   // cd не сохраняется
+    return o;
   }
 
   function spawn(s) {
@@ -93,14 +118,17 @@
   }
 
   // ---------- действия ----------
+  function dealDamage(s, dmg, source, events) {
+    s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
+    events.push({ type: 'hit', dmg, source });
+    if (s.enemy.hp <= 0) kill(s, events);
+  }
+
   function tap(s) {
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
-    const dmg = tapDamage(s);
     s.stats.taps++;
-    s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
-    events.push({ type: 'hit', dmg });
-    if (s.enemy.hp <= 0) kill(s, events);
+    dealDamage(s, tapDamage(s), 'tap', events);
     return events;
   }
 
@@ -139,6 +167,17 @@
       s.respawn -= dt;
       if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
       return events;
+    }
+    // Автоатаки союзников: перезарядка идёт только пока враг жив
+    for (const a of CONFIG.allies) {
+      const st = s.allies[a.id];
+      if (st.level <= 0) continue;
+      st.cd -= dt;
+      if (st.cd <= 0 && s.enemy.alive) {
+        st.cd += a.attackInterval;
+        dealDamage(s, allyDps(s, a.id) * a.attackInterval, a.id, events);
+      }
+      if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
     }
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
@@ -179,6 +218,17 @@
     return true;
   }
 
+  function buyAlly(s, id, n) {
+    if (!allyDef(id)) return false;
+    const count = n === 'max' ? allyMax(s, id) : n;
+    if (!Number.isInteger(count) || count <= 0) return false;
+    const cost = allyCost(s, id, count);
+    if (cost > s.gold) return false;
+    s.gold -= cost;
+    s.allies[id].level += count;
+    return true;
+  }
+
   // ---------- сохранение ----------
   function serialize(s) {
     return JSON.stringify({
@@ -186,6 +236,7 @@
       floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
       enemyIndex: s.enemyIndex, farming: s.farming,
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
+      allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       savedAt: Date.now(),
     });
   }
@@ -193,7 +244,9 @@
   function deserialize(str) {
     let d;
     try { d = JSON.parse(str); } catch (e) { return null; }
-    if (!d || d.v !== CONFIG.saveVersion) return null;
+    if (!d || typeof d !== 'object') return null;
+    if (d.v === 1) { d.v = 2; d.allies = {}; }          // миграция 0.2 → 0.3: союзников ещё не было
+    if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
         !int(d.enemyIndex, 1) || d.enemyIndex > CONFIG.enemiesPerFloor ||
@@ -206,6 +259,13 @@
     if (d.stats) s.stats = {
       taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0,
     };
+    const al = d.allies && typeof d.allies === 'object' ? d.allies : {};
+    for (const a of CONFIG.allies) {
+      const lv = al[a.id];
+      if (lv === undefined) continue;
+      if (!int(lv, 0)) return null;
+      s.allies[a.id].level = lv;
+    }
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
@@ -219,6 +279,7 @@
 
   const Core = {
     CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
+    buyAlly, allyDps, autoDps, allyCost, allyMax,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };

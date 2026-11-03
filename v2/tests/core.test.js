@@ -165,3 +165,69 @@ test('формат чисел: обычные и научная нотация',
   assert.strictEqual(C.fmt(12345.9), '12 345');
   assert.strictEqual(C.fmt(1.25e30), '1.25e30');
 });
+
+// ---------- союзники (этап 3) ----------
+test('союзник не нанят: не атакует', () => {
+  const s = C.newState();
+  const hp = s.enemy.hp;
+  C.tick(s, 5);
+  assert.strictEqual(s.enemy.hp, hp);
+  assert.strictEqual(C.autoDps(s), 0);
+});
+
+test('найм союзника за золото и рост уровня', () => {
+  const s = C.newState();
+  const a = CFG.allies[0];
+  assert.strictEqual(C.buyAlly(s, a.id, 1), false);    // нет золота
+  s.gold = a.hireCost;
+  assert.strictEqual(C.buyAlly(s, a.id, 1), true);
+  assert.strictEqual(s.allies[a.id].level, 1);
+  assert.strictEqual(s.gold, 0);
+  assert.strictEqual(C.autoDps(s), a.baseDps);
+  s.gold = 1e6;
+  C.buyAlly(s, a.id, 'max');
+  assert.ok(C.allyCost(s, a.id, 1) > s.gold);
+  assert.strictEqual(C.buyAlly(s, 'нет-такого', 1), false);
+});
+
+test('союзник атакует сам с фиксированной частотой и наносит свой DPS', () => {
+  const s = C.newState();
+  const a = CFG.allies[0];
+  s.allies[a.id].level = 1;
+  s.enemy.hp = s.enemy.maxHp = 1e9;                    // живучий враг
+  const step = 1 / 30;
+  let hits = 0, dmg = 0;
+  for (let t = 0; t < 10; t += step) for (const e of C.tick(s, step)) if (e.type === 'hit') { hits++; dmg += e.dmg; assert.strictEqual(e.source, a.id); }
+  assert.ok(Math.abs(hits - 10 / a.attackInterval) <= 1, 'частота атак ' + hits);
+  assert.ok(Math.abs(dmg / 10 - a.baseDps) / a.baseDps < 0.1, 'DPS ' + dmg / 10);
+});
+
+test('союзник убивает врага без тапов, не бьёт мёртвого, проходит этаж', () => {
+  const s = C.newState();
+  s.allies[CFG.allies[0].id].level = 500;
+  const step = 1 / 30;
+  for (let t = 0; t < 60 && s.floor === 1; t += step) {
+    const ev = C.tick(s, step);
+    if (!s.enemy.alive) assert.ok(!ev.slice(ev.findIndex(e => e.type === 'kill') + 1).some(e => e.type === 'hit'));
+  }
+  assert.strictEqual(s.floor, 2);
+  assert.ok(s.gold > 0);
+});
+
+test('сохранение союзников и миграция сохранения версии 0.2', () => {
+  const s = C.newState();
+  s.allies[CFG.allies[0].id].level = 7;
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.allies[CFG.allies[0].id].level, 7);
+
+  const old = JSON.stringify({ v: 1, floor: 4, maxFloor: 5, highestCleared: 4, enemyIndex: 3, farming: false,
+    gold: 50, tapLevel: 12, stats: { taps: 10, kills: 30, bossKills: 4 } });
+  const m = C.deserialize(old);
+  assert.ok(m, 'старое сохранение загружается');
+  assert.strictEqual(m.floor, 4);
+  assert.strictEqual(m.tapLevel, 12);
+  assert.strictEqual(m.allies[CFG.allies[0].id].level, 0);
+
+  const bad = JSON.parse(C.serialize(s)); bad.allies[CFG.allies[0].id] = -1;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
