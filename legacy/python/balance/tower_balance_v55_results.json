@@ -1,0 +1,431 @@
+{
+  "version": "5.5",
+  "model": "v5.4 patched simulator, simplified 30 heroes, heuristic purchases",
+  "relics": {
+    "heart": {
+      "cost": 15,
+      "dps": 1.25
+    },
+    "seal": {
+      "cost": 20,
+      "dps": 1.25
+    },
+    "spark": {
+      "cost": 20,
+      "dps": 1.2
+    },
+    "gold": {
+      "cost": 10,
+      "gold": 1.35
+    },
+    "knowledge": {
+      "cost": 15,
+      "discount": 0.08
+    },
+    "boss": {
+      "cost": 20,
+      "boss": 1.2
+    }
+  },
+  "builds": {
+    "damage": {
+      "shards_spent": 55,
+      "hours": 5.496,
+      "reached_floor": 400,
+      "farmed_kills": 955,
+      "milestones": {
+        "50": {
+          "hours": 0.42,
+          "gold": 4548,
+          "dps": 8089,
+          "hired": 4,
+          "levels": 250,
+          "farmed": 0
+        },
+        "100": {
+          "hours": 0.57,
+          "gold": 57430,
+          "dps": 76347,
+          "hired": 7,
+          "levels": 540,
+          "farmed": 0
+        },
+        "150": {
+          "hours": 0.76,
+          "gold": 726745,
+          "dps": 512799,
+          "hired": 11,
+          "levels": 952,
+          "farmed": 0
+        },
+        "200": {
+          "hours": 1.02,
+          "gold": 9167441,
+          "dps": 5034299,
+          "hired": 13,
+          "levels": 1393,
+          "farmed": 0
+        },
+        "250": {
+          "hours": 1.38,
+          "gold": 114662451,
+          "dps": 40203693,
+          "hired": 16,
+          "levels": 1954,
+          "farmed": 0
+        },
+        "300": {
+          "hours": 2.26,
+          "gold": 1447377184,
+          "dps": 431238973,
+          "hired": 21,
+          "levels": 3014,
+          "farmed": 131
+        },
+        "350": {
+          "hours": 3.71,
+          "gold": 36590100871,
+          "dps": 6268871214,
+          "hired": 27,
+          "levels": 4252,
+          "farmed": 479
+        },
+        "400": {
+          "hours": 5.5,
+          "gold": 695588708271,
+          "dps": 92627371344,
+          "hired": 30,
+          "levels": 5542,
+          "farmed": 955
+        }
+      }
+    },
+    "hybrid": {
+      "shards_spent": 45,
+      "hours": 5.109,
+      "reached_floor": 400,
+      "farmed_kills": 807,
+      "milestones": {
+        "50": {
+          "hours": 0.46,
+          "gold": 6132,
+          "dps": 8257,
+          "hired": 4,
+          "levels": 260,
+          "farmed": 0
+        },
+        "100": {
+          "hours": 0.61,
+          "gold": 77967,
+          "dps": 77416,
+          "hired": 7,
+          "levels": 563,
+          "farmed": 0
+        },
+        "150": {
+          "hours": 0.8,
+          "gold": 974080,
+          "dps": 522454,
+          "hired": 11,
+          "levels": 1004,
+          "farmed": 0
+        },
+        "200": {
+          "hours": 1.04,
+          "gold": 12315737,
+          "dps": 5803121,
+          "hired": 13,
+          "levels": 1439,
+          "farmed": 0
+        },
+        "250": {
+          "hours": 1.39,
+          "gold": 154972908,
+          "dps": 40784106,
+          "hired": 16,
+          "levels": 2053,
+          "farmed": 0
+        },
+        "300": {
+          "hours": 2.23,
+          "gold": 1958500565,
+          "dps": 430778045,
+          "hired": 21,
+          "levels": 3089,
+          "farmed": 117
+        },
+        "350": {
+          "hours": 3.5,
+          "gold": 49438957678,
+          "dps": 6274152184,
+          "hired": 27,
+          "levels": 4296,
+          "farmed": 395
+        },
+        "400": {
+          "hours": 5.11,
+          "gold": 941658332808,
+          "dps": 91144930298,
+          "hired": 30,
+          "levels": 5584,
+          "farmed": 807
+        }
+      }
+    },
+    "economy": {
+      "shards_spent": 45,
+      "hours": 7.07,
+      "reached_floor": 400,
+      "farmed_kills": 1295,
+      "milestones": {
+        "50": {
+          "hours": 0.65,
+          "gold": 6169,
+          "dps": 6701,
+          "hired": 5,
+          "levels": 290,
+          "farmed": 0
+        },
+        "100": {
+          "hours": 0.81,
+          "gold": 77623,
+          "dps": 62801,
+          "hired": 7,
+          "levels": 568,
+          "farmed": 0
+        },
+        "150": {
+          "hours": 1.04,
+          "gold": 976908,
+          "dps": 453485,
+          "hired": 11,
+          "levels": 1028,
+          "farmed": 0
+        },
+        "200": {
+          "hours": 1.35,
+          "gold": 12299348,
+          "dps": 4720541,
+          "hired": 13,
+          "levels": 1445,
+          "farmed": 0
+        },
+        "250": {
+          "hours": 1.8,
+          "gold": 154933753,
+          "dps": 33764565,
+          "hired": 16,
+          "levels": 2082,
+          "farmed": 0
+        },
+        "300": {
+          "hours": 3.07,
+          "gold": 1967523599,
+          "dps": 430456020,
+          "hired": 23,
+          "levels": 3272,
+          "farmed": 242
+        },
+        "350": {
+          "hours": 4.86,
+          "gold": 49484423500,
+          "dps": 6257891317,
+          "hired": 28,
+          "levels": 4492,
+          "farmed": 686
+        },
+        "400": {
+          "hours": 7.07,
+          "gold": 933471534035,
+          "dps": 91133064868,
+          "hired": 30,
+          "levels": 5798,
+          "farmed": 1295
+        }
+      }
+    },
+    "balanced": {
+      "shards_spent": 40,
+      "hours": 6.272,
+      "reached_floor": 400,
+      "farmed_kills": 1187,
+      "milestones": {
+        "50": {
+          "hours": 0.54,
+          "gold": 6169,
+          "dps": 6980,
+          "hired": 5,
+          "levels": 290,
+          "farmed": 0
+        },
+        "100": {
+          "hours": 0.7,
+          "gold": 77623,
+          "dps": 65417,
+          "hired": 7,
+          "levels": 568,
+          "farmed": 0
+        },
+        "150": {
+          "hours": 0.9,
+          "gold": 976908,
+          "dps": 472380,
+          "hired": 11,
+          "levels": 1028,
+          "farmed": 0
+        },
+        "200": {
+          "hours": 1.17,
+          "gold": 12299348,
+          "dps": 4917230,
+          "hired": 13,
+          "levels": 1445,
+          "farmed": 0
+        },
+        "250": {
+          "hours": 1.56,
+          "gold": 154933753,
+          "dps": 35171422,
+          "hired": 16,
+          "levels": 2082,
+          "farmed": 0
+        },
+        "300": {
+          "hours": 2.66,
+          "gold": 1957478688,
+          "dps": 430553014,
+          "hired": 22,
+          "levels": 3221,
+          "farmed": 210
+        },
+        "350": {
+          "hours": 4.26,
+          "gold": 50117351933,
+          "dps": 6288385133,
+          "hired": 28,
+          "levels": 4454,
+          "farmed": 617
+        },
+        "400": {
+          "hours": 6.27,
+          "gold": 933058257717,
+          "dps": 91131406593,
+          "hired": 30,
+          "levels": 5765,
+          "farmed": 1187
+        }
+      }
+    },
+    "boss_focus": {
+      "shards_spent": 45,
+      "hours": 5.799,
+      "reached_floor": 400,
+      "farmed_kills": 889,
+      "milestones": {
+        "50": {
+          "hours": 0.54,
+          "gold": 6132,
+          "dps": 7927,
+          "hired": 4,
+          "levels": 260,
+          "farmed": 0
+        },
+        "100": {
+          "hours": 0.7,
+          "gold": 77967,
+          "dps": 74319,
+          "hired": 7,
+          "levels": 563,
+          "farmed": 0
+        },
+        "150": {
+          "hours": 0.91,
+          "gold": 974080,
+          "dps": 501556,
+          "hired": 11,
+          "levels": 1004,
+          "farmed": 0
+        },
+        "200": {
+          "hours": 1.19,
+          "gold": 12315737,
+          "dps": 5570996,
+          "hired": 13,
+          "levels": 1439,
+          "farmed": 0
+        },
+        "250": {
+          "hours": 1.59,
+          "gold": 154972908,
+          "dps": 39152742,
+          "hired": 16,
+          "levels": 2053,
+          "farmed": 0
+        },
+        "300": {
+          "hours": 2.56,
+          "gold": 1968716524,
+          "dps": 430608488,
+          "hired": 21,
+          "levels": 3097,
+          "farmed": 132
+        },
+        "350": {
+          "hours": 4.02,
+          "gold": 50165930019,
+          "dps": 6259431734,
+          "hired": 27,
+          "levels": 4329,
+          "farmed": 444
+        },
+        "400": {
+          "hours": 5.8,
+          "gold": 939622222469,
+          "dps": 90989952688,
+          "hired": 30,
+          "levels": 5621,
+          "farmed": 889
+        }
+      }
+    }
+  },
+  "cycles": [
+    {
+      "run": "first",
+      "equipped_relics": [],
+      "hours": 11.489,
+      "reached_floor": 400,
+      "shards_earned_on_rebirth_assumed": 55
+    },
+    {
+      "run": "second",
+      "equipped_relics": [
+        "heart",
+        "seal",
+        "spark"
+      ],
+      "hours": 5.496,
+      "reached_floor": 400,
+      "shards_earned_on_rebirth_assumed": 35
+    },
+    {
+      "run": "third",
+      "equipped_relics": [
+        "heart",
+        "seal",
+        "spark",
+        "gold",
+        "knowledge"
+      ],
+      "hours": 3.851,
+      "reached_floor": 400,
+      "shards_earned_on_rebirth_assumed": null
+    }
+  ],
+  "assumptions": [
+    "First rebirth awards 55 shards; second rebirth awards 35 shards by assumption, not from simulated gameplay",
+    "Third run spends 80 of 90 assumed total earned shards, leaving 10 unspent; shard income is not yet simulated",
+    "No repeated relic levels, no earned shard ledger, no gear, no stars, no offline time",
+    "The engine uses simplified passives and an approximate boss modifier"
+  ]
+}

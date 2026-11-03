@@ -1,0 +1,34 @@
+import groovy.json.JsonSlurper
+
+plugins { id 'com.android.application' }
+
+// Версия берётся из work/version.json (одна версия для веба и APK)
+def ver = new JsonSlurper().parse(file('../../work/version.json')).version
+def parts = ver.tokenize('.').collect { it as int }
+def code = parts[0] * 10000 + parts[1] * 100 + parts[2]
+
+android {
+    namespace 'ru.prizvannyy.game'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'ru.prizvannyy.game'   // НЕ МЕНЯТЬ: иначе обновление встанет отдельным приложением без сохранений
+        minSdk 24
+        targetSdk 34
+        versionCode code
+        versionName ver
+    }
+    signingConfigs {
+        release {
+            // Один и тот же ключ для всех сборок — иначе Android не даст поставить обновление поверх и прогресс пропадёт.
+            storeFile file('../keystore/prizvannyy-release.jks')
+            storePassword System.getenv('PZ_KEYSTORE_PASSWORD') ?: project.findProperty('pzKeystorePassword')
+            keyAlias 'prizvannyy'
+            keyPassword System.getenv('PZ_KEY_PASSWORD') ?: project.findProperty('pzKeyPassword')
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+        debug { signingConfig signingConfigs.release }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
