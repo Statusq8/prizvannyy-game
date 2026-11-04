@@ -618,8 +618,8 @@
 
   /* 0.37: чистый экран — интерфейс скрыт, логика работает; меню и кнопки возвращаем по одному. Старый интерфейс: адрес с #ui */
   body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
-  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #toast, body.clean #ultBanner, body.clean #version,
-  body.clean #modal, body.clean .askWrap, body.clean .allyTag, body.clean .ultBar { display: none !important; }
+  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #ultBanner, body.clean #version,
+  body.clean #modal, body.clean .allyTag, body.clean .ultBar { display: none !important; }
 
   /* 0.38: верхняя полоса — золото, общий DPS отряда, без урона тапа (видна всегда, нажатие ничего не делает) */
   body:not(.clean) #topBar { display: none; }
@@ -674,6 +674,223 @@
   body.clean .dot.cur { background: #fff; border-color: #fff; box-shadow: 0 0 6px #fff; }
   body.clean .dot.boss { width: 12px; height: 12px; background: #3a1410; border-color: #c24a2a; }
   body.clean .dot.boss.cur { background: #ff6b4a; box-shadow: 0 0 8px #ff6b4a; }
+  /* ===================== UI 2 (0.40) — по docs/ui/UI_MASTER_v2.md =====================
+     Графика пока нарисована кодом (CSS/SVG); позже заменяется PNG по docs/ui/ASSET_PROMPTS.md. */
+  :root { --steel1: #3a3542; --steel2: #1c1922; --steelEdge: #8d8597; --steelHi: #c9c2d2; --cry: #b14dff; --cryHi: #e3b6ff; --red1: #b0182c; --red2: #5a0a16; --goldE: #d6a640; }
+
+  /* окна подтверждения и отчёты нужны и в чистом режиме — поверх страниц */
+  body.clean #ask, body.clean #away { z-index: 90; }
+  body.clean #toast { z-index: 95; }
+
+  /* ---------- экран боя: композиция «из-за спин» (этап 10) ---------- */
+  body.clean #biomeLabel { display: none !important; }
+  body.clean #waveLbl { order: 2; margin-top: 4px; font-family: 'Ruslan Display', Georgia, serif; font-size: 12px; letter-spacing: 1px; color: #e9dcff; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
+  body.clean #dots { order: 3; margin-top: 4px; }
+  body.clean #enemyName { order: 4; margin-top: 8px; padding: 3px 18px 4px; font-size: 16px; border-radius: 4px;
+    background: linear-gradient(#2a2232ee, #120e18ee); border: 1px solid #6e6678; box-shadow: 0 0 0 1px #000, 0 3px 8px #000a, inset 0 1px 0 #ffffff1a;
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%); }
+  body.clean #hpRow { order: 5; margin-top: 3px; }
+  body.clean #waveLbl:empty { display: none; }
+  #waveLbl { display: none; }
+  body.clean #waveLbl { display: block; }
+
+  body.clean #arena { align-items: flex-start; }
+  body.clean #enemy { margin: calc(env(safe-area-inset-top) + 150px) 0 0; height: min(33%, 250px); }
+  body.clean #enemy.boss { height: min(38%, 290px); }
+  body.clean #hero { bottom: 24%; height: min(24%, 140px); z-index: 3; }
+  body.clean #hero.art { height: min(40%, 230px); transform: translate(-50%, 14%); }
+  body.clean .ally { height: min(20%, 104px); bottom: 30%; }
+  body.clean .ally.L:not(.back) { left: 3% !important; }
+  body.clean .ally.R:not(.back) { right: 3% !important; left: auto !important; }
+  body.clean .ally.back { height: min(17%, 88px); bottom: 43%; filter: brightness(.85); }
+  body.clean .ally.L.back { left: 13% !important; }
+  body.clean .ally.R.back { right: 13% !important; left: auto !important; }
+  body.clean #pet { left: 50%; transform: translateX(-50%); bottom: 9%; width: min(16%, 66px); z-index: 3; }
+  /* компактные индикаторы ультов под персонажами (сами ульты автоматические) */
+  body.clean .ultBar { display: block !important; left: 26%; right: 26%; bottom: -6px; height: 5px; border-radius: 1px; background: #0a0710cc; border: 1px solid #6e6678; }
+  body.clean .ultBar i { background: linear-gradient(90deg, #7a2ad0, #e3b6ff); }
+  body.clean .ultBar.ready { border-color: #e3b6ff; box-shadow: 0 0 6px #b14dff; }
+
+  /* ---------- 4 угловые кнопки (этап 10.1): квадрат с резными углами, чёрная сталь + фиолетовый кристалл ---------- */
+  .cBtn { display: none; }
+  body.clean .cBtn { display: grid; place-items: center; position: absolute; z-index: 8; width: 64px; height: 64px; padding: 0; cursor: pointer; }
+  body.clean #cbMenu { left: 8px; top: calc(env(safe-area-inset-top) + 48px); }
+  body.clean #cbSet { right: 8px; top: calc(env(safe-area-inset-top) + 48px); }
+  body.clean #cbPve { left: 8px; bottom: calc(env(safe-area-inset-bottom) + 12px); }
+  body.clean #cbMap { right: 8px; bottom: calc(env(safe-area-inset-bottom) + 12px); }
+  .cBtn .fr { position: absolute; inset: 0; clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+    background: linear-gradient(135deg, var(--steelHi), #5a5364 30%, #2a2630 60%, var(--steelEdge)); }
+  .cBtn .fr::before { content: ""; position: absolute; inset: 3px; clip-path: inherit; background: radial-gradient(circle at 50% 40%, #3a1a5a 0%, #160e20 60%, #0a070e 100%);
+    box-shadow: inset 0 0 12px #b14dff80; }
+  .cBtn .fr::after { content: ""; position: absolute; inset: 3px; clip-path: inherit; box-shadow: inset 0 0 0 1px #b14dff90, inset 0 0 14px #b14dff55; }
+  .cBtn .gem { position: absolute; width: 7px; height: 7px; background: radial-gradient(circle at 35% 30%, #fff, var(--cryHi) 30%, var(--cry) 70%, #4a0a8a); transform: rotate(45deg); box-shadow: 0 0 6px var(--cry); z-index: 1; }
+  .cBtn .gem.a { left: 3px; top: 3px; } .cBtn .gem.b { right: 3px; top: 3px; } .cBtn .gem.c { left: 3px; bottom: 3px; } .cBtn .gem.d { right: 3px; bottom: 3px; }
+  .cBtn svg { position: relative; z-index: 2; width: 46px; height: 46px; overflow: visible; filter: drop-shadow(0 2px 2px #000) drop-shadow(0 0 4px #b14dff80); transition: transform .08s; }
+  .cBtn:active svg, .cBtn.press svg { transform: scale(.9); }
+  .cBtn:active .fr::after, .cBtn.press .fr::after { box-shadow: inset 0 0 0 2px #e3b6ff, inset 0 0 22px #b14dff; }
+  .cBtn .bang { position: absolute; right: -2px; top: -2px; z-index: 3; width: 16px; height: 16px; border-radius: 50%; background: #e0202a; border: 1px solid #ffd0d0; color: #fff; font: 900 11px/14px system-ui; display: none; }
+  .cBtn .bang.on { display: block; }
+  body.clean.pageOpen .cBtn, body.clean.pageOpen #topBar, body.clean.pageOpen #hud { visibility: hidden; }
+
+  /* ---------- полноэкранные страницы (этапы 3–9) ---------- */
+  .pg { display: none; }
+  body.clean .pg.show { display: flex; flex-direction: column; position: absolute; inset: 0; z-index: 60; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 0%, #4a1a7a 0%, #1a0e2a 38%, #0b0710 75%); animation: pgIn .18s ease-out; }
+  @keyframes pgIn { from { opacity: 0; filter: brightness(2) saturate(1.6); transform: scale(1.02); } to { opacity: 1; } }
+  /* единая Башня сквозь интерфейс: силуэт по всей высоте */
+  .pg .tower { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .55;
+    background:
+      radial-gradient(ellipse at 50% 6%, #c06bff55 0%, transparent 20%),
+      linear-gradient(90deg, transparent 34%, #1d1228 36%, #2a1a3a 50%, #1d1228 64%, transparent 66%),
+      linear-gradient(90deg, transparent 20%, #140c1c 24%, #1b1126 30%, transparent 32%, transparent 68%, #1b1126 70%, #140c1c 76%, transparent 80%),
+      repeating-linear-gradient(180deg, transparent 0 46px, #b14dff22 46px 48px); }
+  .pg .tower::after { content: ""; position: absolute; left: 50%; top: 2%; width: 120px; height: 60px; margin-left: -60px; border-radius: 50%; border: 2px solid #c06bff66; box-shadow: 0 0 24px #b14dff88; transform: perspective(200px) rotateX(70deg); }
+  .pg > * { position: relative; z-index: 1; }
+  .pgTop { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: calc(env(safe-area-inset-top) + 8px) 8px 4px; min-height: 42px; }
+  .pgTop .cur { display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 3px; border-radius: 14px; background: linear-gradient(#2a2232, #120e18); border: 1px solid #6e6678;
+    box-shadow: 0 0 0 1px #000, inset 0 1px 0 #ffffff1a; font: 400 13px 'Russo One', system-ui, sans-serif; color: #fff; text-shadow: 0 1px 0 #000; }
+  .pgTop .cur i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; background: radial-gradient(circle at 40% 30%, #6a4a8a, #241634); border: 1px solid #000; }
+  .pgTop .cur.g { color: var(--gold); }
+  .pgHead { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+  .backBtn { flex: none; width: 46px; height: 34px; display: grid; place-items: center; font-size: 22px; color: #fff; clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%);
+    background: linear-gradient(#5a4a6a, #2a2034); border: none; text-shadow: 0 1px 0 #000; }
+  .backBtn:active { filter: brightness(1.5); }
+  .titlePl { flex: 1; text-align: center; height: 34px; line-height: 32px; font-family: 'Ruslan Display', Georgia, serif; font-size: 18px; color: #f4e6c2; text-shadow: 0 1px 0 #000, 0 0 8px #b14dff;
+    background: linear-gradient(#2e2238, #120c18); border: 1px solid #8d8597; box-shadow: 0 0 0 1px #000, inset 0 0 10px #b14dff40;
+    clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 18px; }
+  .pgBody { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 4px 8px calc(env(safe-area-inset-bottom) + 16px); -webkit-overflow-scrolling: touch; }
+  .pgTabs { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 2px 8px 4px; }
+  .pgTabs button { height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 6px; color: #e9dcff; font: 700 11px system-ui;
+    background: linear-gradient(#2a2232, #120e18); border: 1px solid #6e6678; box-shadow: 0 0 0 1px #000, inset 0 1px 0 #ffffff14; text-shadow: 0 1px 0 #000; position: relative; }
+  .pgTabs button b { font-size: 24px; line-height: 1; filter: drop-shadow(0 0 4px var(--tc, #b14dff)); }
+  .pgTabs button.on { border-color: var(--goldE); box-shadow: 0 0 0 1px #000, 0 0 10px #d6a64099, inset 0 0 10px #d6a64055; color: #ffe8a8; }
+  .chip { height: 30px; padding: 0 12px; border-radius: 6px; background: linear-gradient(#3a2e46, #1a1222); border: 1px solid #6e6678; color: #e9dcff; font: 700 12px system-ui; }
+  .chip.on { background: linear-gradient(#d6a640, #7a5212); border-color: #ffe08a; color: #2a1a04; }
+  .bang2 { position: absolute; right: 4px; top: 4px; width: 15px; height: 15px; border-radius: 50%; background: #e0202a; color: #fff; font: 900 10px/15px system-ui; text-align: center; }
+
+  /* ---------- главное меню (этап 3) ---------- */
+  .mCard { width: 100%; display: flex; align-items: center; gap: 14px; height: 84px; margin-bottom: 10px; padding: 0 14px; color: #fff; text-align: left;
+    background: linear-gradient(90deg, #2a1e36ee, #140e1cdd); border: 1px solid #6e6678; border-radius: 8px; box-shadow: 0 0 0 1px #000, 0 4px 10px #000a, inset 0 1px 0 #ffffff14; position: relative; }
+  .mCard:active { filter: brightness(1.3); }
+  .mCard .ic { flex: none; width: 58px; height: 58px; display: grid; place-items: center; font-size: 32px; border-radius: 8px; border: 2px solid var(--tc); box-shadow: 0 0 12px var(--tc), inset 0 0 12px var(--tc);
+    background: radial-gradient(circle, #ffffff10, #0008); }
+  .mCard .nm { font-family: 'Ruslan Display', Georgia, serif; font-size: 20px; color: #f4e6c2; text-shadow: 0 1px 0 #000; }
+  .mCard small { display: block; font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+  .mMore { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+  .mMore button { height: 62px; border-radius: 6px; background: linear-gradient(#251c2e, #120e18); border: 1px solid #4e4757; color: #d8d0e2; font: 700 11px system-ui; position: relative; }
+  .mMore button b { display: block; font-size: 20px; margin-bottom: 2px; }
+  .secT { margin: 12px 2px 6px; font: 800 11px system-ui; letter-spacing: 1px; color: #9a8aa8; text-transform: uppercase; }
+
+  /* ---------- Прокачка (этап 4): крупные карточки ---------- */
+  .upTool { display: flex; justify-content: flex-end; margin: 0 0 6px; }
+  .upTool select, .bagTool select { height: 30px; border-radius: 6px; background: linear-gradient(#d6a640, #7a5212); border: 1px solid #ffe08a; color: #2a1a04; font: 800 13px system-ui; padding: 0 8px; }
+  .hCard { display: grid; grid-template-columns: 86px 1fr auto; gap: 10px; align-items: center; min-height: 112px; margin-bottom: 8px; padding: 10px; border-radius: 8px;
+    background: linear-gradient(90deg, #241a30ee, #120e18dd); border: 2px solid var(--rc, #4e4757); box-shadow: 0 0 0 1px #000, 0 0 10px var(--rg, transparent), inset 0 1px 0 #ffffff14; }
+  .hCard.lock { opacity: .85; }
+  .hCard .pt { position: relative; width: 86px; height: 86px; border-radius: 6px; border: 2px solid var(--rc, #6e6678); background: #120c18; display: grid; place-items: center; font-size: 42px; overflow: visible; }
+  .hCard .pt img, .hCard .pt svg { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+  .hCard.lock .pt > *:not(.rk) { filter: brightness(0) drop-shadow(0 0 2px #6e6678); }
+  .rk { position: absolute; right: -8px; top: -8px; min-width: 26px; height: 26px; padding: 0 3px; display: grid; place-items: center; border-radius: 4px; transform: rotate(0); font: 400 13px 'Russo One', system-ui; color: #fff;
+    background: linear-gradient(#3a2e46, #120e18); border: 2px solid var(--rc, #6e6678); text-shadow: 0 1px 0 #000; box-shadow: 0 0 6px var(--rg, #000); z-index: 2; }
+  .stars { position: absolute; left: 0; right: 0; bottom: -9px; text-align: center; font-size: 11px; letter-spacing: -1px; color: #6e6678; text-shadow: 0 1px 0 #000; }
+  .stars b { color: var(--sc, #ffd36b); font-weight: 400; }
+  .hCard .inf { min-width: 0; }
+  .hCard .nm { font-family: 'Ruslan Display', Georgia, serif; font-size: 17px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 0 #000; }
+  .hCard .ln { font: 600 12px system-ui; color: #c9bfd6; margin-top: 3px; }
+  .hCard .ln b { font: 400 13px 'Russo One', system-ui; color: #fff; }
+  .hCard .ln .up { color: #6be37a; }
+  .fac { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 3px; border: 1px solid #6e6678; background: #1a1222; font: 700 10px system-ui; color: #d8b8ff; }
+  .upBtn { width: 104px; min-height: 52px; border-radius: 6px; color: #fff; font: 800 13px system-ui; text-shadow: 0 1px 0 #000; padding: 4px;
+    background: linear-gradient(#d4283e, #7a0a1a); border: 2px solid var(--goldE); box-shadow: 0 0 0 1px #000, inset 0 1px 0 #ffffff40, 0 3px 6px #000a; }
+  .upBtn span, .upBtn small { display: block; font: 400 12px 'Russo One', system-ui; color: #ffe8a8; margin-top: 2px; }
+  .upBtn:disabled { filter: grayscale(.8) brightness(.6); }
+  .upBtn:not(:disabled):active { transform: translateY(1px) scale(.97); filter: brightness(1.3); }
+  .upBtn.alt { background: linear-gradient(#5a3a8a, #2a1a4a); }
+  .upBtn.gold { background: linear-gradient(#d6a640, #7a5212); color: #2a1a04; text-shadow: none; }
+  .upBtn.gold span { color: #2a1a04; }
+
+  /* ---------- Артефакты (этап 5): 4 в ряд ---------- */
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .aCell { position: relative; aspect-ratio: .72; border-radius: 6px; padding: 4px 3px; display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff;
+    background: linear-gradient(#2a1e36cc, #120e18cc); border: 2px solid var(--rc, #6e6678); box-shadow: 0 0 0 1px #000, 0 0 8px var(--rg, transparent); }
+  .aCell .ai { flex: 1; width: 100%; display: grid; place-items: center; font-size: 30px; filter: drop-shadow(0 0 6px var(--rg, #b14dff)); }
+  .aCell .lv { font: 400 10px 'Russo One', system-ui; padding: 0 5px; border-radius: 3px; background: #000a; }
+  .aCell .an { font: 700 10px/1.1 system-ui; margin-top: 2px; min-height: 22px; display: flex; align-items: center; }
+  .aCell .ab { font: 700 9px system-ui; color: #6be37a; }
+  .aCell.lock { opacity: .7; } .aCell.lock .ai { filter: brightness(0) drop-shadow(0 0 2px #6e6678); }
+  .aCell.lock::after { content: "🔒"; position: absolute; top: 34%; left: 50%; transform: translateX(-50%); font-size: 18px; }
+  .detBox { margin-top: 8px; padding: 14px; border-radius: 8px; background: linear-gradient(#241a30ee, #120e18ee); border: 2px solid var(--rc, #6e6678); text-align: center; }
+  .detBox .big { font-size: 64px; filter: drop-shadow(0 0 12px var(--rg, #b14dff)); }
+  .detBox h3 { font-family: 'Ruslan Display', Georgia, serif; font-weight: 400; font-size: 20px; color: #f4e6c2; margin: 4px 0; }
+  .detBox p { font: 600 13px system-ui; color: #c9bfd6; margin: 6px 0; }
+  .detBox .cmp { font: 400 15px 'Russo One', system-ui; color: #fff; margin: 10px 0; }
+  .detBox .cmp em { color: #6be37a; font-style: normal; }
+  .multRow { display: flex; gap: 6px; justify-content: center; margin: 4px 0 10px; }
+
+  /* ---------- Сумка (этап 6): 5 в ряд ---------- */
+  .bagTool { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .bagTool input { flex: 1; min-width: 0; height: 30px; border-radius: 6px; border: 1px solid #6e6678; background: #120e18; color: #fff; padding: 0 10px; font: 600 13px system-ui; }
+  .sortRow { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; font: 700 11px system-ui; color: #b9b1c3; }
+  .iCell { position: relative; aspect-ratio: 1; border-radius: 5px; display: grid; place-items: center; font-size: 26px; background: linear-gradient(#1e1626, #0e0a14); border: 1px solid var(--rc, #3a3342);
+    box-shadow: inset 0 0 8px #000, 0 0 6px var(--rg, transparent); }
+  .iCell .q { position: absolute; right: 3px; bottom: 1px; font: 400 10px 'Russo One', system-ui; color: #fff; text-shadow: 0 1px 0 #000, 0 0 2px #000; }
+  .iCell.empty { opacity: .45; font-size: 14px; color: #3a3342; }
+  .iCell .nw { position: absolute; right: -3px; top: -3px; width: 14px; height: 14px; border-radius: 50%; background: #e0202a; color: #fff; font: 900 10px/14px system-ui; text-align: center; }
+
+  /* ---------- окно предмета ---------- */
+  #ui2Pop { display: none; }
+  body.clean #ui2Pop.show { display: grid; place-items: center; position: absolute; inset: 0; z-index: 80; background: #000a; }
+  #ui2Pop .box { width: min(88%, 340px); padding: 16px; border-radius: 10px; background: linear-gradient(#2a1e36, #120e18); border: 2px solid var(--rc, #8d8597); box-shadow: 0 0 0 1px #000, 0 0 20px var(--rg, #b14dff55); text-align: center; color: #fff; }
+  #ui2Pop .big { font-size: 54px; }
+  #ui2Pop h3 { font-family: 'Ruslan Display', Georgia, serif; font-weight: 400; font-size: 19px; color: #f4e6c2; margin: 4px 0; }
+  #ui2Pop p { font: 600 13px system-ui; color: #c9bfd6; margin: 6px 0 12px; }
+  #ui2Pop .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- Питомцы (этап 7) ---------- */
+  .petTop { display: grid; grid-template-columns: 46% 1fr; gap: 10px; padding: 10px; border-radius: 8px; background: linear-gradient(#2a1e36ee, #120e18ee); border: 2px solid var(--rc, #6e6678); box-shadow: 0 0 0 1px #000, 0 0 14px var(--rg, transparent); }
+  .petTop .pic { position: relative; aspect-ratio: 1; border-radius: 6px; display: grid; place-items: center; font-size: 80px; border: 2px solid var(--rc, #6e6678);
+    background: radial-gradient(circle at 50% 60%, var(--rg, #b14dff) 0%, #1a0e2a 55%, #0a0710 100%); animation: petBg 4s ease-in-out infinite alternate; }
+  @keyframes petBg { to { filter: hue-rotate(25deg) brightness(1.15); } }
+  .petTop .nm { font-family: 'Ruslan Display', Georgia, serif; font-size: 18px; color: #fff; }
+  .petTop .ln { font: 600 12px system-ui; color: #c9bfd6; margin-top: 4px; }
+  .petTop .ln b { font: 400 13px 'Russo One', system-ui; color: #fff; }
+  .petBtns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
+  .petBtns .upBtn { width: auto; min-height: 44px; }
+  .abil { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; padding: 8px; margin-top: 6px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
+  .abil .ico { width: 52px; height: 52px; border-radius: 6px; display: grid; place-items: center; font-size: 26px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
+  .abil b { font: 800 12px system-ui; color: #fff; } .abil i { font-style: normal; font: 700 10px system-ui; padding: 1px 6px; border-radius: 3px; margin-right: 6px; background: #d6a640; color: #2a1a04; }
+  .abil.pas i { background: #6e4aa8; color: #fff; }
+  .abil p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+
+  /* ---------- Карта Башни (этап 9, концепт v2): ровно 5 этажей на экране ---------- */
+  #mapList { flex: 1; min-height: 0; overflow-y: auto; scroll-snap-type: y proximity; padding: 0 8px; }
+  .fRoom { position: relative; height: calc((100dvh - env(safe-area-inset-top) - 118px) / 5); min-height: 92px; scroll-snap-align: center; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 12px 10px; border-left: 10px solid #1c1622; border-right: 10px solid #1c1622; color: #fff;
+    background: linear-gradient(180deg, #0c0810 0, #0c0810 8px, transparent 8px), linear-gradient(180deg, hsl(var(--bh, 270), 30%, 14%), hsl(var(--bh, 270), 35%, 7%));
+    box-shadow: inset 0 -6px 0 #2a2232, inset 0 -8px 0 #000, inset 0 0 30px #000; }
+  .fRoom::before { content: ""; position: absolute; left: 8%; right: 8%; top: 8px; bottom: 14px; background: repeating-linear-gradient(90deg, transparent 0 18%, #00000055 18% 20%); pointer-events: none; }
+  .fRoom .no { position: relative; font: 400 18px 'Ruslan Display', Georgia, serif; text-shadow: 0 1px 0 #000, 0 0 6px #000; }
+  .fRoom .st { position: relative; font: 700 11px system-ui; color: #b9b1c3; text-align: right; }
+  .fRoom .who { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 30px; filter: drop-shadow(0 2px 2px #000); letter-spacing: 6px; }
+  .fRoom.done .no { color: #9a8aa8; }
+  .fRoom.done::after { content: "✓"; position: absolute; left: 50%; top: 14px; transform: translateX(-50%); font: 900 14px system-ui; color: #6be37a; }
+  .fRoom.cur { box-shadow: inset 0 -6px 0 #d6a640, inset 0 0 0 2px #ffd36b, inset 0 0 40px #d6a64077; }
+  .fRoom.cur .no { color: #ffd36b; }
+  .fRoom.shut { filter: saturate(.5) brightness(.7); }
+  .fRoom.shut .who::after { content: "🔒"; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 28px; letter-spacing: 0; filter: hue-rotate(-40deg) saturate(3); }
+  .fRoom.key { border-color: #5a1a1a; }
+  .fRoom .zone { position: absolute; left: 12px; top: 12px; font: 400 10px 'Ruslan Display', Georgia, serif; color: #e3b6ff; letter-spacing: 1px; }
+  .mapInfo { flex: none; text-align: center; font: 400 14px 'Russo One', system-ui; color: #f4e6c2; padding: 0 0 6px; text-shadow: 0 1px 0 #000; }
+
+  /* ---------- старые разделы внутри новой полноэкранной страницы (временно, до своего дизайна) ---------- */
+  body.clean.oldOpen #panel { display: flex !important; position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    top: calc(env(safe-area-inset-top) + 50px) !important; height: auto !important; transform: none !important; visibility: visible !important; pointer-events: auto !important;
+    z-index: 61 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; padding-top: 0 !important; background: #120c18f2 !important; }
+  body.clean.oldOpen #panel #groupHead, body.clean.oldOpen #panel #panelToggle, body.clean.oldOpen #panel #popBack, body.clean.oldOpen #panel #tabs, body.clean.oldOpen #panel #goldRow { display: none !important; }
+  body.clean.oldOpen #pgOld { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 50px); z-index: 62; background: #1a0e2a; }
+  #pgOld { display: none; }
+
 </style>
 </head>
 <body>
@@ -699,6 +916,7 @@
       <button class="navBtn" id="nextFloor" aria-label="Этаж выше">›</button>
     </div>
     <div id="biomeLabel"></div>
+    <div id="waveLbl"></div>
     <div id="dots"></div>
     <div id="enemyName"></div>
     <div id="hpRow"><div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div><div id="timerSec"></div></div>
@@ -757,6 +975,56 @@
     <div id="hint">Тапай по врагу!</div>
     <div id="toast"></div>
   </div>
+
+  <!-- ===== UI 2 (0.40): 4 угловые кнопки и полноэкранные страницы — docs/ui/UI_MASTER_v2.md ===== -->
+  <button class="cBtn" id="cbMenu" aria-label="Персонажи и улучшения"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><defs><linearGradient id="gBlade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9c2d2"/><stop offset="1" stop-color="#6e6678"/></linearGradient>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#d6a640"/><stop offset="1" stop-color="#6a4a12"/></linearGradient></defs>
+      <g stroke="#120a18" stroke-width="1.2" stroke-linejoin="round">
+        <path d="M8 6 L12 4 L36 30 L32 34 Z" fill="url(#gBlade)"/><path d="M40 6 L36 4 L12 30 L16 34 Z" fill="url(#gBlade)"/>
+        <path d="M29 31 L35 25 L37 27 L31 33 Z M19 31 L13 25 L11 27 L17 33 Z" fill="url(#gGold)"/>
+        <path d="M33 33 L41 41 L39 43 L31 35 Z M15 33 L7 41 L9 43 L17 35 Z" fill="#3a2230"/>
+        <circle cx="41" cy="42" r="2.4" fill="#b14dff"/><circle cx="7" cy="42" r="2.4" fill="#b14dff"/></g></svg>
+    <i class="bang" id="cbMenuBang">!</i></button>
+  <button class="cBtn" id="cbSet" aria-label="Настройки и профиль"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><defs><radialGradient id="gCry" cx=".4" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#e3b6ff"/><stop offset="1" stop-color="#6a1ab0"/></radialGradient></defs>
+      <path d="M24 3 l3 5 5-2 1 6 6 1-2 5 5 3-5 3 2 5-6 1-1 6-5-2-3 5-3-5-5 2-1-6-6-1 2-5-5-3 5-3-2-5 6-1 1-6 5 2z" fill="url(#gBlade)" stroke="#120a18" stroke-width="1.2" stroke-linejoin="round"/>
+      <circle cx="24" cy="24" r="10" fill="#1a1022" stroke="#6e6678" stroke-width="1.5"/>
+      <path d="M24 15 L30 24 L24 33 L18 24 Z" fill="url(#gCry)" stroke="#2a0a4a" stroke-width="1"/></svg></button>
+  <button class="cBtn" id="cbPve" aria-label="PvE и рейтинги"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><g stroke="#3a2606" stroke-width="1.2" stroke-linejoin="round">
+      <path d="M13 6 H35 V16 Q35 28 24 30 Q13 28 13 16 Z" fill="url(#gGold)"/>
+      <path d="M13 9 H6 Q6 20 14 21 M35 9 H42 Q42 20 34 21" fill="none" stroke="#d6a640" stroke-width="3"/>
+      <path d="M21 30 H27 V36 H21 Z" fill="url(#gGold)"/><path d="M14 36 H34 L36 43 H12 Z" fill="url(#gGold)"/>
+      <path d="M24 10 L27 16 L24 22 L21 16 Z" fill="url(#gCry)"/></g></svg>
+    <i class="bang" id="cbPveBang">!</i></button>
+  <button class="cBtn" id="cbMap" aria-label="Карта Башни"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><g stroke="#120a18" stroke-width="1.1" stroke-linejoin="round">
+      <path d="M24 1 L28 10 H20 Z" fill="url(#gCry)"/>
+      <path d="M20 10 H28 L30 44 H18 Z" fill="url(#gBlade)"/>
+      <path d="M14 22 H18 L18 44 H12 Z M30 22 H34 L36 44 H30 Z" fill="#8d8597"/>
+      <path d="M14 22 L16 16 L18 22 M30 22 L32 16 L34 22" fill="#c9c2d2"/>
+      <path d="M22 16 H26 V21 H22 Z M22 26 H26 V31 H22 Z M22 36 H26 V44 H22 Z" fill="#b14dff"/>
+      <ellipse cx="24" cy="45" rx="16" ry="2.5" fill="#b14dff" opacity=".6" stroke="none"/></g></svg></button>
+
+  <div class="pg" id="pgMenu"><div class="tower"></div>
+    <div class="pgTop" id="mTop"></div>
+    <div class="pgHead"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl">Меню</div></div>
+    <div class="pgBody" id="mBody"></div>
+  </div>
+  <div class="pg" id="pgSec"><div class="tower"></div>
+    <div class="pgTop" id="sTop"></div>
+    <div class="pgTabs" id="sTabs"></div>
+    <div class="pgHead"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl" id="sTitle"></div></div>
+    <div class="pgBody" id="sBody"></div>
+  </div>
+  <div class="pg" id="pgMap"><div class="tower"></div>
+    <div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl">Карта Башни</div></div>
+    <div class="mapInfo" id="mapInfo"></div>
+    <div id="mapList"></div>
+  </div>
+  <div id="pgOld"><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" id="oldBack" aria-label="Назад">←</button><div class="titlePl" id="oldTitle"></div></div></div>
+  <div id="ui2Pop"><div class="box" id="ui2PopBox"></div></div>
 
   <div id="abilityBar"></div>
   <div id="panel" class="collapsed">
@@ -837,7 +1105,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.39</div>
+  <div id="version">v0.40</div>
 </div>
 
 <script>
@@ -3916,6 +4184,7 @@
     }
     $('canBuy').classList.toggle('on', anyAffordable);
     const upBtn = document.querySelector('.sideBtn[data-open="up"]'); if (upBtn) upBtn.classList.toggle('on', anyAffordable);
+    if (ui2Refresh) ui2Refresh();
   }
 
   // Подсказка о следующей вехе уровня
@@ -5009,6 +5278,309 @@
   buildAbilities();
   render();
   if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
+  // ===================== UI 2 (0.40) — по docs/ui/UI_MASTER_v2.md =====================
+  // Новые экраны поверх старой логики: 4 угловые кнопки, главное меню, Прокачка, Артефакты, Сумка, Питомцы, Карта Башни.
+  // Остальные разделы пока открываются старыми вкладками внутри полноэкранной страницы (TODO: свой дизайн).
+  var ui2Refresh = null;
+  (function () {
+    const RC = { E: '#8d8d96', D: '#4cbf5a', C: '#3a8fe0', B: '#a050e0', A: '#e04848', S: '#ffb030', SS: '#ff7a20', SSS: '#ff40c0', GOD: '#fff2a0' };
+    const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
+    const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
+    const MORE = [['portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
+      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика']];
+    let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
+    const stack = [];
+    const heroImg = (document.querySelector('#cards .cardIcon img') || {}).src || '';
+
+    // короткий звук нажатия (WebAudio, без файлов)
+    let actx = null;
+    function click() {
+      try {
+        actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+        o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(260, t + 0.07);
+        g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+        o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.1);
+      } catch (e) {}
+    }
+    function setHtml(id, html) { if (lastHtml[id] !== html) { $(id).innerHTML = html; lastHtml[id] = html; } }
+    function cur(icon, val, gold) { return '<div class="cur' + (gold ? ' g' : '') + '"><i>' + icon + '</i>' + val + '</div>'; }
+    const M = CFG.materials;
+
+    // ---------- открытие / закрытие страниц ----------
+    function show(id) {
+      document.querySelectorAll('.pg').forEach(p => p.classList.toggle('show', p.id === id));
+      document.body.classList.toggle('pageOpen', !!id);
+    }
+    function open(p, opt) {
+      if (page && page !== p) stack.push(page);
+      page = p; if (opt) Object.assign(state, opt);
+      lastHtml = {};
+      if (p === 'menu') show('pgMenu');
+      else if (p === 'sec') show('pgSec');
+      else if (p === 'map') show('pgMap');
+      refresh();
+      if (p === 'map') setTimeout(() => { const c = document.querySelector('.fRoom.cur'); if (c) c.scrollIntoView({ block: 'center' }); }, 0);
+    }
+    const state = {};
+    function back() {
+      click();
+      if (page === 'sec' && artSel) { artSel = null; lastHtml = {}; refresh(); return; }
+      page = stack.pop() || null;
+      if (!page) { show(null); return; }
+      lastHtml = {}; show(page === 'menu' ? 'pgMenu' : page === 'sec' ? 'pgSec' : 'pgMap'); refresh();
+    }
+    document.querySelectorAll('.pg [data-back]').forEach(b => b.addEventListener('click', back));
+
+    // старые вкладки — внутри полноэкранной страницы
+    function openOld(t) {
+      click();
+      tab = t; setCollapsed(false);
+      document.body.classList.add('oldOpen');
+      $('oldTitle').textContent = TAB_NAMES[t] || '';
+      render();
+    }
+    function closeOld() { document.body.classList.remove('oldOpen'); setCollapsed(true); render(); }
+    $('oldBack').addEventListener('click', () => { click(); closeOld(); });
+
+    // ---------- 4 угловые кнопки ----------
+    const press = b => { b.classList.add('press'); setTimeout(() => b.classList.remove('press'), 120); click(); if (navigator.vibrate && setg.vibro === 'on') try { navigator.vibrate(8); } catch (e) {} };
+    $('cbMenu').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('menu'); });
+    $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); });          // этап 11 на паузе — экран не согласован
+    $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); openOld('pve'); });
+    $('cbMap').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('map'); });
+
+    // ---------- главное меню ----------
+    function renderMenu() {
+      setHtml('mTop', cur('◆', fmt(s.gold), true) + cur('🎟', fmt(s.tickets)) + cur('👻', fmt(s.souls)));
+      const sub = { up: 'Главный герой и союзники', art: 'Все найденные действуют сразу', bag: 'Материалы, билеты, руны, кости', pets: 'Призванное существо в бою' };
+      const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) };
+      let h = SECS.map(([id, ic, nm, c]) => '<button class="mCard" data-sec="' + id + '" style="--tc:' + c + '"><span class="ic">' + ic + '</span><span><span class="nm">' + nm + '</span><small>' + sub[id] + '</small></span>' +
+        (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
+      h += '<div class="secT">Другие разделы · временно в старом виде</div><div class="mMore">' +
+        MORE.map(([id, ic, nm]) => '<button data-old="' + id + '"><b>' + ic + '</b>' + nm + (navBang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('') + '</div>';
+      setHtml('mBody', h);
+    }
+    $('mBody').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.sec) { click(); sec = b.dataset.sec; artSel = null; open('sec'); }
+      else if (b.dataset.old) openOld(b.dataset.old);
+    });
+
+    // ---------- разделы с вкладками ----------
+    function renderSec() {
+      setHtml('sTabs', SECS.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
+      const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur(M.heart.icon, fmt(s.materials.heart)) + cur('◆', fmt(s.gold), true)
+        : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
+      setHtml('sTop', top);
+      $('sTitle').textContent = sec === 'up' ? 'Герои' : sec === 'art' ? (artSel ? 'Улучшение' : 'Артефакты') : sec === 'bag' ? 'Сумка' : 'Питомцы';
+      setHtml('sBody', sec === 'up' ? upHtml() : sec === 'art' ? artHtml() : sec === 'bag' ? bagHtml() : petsHtml());
+    }
+    $('sTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; click(); sec = b.dataset.st; artSel = null; lastHtml = {}; refresh(); $('sBody').scrollTop = 0; });
+
+    // Прокачка: крупные карточки; кнопка — та же покупка, что в старой панели (ранг, найм, ×N)
+    const MSEL = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
+    function stars(n, max) { let t = ''; for (let i = 0; i < max; i++) t += i < n ? '<b>★</b>' : '★'; return '<div class="stars">' + t + '</div>'; }
+    function upHtml() {
+      let h = '<div class="upTool"><select id="u2mult">' + MSEL.map(([v, t]) => '<option value="' + v + '"' + (v === mult ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>';
+      const r = C.rankLabel(s.heroRank), RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+      h += '<div class="hCard" style="' + rvar('S') + '"><div class="pt">' + (heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡') + '<span class="rk">' + RN[r.rank || 1] + '</span></div>' +
+        '<div class="inf"><div class="nm">Призванный</div><div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> / ' + fmt(C.tapCap(s)) + '</div>' +
+        '<div class="ln">⚔ <b>' + fmt(C.tapHit(s)) + '</b> за тап</div><span class="fac">Главный герой</span></div>' +
+        '<button class="upBtn" data-ub="hero"' + (el.buyTap.disabled ? ' disabled' : '') + '>' + el.buyTap.innerHTML + '</button></div>';
+      const list = CFG.allies.slice().sort((a, b) => {
+        const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
+        if (ua !== ub) return ua ? -1 : 1;
+        const sa = C.inSquad(s, a.id), sb = C.inSquad(s, b.id);
+        if (sa !== sb) return sa ? -1 : 1;
+        return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
+      });
+      for (const a of list) {
+        const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
+        const fig = '<div style="width:100%;height:100%">' + allySvg(ALLY_VIS[a.id], hh.evo) + '</div>';
+        if (!hh.unlocked) {
+          h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0, CFG.maxStars) + '</div>' +
+            '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +
+            '<button class="upBtn alt" data-free="' + a.id + '">🔒 Освободить героя</button></div>';
+          continue;
+        }
+        const dps = lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—';
+        h += '<div class="hCard" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars, CFG.maxStars) + '</div>' +
+          '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. <b>' + (lv ? fmt(lv) : '--') + '</b>' + (lv ? ' / ' + fmt(C.allyCap(s, a.id)) : '') + '</div>' +
+          '<div class="ln">⚔ <b>' + dps + '</b> DPS</div><span class="fac">' + a.role + (C.inSquad(s, a.id) ? ' · в отряде' : ' · резерв') + '</span></div>' +
+          '<button class="upBtn" data-ub="' + a.id + '"' + (u.btn.disabled ? ' disabled' : '') + '>' + u.btn.innerHTML + '</button></div>';
+      }
+      return h;
+    }
+
+    // Артефакты: сетка 4 в ряд, отдельная страница улучшения (×1/×10/×100/MAX)
+    function artHtml() {
+      if (artSel) {
+        const a = CFG.artifacts.find(x => x.id === artSel), lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id);
+        const prev = c != null ? C.previewSpend(s, 'upgrade', a.id, TPS_PREVIEW) : null;
+        return '<div class="multRow">' + [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']].map(([v, t]) => '<button class="chip' + (artN === v ? ' on' : '') + '" data-an="' + v + '">' + t + '</button>').join('') + '</div>' +
+          '<div class="detBox" style="' + rvar(lv >= (a.max || 1e9) ? 'S' : 'B') + '"><div class="big">' + a.icon + '</div><h3>' + a.name + '</h3>' +
+          '<div class="cmp">Ур. ' + lv + (a.max ? ' / ' + a.max : '') + '</div><p>' + a.desc + '</p>' + (prev ? dpsChange(prev) : '') +
+          (c == null ? '<button class="upBtn" disabled style="width:70%;margin-top:10px">Максимум</button>'
+                     : '<button class="upBtn" data-aup="' + a.id + '" style="width:70%;margin-top:10px"' + (B.gte(s.souls, c) ? '' : ' disabled') + '>Улучшить' +
+                       (artN !== 1 ? ' ' + (artN === 'max' ? 'MAX' : '×' + artN) : '') + '<span>👻 ' + fmt(c) + (artN !== 1 ? ' за ур.' : '') + '</span></button>') + '</div>';
+      }
+      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0), not = CFG.artifacts.filter(a => !C.artLevel(s, a.id));
+      let h = '<div class="multRow"><button class="chip' + (artTab === 'got' ? ' on' : '') + '" data-at="got">Полученные (' + got.length + ')</button>' +
+        '<button class="chip' + (artTab === 'not' ? ' on' : '') + '" data-at="not">🔒 Не полученные (' + not.length + ')</button></div>';
+      const fc = C.findCost(s);
+      if (artTab === 'not' && fc != null) h += '<div style="text-align:center;margin-bottom:8px"><button class="upBtn" data-find style="width:auto;padding:4px 16px"' + (B.gte(s.souls, fc) ? '' : ' disabled') + '>Найти артефакт<span>👻 ' + fmt(fc) + '</span></button></div>';
+      h += '<div class="grid4">' + (artTab === 'got' ? got : not).map(a => {
+        const lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), can = c != null && B.gte(s.souls, c);
+        return '<button class="aCell' + (lv ? '' : ' lock') + '" data-art="' + (lv ? a.id : '') + '" style="' + rvar(lv && a.max && lv >= a.max ? 'S' : 'B') + '">' +
+          (lv ? '<span class="lv">Ур. ' + lv + '</span>' : '') + '<span class="ai">' + a.icon + '</span><span class="an">' + (lv ? a.name : '???') + '</span>' +
+          (can ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
+      }).join('') + '</div>';
+      return h;
+    }
+
+    // Сумка: 5 в ряд, категории, поиск, сортировка, окно предмета
+    function bagItems() {
+      const it = [];
+      const add = (o) => { if (o.n > 0 || o.always) it.push(o); };
+      add({ id: 'shard', cat: 'shard', icon: M.shard.icon, name: M.shard.name, n: s.materials.shard, r: 2, desc: 'Падают с боссов. Ранги героев и улучшение питомцев.' });
+      add({ id: 'heart', cat: 'mat', icon: M.heart.icon, name: M.heart.name, n: s.materials.heart, r: 4, desc: 'За первое прохождение особых боссов. Эволюция и ранги героев.' });
+      add({ id: 'dust', cat: 'mat', icon: '⚱', name: 'Костяная пыль', n: s.materials.dust | 0, r: 1, desc: 'Получается при переработке костей.' });
+      add({ id: 'tickets', cat: 'tick', icon: '🎟', name: 'Билет призыва', n: s.tickets, r: 3, desc: 'Призыв героев в портале.', go: 'portal' });
+      add({ id: 'lanterns', cat: 'tick', icon: '🏮', name: 'Фонарь события', n: (s.event && s.event.lanterns) | 0, r: 4, desc: 'Валюта события недели: событийный призыв и лавка.', go: 'events' });
+      add({ id: 'essence', cat: 'spec', icon: '✦', name: 'Эссенция', n: s.essence, r: 3, desc: 'Награда заданий и подземелий.' });
+      for (const ru of s.runes) { const k = CFG.runes.kinds.find(x => x.id === (ru.type || ru.kind)) || {}; it.push({ id: 'r' + ru.id, cat: 'spec', icon: k.icon || 'ᚦ', name: (k.name || 'Руна') + ' · ур. ' + (ru.lvl | 0), n: 1, r: ru.tier | 0, desc: k.desc ? '+% ' + k.desc : '', go: 'runes' }); }
+      for (const bo of s.bones) { const k = CFG.bones.slots.find(x => x.id === bo.slot) || {}; it.push({ id: 'b' + bo.id, cat: 'spec', icon: k.icon || '🦴', name: 'Кость: ' + (k.name || '') + ' · ур. ' + (bo.lvl | 0), n: 1, r: bo.tier | 0, desc: k.desc ? '+% ' + k.desc + (bo.on ? ' · надета' : '') : '', go: 'bones' }); }
+      return it;
+    }
+    const RAR_BY_N = ['E', 'D', 'C', 'B', 'A', 'S', 'GOD'];
+    function bagHtml() {
+      const cats = [['all', 'Все'], ['mat', 'Материалы'], ['shard', 'Осколки'], ['cons', 'Расходники'], ['tick', 'Билеты'], ['spec', 'Особые']];
+      let list = bagItems().filter(x => (bagCat === 'all' || x.cat === bagCat) && (!bagQ || x.name.toLowerCase().includes(bagQ)));
+      list.sort(bagSort === 'type' ? (a, b) => a.cat.localeCompare(b.cat) : bagSort === 'new' ? (a, b) => 0 : (a, b) => b.r - a.r);
+      let h = '<div class="bagTool"><input id="bagQ" placeholder="🔍 Поиск предметов…" value="' + bagQ.replace(/"/g, '') + '"><select id="bagCat">' + cats.map(([v, t]) => '<option value="' + v + '"' + (v === bagCat ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
+        '<div class="sortRow">Сортировка: ' + [['rar', 'Редкость'], ['type', 'Тип'], ['new', 'Новые']].map(([v, t]) => '<button class="chip' + (bagSort === v ? ' on' : '') + '" data-bs="' + v + '">' + t + '</button>').join('') + '</div>';
+      const cells = list.map(x => '<button class="iCell" data-item="' + x.id + '" style="' + rvar(RAR_BY_N[Math.min(6, x.r)]) + '">' + x.icon + (x.n > 1 ? '<span class="q">' + fmt(x.n) + '</span>' : '') + '</button>');
+      const total = Math.max(25, Math.ceil(cells.length / 5) * 5 + 5);
+      for (let i = cells.length; i < total; i++) cells.push('<div class="iCell empty">✦</div>');
+      return h + '<div class="grid5">' + cells.join('') + '</div>';
+    }
+    function popItem(id) {
+      const x = bagItems().find(i => i.id === id); if (!x) return;
+      $('ui2PopBox').style.cssText = rvar(RAR_BY_N[Math.min(6, x.r)]);
+      $('ui2PopBox').innerHTML = '<div class="big">' + x.icon + '</div><h3>' + x.name + '</h3><div class="ln" style="font:400 15px Russo One,system-ui">× ' + fmt(x.n) + '</div><p>' + (x.desc || '') + '</p>' +
+        '<div class="row">' + (x.go ? '<button class="upBtn alt" data-pgo="' + x.go + '">Подробнее</button>' : '') + '<button class="upBtn" data-pclose>Закрыть</button></div>';
+      $('ui2Pop').classList.add('show');
+    }
+    $('ui2Pop').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (e.target.id === 'ui2Pop' || (b && b.dataset.pclose !== undefined)) { click(); $('ui2Pop').classList.remove('show'); return; }
+      if (b && b.dataset.pgo) { $('ui2Pop').classList.remove('show'); openOld(b.dataset.pgo); }
+    });
+
+    // Питомцы: один большой выбранный сверху, остальные ниже; 1 активное + 1 пассивное умение
+    function petsHtml() {
+      const P = CFG.pets, list = P.list;
+      if (!petSel || !C.petDef(petSel)) petSel = s.pets.active || (list.find(p => C.petLevel(s, p.id)) || list[0]).id;
+      const p = C.petDef(petSel), lv = C.petLevel(s, p.id), act = s.pets.active === p.id, up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up, canGet = !lv && C.petCanUnlock(s, p.id);
+      const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
+      let h = '<div class="petTop" style="' + rvar(act ? 'S' : 'B') + '"><div class="pic"' + (lv ? '' : ' style="filter:brightness(0) drop-shadow(0 0 2px #6e6678)"') + '>' + p.icon + '</div>' +
+        '<div><div class="nm">' + p.name + '</div>' + (lv ? '<div class="ln">Ур. <b>' + lv + '</b> / ' + P.maxLevel + '</div><div class="ln">⚔ <b>' + Math.round(C.petShare(s, p.id) * 100) + '%</b> DPS отряда</div>' +
+        (act ? '<div class="ln" style="color:#ffd36b">● в бою</div>' : '') : '<div class="ln">🔒 Откроется: ' + cond + '</div>') + '</div></div>';
+      h += '<div class="petBtns">' +
+        (lv ? (act ? '<button class="upBtn alt" data-pact="off">Отозвать</button>' : '<button class="upBtn gold" data-pact="on">Призвать</button>')
+            : '<button class="upBtn gold" data-pget' + (canGet ? '' : ' disabled') + '>Получить</button>') +
+        '<button class="upBtn" data-pup' + (canUp ? '' : ' disabled') + '>' + (up ? 'Улучшить<span>' + M.shard.icon + ' ' + fmt(up) + '</span>' : lv ? 'Максимум' : 'Улучшить') + '</button>' +
+        '<button class="upBtn alt" disabled>Эволюция<span>скоро</span></button></div>';
+      const pas = p.boss ? '+' + Math.round(p.boss * 100) + '% урона по боссам' : p.vuln ? '+' + Math.round(p.vuln * 100) + '% урона по уязвимому боссу' : 'Бонусы артефактов действуют на питомца';
+      h += '<div class="abil"><div class="ico">⚡</div><div><b><i>Активная</i>Удар</b><p>Раз в ' + p.interval + ' с бьёт на долю DPS отряда (' + Math.round(C.petShare(s, p.id) * 100) + '%) — ' + p.desc + '.</p></div></div>' +
+           '<div class="abil pas"><div class="ico">✦</div><div><b><i>Пассивная</i>Аура</b><p>' + pas + '.</p></div></div>';
+      h += '<div class="secT">Все питомцы · в бою один</div><div class="grid4">' + list.map(q => {
+        const ql = C.petLevel(s, q.id);
+        return '<button class="aCell' + (ql ? '' : ' lock') + '" data-psel="' + q.id + '" style="' + rvar(s.pets.active === q.id ? 'S' : q.id === petSel ? 'A' : 'B') + '">' +
+          (ql ? '<span class="lv">Ур. ' + ql + '</span>' : '') + '<span class="ai">' + q.icon + '</span><span class="an">' + q.name + '</span>' +
+          (!ql && C.petCanUnlock(s, q.id) ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
+      }).join('') + '</div><div class="secT" style="text-align:center">Новая система питомцев (27 шт., 3 формы) — после интерфейса</div>';
+      return h;
+    }
+
+    $('sBody').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      const d = b.dataset;
+      if (d.ub) { click(); (d.ub === 'hero' ? el.buyTap : allyUi[d.ub].btn).click(); }
+      else if (d.free) { openOld('portal'); return; }
+      else if (d.at) { click(); artTab = d.at; }
+      else if (d.art) { click(); artSel = d.art; artN = 1; }
+      else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }
+      else if (d.aup) {
+        click(); const n = artN === 'max' ? 1e4 : artN; let k = 0;
+        while (k < n && C.upgradeArtifact(s, d.aup)) k++;
+        if (k) { save(); toast('Артефакт улучшен<small>+' + k + ' ур.</small>'); }
+      }
+      else if (d.find !== undefined) { const id = C.findArtifact(s); if (id) { const a = CFG.artifacts.find(x => x.id === id); toast('Найден артефакт!<small>' + a.icon + ' ' + a.name + '</small>'); save(); } }
+      else if (d.item) { click(); popItem(d.item); return; }
+      else if (d.bs) { click(); bagSort = d.bs; }
+      else if (d.psel) { click(); petSel = d.psel; }
+      else if (d.pact) { click(); if (d.pact === 'on') C.setPet(s, petSel); else { s.pets.active = null; s.petAcc = 0; } save(); }
+      else if (d.pup !== undefined) { click(); if (C.upgradePet(s, petSel)) save(); }
+      else if (d.pget !== undefined) { click(); if (C.unlockPet(s, petSel)) { toast('Призванное существо!<small>' + C.petDef(petSel).icon + ' ' + C.petDef(petSel).name + '</small>'); save(); } }
+      else return;
+      render();
+    });
+    $('sBody').addEventListener('change', e => {
+      if (e.target.id === 'u2mult') { const v = e.target.value; mult = v === 'max' ? 'max' : +v; const m = MULTS.find(x => x[0] === mult); if (m) $('multCycle').textContent = m[1]; render(); }
+      if (e.target.id === 'bagCat') { bagCat = e.target.value; refresh(); }
+    });
+    $('sBody').addEventListener('input', e => {
+      if (e.target.id === 'bagQ') { bagQ = e.target.value.toLowerCase(); const pos = e.target.selectionStart; lastHtml.sBody = null; refresh(); const q = $('bagQ'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (er) {} } }
+    });
+
+    // ---------- Карта Башни: ровно 5 этажей на экране, прокрутка, открывается на текущем ----------
+    let mapLo = 0, mapHi = 0;
+    function renderMap2() {
+      const TOP = 100000, curF = s.floor;
+      if (!mapHi || curF > mapHi - 5 || curF < mapLo + 5) { mapLo = Math.max(1, curF - 40); mapHi = Math.min(TOP, Math.max(curF, s.maxFloor) + 15); }
+      $('mapInfo').textContent = 'Этаж ' + curF + ' / Рекорд ' + s.maxFloor;
+      let h = mapHi < TOP ? '<div style="text-align:center;padding:8px"><button class="chip" data-mm="up">▲ Выше</button></div>' : '';
+      for (let f = mapHi; f >= mapLo; f--) {
+        const done = f < s.maxFloor || (f === s.maxFloor && f !== curF && false), isCur = f === curF, shut = f > s.maxFloor, key = C.isFinalBoss(f);
+        const hue = (C.biomeOf(f).hue + 270) % 360;
+        const who = isCur ? '🗡👹' : shut ? (key ? '💀' : '') : f === s.maxFloor ? '👹' : key ? '👑' : '';
+        h += '<div class="fRoom' + (isCur ? ' cur' : done ? ' done' : '') + (shut ? ' shut' : '') + (key ? ' key' : '') + '" data-f="' + f + '" style="--bh:' + hue + '">' +
+          (C.isBiomeStart(f) ? '<span class="zone">' + C.biomeName(f) + '</span>' : '') +
+          '<span class="no">' + (key ? '👑 ' : '') + 'Этаж ' + f + '</span><span class="who">' + who + '</span>' +
+          '<span class="st">' + (isCur ? 'вы здесь' : shut ? 'закрыт' : done ? 'пройден · награды меньше' : 'открыт') + (key ? '<br>ключевой босс' : '') + '</span></div>';
+      }
+      if (mapLo > 1) h += '<div style="text-align:center;padding:8px"><button class="chip" data-mm="down">▼ Ниже</button></div>';
+      setHtml('mapList', h);
+    }
+    $('mapList').addEventListener('click', e => {
+      const b = e.target.closest('[data-mm]');
+      if (b) { click(); if (b.dataset.mm === 'up') mapHi = Math.min(100000, mapHi + 40); else mapLo = Math.max(1, mapLo - 40); lastHtml.mapList = null; renderMap2(); return; }
+      const r = e.target.closest('.fRoom'); if (!r) return;
+      const f = +r.dataset.f;
+      if (f > s.maxFloor) { toast('Этаж ещё закрыт<small>сначала пройдите этаж ' + s.maxFloor + '</small>'); return; }
+      if (s.mode) { toast('Сначала выйдите из режима'); return; }
+      click(); handle(C.goToFloor(s, f)); save(); back(); render();
+    });
+
+    // ---------- обновление ----------
+    function refresh() {
+      // волна и % HP на экране боя
+      if (!s.mode) $('waveLbl').textContent = 'Волна ' + Math.min(s.enemyIndex, CFG.enemiesPerFloor) + '/' + CFG.enemiesPerFloor; else $('waveLbl').textContent = '';
+      const en = s.enemy; if (en && B.gt(en.maxHp, 0)) el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp) + ' (' + Math.ceil(B.toNum(B.div(en.hp, en.maxHp)) * 100) + '%)';
+      $('cbMenuBang').classList.toggle('on', !!(navBang.up || navBang.heroes || navBang.souls));
+      $('cbPveBang').classList.toggle('on', !!navBang.pve);
+      // старая вкладка закрылась сама (например, старт режима PvE) — снять полноэкранную обёртку
+      if (document.body.classList.contains('oldOpen') && $('panel').classList.contains('collapsed')) document.body.classList.remove('oldOpen');
+      if (page === 'menu') renderMenu();
+      else if (page === 'sec') renderSec();
+      else if (page === 'map') renderMap2();
+    }
+    ui2Refresh = refresh;
+    refresh();
+  })();
+
   if (C.loginAvailable(s, dayKey())) setTimeout(() => toast('📬 Бонус за вход ждёт<small>день ' + (C.loginDayIndex(s) + 1) + ' из ' + CFG.login.days.length + '</small>'), 1200);
   requestAnimationFrame(loop);
 })();

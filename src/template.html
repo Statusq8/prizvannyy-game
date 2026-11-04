@@ -618,8 +618,8 @@
 
   /* 0.37: чистый экран — интерфейс скрыт, логика работает; меню и кнопки возвращаем по одному. Старый интерфейс: адрес с #ui */
   body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
-  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #toast, body.clean #ultBanner, body.clean #version,
-  body.clean #modal, body.clean .askWrap, body.clean .allyTag, body.clean .ultBar { display: none !important; }
+  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #ultBanner, body.clean #version,
+  body.clean #modal, body.clean .allyTag, body.clean .ultBar { display: none !important; }
 
   /* 0.38: верхняя полоса — золото, общий DPS отряда, без урона тапа (видна всегда, нажатие ничего не делает) */
   body:not(.clean) #topBar { display: none; }
@@ -674,6 +674,7 @@
   body.clean .dot.cur { background: #fff; border-color: #fff; box-shadow: 0 0 6px #fff; }
   body.clean .dot.boss { width: 12px; height: 12px; background: #3a1410; border-color: #c24a2a; }
   body.clean .dot.boss.cur { background: #ff6b4a; box-shadow: 0 0 8px #ff6b4a; }
+/*__UI2_CSS__*/
 </style>
 </head>
 <body>
@@ -699,6 +700,7 @@
       <button class="navBtn" id="nextFloor" aria-label="Этаж выше">›</button>
     </div>
     <div id="biomeLabel"></div>
+    <div id="waveLbl"></div>
     <div id="dots"></div>
     <div id="enemyName"></div>
     <div id="hpRow"><div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div><div id="timerSec"></div></div>
@@ -758,6 +760,7 @@
     <div id="toast"></div>
   </div>
 
+<!--__UI2_HTML__-->
   <div id="abilityBar"></div>
   <div id="panel" class="collapsed">
     <button id="popBack">Назад</button>
@@ -837,7 +840,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.39</div>
+  <div id="version">v0.40</div>
 </div>
 
 <script>
@@ -1366,6 +1369,7 @@
     }
     $('canBuy').classList.toggle('on', anyAffordable);
     const upBtn = document.querySelector('.sideBtn[data-open="up"]'); if (upBtn) upBtn.classList.toggle('on', anyAffordable);
+    if (ui2Refresh) ui2Refresh();
   }
 
   // Подсказка о следующей вехе уровня
@@ -2459,6 +2463,7 @@
   buildAbilities();
   render();
   if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
+/*__UI2_JS__*/
   if (C.loginAvailable(s, dayKey())) setTimeout(() => toast('📬 Бонус за вход ждёт<small>день ' + (C.loginDayIndex(s) + 1) + ' из ' + CFG.login.days.length + '</small>'), 1200);
   requestAnimationFrame(loop);
 })();

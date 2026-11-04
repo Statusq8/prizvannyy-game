@@ -1,0 +1,49 @@
+  <!-- ===== UI 2 (0.40): 4 угловые кнопки и полноэкранные страницы — docs/ui/UI_MASTER_v2.md ===== -->
+  <button class="cBtn" id="cbMenu" aria-label="Персонажи и улучшения"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><defs><linearGradient id="gBlade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9c2d2"/><stop offset="1" stop-color="#6e6678"/></linearGradient>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#d6a640"/><stop offset="1" stop-color="#6a4a12"/></linearGradient></defs>
+      <g stroke="#120a18" stroke-width="1.2" stroke-linejoin="round">
+        <path d="M8 6 L12 4 L36 30 L32 34 Z" fill="url(#gBlade)"/><path d="M40 6 L36 4 L12 30 L16 34 Z" fill="url(#gBlade)"/>
+        <path d="M29 31 L35 25 L37 27 L31 33 Z M19 31 L13 25 L11 27 L17 33 Z" fill="url(#gGold)"/>
+        <path d="M33 33 L41 41 L39 43 L31 35 Z M15 33 L7 41 L9 43 L17 35 Z" fill="#3a2230"/>
+        <circle cx="41" cy="42" r="2.4" fill="#b14dff"/><circle cx="7" cy="42" r="2.4" fill="#b14dff"/></g></svg>
+    <i class="bang" id="cbMenuBang">!</i></button>
+  <button class="cBtn" id="cbSet" aria-label="Настройки и профиль"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><defs><radialGradient id="gCry" cx=".4" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#e3b6ff"/><stop offset="1" stop-color="#6a1ab0"/></radialGradient></defs>
+      <path d="M24 3 l3 5 5-2 1 6 6 1-2 5 5 3-5 3 2 5-6 1-1 6-5-2-3 5-3-5-5 2-1-6-6-1 2-5-5-3 5-3-2-5 6-1 1-6 5 2z" fill="url(#gBlade)" stroke="#120a18" stroke-width="1.2" stroke-linejoin="round"/>
+      <circle cx="24" cy="24" r="10" fill="#1a1022" stroke="#6e6678" stroke-width="1.5"/>
+      <path d="M24 15 L30 24 L24 33 L18 24 Z" fill="url(#gCry)" stroke="#2a0a4a" stroke-width="1"/></svg></button>
+  <button class="cBtn" id="cbPve" aria-label="PvE и рейтинги"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><g stroke="#3a2606" stroke-width="1.2" stroke-linejoin="round">
+      <path d="M13 6 H35 V16 Q35 28 24 30 Q13 28 13 16 Z" fill="url(#gGold)"/>
+      <path d="M13 9 H6 Q6 20 14 21 M35 9 H42 Q42 20 34 21" fill="none" stroke="#d6a640" stroke-width="3"/>
+      <path d="M21 30 H27 V36 H21 Z" fill="url(#gGold)"/><path d="M14 36 H34 L36 43 H12 Z" fill="url(#gGold)"/>
+      <path d="M24 10 L27 16 L24 22 L21 16 Z" fill="url(#gCry)"/></g></svg>
+    <i class="bang" id="cbPveBang">!</i></button>
+  <button class="cBtn" id="cbMap" aria-label="Карта Башни"><span class="fr"></span><i class="gem a"></i><i class="gem b"></i><i class="gem c"></i><i class="gem d"></i>
+    <svg viewBox="0 0 48 48"><g stroke="#120a18" stroke-width="1.1" stroke-linejoin="round">
+      <path d="M24 1 L28 10 H20 Z" fill="url(#gCry)"/>
+      <path d="M20 10 H28 L30 44 H18 Z" fill="url(#gBlade)"/>
+      <path d="M14 22 H18 L18 44 H12 Z M30 22 H34 L36 44 H30 Z" fill="#8d8597"/>
+      <path d="M14 22 L16 16 L18 22 M30 22 L32 16 L34 22" fill="#c9c2d2"/>
+      <path d="M22 16 H26 V21 H22 Z M22 26 H26 V31 H22 Z M22 36 H26 V44 H22 Z" fill="#b14dff"/>
+      <ellipse cx="24" cy="45" rx="16" ry="2.5" fill="#b14dff" opacity=".6" stroke="none"/></g></svg></button>
+
+  <div class="pg" id="pgMenu"><div class="tower"></div>
+    <div class="pgTop" id="mTop"></div>
+    <div class="pgHead"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl">Меню</div></div>
+    <div class="pgBody" id="mBody"></div>
+  </div>
+  <div class="pg" id="pgSec"><div class="tower"></div>
+    <div class="pgTop" id="sTop"></div>
+    <div class="pgTabs" id="sTabs"></div>
+    <div class="pgHead"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl" id="sTitle"></div></div>
+    <div class="pgBody" id="sBody"></div>
+  </div>
+  <div class="pg" id="pgMap"><div class="tower"></div>
+    <div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl">Карта Башни</div></div>
+    <div class="mapInfo" id="mapInfo"></div>
+    <div id="mapList"></div>
+  </div>
+  <div id="pgOld"><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" id="oldBack" aria-label="Назад">←</button><div class="titlePl" id="oldTitle"></div></div></div>
+  <div id="ui2Pop"><div class="box" id="ui2PopBox"></div></div>
