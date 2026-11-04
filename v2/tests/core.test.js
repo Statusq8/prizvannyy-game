@@ -840,3 +840,86 @@ test('сохранение душ, артефактов, ритуалов и м�
   const bad = JSON.parse(C.serialize(s)); bad.artifacts.eye = 999;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
+
+// ---------- материалы и эволюция (0.10) ----------
+function killBoss(s) { s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s); killCurrent(s); return respawn(s); }
+
+test('материалы: осколки за каждого босса (и повторно), сердце — за первое в игре прохождение 50-го', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  reach(s, 49);
+  const ev = [];
+  s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s); ev.push(...killCurrent(s));
+  const m = ev.find(e => e.type === 'materials');
+  assert.deepStrictEqual(m, { type: 'materials', shard: C.shardsForBoss(49), heart: 0 });
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(49));
+  respawn(s); killBoss(s);                                   // босс 50-го
+  assert.strictEqual(s.materials.heart, 1);
+  C.goToFloor(s, 50); killBoss(s);                           // повтор: осколки есть, сердца нет
+  assert.strictEqual(s.materials.heart, 1);
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(49) + 2 * C.shardsForBoss(50));
+});
+
+test('материалы и эволюция переживают ритуал; сердца после ритуала не повторяются', () => {
+  const s = C.newState(NOCRIT);
+  s.materials = { shard: 77, heart: 4 }; s.heartFloor = 400; s.heroes.irene.evo = 2;
+  reach(s, 400); C.ritual(s);
+  assert.deepStrictEqual(s.materials, { shard: 77, heart: 4 });
+  assert.strictEqual(s.heroes.irene.evo, 2);
+  assert.strictEqual(C.bossMaterials(s, 50).heart, 0);
+  assert.strictEqual(C.bossMaterials(s, 450).heart, 1);
+});
+
+test('эволюция: нужны звёзды и материалы, цена растёт с редкостью, даёт только индивидуальный DPS', () => {
+  const s = C.newState(NOCRIT);
+  s.allies.irene.level = 10;
+  const st = CFG.evolution.stages[0];
+  assert.strictEqual(C.evolve(s, 'irene'), false);           // нет звёзд и материалов
+  s.heroes.irene.stars = st.stars;
+  const c = C.evoCost(s, 'irene');
+  s.materials.shard = c.shards - 1;
+  assert.strictEqual(C.evolve(s, 'irene'), false);           // не хватает осколков
+  s.materials.shard = c.shards;
+  const dps = C.allyDps(s, 'irene'), crit = C.critChance(s), mult = C.critMult(s);
+  assert.strictEqual(C.evolve(s, 'irene'), true);
+  assert.strictEqual(s.heroes.irene.evo, 1); assert.strictEqual(s.materials.shard, 0);
+  assert.strictEqual(C.allyDps(s, 'irene'), dps * st.mult);
+  assert.strictEqual(C.critChance(s), crit); assert.strictEqual(C.critMult(s), mult);   // без критов
+  assert.ok(C.evoCost(s, 'kael').shards > C.evoCost(C.newState(), 'irene').shards);   // B дороже E
+  // вторая ступень требует сердца
+  s.heroes.irene.stars = CFG.evolution.stages[1].stars; s.materials.shard = 1e6;
+  assert.strictEqual(C.evolve(s, 'irene'), false);
+  s.materials.heart = CFG.evolution.stages[1].hearts;
+  assert.strictEqual(C.evolve(s, 'irene'), true);
+  // после последней ступени — дальше некуда
+  s.heroes.irene.evo = CFG.evolution.stages.length;
+  assert.strictEqual(C.evoCost(s, 'irene'), null);
+  assert.strictEqual(C.evolve(s, 'irene'), false);
+  // закрытого героя эволюционировать нельзя
+  s.heroes.azrael.stars = 10; s.materials.heart = 99;
+  assert.strictEqual(C.evolve(s, 'azrael'), false);
+});
+
+test('Алтарь: осколки в сердце — гарантированная альтернатива', () => {
+  const s = C.newState(NOCRIT);
+  const r = CFG.materials.heartRecipe;
+  s.materials.shard = r * 2 - 1;
+  assert.strictEqual(C.forgeHeart(s, 2), false);
+  assert.strictEqual(C.forgeHeart(s, 1), true);
+  assert.deepStrictEqual(s.materials, { shard: r - 1, heart: 1 });
+});
+
+test('сохранение эволюции и материалов, миграция с 0.9 начисляет материалы за пройденных боссов', () => {
+  const s = C.newState(NOCRIT);
+  s.materials = { shard: 15, heart: 2 }; s.heartFloor = 100; s.heroes.irene.evo = 1;
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.materials, { shard: 15, heart: 2 });
+  assert.strictEqual(t.heartFloor, 100); assert.strictEqual(t.heroes.irene.evo, 1);
+  const old = JSON.parse(C.serialize(s)); old.v = 6; delete old.materials; delete old.heartFloor; old.ticketFloor = 100;
+  for (const id in old.heroes) delete old.heroes[id].evo;
+  const m = C.deserialize(JSON.stringify(old));
+  let sh = 0; for (let f = 1; f <= 100; f++) sh += C.shardsForBoss(f);
+  assert.deepStrictEqual(m.materials, { shard: sh, heart: 2 });
+  assert.strictEqual(m.heartFloor, 100); assert.strictEqual(m.heroes.irene.evo, 0);
+  const bad = JSON.parse(C.serialize(s)); bad.heroes.irene.evo = 9;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
