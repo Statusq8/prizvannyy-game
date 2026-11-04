@@ -978,6 +978,30 @@
   .diffRow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .diffRow .upBtn { width: auto; min-height: 44px; font-size: 11px; }
 
+  /* ===================== 0.46: остальные разделы в новом стиле (общее оформление поверх прежних вкладок) ===================== */
+  body.clean.oldOpen #panel { background:
+      radial-gradient(ellipse at 50% 0%, #4a1a7acc 0%, transparent 40%),
+      linear-gradient(90deg, transparent 34%, #1d122866 36%, #2a1a3a66 50%, #1d122866 64%, transparent 66%),
+      repeating-linear-gradient(180deg, transparent 0 46px, #b14dff14 46px 48px),
+      linear-gradient(#1a0e2a, #0b0710) !important; }
+  body.clean.oldOpen #pgOld { background: linear-gradient(#2a1240, #1a0e2a); box-shadow: 0 2px 10px #000a; }
+  body.clean.oldOpen #panel .secTitle { font: 400 13px 'Ruslan Display', Georgia, serif; letter-spacing: .5px; color: #e3b6ff; text-shadow: 0 1px 0 #000; margin: 14px 2px 6px; }
+  body.clean.oldOpen #panel .hRow { padding: 9px 10px; border-radius: 8px; background: linear-gradient(90deg, #241a30ee, #120e18dd); border: 1px solid #4e4757; border-left: 3px solid var(--r);
+    box-shadow: 0 0 0 1px #000, 0 3px 8px #0008, inset 0 1px 0 #ffffff12; }
+  body.clean.oldOpen #panel .hRow + .hRow { margin-top: 7px; }
+  body.clean.oldOpen #panel .hName { color: #fff; text-shadow: 0 1px 0 #000; }
+  body.clean.oldOpen #panel .hSub, body.clean.oldOpen #panel .hint2 { color: #b9b1c3; }
+  body.clean.oldOpen #panel .artIcon, body.clean.oldOpen #panel .hIcon { border-radius: 6px; border: 2px solid var(--r, #6e6678); box-shadow: 0 0 8px var(--r, transparent); background: radial-gradient(#3a2a4a, #0a0710); }
+  body.clean.oldOpen #panel .hBtn, body.clean.oldOpen #panel .pBtn, body.clean.oldOpen #panel .sacBtn { border-radius: 6px; color: #e9dcff; background: linear-gradient(#3a2e46, #1a1222); border: 1px solid #6e6678;
+    box-shadow: 0 0 0 1px #000, inset 0 1px 0 #ffffff18; text-shadow: 0 1px 0 #000; }
+  body.clean.oldOpen #panel .hBtn.go { color: #fff; background: linear-gradient(#d4283e, #7a0a1a); border: 2px solid var(--goldE); box-shadow: 0 0 0 1px #000, inset 0 1px 0 #ffffff40; }
+  body.clean.oldOpen #panel .hBtn:disabled { filter: grayscale(.7) brightness(.65); }
+  body.clean.oldOpen #panel .hBtn:not(:disabled):active, body.clean.oldOpen #panel .claimAll:not(:disabled):active { transform: scale(.97); filter: brightness(1.25); }
+  body.clean.oldOpen #panel .claimAll { border-radius: 8px; font: 400 16px 'Ruslan Display', Georgia, serif; color: #2a1a04; text-shadow: none;
+    background: linear-gradient(#ffe08a, #d6a640 50%, #7a5212); border: 2px solid #fff1b8; box-shadow: 0 0 0 1px #000, 0 0 12px #d6a64088; }
+  body.clean.oldOpen #panel .claimAll:disabled { background: #2a2234; color: #9a8aa8; border-color: #4e4757; box-shadow: none; }
+  body.clean.oldOpen #panel .badge { border-radius: 3px; }
+
 </style>
 </head>
 <body>
@@ -1198,7 +1222,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.45</div>
+  <div id="version">v0.46</div>
 </div>
 
 <script>
@@ -5624,7 +5648,7 @@
       const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) };
       let h = SECS.map(([id, ic, nm, c]) => '<button class="mCard" data-sec="' + id + '" style="--tc:' + c + '"><span class="ic">' + ic + '</span><span><span class="nm">' + nm + '</span><small>' + sub[id] + '</small></span>' +
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
-      h += '<div class="secT">Другие разделы · временно в старом виде</div><div class="mMore">' +
+      h += '<div class="secT">Другие разделы</div><div class="mMore">' +
         MORE.map(([id, ic, nm]) => '<button data-old="' + id + '"><b>' + ic + '</b>' + nm + (navBang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('') + '</div>';
       setHtml('mBody', h);
     }
