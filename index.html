@@ -461,6 +461,48 @@
   /* «Бей босса» не наезжает на боковые колонки */
   #farmBar, #modeBar { top: 4px; }
   #version { bottom: auto; top: 2px; left: auto; right: 6px; }
+  /* ===== навигация по образцу «Крушителей подземелий» (0.34) ===== */
+  .corner { position: absolute; z-index: 4; }
+  .corner.TL { top: 6px; left: 6px; } .corner.TR { top: 6px; right: 6px; }
+  .corner.BL { bottom: 6px; left: 6px; } .corner.BR { bottom: 6px; right: 6px; }
+  .corner .ico { background: radial-gradient(circle at 50% 35%, #d8402e, #8a160e); border-color: #e0a248; }
+  .leftCol { position: absolute; left: 6px; top: calc(6px + clamp(60px, 9dvh, 78px)); display: flex; flex-direction: column; gap: clamp(4px, 1dvh, 10px); z-index: 4; }
+  .sideBtn.plain .ico { background: none; border: none; box-shadow: none; font-size: clamp(26px, 4.4dvh, 36px); filter: drop-shadow(0 2px 3px #000); }
+  .sideBtn.round { position: absolute; right: 8px; top: calc(10px + clamp(60px, 9dvh, 78px)); z-index: 4; width: clamp(40px, 6dvh, 50px); }
+  .sideBtn.round .ico { border-radius: 50%; background: radial-gradient(circle, #3a2a52, #140a1d); border-color: #8a7ad8; box-shadow: 0 0 10px #8a7ad8aa; }
+  #flyout { display: none; position: absolute; z-index: 5; left: calc(14px + clamp(44px, 6.6dvh, 58px)); top: calc(6px + clamp(60px, 9dvh, 78px));
+    right: 14%; padding: 12px 8px; border-radius: 12px; background: #0a0608d8; border: 1px solid #ffffff22;
+    grid-template-columns: repeat(3, 1fr); gap: 10px 6px; justify-items: center; }
+  #flyout.show { display: grid; }
+  #flyout .sideBtn { width: 100%; }
+  #flyout .lbl { white-space: normal; text-align: center; }
+  #abilityBar { justify-content: center; gap: 22px; }
+  /* разделы: группа на весь экран со строкой иконок-вкладок, окна-«свитки» по центру поверх боя */
+  #groupHead { display: none; align-items: flex-end; gap: 6px; padding: 8px 0 8px; border-bottom: 2px solid var(--frameDark); margin-bottom: 8px; }
+  #grpBack { flex: none; width: 54px; height: 50px; border-radius: 10px; font-size: 24px; color: #ff5a4a; background: linear-gradient(180deg, #3a3e48, #20232a);
+    border: 2px solid #6a6e78; box-shadow: 0 0 0 2px #0a0608; }
+  #grpTabs { flex: 1; display: flex; gap: 5px; min-width: 0; }
+  #grpTabs button { position: relative; flex: 1; min-width: 0; height: 50px; border-radius: 9px 9px 4px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 20px; background: linear-gradient(180deg, #2c3038, #1a1c22); border: 2px solid #4a4e58; opacity: .7; }
+  #grpTabs button small { font-size: 9px; font-weight: 800; }
+  #grpTabs button.on { opacity: 1; height: 56px; border-color: #e0a248; background: linear-gradient(180deg, #4a3a22, #2a1e10); }
+  #grpTabs button i { display: none; position: absolute; top: -5px; right: -3px; font-style: normal; font-size: 13px; font-weight: 900; color: #ffb52a; text-shadow: 0 0 3px #000; }
+  #grpTabs button.bang i { display: block; }
+  #panel.grpR #groupHead { flex-direction: row-reverse; }
+  #panel.grpR #grpBack { transform: scaleX(-1); }
+  #panel.grpL #groupHead, #panel.grpR #groupHead { display: flex; }
+  #panel.grpL #panelToggle, #panel.grpR #panelToggle { display: none; }
+  #panel.full { top: 0; height: auto; border-radius: 0; border: none; box-shadow: none; z-index: 9; padding-top: env(safe-area-inset-top); }
+  #panel.popup { top: 8%; bottom: 7%; left: 5%; right: 5%; height: auto; z-index: 9; border-radius: 14px; border: 3px solid #b8925e; box-shadow: 0 0 0 3px #2a1a0a, 0 10px 40px #000e; }
+  #panel.popup #panelToggle { justify-content: center; font-size: 18px; color: #ff6a4a; }
+  #panel.popup #panelToggle .x { display: none; }
+  #popBack { display: none; order: 99; flex: none; margin: 8px auto 0; padding: 10px 40px; border-radius: 10px; font-size: 16px; font-weight: 900; color: #fff;
+    background: linear-gradient(180deg, #3a6ae8, #1a3aa8); border: 2px solid #c9b06a; box-shadow: 0 0 0 2px #0a0a2a; }
+  #panel.popup #popBack { display: block; }
+  #panel.collapsed { visibility: hidden; }
+  #tabs { display: none !important; }
+  #panel.popup #goldRow, #panel:not(.grpL):not(.grpR) #goldRow { display: none; }
+  #panel.popup.collapsed, #panel.full.collapsed { transform: translateY(110%); }
 
   /* ===== карточки «Прокачки» по образцу (0.31): пергамент, портрет в рамке ===== */
   #multCycle { min-width: 76px; padding: 7px 14px; border-radius: 9px; font-size: 15px; font-weight: 900; color: #3a2a00;
@@ -580,21 +622,21 @@
     <div id="ultBanner"></div>
     <div id="modeBar"><span id="modeInfo"></span><button id="leaveBtn">Выйти</button></div>
     <div id="farmBar"><span class="plate">Фарм этажа</span><button id="bossBtn">Бей босса</button></div>
-    <!-- боковое меню: кнопки в рамках, «!» — есть что сделать -->
-    <div class="side L">
-      <button class="sideBtn" data-open="season"><span class="ico">🎭</span><span class="lbl">Сезон</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="heroes"><span class="ico">🪖</span><span class="lbl">Герои</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="portal"><span class="ico">🌀</span><span class="lbl">Портал</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="altar"><span class="ico">🕯</span><span class="lbl">Алтарь</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="quests"><span class="ico">📜</span><span class="lbl">Задания</span><i class="bang">!</i></button>
+    <!-- навигация по образцу «Крушителей подземелий» (0.34): 4 угла, колонка слева, книга с выпадающей сеткой -->
+    <button class="sideBtn corner TL" data-open="@L" data-bang="up,heroes,portal,altar,souls"><span class="ico">🪖</span><span class="lbl">Герои</span><i class="bang">!</i></button>
+    <button class="sideBtn corner TR" data-open="@R" data-bang="runes,bones,inbox"><span class="ico">📦</span><span class="lbl">Сумка</span><i class="bang">!</i></button>
+    <button class="sideBtn corner BL" data-open="pve"><span class="ico">⚡</span><span class="lbl">PvE</span><i class="bang">!</i></button>
+    <button class="sideBtn corner BR" data-open="map"><span class="ico">🧭</span><span class="lbl">Карта</span><i class="bang">!</i></button>
+    <div class="leftCol">
+      <button class="sideBtn plain" data-open="@book" data-bang="season,inbox"><span class="ico">📖</span><span class="lbl">Книга ›</span><i class="bang">!</i></button>
+      <button class="sideBtn plain" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
+      <button class="sideBtn plain" data-open="quests"><span class="ico">📜</span><span class="lbl">Задания</span><i class="bang">!</i></button>
     </div>
-    <div class="side R">
-      <button class="sideBtn" data-open="up"><span class="ico">⚔</span><span class="lbl">Прокачка</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="souls"><span class="ico">👻</span><span class="lbl">Души</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="bones"><span class="ico">🦴</span><span class="lbl">Кости</span><i class="bang">!</i></button>
+    <button class="sideBtn round" data-open="inbox" data-bang="travel"><span class="ico">⏳</span><i class="bang">!</i></button>
+    <div id="flyout">
+      <button class="sideBtn plain" data-open="season"><span class="ico">🎭</span><span class="lbl">Сезон</span><i class="bang">!</i></button>
+      <button class="sideBtn plain" data-open="inbox"><span class="ico">🎁</span><span class="lbl">Бонус за вход</span><i class="bang">!</i></button>
+      <button class="sideBtn plain" data-open="stats"><span class="ico">📊</span><span class="lbl">Статистика</span><i class="bang">!</i></button>
     </div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
@@ -637,6 +679,8 @@
 
   <div id="abilityBar"></div>
   <div id="panel" class="collapsed">
+    <button id="popBack">Назад</button>
+    <div id="groupHead"><button id="grpBack" aria-label="Назад к бою">◀</button><div id="grpTabs"></div></div>
     <button id="panelToggle" aria-label="Закрыть меню"><span id="toggleLabel">Прокачка</span><span class="x">✕</span><span id="canBuy"></span></button>
     <div id="goldRow">
       <div id="gold">0</div>
@@ -712,7 +756,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.33</div>
+  <div id="version">v0.34</div>
 </div>
 
 <script>
@@ -3376,17 +3420,45 @@
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
   const TAB_NAMES = { stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  // как в «Крушителях»: левый верхний угол — группа героя, правый — «Сумка» (стрелка «назад» справа),
+  // задания/события/сезон — окна-свитки поверх боя, карта и PvE — отдельные экраны
+  const GROUP_L = [['up', '⚔', 'Прокачка'], ['heroes', '🪖', 'Герои'], ['portal', '🌀', 'Портал'], ['altar', '🕯', 'Алтарь'], ['souls', '👻', 'Души']];
+  const GROUP_R = [['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['inbox', '📬', 'Награды'], ['settings', '⚙', 'Настройки']];
+  const POPUP_TABS = new Set(['quests', 'events', 'season']);
+  const grpOf = t => GROUP_L.some(g => g[0] === t) ? 'L' : GROUP_R.some(g => g[0] === t) ? 'R' : null;
+  let lastL = 'up', lastR = 'runes', navBang = {};
+  function applyMode() {
+    const p = $('panel'), g = grpOf(tab), open = !p.classList.contains('collapsed');
+    p.classList.toggle('grpL', g === 'L'); p.classList.toggle('grpR', g === 'R');
+    p.classList.toggle('popup', POPUP_TABS.has(tab)); p.classList.toggle('full', !POPUP_TABS.has(tab));
+    if (g === 'L') lastL = tab; if (g === 'R') lastR = tab;
+    if (g && open) $('grpTabs').innerHTML = (g === 'L' ? GROUP_L : GROUP_R).map(([id, ic, nm]) =>
+      '<button data-gt="' + id + '" class="' + (id === tab ? 'on ' : '') + (navBang[id] ? 'bang' : '') + '">' + ic + '<small>' + nm + '</small><i>!</i></button>').join('');
+  }
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
+    $('flyout').classList.remove('show');
+    if (!on) applyMode();
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
   }
   setCollapsed(true);                    // на старте меню закрыто — весь экран под бой
   $('panelToggle').addEventListener('click', () => setCollapsed(true));
+  $('popBack').addEventListener('click', () => setCollapsed(true));
+  $('grpBack').addEventListener('click', () => setCollapsed(true));
+  $('grpTabs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.gt === 'settings') { $('settingsBtn').click(); return; }
+    tab = b.dataset.gt; render();
+  });
   // боковые кнопки открывают нужный раздел; повторное нажатие закрывает
-  document.querySelectorAll('.sideBtn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.sideBtn').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    let t = b.dataset.open;
+    if (t === '@book') { $('flyout').classList.toggle('show'); return; }
+    if (t === '@L') t = lastL; if (t === '@R') t = lastR;
     const open = !$('panel').classList.contains('collapsed');
-    if (open && tab === b.dataset.open) { setCollapsed(true); return; }
-    tab = b.dataset.open; setCollapsed(false); render();
+    if (open && tab === t) { setCollapsed(true); return; }
+    tab = t; setCollapsed(false); render();
   }));
   const dmgLog = [];                    // [время, урон] для DPS
   let tapped = s.stats.taps > 0;
@@ -3545,7 +3617,8 @@
 
   // ---------- ввод ----------
   el.arena.addEventListener('pointerdown', e => {
-    if (e.target.closest('#farmBar') || e.target.closest('#modeBar') || e.target.closest('.side')) return;
+    if (e.target.closest('#farmBar') || e.target.closest('#modeBar') || e.target.closest('.sideBtn') || e.target.closest('#flyout')) { return; }
+    $('flyout').classList.remove('show');
     e.preventDefault();
     const r = el.arena.getBoundingClientRect();
     const ev = C.tap(s);
@@ -3834,8 +3907,11 @@
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
       season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
     };
+    bang.inbox = inbN > 0; bang.travel = C.travelCost(s, dayKey()) === 0 && B.gt(C.offlineDps(s), 0);
+    navBang = bang;
     const opened = !$('panel').classList.contains('collapsed');
-    document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', !!bang[b.dataset.open]); b.classList.toggle('cur', opened && tab === b.dataset.open); });
+    if (opened) applyMode();
+    document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', (b.dataset.bang || b.dataset.open).split(',').some(k => bang[k])); b.classList.toggle('cur', opened && tab === b.dataset.open); });
     $('resGold').textContent = fmt(s.gold); $('resTickets').textContent = fmt(s.tickets);
     $('resShards').textContent = fmt(s.materials.shard); $('resSouls').textContent = fmt(s.souls);
     $('panel').dataset.tab = tab;
