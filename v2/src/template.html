@@ -219,7 +219,24 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab { display: block; }
+  #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
+  #soulDot.on { display: inline-block; }
+  .tab { font-size: 11px; padding: 7px 2px; }
+  /* души и артефакты */
+  .soulHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .soulCnt { font-size: 15px; font-weight: 700; } .soulCnt b { color: #8fe6ff; }
+  .soulBonus { font-size: 12px; color: var(--ok); font-weight: 700; }
+  .ritualBox { padding: 10px; border-radius: 12px; border: 1px solid #5a3a7a; background: linear-gradient(180deg, #2a1640, #1a1024); margin: 6px 0 4px; }
+  .ritualBox.ready { border-color: #b98cff; box-shadow: 0 0 12px #b98cff40; }
+  .ritualBox p { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .ritBtn { width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px; font-weight: 800; background: linear-gradient(180deg, #7a4fc4, #4b2c86); border: 1px solid var(--accent); }
+  .ritBtn:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
+  .artIcon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; flex: none; background: #241a34; }
+  .dpsPrev { font-size: 10px; color: var(--muted); }
+  .dpsPrev b { color: var(--text); } .dpsPrev .dn { color: #ff8a8a; } .dpsPrev .up { color: var(--ok); }
+  .askList { display: block; font-size: 12px; line-height: 1.5; color: var(--muted); margin: 6px 0 10px; }
+  .askList b { color: var(--text); }
   #panel:not([data-tab="up"]) #cards, #panel:not([data-tab="up"]) #mult { display: none; }
   /* Алтарь */
   .altHead { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
@@ -355,10 +372,11 @@
       </div>
     </div>
     <div id="tabs">
-      <button class="tab on" data-tab="up">Улучшения</button>
+      <button class="tab on" data-tab="up">Прокачка</button>
       <button class="tab" data-tab="heroes">Герои</button>
       <button class="tab" data-tab="portal">Портал <span id="ticketDot"></span></button>
       <button class="tab" data-tab="altar">Алтарь</button>
+      <button class="tab" data-tab="souls">Души <span id="soulDot"></span></button>
     </div>
     <div id="cards">
     <div class="card">
@@ -373,6 +391,7 @@
     </div>
     <div id="heroesTab" class="tabBody"></div>
     <div id="altarTab" class="tabBody"></div>
+    <div id="soulsTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
@@ -398,7 +417,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.8</div>
+  <div id="version">v0.9</div>
 </div>
 
 <script>
@@ -539,6 +558,12 @@
           fx('spark', x, y, null, 300);
           if (e.crit) fx('critFlash', x, y, null, 160);
           fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
+        } else if (e.source === 'heroAuto') {
+          dmgLog.push([performance.now(), e.dmg, 'auto']);
+          heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
+          const dx = r.width * (0.44 + Math.random() * 0.12), dy = r.height * 0.5;
+          if (e.crit) fx('critFlash', dx, dy, null, 160);
+          fx('dmg auto' + (e.crit ? ' crit' : ''), dx, dy, fmt(e.dmg), 700).style.color = e.crit ? '' : 'var(--gold)';
         } else {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const isUlt = e.source.startsWith('ult:');
@@ -656,14 +681,14 @@
     el.timerBar.classList.toggle('show', en.isBoss);
     el.farmBar.classList.toggle('show', s.farming);
     el.hint.style.display = tapped ? 'none' : '';
-    el.tapDmg.textContent = fmt(C.tapDamage(s));
+    el.tapDmg.textContent = fmt(C.tapHit(s));
     el.gold.textContent = fmt(s.gold);
     el.tapLvl.textContent = fmt(s.tapLevel);
 
     const n = mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : mult;
     const cost = C.upgradeCost(s.tapLevel, n);
     const can = cost <= s.gold;
-    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapDamage(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n)) + '</b>' + msHint(s.tapLevel);
+    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapHit(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n) * C.permMult(s, 'tap')) + '</b>' + msHint(s.tapLevel);
     anyAffordable = false;
     renderTabs();
     setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.');
@@ -673,8 +698,9 @@
       const u = allyUi[a.id], lv = s.allies[a.id].level;
       const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : mult;
       const acost = C.allyCost(s, a.id, an);
-      u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id)) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an)) + '</b>' + msHint(lv)
-                           : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an)) + '</b>';
+      const pm = C.permMult(s, 'ally') * C.starMult(s, a.id);   // души, артефакты и звёзды
+      u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an) * pm) + '</b>' + msHint(lv)
+                           : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an) * pm) + '</b>';
       setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
       const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
       u.card.style.display = unlocked ? '' : 'none';
@@ -737,9 +763,12 @@
     $('panel').dataset.tab = tab;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('ticketDot').classList.toggle('on', s.tickets > 0);
+    const fc = C.findCost(s);
+    $('soulDot').classList.toggle('on', C.canRitual(s) || (fc != null && s.souls >= fc));
     if (tab === 'heroes') renderHeroes();
     if (tab === 'portal') renderPortal();
     if (tab === 'altar') renderAltar();
+    if (tab === 'souls') renderSouls();
   }
   function renderHeroes() {
     const list = CFG.allies.slice().sort((a, b) => {
@@ -856,6 +885,82 @@
     render();
   });
 
+  // ---------- души, артефакты, ритуал ----------
+  const TPS_PREVIEW = 5;                       // для сравнения «до / после» — ожидаемый DPS при 5 тапах в секунду
+  let soulsHtml = '';
+  const pctUp = m => '+' + fmt(Math.round((m - 1) * 100)) + '%';
+  function dpsChange(p) {
+    if (!p) return '';
+    const cls = p.after >= p.before ? 'up' : 'dn';
+    return '<div class="dpsPrev">DPS ' + fmt(p.before) + ' → <b class="' + cls + '">' + fmt(p.after) + '</b></div>';
+  }
+  function renderSouls() {
+    const R = CFG.ritual;
+    let html = '<div class="soulHead"><div class="soulCnt">👻 <b>' + fmt(s.souls) + '</b> душ</div>' +
+      '<div class="soulBonus">' + pctUp(C.soulMult(s)) + ' урона</div></div>' +
+      '<div class="hint2">Неизрасходованные души усиливают весь урон: +' + Math.round(CFG.souls.dpsPerSoul * 100) +
+      '% за каждую. Трата на артефакты уменьшает этот бонус — смотрите DPS до и после.</div>';
+    // ритуал
+    const ready = C.canRitual(s);
+    html += '<div class="ritualBox' + (ready ? ' ready' : '') + '"><b>Ритуал</b>' +
+      (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s.rituals + 1) +
+               '. Чем выше этаж, тем больше душ.</p>'
+             : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor +
+               (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
+      '<button class="ritBtn" data-act="ritual"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести ритуал' : 'Нужен этаж ' + R.floor) + '</button></div>';
+    // поиск артефакта
+    const fc = C.findCost(s);
+    html += '<div class="secTitle">АРТЕФАКТЫ · найдено ' + C.foundCount(s) + '/' + CFG.artifacts.length + ' · все действуют сразу</div>';
+    if (fc != null) {
+      const after = { ...s, souls: s.souls - fc };
+      html += '<div class="recipe"><div>Найти случайный артефакт<small>Бонус душ ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + '</small></div>' +
+        '<button class="hBtn' + (s.souls >= fc ? ' go' : '') + '" data-act="find"' + (s.souls >= fc ? '' : ' disabled') + '>👻 ' + fmt(fc) + '</button></div>';
+    }
+    const arts = CFG.artifacts.slice().sort((x, y) => (C.artLevel(s, y.id) > 0) - (C.artLevel(s, x.id) > 0));   // найденные сверху
+    for (const a of arts) {
+      const lv = C.artLevel(s, a.id);
+      if (!lv) {
+        html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">???</div><div class="hSub">Ещё не найден</div></div></div>';
+        continue;
+      }
+      const c = C.upgradeArtCost(s, a.id);
+      const prev = c != null ? C.previewSpend(s, 'upgrade', a.id, TPS_PREVIEW) : null;
+      html += '<div class="hRow" style="--r:#8fe6ff"><div class="artIcon">' + a.icon + '</div><div class="hInfo">' +
+        '<div class="hName">' + a.name + ' · ур. ' + lv + (a.max ? '/' + a.max : '') + '</div><div class="hSub">' + a.desc + '</div>' +
+        (prev ? dpsChange(prev) : '') + '</div>' +
+        (c == null ? '<button class="hBtn" disabled>max</button>'
+                   : '<button class="hBtn' + (s.souls >= c ? ' go' : '') + '" data-up="' + a.id + '"' + (s.souls >= c ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
+    }
+    if (html !== soulsHtml) { $('soulsTab').innerHTML = html; soulsHtml = html; }
+  }
+  $('soulsTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.act === 'find') {
+      const id = C.findArtifact(s);
+      if (id) { const a = CFG.artifacts.find(x => x.id === id); toast('Найден артефакт!<small>' + a.icon + ' ' + a.name + '</small>'); save(); }
+    } else if (d.up) {
+      if (C.upgradeArtifact(s, d.up)) save();
+    } else if (d.act === 'ritual') {
+      if (!C.canRitual(s)) return;
+      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s.rituals + 1);
+      const after = { ...s, souls: s.souls + souls };
+      ask('<b>Ритуал</b><span class="askList">' +
+        '<b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+        '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + '<br>' +
+        '<b>Сохранится:</b> герои, звёзды, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        const r = C.ritual(s);
+        if (!r) return;
+        dmgLog.length = 0;
+        restartAnim('spawn');
+        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        save(); render();
+      });
+      return;
+    }
+    render();
+  });
+
   function renderPortal() {
     const P = CFG.portal;
     $('ticketCount').textContent = fmt(s.tickets);
@@ -931,7 +1036,7 @@
     renderAbilities();
     renderUlts();
     if (s.enemy.isBoss) {
-      const p = Math.max(0, s.bossTimeLeft / CFG.bossTimeSec);
+      const p = Math.max(0, s.bossTimeLeft / C.bossTime(s));
       el.timerFill.style.width = (p * 100) + '%';
       el.timerFill.classList.toggle('low', s.bossTimeLeft < 5);
     }

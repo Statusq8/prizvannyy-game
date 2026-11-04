@@ -4,14 +4,14 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 5,
+    saveVersion: 6,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
     bossHpMult: 6,
     bossTimeSec: 30,              // таймер босса (TBD)
     goldBase: 1,
-    goldGrowth: 1.15,
+    goldGrowth: 1.16,
     bossGoldMult: 8,
     firstClearGoldMult: 20,       // разовая награда за первое прохождение этажа
     tapBaseDamage: 1,
@@ -52,6 +52,39 @@
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
     },
     // Алтарь (GDD §5): пожертвованные копии исчезают навсегда и дают эссенцию по редкости (TBD)
+    // Души (GDD §6–7): постоянный ресурс. Бонус DPS строго линеен по НЕИЗРАСХОДОВАННЫМ душам.
+    // Все числа временные (TBD по GDD §16).
+    souls: { dpsPerSoul: 0.1 },
+    // Ритуал (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
+    ritual: {
+      floor: 400,
+      startStep: 20,                     // старт после N ритуалов: 1 + 20·N, строго ниже 400
+      soulsBase: 50, soulsGrowth: 1.04,  // души за забег: 50 · 1.04^(этаж − 400)
+      recordBonus: 1,                    // + душа за каждый новый рекордный этаж
+    },
+    // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
+    // уровни переживают ритуал. Действуют на главного героя, союзников и питомца.
+    // Единственный источник постоянного роста критов (шанс не выше 50% от всех источников вместе).
+    artifactFind: { cost: 3, growth: 1.7 },
+    artifacts: [
+      { id: 'blade',  name: 'Клинок первого призыва', icon: '🗡', kind: 'heroAuto', per: 0.1, cost: 2, growth: 1.25,
+        desc: 'Главный герой сам атакует раз в секунду. +10% урона героя за уровень' },
+      { id: 'eye',    name: 'Око охотника',      icon: '👁', kind: 'critChance', per: 0.01, cost: 2, growth: 1.3, max: 45,
+        desc: '+1% шанса крита за уровень' },
+      { id: 'fang',   name: 'Клык бездны',       icon: '🦷', kind: 'critMult', per: 0.2, cost: 2, growth: 1.25,
+        desc: '+0,2 к крит-урону за уровень' },
+      { id: 'grail',  name: 'Кровавый грааль',   icon: '🏆', kind: 'allDmg', per: 0.25, cost: 3, growth: 1.25,
+        desc: '+25% всего урона за уровень' },
+      { id: 'banner', name: 'Знамя отряда',      icon: '🚩', kind: 'allyDmg', per: 0.4, cost: 2, growth: 1.25,
+        desc: '+40% урона союзников за уровень' },
+      { id: 'gaunt',  name: 'Перчатка титана',   icon: '🧤', kind: 'tapDmg', per: 0.4, cost: 2, growth: 1.25,
+        desc: '+40% урона главного героя за уровень' },
+      { id: 'feather',name: 'Перо феникса',      icon: '🪶', kind: 'gold', per: 0.2, cost: 2, growth: 1.25,
+        desc: '+20% золота за уровень' },
+      { id: 'sand',   name: 'Песочные часы',     icon: '⏳', kind: 'bossTime', per: 1, cost: 2, growth: 1.35, max: 15,
+        desc: '+1 с к таймеру босса за уровень' },
+    ],
+    heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
       ticketCost: 30,                                              // «Слеза портала»: эссенция → 1 билет
@@ -112,6 +145,27 @@
     const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1);
     return Math.ceil(isBoss ? hp * CONFIG.bossHpMult : hp);
   }
+  // ---------- души и артефакты ----------
+  function artDef(id) { return CONFIG.artifacts.find(a => a.id === id); }
+  function artLevel(s, id) { return s.artifacts[id] | 0; }
+  // Суммарная сила эффекта данного вида от всех найденных артефактов
+  function artPower(s, kind) {
+    let x = 0;
+    for (const a of CONFIG.artifacts) if (a.kind === kind) x += a.per * artLevel(s, a.id);
+    return x;
+  }
+  function soulMult(s) { return 1 + CONFIG.souls.dpsPerSoul * s.souls; }
+  function goldMult(s) { return 1 + artPower(s, 'gold'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime'); }
+  function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
+  // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
+  function permMult(s, source) {
+    let m = soulMult(s) * (1 + artPower(s, 'allDmg'));
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto'));
+    else m *= 1 + artPower(s, 'allyDmg');
+    return m;
+  }
+
   function killGold(floor, isBoss) {
     const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1);
     return Math.ceil(isBoss ? g * CONFIG.bossGoldMult : g);
@@ -140,11 +194,11 @@
   function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
   // Сюда же добавятся бонусы артефактов (этап 4); временный бонус даёт способность «Клеймо охотника»
   function critChance(s) {
-    let ch = CONFIG.crit.baseChance;
+    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance');
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
     return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { return CONFIG.crit.baseMult; }
+  function critMult(s) { return CONFIG.crit.baseMult + artPower(s, 'critMult'); }
   function enemyName(floor, index, isBoss) {
     if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
     return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
@@ -180,7 +234,19 @@
   function inSquad(s, id) { return s.squad.includes(id); }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return allyDps(s, id) * (inSquad(s, id) ? 1 : CONFIG.reserveShare); }
-  function autoDps(s) { return CONFIG.allies.reduce((sum, a) => sum + contribDps(s, a.id), 0); }
+  // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
+  function autoDps(s) {
+    const allies = CONFIG.allies.reduce((sum, a) => sum + contribDps(s, a.id), 0) * permMult(s, 'ally');
+    const hero = hasHeroAuto(s) ? tapDamage(s) * permMult(s, 'heroAuto') / CONFIG.heroAutoInterval : 0;
+    return allies + hero;
+  }
+  // Урон тапа с постоянными множителями (для показа)
+  function tapHit(s) { return tapDamage(s) * permMult(s, 'tap'); }
+  // Ожидаемый DPS при заданной частоте тапов с учётом критов — для сравнения «до / после» трат душ
+  function expectedDps(s, tps) {
+    const critF = 1 + critChance(s) * (critMult(s) - 1);
+    return (autoDps(s) + tapHit(s) * tps) * critF;
+  }
   function reserveDps(s) { return CONFIG.allies.reduce((sum, a) => sum + (inSquad(s, a.id) ? 0 : contribDps(s, a.id)), 0); }
   function squadDefs(s) { return s.squad.map(allyDef); }
   // Уровень 0 → первая покупка = найм по hireCost
@@ -210,6 +276,12 @@
       essence: 0,
       locks: {},                                 // id → true: копии защищены от пожертвования
       discovered: {},                            // id скрытого героя → рецепт найден
+      souls: 0,
+      artifacts: {},                             // id → уровень (≥1 — найден)
+      rituals: 0,
+      bestFloor: 1,                              // рекорд за всю игру
+      bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
+      heroAutoAcc: 0,                            // накопитель автоатаки героя (не сохраняется)
       reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
@@ -243,7 +315,7 @@
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const hp = enemyMaxHp(s.floor, isBoss);
     s.enemy = { hp, maxHp: hp, isBoss, alive: true, mark: 0, markPower: 1, name: enemyName(s.floor, s.enemyIndex, isBoss) };
-    s.bossTimeLeft = isBoss ? CONFIG.bossTimeSec : 0;
+    s.bossTimeLeft = isBoss ? bossTime(s) : 0;
     s.respawn = 0;
   }
 
@@ -258,7 +330,7 @@
   }
 
   function dealDamage(s, dmg, source, events) {
-    dmg *= damageMult(s, source);
+    dmg *= permMult(s, source) * damageMult(s, source);
     const crit = s.rng() < critChance(s);
     if (crit) dmg *= critMult(s);
     s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
@@ -278,7 +350,7 @@
     const isBoss = s.enemy.isBoss;
     s.enemy.alive = false;
     s.respawn = CONFIG.respawnDelaySec;
-    const gold = killGold(s.floor, isBoss);
+    const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s));
     s.gold += gold;
     s.stats.kills++;
     events.push({ type: 'kill', gold, boss: isBoss });
@@ -287,7 +359,7 @@
       s.stats.bossKills++;
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
-        const bonus = firstClearGold(s.floor);
+        const bonus = Math.ceil(firstClearGold(s.floor) * goldMult(s));
         s.gold += bonus;
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
@@ -298,6 +370,7 @@
         if (n) events.push({ type: 'tickets', n, floor: s.floor });
       }
       s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
+      s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
       s.floor += 1;
       s.enemyIndex = 1;
       events.push({ type: 'floor', floor: s.floor });
@@ -342,6 +415,15 @@
         dealDamage(s, allyDps(s, a.id) * a.attackInterval, a.id, events);
       }
       if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
+    }
+    // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
+    if (hasHeroAuto(s)) {
+      s.heroAutoAcc += dt;
+      if (s.heroAutoAcc >= CONFIG.heroAutoInterval) {
+        s.heroAutoAcc -= CONFIG.heroAutoInterval;
+        dealDamage(s, tapDamage(s), 'heroAuto', events);
+        if (!s.enemy.alive) return events;
+      }
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
     const rd = reserveDps(s);
@@ -398,7 +480,7 @@
   }
 
   // ---------- способности главного героя ----------
-  function abilityUnlocked(s, id) { return s.maxFloor >= abilityDef(id).unlockFloor; }
+  function abilityUnlocked(s, id) { return Math.max(s.maxFloor, s.bestFloor) >= abilityDef(id).unlockFloor; }
   function abilityReady(s, id) { return abilityUnlocked(s, id) && s.abilities[id].cd <= 0; }
   function useAbility(s, id) {
     const def = abilityDef(id);
@@ -493,6 +575,72 @@
     return true;
   }
 
+  // ---------- артефакты за души ----------
+  function foundCount(s) { return CONFIG.artifacts.filter(a => artLevel(s, a.id) > 0).length; }
+  function findCost(s) {
+    const f = CONFIG.artifactFind;
+    return foundCount(s) >= CONFIG.artifacts.length ? null : Math.ceil(f.cost * Math.pow(f.growth, foundCount(s)));
+  }
+  // Найти случайный ещё не найденный артефакт
+  function findArtifact(s) {
+    const cost = findCost(s);
+    if (cost == null || s.souls < cost) return null;
+    const pool = CONFIG.artifacts.filter(a => artLevel(s, a.id) === 0);
+    const a = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
+    s.souls -= cost;
+    s.artifacts[a.id] = 1;
+    return a.id;
+  }
+  function upgradeArtCost(s, id) {
+    const a = artDef(id), lv = artLevel(s, id);
+    if (!a || lv === 0 || (a.max && lv >= a.max)) return null;
+    return Math.ceil(a.cost * Math.pow(a.growth, lv - 1));
+  }
+  function upgradeArtifact(s, id) {
+    const cost = upgradeArtCost(s, id);
+    if (cost == null || s.souls < cost) return false;
+    s.souls -= cost;
+    s.artifacts[id]++;
+    return true;
+  }
+  // Предпросмотр: ожидаемый DPS до и после траты душ (бонус неизрасходованных душ уменьшится)
+  function previewSpend(s, action, id, tps) {
+    const before = expectedDps(s, tps);
+    const t = { ...s, souls: s.souls, artifacts: { ...s.artifacts } };
+    if (action === 'upgrade') { const c = upgradeArtCost(s, id); if (c == null) return null; t.souls -= c; t.artifacts[id]++; }
+    return { before, after: expectedDps(t, tps) };
+  }
+
+  // ---------- ритуал ----------
+  function canRitual(s) { return s.maxFloor >= CONFIG.ritual.floor; }
+  function ritualStartFloor(n) { return Math.min(CONFIG.ritual.floor - 1, 1 + CONFIG.ritual.startStep * n); }
+  function ritualSouls(s) {
+    if (!canRitual(s)) return 0;
+    const R = CONFIG.ritual;
+    const base = Math.floor(R.soulsBase * Math.pow(R.soulsGrowth, s.maxFloor - R.floor));
+    // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
+    const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
+    return base + record;
+  }
+  function ritual(s) {
+    if (!canRitual(s)) return null;
+    const souls = ritualSouls(s);
+    s.souls += souls;
+    s.rituals++;
+    s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
+    s.bestRecordAtRunStart = s.bestFloor;
+    const start = ritualStartFloor(s.rituals);
+    // сбрасывается: золото, временные уровни, найм, прогресс забега
+    s.gold = 0; s.tapLevel = 1;
+    for (const a of CONFIG.allies) { const st = s.allies[a.id]; st.level = 0; st.ult = 0; st.cd = a.attackInterval; }
+    s.buffs = { team: 0, tap: 0, teamPower: 1, tapPower: 1 };
+    s.floor = start; s.maxFloor = start; s.highestCleared = start - 1;
+    s.enemyIndex = 1; s.farming = false; s.reserveAcc = 0; s.heroAutoAcc = 0;
+    spawn(s);
+    // сохраняется: герои, звёзды, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
+    return { souls, start };
+  }
+
   // ---------- Алтарь ----------
   function setLock(s, id, on) {
     if (!allyDef(id)) return false;
@@ -572,6 +720,7 @@
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars }])),
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
+      souls: s.souls, artifacts: { ...s.artifacts }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -590,6 +739,7 @@
       d.tickets = t; d.ticketFloor = d.highestCleared | 0; d.pity = { a: 0, s: 0 };
     }
     if (d.v === 4) { d.v = 5; d.essence = 0; d.locks = []; d.discovered = []; }   // 0.7 → 0.8: Алтарь
+    if (d.v === 5) { d.v = 6; d.souls = 0; d.artifacts = {}; d.rituals = 0; d.bestFloor = d.maxFloor; d.bestRecordAtRunStart = 1; }   // 0.8 → 0.9
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -639,6 +789,16 @@
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
     if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
     s.essence = d.essence;
+    if (!int(d.souls, 0) || !int(d.rituals, 0) || !int(d.bestFloor, 1) || !int(d.bestRecordAtRunStart, 1) ||
+        !d.artifacts || typeof d.artifacts !== 'object') return null;
+    s.souls = d.souls; s.rituals = d.rituals;
+    s.bestFloor = Math.max(d.bestFloor, d.maxFloor); s.bestRecordAtRunStart = d.bestRecordAtRunStart;
+    for (const a of CONFIG.artifacts) {
+      const lv = d.artifacts[a.id];
+      if (lv === undefined) continue;
+      if (!int(lv, 1) || (a.max && lv > a.max)) return null;
+      s.artifacts[a.id] = lv;
+    }
     for (const id of d.locks) if (allyDef(id)) s.locks[id] = true;
     for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
@@ -677,6 +837,9 @@
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult,
     useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
+    soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
+    findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
+    canRitual, ritualStartFloor, ritualSouls, ritual,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
