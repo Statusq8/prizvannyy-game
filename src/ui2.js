@@ -6,7 +6,7 @@
     const RC = { E: '#8d8d96', D: '#4cbf5a', C: '#3a8fe0', B: '#a050e0', A: '#e04848', S: '#ffb030', SS: '#ff7a20', SSS: '#ff40c0', GOD: '#fff2a0' };
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
-    const MORE = [['portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
+    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
       ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
@@ -37,6 +37,7 @@
       page = p; if (opt) Object.assign(state, opt);
       lastHtml = {};
       if (p === 'menu') show('pgMenu');
+      else if (p === 'x') show('pgX');
       else if (p === 'sec') show('pgSec');
       else if (p === 'map') show('pgMap');
       refresh();
@@ -48,7 +49,7 @@
       if (page === 'sec' && artSel) { artSel = null; lastHtml = {}; refresh(); return; }
       page = stack.pop() || null;
       if (!page) { show(null); return; }
-      lastHtml = {}; show(page === 'menu' ? 'pgMenu' : page === 'sec' ? 'pgSec' : 'pgMap'); refresh();
+      lastHtml = {}; show(page === 'menu' ? 'pgMenu' : page === 'sec' ? 'pgSec' : page === 'x' ? 'pgX' : 'pgMap'); refresh();
     }
     document.querySelectorAll('.pg [data-back]').forEach(b => b.addEventListener('click', back));
 
@@ -67,7 +68,7 @@
     const press = b => { b.classList.add('press'); setTimeout(() => b.classList.remove('press'), 120); click(); if (navigator.vibrate && setg.vibro === 'on') try { navigator.vibrate(8); } catch (e) {} };
     $('cbMenu').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('menu'); });
     $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); });          // этап 11 на паузе — экран не согласован
-    $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); openOld('pve'); });
+    $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; openX('pve'); });
     $('cbMap').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('map'); });
 
     // ---------- главное меню ----------
@@ -85,6 +86,7 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.sec) { click(); sec = b.dataset.sec; artSel = null; open('sec'); }
       else if (b.dataset.old === '@backup') { click(); popBackups(); }
+      else if (b.dataset.old === '@portal' || b.dataset.old === '@souls') { click(); openX(b.dataset.old.slice(1)); }
       else if (b.dataset.old) openOld(b.dataset.old);
     });
 
@@ -271,7 +273,7 @@
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       const d = b.dataset;
       if (d.ub) { click(); (d.ub === 'hero' ? el.buyTap : allyUi[d.ub].btn).click(); }
-      else if (d.free) { openOld('portal'); return; }
+      else if (d.free) { click(); openX('portal'); return; }
       else if (d.at) { click(); artTab = d.at; }
       else if (d.art) { click(); artSel = d.art; artN = 1; }
       else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }
@@ -327,6 +329,188 @@
       click(); handle(C.goToFloor(s, f)); save(); back(); render();
     });
 
+
+    // ===================== 0.45: Портал, Души и ритуал, PvE — новые страницы =====================
+    let xKind = 'portal', ban = 'normal', showHist = false;
+    const xStack = [];
+    function openX(k) { if (page === 'x' && xKind !== k) xStack.push(xKind); xKind = k; showHist = false; open('x'); $('xBody').scrollTop = 0; }
+    // «Назад» на странице X: сначала история → портал, затем предыдущая страница X
+    const xBack = document.querySelector('#pgX [data-back]');
+    xBack.removeEventListener('click', back);
+    xBack.addEventListener('click', () => {
+      if (xKind === 'portal' && showHist) { click(); showHist = false; lastHtml = {}; refresh(); return; }
+      if (xStack.length) { click(); xKind = xStack.pop(); lastHtml = {}; refresh(); return; }
+      back();
+    });
+    function renderX() {
+      const aux = $('xAux');
+      if (xKind === 'portal') {
+        $('xTitle').textContent = showHist ? 'История призывов' : 'Портал призыва';
+        aux.style.display = showHist ? 'none' : ''; aux.textContent = '📜 История';
+        setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
+        setHtml('xBody', showHist ? histHtml() : portalHtml());
+      } else if (xKind === 'souls') {
+        $('xTitle').textContent = 'Души и ритуал'; aux.style.display = 'none';
+        setHtml('xTop', cur('👻', fmt(s.souls)));
+        setHtml('xBody', soulsHtml2());
+      } else {
+        $('xTitle').textContent = 'PvE'; aux.style.display = 'none';
+        setHtml('xTop', cur('✦', fmt(s.essence)) + cur('🎟', fmt(s.tickets)));
+        setHtml('xBody', pveHtml2());
+      }
+    }
+    $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- Портал (этап 8): один общий портал, ×1 и ×10, шансы, история, шкала гарантии ----------
+    const HIST_KEY = 'prizvannyy_v2_hist';
+    function histGet() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch (e) { return []; } }
+    function histAdd(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.concat(histGet()).slice(0, 100))); } catch (e) {} }
+    function portalHtml() {
+      const P = CFG.portal, b = C.bannerDef(ban), pity = C.bannerPity(s, ban), pS = b.pityS || P.pityS, pA = b.pityA || P.pityA;
+      const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0;
+      const open = RANKS.filter((r, i) => i >= base && C.rarityOpen(s, r) && CFG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal));
+      const tot = open.reduce((x, r) => x + P.odds[r], 0);
+      const feat = b.featured ? C.featuredHeroes(s).map(id => CFG.allies.find(a => a.id === id)) : [];
+      const c1 = C.canSummon(s, ban, 1), c10 = C.canSummon(s, ban, 10), cost = n => { const c = C.bannerCost(ban, n); return c.lanterns ? '🏮 ' + c.lanterns : '🎟 ' + c.tickets; };
+      let h = '<div class="gate"><div class="arch"></div><div class="rift"></div><div class="keyst"></div></div>';
+      h += '<div class="banRow">' + P.banners.map(x => '<button class="chip' + (x.id === ban ? ' on' : '') + '" data-ban="' + x.id + '"' + (x.id === 'event' && !C.currentEvent(s) ? ' disabled' : '') + '>' + x.icon + ' ' + x.name + '</button>').join('') + '</div>';
+      h += '<div class="hint3">' + b.desc + (feat.length ? '. Герои недели: <b style="color:#ffe8a8">' + feat.map(a => a.name + ' (' + a.rarity + ')').join(', ') + '</b>' : '') + '</div>';
+      h += '<div class="pity">S+<div class="bar"><i style="width:' + Math.min(100, pity.s / pS * 100) + '%"></i><b>' + pity.s + ' / ' + pS + '</b></div><span class="rk" style="position:static;' + rvar('S') + '">S</span></div>';
+      h += '<div class="pity">A+<div class="bar"><i style="width:' + Math.min(100, pity.a / pA * 100) + '%;background:linear-gradient(90deg,#a03a1a,#ffa64a)"></i><b>' + pity.a + ' / ' + pA + '</b></div><span class="rk" style="position:static;' + rvar('A') + '">A</span></div>';
+      if (pity.s > P.softS) h += '<div class="hint3" style="color:#ffd36b">Шанс S повышен!</div>';
+      h += '<div class="pullRow"><button class="pullBtn" data-pull="1"' + (c1 ? '' : ' disabled') + '>Призвать ×1<span>' + cost(1) + '</span></button>' +
+        '<button class="pullBtn x10" data-pull="10"' + (c10 ? '' : ' disabled') + '>Призвать ×10<span>' + cost(10) + '</span></button></div>';
+      if (!c1) h += '<div class="noMoney">⚠ Недостаточно ' + (ban === 'event' ? 'фонарей' : 'билетов') + '</div>';
+      h += '<div class="secT">Шансы призыва</div><div class="odds">' + RANKS.slice(base).map(r => {
+        const on = open.includes(r), g = CFG.rarityGates[r];
+        return '<span class="' + (on ? '' : 'off') + '"><b style="background:' + (RC[r] || '#888') + '">' + r + '</b>' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : (g && !C.rarityOpen(s, r) ? 'с ' + g + ' эт.' : '—')) + '</span>';
+      }).join('') + '</div>';
+      h += '<div class="hint3">После ' + P.softS + ' призывов без S шанс S растёт с каждым. Гарантии у баннеров раздельные. Билеты — за первое прохождение босса каждого 5-го этажа, на 10-м больше. SS/SSS/GOD открываются рекордом этажа.</div>';
+      return h;
+    }
+    function histHtml() {
+      const L = histGet();
+      if (!L.length) return '<div class="hint3" style="text-align:center;margin-top:20px">Пока пусто — здесь будут последние 100 призывов.</div>';
+      return '<div class="hist">' + L.map(x => { const a = CFG.allies.find(h => h.id === x.id) || { name: x.id };
+        return '<div><span><b style="color:' + (RC[x.r] || '#fff') + '">' + x.r + '</b> ' + a.name + (x.n ? ' · <span style="color:#6be37a">новый</span>' : '') + '</span><span>' + new Date(x.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span></div>'; }).join('') + '</div>';
+    }
+    // анимация: приближение к порталу → по одному (цвет ранга) → общий экран для ×10; «Пропустить» через 1 с
+    let fxQ = [], fxAll = [], fxTimer = null;
+    function pull2(n) {
+      const r = C.summon(s, n, ban); if (!r) return;
+      histAdd(r.map(x => ({ id: x.id, r: x.rarity, n: x.isNew ? 1 : 0, t: Date.now(), b: ban })));
+      save(); render();
+      fxAll = r; fxQ = r.slice();
+      const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);
+      $('sumFx').style.setProperty('--fx', RC[best.rarity] || '#b14dff');
+      $('sumFx').classList.add('show'); $('sfStage').innerHTML = ''; $('sfSkip').classList.remove('on');
+      setTimeout(() => $('sfSkip').classList.add('on'), 1000);
+      clearTimeout(fxTimer); fxTimer = setTimeout(fxNext, 600);
+    }
+    function fxCard(x) {
+      const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id] || {}, h = s.heroes[x.id];
+      const cut = x.isNew && RANKS.indexOf(x.rarity) >= RANKS.indexOf('A');       // первое получение редкого — короткая кат-сцена
+      $('sumFx').style.setProperty('--fx', RC[x.rarity] || '#b14dff');
+      $('sfStage').innerHTML = '<div class="sfCard' + (cut ? ' cut' : '') + '" style="' + rvar(x.rarity) + '"><div class="big">' + (v.icon || '✦') + '</div><span class="rk">' + x.rarity + '</span><h3>' + a.name + '</h3>' +
+        '<p>' + (x.isNew ? (cut ? '✦ Новый герой призван! ✦' : 'Новый герой') : 'Дубликат · копий: ' + h.copies) + '</p><div class="hint3">' + a.role + '</div></div>';
+      click();
+      return cut ? 1600 : 900;
+    }
+    function fxNext() {
+      if (fxQ.length) { const d = fxCard(fxQ.shift()); fxTimer = setTimeout(fxNext, d); return; }
+      fxSummary();
+    }
+    function fxSummary() {
+      clearTimeout(fxTimer); fxQ = [];
+      if (fxAll.length === 1) { $('sfStage').insertAdjacentHTML('beforeend', ''); }
+      const grid = fxAll.length > 1 ? '<div class="sfGrid">' + fxAll.map(x => { const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id] || {};
+        return '<div style="' + rvar(x.rarity) + '"><b>' + (v.icon || '✦') + '</b><i>' + x.rarity + '</i>' + a.name + '<span style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'новый' : 'дубликат') + '</span></div>'; }).join('') + '</div>' : $('sfStage').innerHTML;
+      $('sfStage').innerHTML = '<div>' + grid + '<div class="sfDone"><button class="upBtn gold" id="sfOk" style="width:160px">Готово</button></div></div>';
+      $('sfSkip').classList.remove('on');
+    }
+    $('sfSkip').addEventListener('click', () => { click(); fxSummary(); });
+    $('sfStage').addEventListener('click', e => { if (e.target.id === 'sfOk') { click(); $('sumFx').classList.remove('show'); lastHtml = {}; refresh(); } });
+
+    // ---------- Души и ритуал ----------
+    function soulsHtml2() {
+      const R = CFG.ritual, ready = C.canRitual(s);
+      let h = '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Неизрасходованные души: ' + pctUp(C.soulMult(s)) + ' всего урона (+' + Math.round(CFG.souls.dpsPerSoul * 100) + '% за душу). Траты на артефакты и дерево уменьшают этот бонус — сравнивайте DPS до и после.</p></div>';
+      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Ритуал</h3>' +
+        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед ритуалом делается резервная копия.</p>'
+               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
+        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести ритуал' : 'Нужен этаж ' + R.floor) + '</button></div>';
+      h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
+      for (const b of CFG.soulTree) {
+        const opn = C.branchOpen(s, b);
+        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ритуал' + (b.rituals === 1 ? 'а' : 'ов') + '</small>') + '</div>';
+        b.nodes.forEach((n, i) => {
+          const lv = C.treeLevel(s, n.id), no = C.treeNodeOpen(s, n.id), c = C.treeCost(s, n.id), can = opn && no && c != null && B.gte(s.souls, c);
+          const prev = c != null && no && opn ? C.previewSpend(s, 'tree', n.id, TPS_PREVIEW) : null;
+          h += '<div class="tNode' + (opn && (no || lv) ? '' : ' lock') + '"><div class="ic">' + (opn ? n.icon : '?') + '</div><div><b>' + n.name + ' · ' + lv + '/' + n.max + '</b><p>' + n.desc + ' за уровень' +
+            (opn && !no ? '. Сначала «' + b.nodes[i - 1].name + '»' : '') + '</p>' + (prev ? dpsChange(prev) : '') + '</div>' +
+            (c == null ? '<button class="upBtn" disabled>Макс.</button>' : '<button class="upBtn" data-tree="' + n.id + '"' + (can ? '' : ' disabled') + '>Улучшить<span>👻 ' + fmt(c) + '</span></button>') + '</div>';
+        });
+      }
+      return h;
+    }
+    function doRitual() {
+      if (!C.canRitual(s)) return;
+      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
+      ask('<b>Ритуал</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+        '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
+        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        writeCopy(PRE_RIT);
+        const r = C.ritual(s); if (!r) return;
+        dmgLog.length = 0; restartAnim('spawn');
+        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        save(); render();
+      });
+    }
+
+    // ---------- PvE ----------
+    const tier2 = {};
+    function pveHtml2() {
+      const P = CFG.pve, busy = !!s.mode, maxT = C.maxDungeonTier(s);
+      let h = busy ? '<div class="noMoney" style="color:#ffd36b">Сейчас идёт «' + s.mode.name + '». Выйти — кнопкой на арене.</div>' : '';
+      h += '<div class="secT">Ежедневные подземелья · ' + P.dungeonEnemies + ' врагов за ' + P.dungeonTime + ' с</div>';
+      for (const d of P.dungeons) {
+        const tt = tier2[d.id] = Math.min(maxT, Math.max(1, tier2[d.id] || maxT)), left = C.attemptsLeft(s, d.id), can = !busy && left > 0;
+        h += '<div class="pveCard" style="' + rvar('C') + '"><div class="ic">' + d.icon + '</div><div><b>' + d.name + ' · ' + left + '/' + P.dailyAttempts + '</b><p>' + d.desc + '</p>' +
+          '<p>Награда: <em>' + rewardText(C.dungeonReward(s, d.id, tt)) + '</em> · как этаж ' + tt * P.tierFloors + '</p>' +
+          '<div class="tier"><button data-t2="' + d.id + ':-1"' + (tt > 1 ? '' : ' disabled') + '>−</button>ур. ' + tt + '<button data-t2="' + d.id + ':1"' + (tt < maxT ? '' : ' disabled') + '>+</button></div></div>' +
+          '<button class="upBtn" data-dun2="' + d.id + '"' + (can ? '' : ' disabled') + '>Войти</button></div>';
+      }
+      const el2 = C.attemptsLeft(s, 'endless'), T = P.trial; C.trialSync(s); const tl = C.attemptsLeft(s, 'trial');
+      h += '<div class="secT">Испытания</div>';
+      h += '<div class="pveCard" style="' + rvar('B') + '"><div class="ic">∞</div><div><b>Бесконечное подземелье · ' + el2 + '/' + P.endless.attempts + '</b><p>Рекорд: <em>' + s.pve.endlessBest + ' волн</em>. Каждые ' + P.endless.bossEvery + ' — контрольный босс на ' + P.endless.bossTime + ' с; за босса ✦, за новый рубеж 🎟.</p></div>' +
+        '<button class="upBtn" data-m2="endless"' + (!busy && el2 ? '' : ' disabled') + '>Войти</button></div>';
+      h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗼</div><div><b>Испытательная башня · ' + tl + '/' + T.attempts + '</b><p>Равные условия: только тапы одной силы, ' + T.time + ' с на стража. Рекорд недели <em>' + s.trial.weekBest + '</em>, за всё время <em>' + s.trial.best + '</em>.</p></div>' +
+        '<button class="upBtn" data-m2="trial"' + (!busy && tl ? '' : ' disabled') + '>Войти</button></div>';
+      const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
+      h += '<div class="secT">Личные боссы · ' + pl + '/' + P.personal.attempts + ' в день · ' + P.personal.time + ' с</div>';
+      if (!bosses.length) h += '<div class="pveCard"><div class="ic">?</div><div><b>Пока нет</b><p>Победите финального босса биома (этаж 50) — он станет личным боссом.</p></div></div>';
+      for (const b of bosses) h += '<div class="pveCard" style="' + rvar('A') + '"><div class="ic">👹</div><div><b>' + b.name + '</b><p>' + b.biome + ' · этаж ' + b.floor + '</p></div><div></div><div class="diffRow">' +
+        P.personal.diffs.map(D => '<button class="upBtn" data-pb2="' + b.id + ':' + D.id + '"' + (!busy && pl ? '' : ' disabled') + '>' + D.name + '<small>' + rewardText(C.personalReward(s, b.floor, D.id)) + '</small></button>').join('') + '</div></div>';
+      h += '<div class="secT">Рейтинги и мировой босс</div><div class="pveCard"><div class="ic">🌍</div><div><b>Скоро</b><p>Рейтинги игроков и общий мировой босс появятся вместе с сервером и аккаунтами.</p></div></div>';
+      return h;
+    }
+    function goMode(kind, opts) { const before = s.mode; startMode(kind, opts); if (!before && s.mode) { stack.length = 0; page = null; show(null); } }
+
+    $('xBody').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      const d = b.dataset;
+      if (d.ban) { click(); ban = d.ban; }
+      else if (d.pull) { click(); pull2(+d.pull); }
+      else if (d.rit !== undefined) { click(); doRitual(); return; }
+      else if (d.tree) { click(); if (C.buyTreeNode(s, d.tree)) save(); }
+      else if (d.t2) { click(); const [id, dl] = d.t2.split(':'); tier2[id] = (tier2[id] || 1) + +dl; }
+      else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }
+      else if (d.m2) { click(); goMode(d.m2, {}); }
+      else if (d.pb2) { click(); const [id, diff] = d.pb2.split(':'); goMode('personal', { id, diff }); }
+      else return;
+      render();
+    });
+
     // ---------- обновление ----------
     function refresh() {
       // волна и % HP на экране боя
@@ -339,6 +523,7 @@
       if (page === 'menu') renderMenu();
       else if (page === 'sec') renderSec();
       else if (page === 'map') renderMap2();
+      else if (page === 'x') renderX();
     }
     ui2Refresh = refresh;
     refresh();

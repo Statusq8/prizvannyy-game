@@ -219,3 +219,85 @@
   .bakRow b { font: 800 12px system-ui; color: #fff; } .bakRow p { margin: 3px 0 6px !important; font: 600 11px system-ui !important; }
   /* выход из режима PvE в чистом экране — над питомцем, по центру */
   body.clean #modeBar { top: auto; bottom: calc(env(safe-area-inset-bottom) + 18px); z-index: 7; width: min(52%, 220px); }
+
+  /* ===================== 0.45: Портал, Души и ритуал, PvE в новом стиле ===================== */
+  /* Портал призыва (этап 8): каменные врата Башни с фиолетовым разломом */
+  .gate { position: relative; width: 78%; max-width: 300px; aspect-ratio: .78; margin: 4px auto 10px; }
+  .gate .arch { position: absolute; inset: 0; border-radius: 48% 48% 6px 6px / 38% 38% 6px 6px;
+    background: repeating-linear-gradient(90deg, #4a4452 0 26px, #3a3442 26px 28px), linear-gradient(#5a5462, #2a2630);
+    box-shadow: inset 0 0 0 8px #2a2630, inset 0 0 0 10px #6e6678, 0 0 40px #b14dff66, 0 10px 20px #000c; }
+  .gate .rift { position: absolute; left: 14%; right: 14%; top: 12%; bottom: 6%; border-radius: 46% 46% 4px 4px / 34% 34% 4px 4px; overflow: hidden;
+    background: radial-gradient(circle at 50% 55%, #fff 0%, #e3b6ff 8%, #b14dff 22%, #4a0a8a 45%, #12041e 75%); box-shadow: inset 0 0 30px #000, 0 0 30px #b14dff; }
+  .gate .rift::before, .gate .rift::after { content: ""; position: absolute; inset: -40%; background: conic-gradient(from 0deg, transparent, #e3b6ff66, transparent 30%, #b14dff88, transparent 60%, #ff40c055, transparent);
+    animation: riftSpin 6s linear infinite; mix-blend-mode: screen; }
+  .gate .rift::after { animation-duration: 9s; animation-direction: reverse; opacity: .7; }
+  @keyframes riftSpin { to { transform: rotate(360deg); } }
+  .gate .keyst { position: absolute; left: 50%; top: 2%; width: 34px; height: 34px; margin-left: -17px; transform: rotate(45deg); background: radial-gradient(circle at 35% 30%, #fff, #e3b6ff 30%, #b14dff 70%, #4a0a8a); box-shadow: 0 0 16px #b14dff; border: 2px solid #2a2630; }
+  .banRow { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 6px; }
+  .banRow .chip { flex: none; }
+  .pity { display: flex; align-items: center; gap: 8px; margin: 6px 0; font: 700 12px system-ui; color: #e9dcff; }
+  .pity .bar { flex: 1; height: 14px; border-radius: 7px; background: #120e18; border: 1px solid #6e6678; overflow: hidden; position: relative; }
+  .pity .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6a1ab0, #e3b6ff); }
+  .pity .bar b { position: absolute; inset: 0; text-align: center; font: 400 10px/14px 'Russo One', system-ui; color: #fff; text-shadow: 0 1px 0 #000; }
+  .pullRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .pullBtn { min-height: 64px; border-radius: 8px; color: #fff; font: 400 18px 'Ruslan Display', Georgia, serif; text-shadow: 0 1px 0 #000; border: 2px solid #8fb8ff;
+    background: linear-gradient(#3a6ad8, #12245a); box-shadow: 0 0 0 1px #000, 0 0 14px #3a8fe088, inset 0 1px 0 #ffffff40; }
+  .pullBtn.x10 { border-color: #ffe08a; background: linear-gradient(#d6a640, #6a4a12); box-shadow: 0 0 0 1px #000, 0 0 14px #d6a64088, inset 0 1px 0 #ffffff50; }
+  .pullBtn span { display: block; font: 400 13px 'Russo One', system-ui; margin-top: 2px; }
+  .pullBtn:disabled { filter: grayscale(.8) brightness(.55); }
+  .pullBtn:not(:disabled):active { transform: scale(.97); filter: brightness(1.25); }
+  .noMoney { text-align: center; font: 700 12px system-ui; color: #ff9a8a; margin-bottom: 6px; }
+  .odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 10px; padding: 8px 10px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; font: 700 11px system-ui; color: #d8d0e2; }
+  .odds span b { display: inline-block; min-width: 30px; padding: 0 4px; margin-right: 4px; border-radius: 3px; text-align: center; color: #000; font: 400 10px 'Russo One', system-ui; }
+  .odds .off { opacity: .35; }
+  .hint3 { font: 600 11px system-ui; color: #9a8aa8; margin: 6px 2px; line-height: 1.35; }
+  /* анимация призыва: приближение к порталу, вспышка цвета ранга, карточки по одной, затем итог ×10 */
+  #sumFx { display: none; }
+  body.clean #sumFx.show { display: block; position: absolute; inset: 0; z-index: 85; overflow: hidden; }
+  #sumFx .sfBg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, var(--fx, #b14dff) 0%, #12041e 45%, #000 80%); animation: sfZoom .6s ease-in; }
+  @keyframes sfZoom { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #sumFx .sfStage { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; }
+  #sumFx #sfSkip { position: absolute; right: 12px; top: calc(env(safe-area-inset-top) + 12px); visibility: hidden; }
+  #sumFx #sfSkip.on { visibility: visible; }
+  .sfCard { width: min(70%, 260px); padding: 18px 12px; border-radius: 12px; text-align: center; color: #fff; border: 3px solid var(--rc); box-shadow: 0 0 0 1px #000, 0 0 40px var(--rc);
+    background: linear-gradient(#2a1e36, #0e0a14); animation: sfCard .45s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes sfCard { from { transform: scale(.2) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sfCard .big { font-size: 90px; line-height: 1.1; filter: drop-shadow(0 0 16px var(--rc)); }
+  .sfCard .rk { position: static; display: inline-grid; margin: 4px 0; font-size: 18px; min-width: 44px; height: 34px; }
+  .sfCard h3 { font: 400 22px 'Ruslan Display', Georgia, serif; margin: 4px 0; }
+  .sfCard p { font: 700 13px system-ui; color: #ffe8a8; }
+  .sfCard.cut { animation: sfCut 1.1s ease-out; }
+  @keyframes sfCut { 0% { transform: scale(.2); opacity: 0; filter: brightness(4); } 40% { transform: scale(1.15); opacity: 1; filter: brightness(2); } 100% { transform: none; filter: none; } }
+  .sfGrid { width: min(96%, 380px); display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .sfGrid > div { aspect-ratio: .75; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--rc); background: #120e18ee; box-shadow: 0 0 10px var(--rc); color: #fff; font: 700 9px system-ui; text-align: center; }
+  .sfGrid > div b { font-size: 26px; }
+  .sfGrid > div i { font-style: normal; font: 400 10px 'Russo One', system-ui; }
+  .sfDone { margin-top: 14px; text-align: center; }
+  .hist { margin-top: 6px; }
+  .hist div { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #2a2232; font: 600 12px system-ui; color: #d8d0e2; }
+  /* Души и ритуал */
+  .soulBig { text-align: center; padding: 12px; border-radius: 8px; background: linear-gradient(#241a30ee, #120e18ee); border: 2px solid #8fe6ff; box-shadow: 0 0 14px #8fe6ff55; }
+  .soulBig .n { font: 400 30px 'Russo One', system-ui; color: #dff8ff; text-shadow: 0 0 10px #8fe6ff; }
+  .soulBig p { font: 600 12px system-ui; color: #b9b1c3; margin-top: 4px; }
+  .ritual { margin-top: 10px; padding: 14px; border-radius: 8px; text-align: center; background: radial-gradient(ellipse at 50% 0%, #5a1a3a 0%, #1a0e1a 70%); border: 2px solid #6e4a5a; }
+  .ritual.ready { border-color: #ff6b9a; box-shadow: 0 0 18px #ff6b9a77; }
+  .ritual h3 { font: 400 20px 'Ruslan Display', Georgia, serif; color: #ffd0e0; }
+  .ritual p { font: 600 12px system-ui; color: #d8c0cc; margin: 6px 0 10px; }
+  .tNode { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; padding: 8px; margin-bottom: 6px; border-radius: 6px; background: #1a1222dd; border: 1px solid #4e4757; }
+  .tNode.lock { opacity: .55; }
+  .tNode .ic { width: 44px; height: 44px; display: grid; place-items: center; font-size: 22px; border-radius: 6px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
+  .tNode b { font: 800 12px system-ui; color: #fff; } .tNode p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+  .tNode .upBtn { width: 86px; min-height: 42px; }
+  .brH { margin: 12px 2px 6px; font: 400 14px 'Ruslan Display', Georgia, serif; color: #e3b6ff; }
+  .brH small { font: 700 10px system-ui; color: #9a8aa8; margin-left: 6px; }
+  /* PvE */
+  .pveCard { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; padding: 10px; margin-bottom: 8px; border-radius: 8px;
+    background: linear-gradient(90deg, #241a30ee, #120e18dd); border: 2px solid var(--rc, #4e4757); box-shadow: 0 0 0 1px #000, 0 0 10px var(--rg, transparent); }
+  .pveCard .ic { width: 48px; height: 48px; display: grid; place-items: center; font-size: 26px; border-radius: 8px; border: 2px solid var(--rc, #6e6678); background: radial-gradient(#3a2a4a, #0a0710); }
+  .pveCard b { font: 800 13px system-ui; color: #fff; } .pveCard p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; } .pveCard p em { font-style: normal; color: #ffe8a8; }
+  .pveCard .upBtn { width: 84px; min-height: 44px; }
+  .tier { display: flex; align-items: center; gap: 6px; margin-top: 6px; font: 400 12px 'Russo One', system-ui; color: #fff; }
+  .tier button { width: 26px; height: 24px; border-radius: 4px; background: #2a2232; border: 1px solid #6e6678; color: #fff; font: 900 14px system-ui; }
+  .tier button:disabled { opacity: .3; }
+  .diffRow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .diffRow .upBtn { width: auto; min-height: 44px; font-size: 11px; }
