@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 8,
+    saveVersion: 9,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -218,6 +218,28 @@
         { id: 'haste',  name: 'Порыв',              icon: '⏱', kind: 'abilityCd',   per: 0.05, cost: 6, growth: 1.4, max: 10, desc: '−5% перезарядки способностей героя' },
       ] },
     ],
+    // Руны (GDD §8): глобальные бонусы команде — урон и экономика, без критов. Коллекция, создание, слияние, улучшение.
+    // В каждом виде действует лучшая руна. Слияние: 3 руны одного вида и редкости → 1 следующей редкости. Числа TBD.
+    runes: {
+      kinds: [
+        { id: 'might',  name: 'Руна мощи',     icon: 'ᚦ', kind: 'allDmg',  base: 0.10, desc: 'всего урона' },
+        { id: 'host',   name: 'Руна отряда',   icon: 'ᚱ', kind: 'allyDmg', base: 0.15, desc: 'урона союзников' },
+        { id: 'strike', name: 'Руна удара',    icon: 'ᛏ', kind: 'heroDmg', base: 0.15, desc: 'урона героя' },
+        { id: 'hunt',   name: 'Руна охоты',    icon: 'ᛒ', kind: 'bossDmg', base: 0.15, desc: 'урона по боссам' },
+        { id: 'wealth', name: 'Руна богатства', icon: 'ᚠ', kind: 'gold',   base: 0.10, desc: 'золота' },
+        { id: 'stone',  name: 'Руна камня',    icon: 'ᛃ', kind: 'shards',  base: 0.05, desc: 'осколков' },
+      ],
+      createCost: 25,                 // осколков за новую руну редкости E
+      tierPower: 2,                   // каждая редкость ×2 к силе
+      perLevel: 0.15,                 // +15% силы за уровень
+      maxLevel: 10,
+      upCost: 10, upGrowth: 1.3,      // улучшение: 10 · ×(редкость+1) · 1.3^ур осколков
+      mergeCount: 3,
+    },
+    // Тотемы (GDD §8): постоянный общий DPS и коллекция, без критов. Тотем биома — за первое в игре
+    // прохождение его финального босса. Уровень — за осколки и сердца. Числа TBD.
+    totems: { dpsPerLevel: 0.1, collection: [5, 10, 15, 20], collectionMult: 1.25, maxLevel: 20,
+              upShards: 50, upGrowth: 1.4, heartEvery: 5 },   // каждый 5-й уровень требует ещё 1 сердце
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -294,6 +316,8 @@
   const TREE = treeNodes();
   function treeDef(id) { return TREE.find(n => n.id === id); }
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
+  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')); }
   function treePower(s, kind) { let x = 0; for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
   function branchOpen(s, b) { return s.rituals >= b.rituals; }
   function treeNodeOpen(s, id) {
@@ -312,14 +336,32 @@
     s.tree[id] = treeLevel(s, id) + 1;
     return true;
   }
-  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')); }
+  // ---------- руны ----------
+  function runeKind(id) { return CONFIG.runes.kinds.find(k => k.id === id); }
+  function runeValue(r) { const R = CONFIG.runes; return runeKind(r.type).base * Math.pow(R.tierPower, r.tier) * (1 + R.perLevel * r.lvl); }
+  // Лучшая руна вида (действует только она)
+  function bestRune(s, type) { let b = null; for (const r of s.runes) if (r.type === type && (!b || runeValue(r) > runeValue(b))) b = r; return b; }
+  function runePower(s, kind) {
+    let x = 0;
+    for (const k of CONFIG.runes.kinds) if (k.kind === kind) { const b = bestRune(s, k.id); if (b) x += runeValue(b); }
+    return x;
+  }
+  // ---------- тотемы ----------
+  function totemCount(s) { return Object.keys(s.totems).length; }
+  function totemMult(s) {
+    const T = CONFIG.totems;
+    let lv = 0; for (const id in s.totems) lv += s.totems[id];
+    const sets = T.collection.filter(n => totemCount(s) >= n).length;
+    return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
+  }
+  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = soulMult(s) * (1 + artPower(s, 'allDmg'));
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg'));
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg'));
+    let m = soulMult(s) * (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg'));
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg'));
     return m;
   }
 
@@ -465,6 +507,8 @@
       souls: 0,
       artifacts: {},                             // id → уровень (≥1 — найден)
       tree: {},                                  // дерево душ: id узла → уровень
+      runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
+      totems: {},                                // id биома → уровень тотема
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -517,7 +561,7 @@
     if (source === 'tap' && s.buffs.tap > 0) m *= s.buffs.tapPower;
     if (s.enemy.mark > 0) m *= s.enemy.markPower;
     if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
-    if (s.enemy.isBoss) m *= 1 + treePower(s, 'bossDmg');
+    if (s.enemy.isBoss) m *= bossDmgMult(s);
     return m;
   }
 
@@ -562,7 +606,7 @@
     s.stats.kills++;
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare && rare.shards) {
-      const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * (1 + treePower(s, 'shards')));
+      const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
       s.materials.shard += n;
       events.push({ type: 'materials', shard: n, heart: 0, rare: true });
     }
@@ -583,7 +627,11 @@
       }
       const mat = bossMaterials(s, s.floor);
       s.materials.shard += mat.shard; s.materials.heart += mat.heart;
-      if (mat.heart) s.heartFloor = s.floor;
+      if (mat.heart) {
+        s.heartFloor = s.floor;
+        const b = biomeOf(s.floor);
+        if (isFinalBoss(s.floor) && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
+      }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
       s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
@@ -683,7 +731,7 @@
       while (!s.farming) {
         const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
         const hp = enemyMaxHp(s.floor, isBoss);
-        if (isBoss && hp / (dps * (1 + treePower(s, 'bossDmg'))) > bossTime(s)) {             // стена: босс не умирает за таймер
+        if (isBoss && hp / (dps * bossDmgMult(s)) > bossTime(s)) {             // стена: босс не умирает за таймер
           r.wallFloor = s.floor;
           s.floor = Math.max(1, s.floor - 1); s.enemyIndex = 1; s.farming = true;
           break;
@@ -851,7 +899,7 @@
   function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
   // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
   function bossMaterials(s, f) {
-    return { shard: Math.ceil(shardsForBoss(f) * (1 + treePower(s, 'shards'))), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
+    return { shard: Math.ceil(shardsForBoss(f) * shardMult(s)), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
   }
   // Требования следующей ступени или null, если эволюция завершена
   function evoCost(s, id) {
@@ -876,6 +924,53 @@
     const cost = CONFIG.materials.heartRecipe * n;
     if (!Number.isInteger(n) || n <= 0 || s.materials.shard < cost) return false;
     s.materials.shard -= cost; s.materials.heart += n;
+    return true;
+  }
+
+  // ---------- руны: создание, улучшение, слияние ----------
+  function createRune(s) {
+    const R = CONFIG.runes;
+    if (s.materials.shard < R.createCost) return null;
+    s.materials.shard -= R.createCost;
+    const k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
+    const r = { id: s.runeSeq++, type: k.id, tier: 0, lvl: 0 };
+    s.runes.push(r);
+    return r;
+  }
+  function runeById(s, id) { return s.runes.find(r => r.id === id); }
+  function runeUpCost(r) {
+    const R = CONFIG.runes;
+    return r.lvl >= R.maxLevel ? null : Math.ceil(R.upCost * (r.tier + 1) * Math.pow(R.upGrowth, r.lvl));
+  }
+  function upgradeRune(s, id) {
+    const r = runeById(s, id), c = r && runeUpCost(r);
+    if (!c || s.materials.shard < c) return false;
+    s.materials.shard -= c; r.lvl++;
+    return true;
+  }
+  // Можно ли слить: есть mergeCount рун вида и редкости, и это не высшая редкость
+  function mergeable(s, type, tier) {
+    return tier < CONFIG.rarities.length - 1 && s.runes.filter(r => r.type === type && r.tier === tier).length >= CONFIG.runes.mergeCount;
+  }
+  // Слияние берёт руны с наименьшим уровнем; новая руна — следующей редкости, уровень 0
+  function mergeRunes(s, type, tier) {
+    if (!mergeable(s, type, tier)) return null;
+    const use = s.runes.filter(r => r.type === type && r.tier === tier).sort((a, b) => a.lvl - b.lvl).slice(0, CONFIG.runes.mergeCount);
+    s.runes = s.runes.filter(r => !use.includes(r));
+    const r = { id: s.runeSeq++, type, tier: tier + 1, lvl: 0 };
+    s.runes.push(r);
+    return r;
+  }
+  // ---------- тотемы ----------
+  function totemUpCost(s, id) {
+    const T = CONFIG.totems, lv = s.totems[id];
+    if (!lv || lv >= T.maxLevel) return null;
+    return { shards: Math.ceil(T.upShards * Math.pow(T.upGrowth, lv - 1)), hearts: (lv + 1) % T.heartEvery === 0 ? 1 : 0 };
+  }
+  function upgradeTotem(s, id) {
+    const c = totemUpCost(s, id);
+    if (!c || s.materials.shard < c.shards || s.materials.heart < c.hearts) return false;
+    s.materials.shard -= c.shards; s.materials.heart -= c.hearts; s.totems[id]++;
     return true;
   }
 
@@ -1029,7 +1124,8 @@
       materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
-      souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
+      souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree },
+      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -1057,6 +1153,10 @@
       for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].evo = 0;
     }
     if (d.v === 7) { d.v = 8; d.tree = {}; }               // 0.13 → 0.14: дерево душ
+    if (d.v === 8) {                                       // 0.14 → 0.15: руны и тотемы за уже пройденных финальных боссов
+      d.v = 9; d.runes = []; d.runeSeq = 1; d.totems = {};
+      for (let f = CONFIG.biomeFloors; f <= (d.heartFloor | 0); f += CONFIG.biomeFloors) d.totems[biomeOf(f).id] = 1;
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1120,6 +1220,19 @@
       if (!int(lv, 1) || (a.max && lv > a.max)) return null;
       s.artifacts[a.id] = lv;
     }
+    if (!Array.isArray(d.runes) || !int(d.runeSeq, 1) || !d.totems || typeof d.totems !== 'object') return null;
+    for (const r of d.runes) {
+      if (!r || !runeKind(r.type) || !int(r.id, 1) || !int(r.tier, 0) || r.tier >= CONFIG.rarities.length ||
+          !int(r.lvl, 0) || r.lvl > CONFIG.runes.maxLevel) return null;
+      s.runes.push({ id: r.id, type: r.type, tier: r.tier, lvl: r.lvl });
+    }
+    s.runeSeq = Math.max(d.runeSeq, ...s.runes.map(r => r.id + 1));
+    for (const b of CONFIG.biomes) {
+      const lv = d.totems[b.id];
+      if (lv === undefined) continue;
+      if (!int(lv, 1) || lv > CONFIG.totems.maxLevel) return null;
+      s.totems[b.id] = lv;
+    }
     if (!d.tree || typeof d.tree !== 'object') return null;
     for (const n of TREE) {
       const lv = d.tree[n.id];
@@ -1169,6 +1282,8 @@
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
     findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
+    runeKind, runeValue, bestRune, runePower, createRune, runeUpCost, upgradeRune, mergeable, mergeRunes,
+    totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
