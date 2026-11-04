@@ -7,5 +7,9 @@ if (!tpl.includes('/*__CORE__*/')) throw new Error('В шаблоне нет м�
 // фон-зал встраивается в файл (игра работает без интернета)
 const bg = 'data:image/webp;base64,' + fs.readFileSync(path.join(dir, 'assets/bg-hall.webp')).toString('base64');
 if (!tpl.includes('__BG_HALL__')) throw new Error('В шаблоне нет метки __BG_HALL__');
-fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('__BG_HALL__', () => bg));
+// картинки игры: метки __ART_<имя>__ → WebP из assets/game/ (готовит tools/art.py); нет файла — пустая строка
+const artDir = path.join(dir, 'assets/game');
+const art = name => { const f = path.join(artDir, name + '.webp'); return fs.existsSync(f) ? 'data:image/webp;base64,' + fs.readFileSync(f).toString('base64') : ''; };
+fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('__BG_HALL__', () => bg)
+  .replace(/__ART_([a-z0-9_]+)__/g, (m, n) => art(n)));
 console.log('index.html собран');
