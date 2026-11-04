@@ -742,6 +742,7 @@ test('Врата восхождения: старт после ритуала р
   s.rituals = 50; assert.strictEqual(C.ritualStartFloor(s), 1);       // число ритуалов больше не влияет
   const gate = CFG.artifacts.find(a => a.id === 'gate');
   let prev = 0;
+  assert.strictEqual(1 + gate.max, CFG.ritual.floor - 1);            // на максимуме — старт с 399
   for (let lv = 1; lv <= gate.max; lv++) {
     s.artifacts.gate = lv;
     const f = C.ritualStartFloor(s);
@@ -750,8 +751,8 @@ test('Врата восхождения: старт после ритуала р
   }
   assert.strictEqual(C.upgradeArtCost(s, 'gate'), null);              // дальше не качается
   s.artifacts.gate = 3; reach(s, 400);
-  assert.strictEqual(C.ritual(s).start, 31);
-  assert.strictEqual(s.floor, 31); assert.strictEqual(s.maxFloor, 31);
+  assert.strictEqual(C.ritual(s).start, 4);
+  assert.strictEqual(s.floor, 4); assert.strictEqual(s.maxFloor, 4);
 });
 
 test('души за ритуал растут с этажом и дают бонус за новый рекорд', () => {
