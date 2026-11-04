@@ -896,6 +896,88 @@
   /* выход из режима PvE в чистом экране — над питомцем, по центру */
   body.clean #modeBar { top: auto; bottom: calc(env(safe-area-inset-bottom) + 18px); z-index: 7; width: min(52%, 220px); }
 
+  /* ===================== 0.45: Портал, Души и ритуал, PvE в новом стиле ===================== */
+  /* Портал призыва (этап 8): каменные врата Башни с фиолетовым разломом */
+  .gate { position: relative; width: 78%; max-width: 300px; aspect-ratio: .78; margin: 4px auto 10px; }
+  .gate .arch { position: absolute; inset: 0; border-radius: 48% 48% 6px 6px / 38% 38% 6px 6px;
+    background: repeating-linear-gradient(90deg, #4a4452 0 26px, #3a3442 26px 28px), linear-gradient(#5a5462, #2a2630);
+    box-shadow: inset 0 0 0 8px #2a2630, inset 0 0 0 10px #6e6678, 0 0 40px #b14dff66, 0 10px 20px #000c; }
+  .gate .rift { position: absolute; left: 14%; right: 14%; top: 12%; bottom: 6%; border-radius: 46% 46% 4px 4px / 34% 34% 4px 4px; overflow: hidden;
+    background: radial-gradient(circle at 50% 55%, #fff 0%, #e3b6ff 8%, #b14dff 22%, #4a0a8a 45%, #12041e 75%); box-shadow: inset 0 0 30px #000, 0 0 30px #b14dff; }
+  .gate .rift::before, .gate .rift::after { content: ""; position: absolute; inset: -40%; background: conic-gradient(from 0deg, transparent, #e3b6ff66, transparent 30%, #b14dff88, transparent 60%, #ff40c055, transparent);
+    animation: riftSpin 6s linear infinite; mix-blend-mode: screen; }
+  .gate .rift::after { animation-duration: 9s; animation-direction: reverse; opacity: .7; }
+  @keyframes riftSpin { to { transform: rotate(360deg); } }
+  .gate .keyst { position: absolute; left: 50%; top: 2%; width: 34px; height: 34px; margin-left: -17px; transform: rotate(45deg); background: radial-gradient(circle at 35% 30%, #fff, #e3b6ff 30%, #b14dff 70%, #4a0a8a); box-shadow: 0 0 16px #b14dff; border: 2px solid #2a2630; }
+  .banRow { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 6px; }
+  .banRow .chip { flex: none; }
+  .pity { display: flex; align-items: center; gap: 8px; margin: 6px 0; font: 700 12px system-ui; color: #e9dcff; }
+  .pity .bar { flex: 1; height: 14px; border-radius: 7px; background: #120e18; border: 1px solid #6e6678; overflow: hidden; position: relative; }
+  .pity .bar i { display: block; height: 100%; background: linear-gradient(90deg, #6a1ab0, #e3b6ff); }
+  .pity .bar b { position: absolute; inset: 0; text-align: center; font: 400 10px/14px 'Russo One', system-ui; color: #fff; text-shadow: 0 1px 0 #000; }
+  .pullRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .pullBtn { min-height: 64px; border-radius: 8px; color: #fff; font: 400 18px 'Ruslan Display', Georgia, serif; text-shadow: 0 1px 0 #000; border: 2px solid #8fb8ff;
+    background: linear-gradient(#3a6ad8, #12245a); box-shadow: 0 0 0 1px #000, 0 0 14px #3a8fe088, inset 0 1px 0 #ffffff40; }
+  .pullBtn.x10 { border-color: #ffe08a; background: linear-gradient(#d6a640, #6a4a12); box-shadow: 0 0 0 1px #000, 0 0 14px #d6a64088, inset 0 1px 0 #ffffff50; }
+  .pullBtn span { display: block; font: 400 13px 'Russo One', system-ui; margin-top: 2px; }
+  .pullBtn:disabled { filter: grayscale(.8) brightness(.55); }
+  .pullBtn:not(:disabled):active { transform: scale(.97); filter: brightness(1.25); }
+  .noMoney { text-align: center; font: 700 12px system-ui; color: #ff9a8a; margin-bottom: 6px; }
+  .odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 10px; padding: 8px 10px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; font: 700 11px system-ui; color: #d8d0e2; }
+  .odds span b { display: inline-block; min-width: 30px; padding: 0 4px; margin-right: 4px; border-radius: 3px; text-align: center; color: #000; font: 400 10px 'Russo One', system-ui; }
+  .odds .off { opacity: .35; }
+  .hint3 { font: 600 11px system-ui; color: #9a8aa8; margin: 6px 2px; line-height: 1.35; }
+  /* анимация призыва: приближение к порталу, вспышка цвета ранга, карточки по одной, затем итог ×10 */
+  #sumFx { display: none; }
+  body.clean #sumFx.show { display: block; position: absolute; inset: 0; z-index: 85; overflow: hidden; }
+  #sumFx .sfBg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, var(--fx, #b14dff) 0%, #12041e 45%, #000 80%); animation: sfZoom .6s ease-in; }
+  @keyframes sfZoom { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #sumFx .sfStage { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; }
+  #sumFx #sfSkip { position: absolute; right: 12px; top: calc(env(safe-area-inset-top) + 12px); visibility: hidden; }
+  #sumFx #sfSkip.on { visibility: visible; }
+  .sfCard { width: min(70%, 260px); padding: 18px 12px; border-radius: 12px; text-align: center; color: #fff; border: 3px solid var(--rc); box-shadow: 0 0 0 1px #000, 0 0 40px var(--rc);
+    background: linear-gradient(#2a1e36, #0e0a14); animation: sfCard .45s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes sfCard { from { transform: scale(.2) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sfCard .big { font-size: 90px; line-height: 1.1; filter: drop-shadow(0 0 16px var(--rc)); }
+  .sfCard .rk { position: static; display: inline-grid; margin: 4px 0; font-size: 18px; min-width: 44px; height: 34px; }
+  .sfCard h3 { font: 400 22px 'Ruslan Display', Georgia, serif; margin: 4px 0; }
+  .sfCard p { font: 700 13px system-ui; color: #ffe8a8; }
+  .sfCard.cut { animation: sfCut 1.1s ease-out; }
+  @keyframes sfCut { 0% { transform: scale(.2); opacity: 0; filter: brightness(4); } 40% { transform: scale(1.15); opacity: 1; filter: brightness(2); } 100% { transform: none; filter: none; } }
+  .sfGrid { width: min(96%, 380px); display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .sfGrid > div { aspect-ratio: .75; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--rc); background: #120e18ee; box-shadow: 0 0 10px var(--rc); color: #fff; font: 700 9px system-ui; text-align: center; }
+  .sfGrid > div b { font-size: 26px; }
+  .sfGrid > div i { font-style: normal; font: 400 10px 'Russo One', system-ui; }
+  .sfDone { margin-top: 14px; text-align: center; }
+  .hist { margin-top: 6px; }
+  .hist div { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #2a2232; font: 600 12px system-ui; color: #d8d0e2; }
+  /* Души и ритуал */
+  .soulBig { text-align: center; padding: 12px; border-radius: 8px; background: linear-gradient(#241a30ee, #120e18ee); border: 2px solid #8fe6ff; box-shadow: 0 0 14px #8fe6ff55; }
+  .soulBig .n { font: 400 30px 'Russo One', system-ui; color: #dff8ff; text-shadow: 0 0 10px #8fe6ff; }
+  .soulBig p { font: 600 12px system-ui; color: #b9b1c3; margin-top: 4px; }
+  .ritual { margin-top: 10px; padding: 14px; border-radius: 8px; text-align: center; background: radial-gradient(ellipse at 50% 0%, #5a1a3a 0%, #1a0e1a 70%); border: 2px solid #6e4a5a; }
+  .ritual.ready { border-color: #ff6b9a; box-shadow: 0 0 18px #ff6b9a77; }
+  .ritual h3 { font: 400 20px 'Ruslan Display', Georgia, serif; color: #ffd0e0; }
+  .ritual p { font: 600 12px system-ui; color: #d8c0cc; margin: 6px 0 10px; }
+  .tNode { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; padding: 8px; margin-bottom: 6px; border-radius: 6px; background: #1a1222dd; border: 1px solid #4e4757; }
+  .tNode.lock { opacity: .55; }
+  .tNode .ic { width: 44px; height: 44px; display: grid; place-items: center; font-size: 22px; border-radius: 6px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
+  .tNode b { font: 800 12px system-ui; color: #fff; } .tNode p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+  .tNode .upBtn { width: 86px; min-height: 42px; }
+  .brH { margin: 12px 2px 6px; font: 400 14px 'Ruslan Display', Georgia, serif; color: #e3b6ff; }
+  .brH small { font: 700 10px system-ui; color: #9a8aa8; margin-left: 6px; }
+  /* PvE */
+  .pveCard { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; padding: 10px; margin-bottom: 8px; border-radius: 8px;
+    background: linear-gradient(90deg, #241a30ee, #120e18dd); border: 2px solid var(--rc, #4e4757); box-shadow: 0 0 0 1px #000, 0 0 10px var(--rg, transparent); }
+  .pveCard .ic { width: 48px; height: 48px; display: grid; place-items: center; font-size: 26px; border-radius: 8px; border: 2px solid var(--rc, #6e6678); background: radial-gradient(#3a2a4a, #0a0710); }
+  .pveCard b { font: 800 13px system-ui; color: #fff; } .pveCard p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; } .pveCard p em { font-style: normal; color: #ffe8a8; }
+  .pveCard .upBtn { width: 84px; min-height: 44px; }
+  .tier { display: flex; align-items: center; gap: 6px; margin-top: 6px; font: 400 12px 'Russo One', system-ui; color: #fff; }
+  .tier button { width: 26px; height: 24px; border-radius: 4px; background: #2a2232; border: 1px solid #6e6678; color: #fff; font: 900 14px system-ui; }
+  .tier button:disabled { opacity: .3; }
+  .diffRow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .diffRow .upBtn { width: auto; min-height: 44px; font-size: 11px; }
+
 </style>
 </head>
 <body>
@@ -1028,6 +1110,12 @@
     <div class="mapInfo" id="mapInfo"></div>
     <div id="mapList"></div>
   </div>
+  <div class="pg" id="pgX"><div class="tower"></div>
+    <div class="pgTop" id="xTop"></div>
+    <div class="pgHead"><button class="backBtn" data-back aria-label="Назад">←</button><div class="titlePl" id="xTitle"></div><button class="chip" id="xAux" style="display:none"></button></div>
+    <div class="pgBody" id="xBody"></div>
+  </div>
+  <div id="sumFx"><div class="sfBg"></div><div class="sfStage" id="sfStage"></div><button class="chip" id="sfSkip">Пропустить</button></div>
   <div id="pgOld"><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" id="oldBack" aria-label="Назад">←</button><div class="titlePl" id="oldTitle"></div></div></div>
   <div id="ui2Pop"><div class="box" id="ui2PopBox"></div></div>
 
@@ -1110,7 +1198,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.44</div>
+  <div id="version">v0.45</div>
 </div>
 
 <script>
@@ -5464,7 +5552,7 @@
     const RC = { E: '#8d8d96', D: '#4cbf5a', C: '#3a8fe0', B: '#a050e0', A: '#e04848', S: '#ffb030', SS: '#ff7a20', SSS: '#ff40c0', GOD: '#fff2a0' };
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
-    const MORE = [['portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
+    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
       ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
@@ -5495,6 +5583,7 @@
       page = p; if (opt) Object.assign(state, opt);
       lastHtml = {};
       if (p === 'menu') show('pgMenu');
+      else if (p === 'x') show('pgX');
       else if (p === 'sec') show('pgSec');
       else if (p === 'map') show('pgMap');
       refresh();
@@ -5506,7 +5595,7 @@
       if (page === 'sec' && artSel) { artSel = null; lastHtml = {}; refresh(); return; }
       page = stack.pop() || null;
       if (!page) { show(null); return; }
-      lastHtml = {}; show(page === 'menu' ? 'pgMenu' : page === 'sec' ? 'pgSec' : 'pgMap'); refresh();
+      lastHtml = {}; show(page === 'menu' ? 'pgMenu' : page === 'sec' ? 'pgSec' : page === 'x' ? 'pgX' : 'pgMap'); refresh();
     }
     document.querySelectorAll('.pg [data-back]').forEach(b => b.addEventListener('click', back));
 
@@ -5525,7 +5614,7 @@
     const press = b => { b.classList.add('press'); setTimeout(() => b.classList.remove('press'), 120); click(); if (navigator.vibrate && setg.vibro === 'on') try { navigator.vibrate(8); } catch (e) {} };
     $('cbMenu').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('menu'); });
     $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); });          // этап 11 на паузе — экран не согласован
-    $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); openOld('pve'); });
+    $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; openX('pve'); });
     $('cbMap').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('map'); });
 
     // ---------- главное меню ----------
@@ -5543,6 +5632,7 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.sec) { click(); sec = b.dataset.sec; artSel = null; open('sec'); }
       else if (b.dataset.old === '@backup') { click(); popBackups(); }
+      else if (b.dataset.old === '@portal' || b.dataset.old === '@souls') { click(); openX(b.dataset.old.slice(1)); }
       else if (b.dataset.old) openOld(b.dataset.old);
     });
 
@@ -5729,7 +5819,7 @@
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       const d = b.dataset;
       if (d.ub) { click(); (d.ub === 'hero' ? el.buyTap : allyUi[d.ub].btn).click(); }
-      else if (d.free) { openOld('portal'); return; }
+      else if (d.free) { click(); openX('portal'); return; }
       else if (d.at) { click(); artTab = d.at; }
       else if (d.art) { click(); artSel = d.art; artN = 1; }
       else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }
@@ -5785,6 +5875,188 @@
       click(); handle(C.goToFloor(s, f)); save(); back(); render();
     });
 
+
+    // ===================== 0.45: Портал, Души и ритуал, PvE — новые страницы =====================
+    let xKind = 'portal', ban = 'normal', showHist = false;
+    const xStack = [];
+    function openX(k) { if (page === 'x' && xKind !== k) xStack.push(xKind); xKind = k; showHist = false; open('x'); $('xBody').scrollTop = 0; }
+    // «Назад» на странице X: сначала история → портал, затем предыдущая страница X
+    const xBack = document.querySelector('#pgX [data-back]');
+    xBack.removeEventListener('click', back);
+    xBack.addEventListener('click', () => {
+      if (xKind === 'portal' && showHist) { click(); showHist = false; lastHtml = {}; refresh(); return; }
+      if (xStack.length) { click(); xKind = xStack.pop(); lastHtml = {}; refresh(); return; }
+      back();
+    });
+    function renderX() {
+      const aux = $('xAux');
+      if (xKind === 'portal') {
+        $('xTitle').textContent = showHist ? 'История призывов' : 'Портал призыва';
+        aux.style.display = showHist ? 'none' : ''; aux.textContent = '📜 История';
+        setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
+        setHtml('xBody', showHist ? histHtml() : portalHtml());
+      } else if (xKind === 'souls') {
+        $('xTitle').textContent = 'Души и ритуал'; aux.style.display = 'none';
+        setHtml('xTop', cur('👻', fmt(s.souls)));
+        setHtml('xBody', soulsHtml2());
+      } else {
+        $('xTitle').textContent = 'PvE'; aux.style.display = 'none';
+        setHtml('xTop', cur('✦', fmt(s.essence)) + cur('🎟', fmt(s.tickets)));
+        setHtml('xBody', pveHtml2());
+      }
+    }
+    $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- Портал (этап 8): один общий портал, ×1 и ×10, шансы, история, шкала гарантии ----------
+    const HIST_KEY = 'prizvannyy_v2_hist';
+    function histGet() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch (e) { return []; } }
+    function histAdd(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.concat(histGet()).slice(0, 100))); } catch (e) {} }
+    function portalHtml() {
+      const P = CFG.portal, b = C.bannerDef(ban), pity = C.bannerPity(s, ban), pS = b.pityS || P.pityS, pA = b.pityA || P.pityA;
+      const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0;
+      const open = RANKS.filter((r, i) => i >= base && C.rarityOpen(s, r) && CFG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal));
+      const tot = open.reduce((x, r) => x + P.odds[r], 0);
+      const feat = b.featured ? C.featuredHeroes(s).map(id => CFG.allies.find(a => a.id === id)) : [];
+      const c1 = C.canSummon(s, ban, 1), c10 = C.canSummon(s, ban, 10), cost = n => { const c = C.bannerCost(ban, n); return c.lanterns ? '🏮 ' + c.lanterns : '🎟 ' + c.tickets; };
+      let h = '<div class="gate"><div class="arch"></div><div class="rift"></div><div class="keyst"></div></div>';
+      h += '<div class="banRow">' + P.banners.map(x => '<button class="chip' + (x.id === ban ? ' on' : '') + '" data-ban="' + x.id + '"' + (x.id === 'event' && !C.currentEvent(s) ? ' disabled' : '') + '>' + x.icon + ' ' + x.name + '</button>').join('') + '</div>';
+      h += '<div class="hint3">' + b.desc + (feat.length ? '. Герои недели: <b style="color:#ffe8a8">' + feat.map(a => a.name + ' (' + a.rarity + ')').join(', ') + '</b>' : '') + '</div>';
+      h += '<div class="pity">S+<div class="bar"><i style="width:' + Math.min(100, pity.s / pS * 100) + '%"></i><b>' + pity.s + ' / ' + pS + '</b></div><span class="rk" style="position:static;' + rvar('S') + '">S</span></div>';
+      h += '<div class="pity">A+<div class="bar"><i style="width:' + Math.min(100, pity.a / pA * 100) + '%;background:linear-gradient(90deg,#a03a1a,#ffa64a)"></i><b>' + pity.a + ' / ' + pA + '</b></div><span class="rk" style="position:static;' + rvar('A') + '">A</span></div>';
+      if (pity.s > P.softS) h += '<div class="hint3" style="color:#ffd36b">Шанс S повышен!</div>';
+      h += '<div class="pullRow"><button class="pullBtn" data-pull="1"' + (c1 ? '' : ' disabled') + '>Призвать ×1<span>' + cost(1) + '</span></button>' +
+        '<button class="pullBtn x10" data-pull="10"' + (c10 ? '' : ' disabled') + '>Призвать ×10<span>' + cost(10) + '</span></button></div>';
+      if (!c1) h += '<div class="noMoney">⚠ Недостаточно ' + (ban === 'event' ? 'фонарей' : 'билетов') + '</div>';
+      h += '<div class="secT">Шансы призыва</div><div class="odds">' + RANKS.slice(base).map(r => {
+        const on = open.includes(r), g = CFG.rarityGates[r];
+        return '<span class="' + (on ? '' : 'off') + '"><b style="background:' + (RC[r] || '#888') + '">' + r + '</b>' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : (g && !C.rarityOpen(s, r) ? 'с ' + g + ' эт.' : '—')) + '</span>';
+      }).join('') + '</div>';
+      h += '<div class="hint3">После ' + P.softS + ' призывов без S шанс S растёт с каждым. Гарантии у баннеров раздельные. Билеты — за первое прохождение босса каждого 5-го этажа, на 10-м больше. SS/SSS/GOD открываются рекордом этажа.</div>';
+      return h;
+    }
+    function histHtml() {
+      const L = histGet();
+      if (!L.length) return '<div class="hint3" style="text-align:center;margin-top:20px">Пока пусто — здесь будут последние 100 призывов.</div>';
+      return '<div class="hist">' + L.map(x => { const a = CFG.allies.find(h => h.id === x.id) || { name: x.id };
+        return '<div><span><b style="color:' + (RC[x.r] || '#fff') + '">' + x.r + '</b> ' + a.name + (x.n ? ' · <span style="color:#6be37a">новый</span>' : '') + '</span><span>' + new Date(x.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span></div>'; }).join('') + '</div>';
+    }
+    // анимация: приближение к порталу → по одному (цвет ранга) → общий экран для ×10; «Пропустить» через 1 с
+    let fxQ = [], fxAll = [], fxTimer = null;
+    function pull2(n) {
+      const r = C.summon(s, n, ban); if (!r) return;
+      histAdd(r.map(x => ({ id: x.id, r: x.rarity, n: x.isNew ? 1 : 0, t: Date.now(), b: ban })));
+      save(); render();
+      fxAll = r; fxQ = r.slice();
+      const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);
+      $('sumFx').style.setProperty('--fx', RC[best.rarity] || '#b14dff');
+      $('sumFx').classList.add('show'); $('sfStage').innerHTML = ''; $('sfSkip').classList.remove('on');
+      setTimeout(() => $('sfSkip').classList.add('on'), 1000);
+      clearTimeout(fxTimer); fxTimer = setTimeout(fxNext, 600);
+    }
+    function fxCard(x) {
+      const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id] || {}, h = s.heroes[x.id];
+      const cut = x.isNew && RANKS.indexOf(x.rarity) >= RANKS.indexOf('A');       // первое получение редкого — короткая кат-сцена
+      $('sumFx').style.setProperty('--fx', RC[x.rarity] || '#b14dff');
+      $('sfStage').innerHTML = '<div class="sfCard' + (cut ? ' cut' : '') + '" style="' + rvar(x.rarity) + '"><div class="big">' + (v.icon || '✦') + '</div><span class="rk">' + x.rarity + '</span><h3>' + a.name + '</h3>' +
+        '<p>' + (x.isNew ? (cut ? '✦ Новый герой призван! ✦' : 'Новый герой') : 'Дубликат · копий: ' + h.copies) + '</p><div class="hint3">' + a.role + '</div></div>';
+      click();
+      return cut ? 1600 : 900;
+    }
+    function fxNext() {
+      if (fxQ.length) { const d = fxCard(fxQ.shift()); fxTimer = setTimeout(fxNext, d); return; }
+      fxSummary();
+    }
+    function fxSummary() {
+      clearTimeout(fxTimer); fxQ = [];
+      if (fxAll.length === 1) { $('sfStage').insertAdjacentHTML('beforeend', ''); }
+      const grid = fxAll.length > 1 ? '<div class="sfGrid">' + fxAll.map(x => { const a = CFG.allies.find(h => h.id === x.id), v = ALLY_VIS[x.id] || {};
+        return '<div style="' + rvar(x.rarity) + '"><b>' + (v.icon || '✦') + '</b><i>' + x.rarity + '</i>' + a.name + '<span style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'новый' : 'дубликат') + '</span></div>'; }).join('') + '</div>' : $('sfStage').innerHTML;
+      $('sfStage').innerHTML = '<div>' + grid + '<div class="sfDone"><button class="upBtn gold" id="sfOk" style="width:160px">Готово</button></div></div>';
+      $('sfSkip').classList.remove('on');
+    }
+    $('sfSkip').addEventListener('click', () => { click(); fxSummary(); });
+    $('sfStage').addEventListener('click', e => { if (e.target.id === 'sfOk') { click(); $('sumFx').classList.remove('show'); lastHtml = {}; refresh(); } });
+
+    // ---------- Души и ритуал ----------
+    function soulsHtml2() {
+      const R = CFG.ritual, ready = C.canRitual(s);
+      let h = '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Неизрасходованные души: ' + pctUp(C.soulMult(s)) + ' всего урона (+' + Math.round(CFG.souls.dpsPerSoul * 100) + '% за душу). Траты на артефакты и дерево уменьшают этот бонус — сравнивайте DPS до и после.</p></div>';
+      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Ритуал</h3>' +
+        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед ритуалом делается резервная копия.</p>'
+               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
+        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести ритуал' : 'Нужен этаж ' + R.floor) + '</button></div>';
+      h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
+      for (const b of CFG.soulTree) {
+        const opn = C.branchOpen(s, b);
+        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ритуал' + (b.rituals === 1 ? 'а' : 'ов') + '</small>') + '</div>';
+        b.nodes.forEach((n, i) => {
+          const lv = C.treeLevel(s, n.id), no = C.treeNodeOpen(s, n.id), c = C.treeCost(s, n.id), can = opn && no && c != null && B.gte(s.souls, c);
+          const prev = c != null && no && opn ? C.previewSpend(s, 'tree', n.id, TPS_PREVIEW) : null;
+          h += '<div class="tNode' + (opn && (no || lv) ? '' : ' lock') + '"><div class="ic">' + (opn ? n.icon : '?') + '</div><div><b>' + n.name + ' · ' + lv + '/' + n.max + '</b><p>' + n.desc + ' за уровень' +
+            (opn && !no ? '. Сначала «' + b.nodes[i - 1].name + '»' : '') + '</p>' + (prev ? dpsChange(prev) : '') + '</div>' +
+            (c == null ? '<button class="upBtn" disabled>Макс.</button>' : '<button class="upBtn" data-tree="' + n.id + '"' + (can ? '' : ' disabled') + '>Улучшить<span>👻 ' + fmt(c) + '</span></button>') + '</div>';
+        });
+      }
+      return h;
+    }
+    function doRitual() {
+      if (!C.canRitual(s)) return;
+      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
+      ask('<b>Ритуал</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+        '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
+        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        writeCopy(PRE_RIT);
+        const r = C.ritual(s); if (!r) return;
+        dmgLog.length = 0; restartAnim('spawn');
+        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        save(); render();
+      });
+    }
+
+    // ---------- PvE ----------
+    const tier2 = {};
+    function pveHtml2() {
+      const P = CFG.pve, busy = !!s.mode, maxT = C.maxDungeonTier(s);
+      let h = busy ? '<div class="noMoney" style="color:#ffd36b">Сейчас идёт «' + s.mode.name + '». Выйти — кнопкой на арене.</div>' : '';
+      h += '<div class="secT">Ежедневные подземелья · ' + P.dungeonEnemies + ' врагов за ' + P.dungeonTime + ' с</div>';
+      for (const d of P.dungeons) {
+        const tt = tier2[d.id] = Math.min(maxT, Math.max(1, tier2[d.id] || maxT)), left = C.attemptsLeft(s, d.id), can = !busy && left > 0;
+        h += '<div class="pveCard" style="' + rvar('C') + '"><div class="ic">' + d.icon + '</div><div><b>' + d.name + ' · ' + left + '/' + P.dailyAttempts + '</b><p>' + d.desc + '</p>' +
+          '<p>Награда: <em>' + rewardText(C.dungeonReward(s, d.id, tt)) + '</em> · как этаж ' + tt * P.tierFloors + '</p>' +
+          '<div class="tier"><button data-t2="' + d.id + ':-1"' + (tt > 1 ? '' : ' disabled') + '>−</button>ур. ' + tt + '<button data-t2="' + d.id + ':1"' + (tt < maxT ? '' : ' disabled') + '>+</button></div></div>' +
+          '<button class="upBtn" data-dun2="' + d.id + '"' + (can ? '' : ' disabled') + '>Войти</button></div>';
+      }
+      const el2 = C.attemptsLeft(s, 'endless'), T = P.trial; C.trialSync(s); const tl = C.attemptsLeft(s, 'trial');
+      h += '<div class="secT">Испытания</div>';
+      h += '<div class="pveCard" style="' + rvar('B') + '"><div class="ic">∞</div><div><b>Бесконечное подземелье · ' + el2 + '/' + P.endless.attempts + '</b><p>Рекорд: <em>' + s.pve.endlessBest + ' волн</em>. Каждые ' + P.endless.bossEvery + ' — контрольный босс на ' + P.endless.bossTime + ' с; за босса ✦, за новый рубеж 🎟.</p></div>' +
+        '<button class="upBtn" data-m2="endless"' + (!busy && el2 ? '' : ' disabled') + '>Войти</button></div>';
+      h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗼</div><div><b>Испытательная башня · ' + tl + '/' + T.attempts + '</b><p>Равные условия: только тапы одной силы, ' + T.time + ' с на стража. Рекорд недели <em>' + s.trial.weekBest + '</em>, за всё время <em>' + s.trial.best + '</em>.</p></div>' +
+        '<button class="upBtn" data-m2="trial"' + (!busy && tl ? '' : ' disabled') + '>Войти</button></div>';
+      const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
+      h += '<div class="secT">Личные боссы · ' + pl + '/' + P.personal.attempts + ' в день · ' + P.personal.time + ' с</div>';
+      if (!bosses.length) h += '<div class="pveCard"><div class="ic">?</div><div><b>Пока нет</b><p>Победите финального босса биома (этаж 50) — он станет личным боссом.</p></div></div>';
+      for (const b of bosses) h += '<div class="pveCard" style="' + rvar('A') + '"><div class="ic">👹</div><div><b>' + b.name + '</b><p>' + b.biome + ' · этаж ' + b.floor + '</p></div><div></div><div class="diffRow">' +
+        P.personal.diffs.map(D => '<button class="upBtn" data-pb2="' + b.id + ':' + D.id + '"' + (!busy && pl ? '' : ' disabled') + '>' + D.name + '<small>' + rewardText(C.personalReward(s, b.floor, D.id)) + '</small></button>').join('') + '</div></div>';
+      h += '<div class="secT">Рейтинги и мировой босс</div><div class="pveCard"><div class="ic">🌍</div><div><b>Скоро</b><p>Рейтинги игроков и общий мировой босс появятся вместе с сервером и аккаунтами.</p></div></div>';
+      return h;
+    }
+    function goMode(kind, opts) { const before = s.mode; startMode(kind, opts); if (!before && s.mode) { stack.length = 0; page = null; show(null); } }
+
+    $('xBody').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      const d = b.dataset;
+      if (d.ban) { click(); ban = d.ban; }
+      else if (d.pull) { click(); pull2(+d.pull); }
+      else if (d.rit !== undefined) { click(); doRitual(); return; }
+      else if (d.tree) { click(); if (C.buyTreeNode(s, d.tree)) save(); }
+      else if (d.t2) { click(); const [id, dl] = d.t2.split(':'); tier2[id] = (tier2[id] || 1) + +dl; }
+      else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }
+      else if (d.m2) { click(); goMode(d.m2, {}); }
+      else if (d.pb2) { click(); const [id, diff] = d.pb2.split(':'); goMode('personal', { id, diff }); }
+      else return;
+      render();
+    });
+
     // ---------- обновление ----------
     function refresh() {
       // волна и % HP на экране боя
@@ -5797,6 +6069,7 @@
       if (page === 'menu') renderMenu();
       else if (page === 'sec') renderSec();
       else if (page === 'map') renderMap2();
+      else if (page === 'x') renderX();
     }
     ui2Refresh = refresh;
     refresh();
