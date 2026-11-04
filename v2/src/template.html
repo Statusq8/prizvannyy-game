@@ -494,7 +494,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.18</div>
+  <div id="version">v0.19</div>
 </div>
 
 <script>
@@ -561,7 +561,10 @@
         '<div class="cardInfo"><div class="cardTitle"></div><div class="cardSub"></div></div><button class="buy"></button>';
       cards.appendChild(card);
       const btn = card.querySelector('.buy');
-      btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, buyCount(s.allies[a.id].level))) { save(); render(); } });
+      btn.addEventListener('click', () => {
+        if (btn.dataset.rank) { if (C.rankUp(s, a.id)) { toast('Новый ранг · ' + a.name + '<small>потолок уровня ' + fmt(C.allyCap(s, a.id)) + '</small>'); save(); render(); } return; }
+        if (C.buyAlly(s, a.id, buyCount(s.allies[a.id].level))) { save(); render(); }
+      });
       allyUi[a.id] = { evo: s.heroes[a.id].evo, fig: sp.querySelector('.fig'), card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
@@ -735,7 +738,10 @@
   }));
   // «ДО ×3»: ровно столько уровней, сколько осталось до следующей вехи урона
   function buyCount(level) { return mult === 'ms' ? C.nextMilestone(level) - level : mult; }
-  el.buyTap.addEventListener('click', () => { if (C.buyTap(s, buyCount(s.tapLevel))) { save(); render(); } });
+  el.buyTap.addEventListener('click', () => {
+    if (el.buyTap.dataset.rank) { if (C.rankUp(s, 'hero')) { toast('Новый ранг · Призванный<small>потолок удара ' + fmt(C.tapCap(s)) + '</small>'); save(); render(); } return; }
+    if (C.buyTap(s, buyCount(s.tapLevel))) { save(); render(); }
+  });
   $('stats').addEventListener('click', () => el.statsMore.classList.toggle('show'));
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
@@ -852,30 +858,36 @@
     el.hint.style.display = tapped ? 'none' : '';
     el.tapDmg.textContent = fmt(C.tapHit(s));
     el.gold.textContent = fmt(s.gold);
-    el.tapLvl.textContent = fmt(s.tapLevel);
+    const tcap = C.tapCap(s), tAtCap = s.tapLevel >= tcap;
+    el.tapLvl.textContent = fmt(s.tapLevel) + '/' + fmt(tcap);
 
-    const n = mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : buyCount(s.tapLevel);
+    const n = Math.max(1, Math.min(tcap - s.tapLevel, mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : buyCount(s.tapLevel)));
     const cost = C.upgradeCost(s.tapLevel, n);
     const can = cost <= s.gold;
-    el.tapSub.innerHTML = 'Урон ' + fmt(C.tapHit(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n) * C.permMult(s, 'tap')) + '</b>' + msHint(s.tapLevel);
+    el.tapSub.innerHTML = rankTag(s.heroRank) + (tAtCap ? 'Урон ' + fmt(C.tapHit(s)) + ' · <span class="ms">потолок — повысьте ранг</span>'
+      : 'Урон ' + fmt(C.tapHit(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n) * C.permMult(s, 'tap')) + '</b>' + msHint(s.tapLevel));
     anyAffordable = false;
     renderTabs();
-    setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.' + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
+    if (tAtCap) setRank(el.buyTap, 'hero');
+    else setBuy(el.buyTap, can, n, cost, '+' + fmt(n) + ' ур.' + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
 
     // союзник
     for (const a of CFG.allies) {
       const u = allyUi[a.id], lv = s.allies[a.id].level;
-      const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : buyCount(lv);
+      const acap = C.allyCap(s, a.id), aAtCap = lv >= acap;
+      const an = Math.max(1, Math.min(acap - lv, mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : buyCount(lv)));
       const acost = C.allyCost(s, a.id, an);
       const pm = C.permMult(s, 'ally') * C.heroMult(s, a.id);   // души, артефакты, звёзды и эволюция
       if (u.evo !== s.heroes[a.id].evo) { u.evo = s.heroes[a.id].evo; u.fig.innerHTML = allySvg(ALLY_VIS[a.id], u.evo); }
-      u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an) * pm) + '</b>' + msHint(lv)
+      u.sub.innerHTML = aAtCap ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' · <span class="ms">потолок — повысьте ранг</span>'
+                    : lv ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an) * pm) + '</b>' + msHint(lv)
                            : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an) * pm) + '</b>';
-      setBuy(u.btn, acost <= s.gold, an, acost, (lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : '')) + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
+      if (aAtCap) setRank(u.btn, a.id);
+      else setBuy(u.btn, acost <= s.gold, an, acost, (lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : '')) + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
       const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
       u.card.style.display = unlocked ? '' : 'none';
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
-      u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) : a.role) +
+      u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) + '/' + fmt(acap) : a.role) +
         (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>');
       // фигура на арене — только у героя в отряде и нанятого
       const slot = SLOTS[sq];
@@ -893,7 +905,24 @@
     return '<span class="ms"> · ×' + CFG.milestoneMult + ' на ' + fmt(C.nextMilestone(level)) + '</span>';
   }
 
+  // Ранг: «Р III·4» — ранг и подранг
+  const RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  function rankTag(k) { const r = C.rankLabel(k); return '<span class="ms">Ранг ' + RN[r.rank] + (r.max ? ' · макс' : '·' + r.sub) + '</span> · '; }
+  // Кнопка повышения ранга на месте покупки, когда уровень упёрся в потолок
+  function setRank(btn, who) {
+    const c = C.rankCost(s, who), M = CFG.materials;
+    btn.dataset.rank = '1';
+    if (!c) { btn.disabled = true; btn.innerHTML = 'Предел<span>ур. 15000</span>'; return; }
+    const evoOk = who === 'hero' || s.heroes[who].evo >= c.needEvo;
+    const can = C.canRankUp(s, who);
+    btn.disabled = !can;
+    if (can) anyAffordable = true;
+    const price = M.shard.icon + ' ' + fmt(c.shards) + (c.hearts ? ' ' + M.heart.icon + ' ' + c.hearts : '');
+    btn.innerHTML = !evoOk ? 'Нужна эволюция ' + RN[c.needEvo] + '<span>для ранга ' + RN[c.newRank] + '</span>'
+      : (c.newRank ? '⇧ Ранг ' + RN[c.newRank] : '⇧ Подранг') + '<span>' + price + ' → ' + fmt(c.cap) + '</span>';
+  }
   function setBuy(btn, can, n, cost, label) {
+    delete btn.dataset.rank;
     btn.disabled = !can;
     if (can) anyAffordable = true;
     btn.innerHTML = can ? label + '<span>◆ ' + fmt(cost) + '</span>'
@@ -980,7 +1009,7 @@
         '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
         (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
         '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
-        ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
+        ' · ранг ' + (() => { const r = C.rankLabel(h.rank); return RN[r.rank] + (r.max ? ' макс' : '·' + r.sub); })() + ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
                       : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
         (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'

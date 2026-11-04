@@ -1381,3 +1381,62 @@ test('сохранение заданий и миграция с 0.16', () => {
   const m = C.deserialize(JSON.stringify(old));
   assert.strictEqual(m.counters.kill, 77); assert.deepStrictEqual(m.quests.claimed, {});
 });
+
+// ---------- ранги и потолки (0.19) ----------
+test('потолок: 600 на старте, 15000 на пределе, растёт с каждой ступенью', () => {
+  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 15000);
+  assert.strictEqual(C.maxSteps(), 100);
+  for (let k = 1; k <= 100; k++) assert.ok(C.capAt(k) > C.capAt(k - 1));
+  assert.deepStrictEqual(C.rankLabel(0), { rank: 1, sub: 0, max: false });
+  assert.deepStrictEqual(C.rankLabel(37), { rank: 4, sub: 7, max: false });
+  assert.deepStrictEqual(C.rankLabel(100), { rank: 10, sub: 10, max: true });
+});
+
+test('покупка уровней упирается в потолок, MAX и ×100 тоже', () => {
+  const s = C.newState(NOCRIT); s.gold = 1e300;
+  s.tapLevel = 590;
+  assert.ok(C.buyTap(s, 100)); assert.strictEqual(s.tapLevel, 600);
+  assert.strictEqual(C.buyTap(s, 1), false); assert.strictEqual(C.buyTap(s, 'max'), false);
+  s.allies.irene.level = 0;
+  assert.ok(C.buyAlly(s, 'irene', 'max')); assert.strictEqual(s.allies.irene.level, 600);
+});
+
+test('ранг героя: подранг за осколки, новый ранг — ещё сердца, потолок растёт', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.rankUp(s, 'hero'), false);
+  s.materials = { shard: 1e9, heart: 0 };
+  for (let i = 0; i < 9; i++) assert.ok(C.rankUp(s, 'hero'));
+  assert.strictEqual(C.tapCap(s), C.capAt(9));
+  const c = C.rankCost(s, 'hero');
+  assert.strictEqual(c.newRank, 2); assert.strictEqual(c.hearts, 2);
+  assert.strictEqual(C.rankUp(s, 'hero'), false);                 // нужны сердца
+  s.materials.heart = 2; assert.ok(C.rankUp(s, 'hero'));
+  assert.deepStrictEqual(C.rankLabel(s.heroRank), { rank: 2, sub: 0, max: false });
+  s.heroRank = 100; assert.strictEqual(C.rankCost(s, 'hero'), null);
+});
+
+test('ранг союзника: цена по редкости, ранги IV, VII, X требуют эволюцию I, II, III', () => {
+  const s = C.newState(NOCRIT); s.materials = { shard: 1e12, heart: 1e6 };
+  assert.ok(C.rankCost(s, 'kael').shards > C.rankCost(s, 'irene').shards);
+  s.heroes.irene.rank = 29;
+  assert.strictEqual(C.rankCost(s, 'irene').needEvo, 1);
+  assert.strictEqual(C.rankUp(s, 'irene'), false);
+  s.heroes.irene.evo = 1; assert.ok(C.rankUp(s, 'irene'));
+  assert.strictEqual(C.allyCap(s, 'irene'), C.capAt(30));
+  s.heroes.irene.rank = 59; assert.strictEqual(C.rankUp(s, 'irene'), false);
+  s.heroes.irene.evo = 2; assert.ok(C.rankUp(s, 'irene'));
+  s.heroes.irene.rank = 89; assert.strictEqual(C.rankUp(s, 'irene'), false);
+  s.heroes.irene.evo = 3; assert.ok(C.rankUp(s, 'irene'));
+  assert.strictEqual(C.rankUp(s, 'azrael'), false);                // не открыт
+});
+
+test('ранги переживают ритуал и сохраняются; миграция с 0.18', () => {
+  const s = C.newState(NOCRIT); s.heroRank = 12; s.heroes.irene.rank = 7;
+  s.floor = s.maxFloor = 400; C.ritual(s);
+  assert.strictEqual(s.heroRank, 12); assert.strictEqual(s.heroes.irene.rank, 7);
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.heroRank, 12); assert.strictEqual(t.heroes.irene.rank, 7);
+  const old = JSON.parse(C.serialize(s)); old.v = 11; delete old.heroRank; for (const id in old.heroes) delete old.heroes[id].rank;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.strictEqual(m.heroRank, 0); assert.strictEqual(m.heroes.irene.rank, 0);
+});
