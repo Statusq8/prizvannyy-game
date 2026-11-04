@@ -30,6 +30,9 @@
     // Потолок шанса крита 50% для всех источников вместе (обычные удары остаются всегда). Одинаков для героя,
     // союзников и питомца; каждый удар проверяется отдельно. Крит-урон растёт отдельно, тоже только от артефактов.
     crit: { baseChance: 0.05, maxChance: 0.5, baseMult: 2 },
+    // Защита от неконтролируемого роста (GDD §6): произведение категорий бонусов (артефакты, руны, тотемы, достижения,
+    // коллекция, питомец, дерево, кости…) растёт линейно до start, выше — как start·(m/start)^power. Души — отдельно. TBD.
+    softcap: { start: 1e6, power: 0.5, goldStart: 1e4 },
     // Цены старой прокачки критов (0.6) — только для возврата золота при переносе сохранения
     legacyCritRefund: { chanceCost: 100, chanceGrowth: 1.22, multCost: 150, multGrowth: 1.16 },
     // Активные способности главного героя: по умолчанию ручные, у каждой свой переключатель автоиспользования (GDD §3)
@@ -548,7 +551,7 @@
       { id: 'garret', name: 'Гаррет', role: 'Ополченец', rarity: 'E', baseDps: 18, attackInterval: 1.0,
         hireCost: 100, costGrowth: 1.05, ult: { name: 'Удар щитом', kind: 'nuke', charge: 15, power: 15 } },
       { id: 'saya', name: 'Сая', role: 'Метательница ножей', rarity: 'D', baseDps: 900, attackInterval: 0.6,
-        hireCost: 2000, costGrowth: 1.05, ult: { name: 'Ядовитые клинки', kind: 'mark', charge: 16, power: 1.4, duration: 6 } },
+        hireCost: 2000, costGrowth: 1.05, ult: { name: 'Ядовитые клинки', kind: 'critBuff', charge: 16, chance: 0.15, dmg: 0.5, duration: 6 } },
       { id: 'drake', name: 'Дрейк', role: 'Копейщик', rarity: 'C', baseDps: 40000, attackInterval: 1.2,
         hireCost: 40000, costGrowth: 1.05, ult: { name: 'Боевой клич', kind: 'teamBuff', charge: 22, power: 1.8, duration: 6 } },
       { id: 'noa', name: 'Ноа', role: 'Громовой маг', rarity: 'B', baseDps: 4e6, attackInterval: 1.4,
@@ -560,7 +563,7 @@
       { id: 'seiren', name: 'Сэйрен', role: 'Повелительница бурь', rarity: 'S', baseDps: 3e11, attackInterval: 0.7,
         hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
       { id: 'kassian', name: 'Кассиан', role: 'Тёмный паладин', rarity: 'SS', baseDps: 2e12, attackInterval: 1.0,
-        hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Клятва тьмы', kind: 'teamBuff', charge: 20, power: 3, duration: 7 } },
+        hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Клятва тьмы', kind: 'critBuff', charge: 20, chance: 0.25, dmg: 1.5, duration: 7 } },
       { id: 'nyx', name: 'Никс', role: 'Королева ночи', rarity: 'SSS', baseDps: 7e12, attackInterval: 0.8,
         hireCost: 5e11, costGrowth: 1.05, ult: { name: 'Беззвёздная ночь', kind: 'nuke', charge: 15, power: 30 } },
       { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
@@ -605,6 +608,7 @@
     if (u.kind === 'teamBuff') return 'Весь урон отряда и тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
     if (u.kind === 'mark') return 'Урон по текущему врагу ×' + n(u.power) + ' на ' + u.duration + ' с (пропадает с новым врагом). Заряд ' + u.charge + ' с.';
     if (u.kind === 'tapBuff') return 'Урон тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
+    if (u.kind === 'critBuff') return 'Всему отряду: +' + Math.round(u.chance * 100) + '% шанса крита (общий предел 50%) и +' + n(u.dmg) + ' к множителю крит-урона на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
     return '';
   }
   // Навыки героя по уровням: описание и открыт ли (для экрана героя)
@@ -969,7 +973,7 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')), CONFIG.softcap.goldStart); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
@@ -977,7 +981,7 @@
     let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
-    return B.mul(soulMult(s), m);
+    return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
   }
 
   function killGold(floor, isBoss) {
@@ -1023,12 +1027,16 @@
   // ---------- криты ----------
   function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
   // Сюда же добавятся бонусы артефактов (этап 4); временный бонус даёт способность «Клеймо охотника»
+  // Временный бонус критов от ультимейта (GDD §3: допустим) — не прокачивается, общий предел шанса 50% остаётся
+  function critBuffOn(s) { return s.critBuff && s.critBuff.t > 0 ? s.critBuff : null; }
   function critChance(s) {
     let ch = CONFIG.crit.baseChance + artPower(s, 'critChance');
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
+    const cb = critBuffOn(s); if (cb) ch += cb.ch;
     return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { return CONFIG.crit.baseMult + artPower(s, 'critMult'); }
+  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + (cb ? cb.dmg : 0); }
+  function softcap(m, start) { const P = CONFIG.softcap; return m <= start ? m : start * Math.pow(m / start, P.power); }
   function enemyName(floor, index, isBoss) {
     const b = biomeOf(floor);
     if (isBoss) return isFinalBoss(floor) ? b.final : b.bosses[(floor - 1) % b.bosses.length];
@@ -1351,6 +1359,7 @@
     if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
+    if (s.critBuff) s.critBuff.t = Math.max(0, s.critBuff.t - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
@@ -1551,6 +1560,7 @@
   }
   // Итог режима: награда при победе (в бесконечном — уже начислена по ходу), возврат в Башню
   function finishMode(s, win, events) {
+    s.critBuff = null;
     const m = s.mode, P = CONFIG.pve, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
     if (win && (m.kind === 'dungeon' || m.kind === 'event')) cnt(s, 'dungeon');
     if (win && m.kind === 'personal') cnt(s, 'personal');
@@ -1947,6 +1957,7 @@
     else if (u.kind === 'teamBuff') { s.buffs.team = u.duration; s.buffs.teamPower = u.power; }
     else if (u.kind === 'tapBuff') { s.buffs.tap = u.duration; s.buffs.tapPower = u.power; }
     else if (u.kind === 'mark') { s.enemy.mark = u.duration; s.enemy.markPower = u.power; }
+    else if (u.kind === 'critBuff') s.critBuff = { t: u.duration, ch: u.chance, dmg: u.dmg };
   }
 
   function challengeBoss(s) {
@@ -2656,7 +2667,7 @@
     B, Big, CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
-    damageMult, critChance, critMult,
+    damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
     findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,

@@ -2221,3 +2221,24 @@ test('испытательная башня: 15 с на стража, HP рас�
   assert.strictEqual(C.enterMode(s, 'trial', {}, 'd1'), null);
   const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.trial, s.trial);
 });
+
+// ---------- 0.47: временные криты от ультимейтов, защита от неконтролируемого роста ----------
+test('ульта «критов» даёт временный шанс и урон крита; общий предел 50% сохраняется', () => {
+  const s = C.newState(NOCRIT);
+  const a = CFG.allies.find(x => x.id === 'kassian');
+  assert.strictEqual(a.ult.kind, 'critBuff'); assert.ok(/крита/.test(C.ultDesc(a)));
+  const ch0 = C.critChance(s), m0 = C.critMult(s);
+  s.critBuff = { t: 5, ch: a.ult.chance, dmg: a.ult.dmg };
+  assert.ok(Math.abs(C.critChance(s) - Math.min(0.5, ch0 + a.ult.chance)) < 1e-9);
+  assert.ok(Math.abs(C.critMult(s) - (m0 + a.ult.dmg)) < 1e-9);
+  s.critBuff.ch = 5; assert.strictEqual(C.critChance(s), 0.5);          // предел
+  C.tick(s, 6); assert.strictEqual(C.critChance(s), ch0);               // кончилось
+});
+
+test('мягкий предел произведения бонусов: до порога без изменений, выше — корень', () => {
+  const P = CFG.softcap;
+  assert.strictEqual(C.softcap(10, P.start), 10);
+  assert.strictEqual(C.softcap(P.start, P.start), P.start);
+  assert.ok(Math.abs(C.softcap(P.start * 100, P.start) - P.start * 10) < 1e-6);
+  assert.ok(C.softcap(P.start * 4, P.start) > C.softcap(P.start * 2, P.start));   // рост остаётся
+});
