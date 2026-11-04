@@ -1383,8 +1383,8 @@ test('сохранение заданий и миграция с 0.16', () => {
 });
 
 // ---------- ранги и потолки (0.19) ----------
-test('потолок: 600 на старте, 15000 на пределе, растёт с каждой ступенью', () => {
-  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 15000);
+test('потолок: 1000 на старте (0.50), 15000 на пределе, растёт с каждой ступенью', () => {
+  assert.strictEqual(C.capAt(0), CFG.ranks.capMin); assert.strictEqual(CFG.ranks.capMin, 1000); assert.strictEqual(C.capAt(C.maxSteps()), 15000);
   assert.strictEqual(C.maxSteps(), 100);
   for (let k = 1; k <= 100; k++) assert.ok(C.capAt(k) > C.capAt(k - 1));
   assert.deepStrictEqual(C.rankLabel(0), { rank: 1, sub: 0, max: false });
@@ -1394,11 +1394,11 @@ test('потолок: 600 на старте, 15000 на пределе, раст
 
 test('покупка уровней упирается в потолок, MAX и ×100 тоже', () => {
   const s = C.newState(NOCRIT); s.gold = 1e300;
-  s.tapLevel = 590;
-  assert.ok(C.buyTap(s, 100)); assert.strictEqual(s.tapLevel, 600);
+  s.tapLevel = CFG.ranks.capMin - 10;
+  assert.ok(C.buyTap(s, 100)); assert.strictEqual(s.tapLevel, CFG.ranks.capMin);
   assert.strictEqual(C.buyTap(s, 1), false); assert.strictEqual(C.buyTap(s, 'max'), false);
   s.allies.irene.level = 0;
-  assert.ok(C.buyAlly(s, 'irene', 'max')); assert.strictEqual(s.allies.irene.level, 600);
+  assert.ok(C.buyAlly(s, 'irene', 'max')); assert.strictEqual(s.allies.irene.level, CFG.ranks.capMin);
 });
 
 test('ранг героя: подранг за осколки, новый ранг — ещё сердца, потолок растёт', () => {
