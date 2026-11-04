@@ -614,7 +614,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.27</div>
+  <div id="version">v0.28</div>
 </div>
 
 <script>
@@ -1110,7 +1110,7 @@
     C.seasonReset(s, dayKey());
     C.eventReset(s, weekKey());
     C.questsReset(s, dayKey(), weekKey());
-    $('questDot').classList.toggle('on', C.claimableCount(s) > 0);
+    $('questDot').classList.toggle('on', C.claimableCount(s) + C.achClaimableCount(s) > 0);
     if (tab === 'quests') renderQuests();
     if (tab === 'season') renderSeason();
     if (tab === 'events') renderEvents();
@@ -1121,7 +1121,7 @@
     // «!» на боковых кнопках
     const fcost = C.findCost(s);
     const bang = {
-      up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
+      up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) > 0, portal: s.tickets > 0,
       heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
@@ -1346,6 +1346,7 @@
   let questsHtml = '';
   function rewardLine(r) {
     const M = CFG.materials, p = [];
+    if (r.souls) p.push('👻 ' + fmt(r.souls));
     if (r.tickets) p.push('🎟 ' + r.tickets); if (r.essence) p.push('✦ ' + r.essence);
     if (r.shard) p.push(M.shard.icon + ' ' + r.shard); if (r.heart) p.push(M.heart.icon + ' ' + r.heart);
     return p.join(' · ');
@@ -1364,19 +1365,36 @@
     return html;
   }
   function renderQuests() {
-    const Q = CFG.quests, n = C.claimableCount(s);
+    const Q = CFG.quests, n = C.claimableCount(s) + C.achClaimableCount(s);
     let html = '<button class="claimAll" data-act="all"' + (n ? '' : ' disabled') + '>' + (n ? 'Забрать всё (' + n + ')' : 'Нечего забирать') + '</button>';
     html += '<div class="secTitle">ЕЖЕДНЕВНЫЕ · обновятся в полночь</div>' + questRows(Q.daily);
     html += '<div class="secTitle">ЕЖЕНЕДЕЛЬНЫЕ · обновятся в понедельник</div>' + questRows(Q.weekly);
     const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), doneN = Q.intro.length - intro.length;
     html += '<div class="secTitle">ВВОДНЫЕ · выполнено ' + doneN + '/' + Q.intro.length + '</div>' + (intro.length ? questRows(intro) : '<div class="hint2">Все вводные задания выполнены.</div>');
+    html += '<div class="secTitle">РИТУАЛЬНЫЕ · текущий забег, обновятся после ритуала</div>' + questRows(Q.ritual);
+    const A = CFG.achievements, pts = C.achPoints(s);
+    html += '<div class="secTitle">ДОСТИЖЕНИЯ · очков ' + pts + ' · +' + Math.round(pts * A.dmgPerPoint * 100) + '% всего урона навсегда</div>';
+    for (const a of A.list) {
+      const t = C.achTier(s, a.id), maxed = t >= a.goals.length, goal = maxed ? a.goals[a.goals.length - 1] : a.goals[t];
+      const v = C.achValue(s, a), can = C.achClaimable(s, a.id), pr = Math.min(1, v / goal);
+      html += '<div class="hRow' + (maxed ? ' claimed' : '') + '" style="--r:' + (can ? 'var(--ok)' : maxed ? 'var(--gold)' : 'var(--line)') + '"><div class="artIcon">' + a.icon + '</div><div class="hInfo">' +
+        '<div class="hName">' + a.name + ' · ступень ' + t + '/' + a.goals.length + '</div>' +
+        '<div class="hSub">' + (maxed ? 'все ступени получены' : fmt(Math.min(v, goal)) + ' / ' + fmt(goal) + ' · награда ' + rewardLine(a.reward) + ' и +1 очко') + '</div>' +
+        (maxed ? '' : '<div class="qBar' + (can ? ' done' : '') + '"><i style="width:' + pr * 100 + '%"></i></div>') + '</div>' +
+        (can ? '<button class="hBtn go" data-ach="' + a.id + '">Забрать</button>' : maxed ? '<button class="hBtn" disabled>✓</button>' : '') + '</div>';
+    }
     if (html !== questsHtml) { $('questsTab').innerHTML = html; questsHtml = html; }
   }
   $('questsTab').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
     if (d.claim) { const r = C.claimQuest(s, d.claim); if (r) { toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); } }
-    else if (d.act === 'all') { const r = C.claimAll(s); if (r) { toast('Забрано наград: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); } }
+    else if (d.act === 'all') {
+      const r = C.claimAll(s), a = C.claimAllAch(s), sum = {}; let n = 0;
+      for (const x of [r, a]) if (x) { n += x.count; for (const k in x.reward) sum[k] = B.add(sum[k] || 0, x.reward[k]); }
+      if (n) { toast('Забрано наград: ' + n + '<small>' + rewardLine(sum) + '</small>'); save(); }
+    }
+    else if (d.ach) { const r = C.claimAch(s, d.ach); if (r) { toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); save(); } }
     else if (d.go) { if (d.go === 'arena') setCollapsed(true); else tab = d.go; }
     render();
   });
