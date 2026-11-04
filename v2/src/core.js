@@ -108,6 +108,47 @@
     // Офлайн (решение пользователя, заменяет GDD §6 «по выбранному этажу»): отряд сам проходит этажи
     // авто-DPS без тапов и ультимейтов, пока не упрётся в босса, затем фармит этаж ниже. Не дольше 12 ч.
     offline: { maxSec: 12 * 3600, minSec: 60, minKillSec: 0.5 },
+    // Полная Башня (GDD §2). Биомы по 50 этажей, после 400-го идут по кругу (II, III …).
+    // У биома свои враги, фон, сложность, награды и финальный босс на последнем этаже. Числа TBD.
+    biomeFloors: 50,
+    biomes: [
+      { id: 'crypt',  name: 'Гнилые катакомбы',  hp: 1.00, gold: 1.0, rare: 0.03, sky: ['#1e1329', '#0d0a12'], hue: 0,
+        enemies: ['Костяной страж', 'Гоблин-падальщик', 'Слепой культист', 'Болотный упырь'],
+        bosses: ['Могильщик', 'Королева червей'], final: 'Хранитель Врат' },
+      { id: 'ash',    name: 'Пепельные шахты',   hp: 1.05, gold: 1.1, rare: 0.03, sky: ['#2e1a14', '#120a08'], hue: 330,
+        enemies: ['Пепельный волк', 'Ржавый механоид', 'Каменный голем', 'Угольный бес'],
+        bosses: ['Мастер плавильни', 'Железный Тиран'], final: 'Владыка Пепла' },
+      { id: 'shade',  name: 'Лес теней',         hp: 0.95, gold: 1.0, rare: 0.05, sky: ['#122418', '#080f0a'], hue: 100,
+        enemies: ['Тень Башни', 'Шепчущий энт', 'Призрачная рысь', 'Ведьмина кукла'],
+        bosses: ['Старейшина рощи', 'Безликий охотник'], final: 'Королева Теней' },
+      { id: 'frost',  name: 'Ледяная цитадель',  hp: 1.10, gold: 1.2, rare: 0.03, sky: ['#14223a', '#080c16'], hue: 190,
+        enemies: ['Ледяной рыцарь', 'Кристальный паук', 'Снежный голем', 'Морозный дух'],
+        bosses: ['Комендант стужи', 'Белый дракончик'], final: 'Король Вечной Зимы' },
+      { id: 'tide',   name: 'Затопленный храм',  hp: 1.00, gold: 1.1, rare: 0.04, sky: ['#0f2630', '#060f14'], hue: 160,
+        enemies: ['Утопленник', 'Кровавый слизень', 'Жрец глубин', 'Морской змей'],
+        bosses: ['Голос прилива', 'Хозяйка раковин'], final: 'Левиафан' },
+      { id: 'blood',  name: 'Кровавая арена',    hp: 1.15, gold: 1.3, rare: 0.03, sky: ['#2e1018', '#12060a'], hue: 300,
+        enemies: ['Гладиатор', 'Арена-берсерк', 'Кровавый пёс', 'Призрачный рыцарь'],
+        bosses: ['Чемпион арены', 'Палач'], final: 'Пожиратель Душ' },
+      { id: 'void',   name: 'Пустотные врата',   hp: 1.05, gold: 1.2, rare: 0.05, sky: ['#1a1036', '#08061a'], hue: 230,
+        enemies: ['Пустотный бес', 'Звёздный глаз', 'Искажённый маг', 'Пожиратель света'],
+        bosses: ['Привратник', 'Сшитый из звёзд'], final: 'Око Бездны' },
+      { id: 'throne', name: 'Престол Башни',     hp: 1.20, gold: 1.5, rare: 0.04, sky: ['#2a2210', '#100c04'], hue: 30,
+        enemies: ['Золотой страж', 'Падший ангел', 'Хранитель свитков', 'Лик Башни'],
+        bosses: ['Правая рука трона', 'Левая рука трона'], final: 'Первый Призыватель' },
+    ],
+    finalBossHpMult: 1.5,                // финальный босс биома крепче обычного
+    // Редкие враги случайно заменяют обычных (не боссов) с этажа minFloor. Шанс — у биома.
+    rare: {
+      minFloor: 10,
+      kinds: [
+        { id: 'gold',    name: 'Золотой гоблин',   hp: 2, gold: 15, shards: 0, weight: 3 },
+        { id: 'crystal', name: 'Кристальный ёж',   hp: 4, gold: 2,  shards: 1, weight: 1 },   // осколки как за босса этажа
+      ],
+    },
+    // Фазы боссов: при падении HP ниже порога — новая фаза и короткая уязвимость (урон по боссу ×vulnMult).
+    // Урона по героям нет (GDD §2).
+    bossPhases: { normal: [0.5], final: [0.66, 0.33], vulnSec: 3, vulnMult: 1.5 },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -154,20 +195,19 @@
     ],
   };
 
-  const ENEMY_NAMES = [
-    'Гоблин-падальщик', 'Костяной страж', 'Тень Башни', 'Пустотный бес',
-    'Каменный голем', 'Кровавый слизень', 'Призрачный рыцарь', 'Пепельный волк',
-    'Слепой культист', 'Ржавый механоид', 'Болотный упырь', 'Кристальный паук',
-  ];
-  const BOSS_NAMES = [
-    'Хранитель Врат', 'Владыка Пепла', 'Королева Теней', 'Пожиратель Душ',
-    'Железный Тиран', 'Око Бездны',
-  ];
+  // ---------- биомы ----------
+  const ROMAN = ['', '', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X'];
+  function biomeIndex(floor) { return Math.floor((floor - 1) / CONFIG.biomeFloors); }
+  function biomeOf(floor) { const B = CONFIG.biomes; return B[biomeIndex(floor) % B.length]; }
+  function biomeCycle(floor) { return Math.floor(biomeIndex(floor) / CONFIG.biomes.length) + 1; }
+  function biomeName(floor) { const n = biomeCycle(floor); return biomeOf(floor).name + (ROMAN[n] !== undefined ? ROMAN[n] : ' ' + n); }
+  function isFinalBoss(floor) { return floor % CONFIG.biomeFloors === 0; }
+  function isBiomeStart(floor) { return (floor - 1) % CONFIG.biomeFloors === 0; }
 
   // ---------- формулы ----------
   function enemyMaxHp(floor, isBoss) {
-    const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1);
-    return Math.ceil(isBoss ? hp * CONFIG.bossHpMult : hp);
+    const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1) * biomeOf(floor).hp;
+    return Math.ceil(isBoss ? hp * CONFIG.bossHpMult * (isFinalBoss(floor) ? CONFIG.finalBossHpMult : 1) : hp);
   }
   // ---------- души и артефакты ----------
   function artDef(id) { return CONFIG.artifacts.find(a => a.id === id); }
@@ -191,7 +231,7 @@
   }
 
   function killGold(floor, isBoss) {
-    const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1);
+    const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * biomeOf(floor).gold;
     return Math.ceil(isBoss ? g * CONFIG.bossGoldMult : g);
   }
   function firstClearGold(floor) {
@@ -224,9 +264,27 @@
   }
   function critMult(s) { return CONFIG.crit.baseMult + artPower(s, 'critMult'); }
   function enemyName(floor, index, isBoss) {
-    if (isBoss) return BOSS_NAMES[(floor - 1) % BOSS_NAMES.length];
-    return ENEMY_NAMES[(floor * 7 + index * 3) % ENEMY_NAMES.length];
+    const b = biomeOf(floor);
+    if (isBoss) return isFinalBoss(floor) ? b.final : b.bosses[(floor - 1) % b.bosses.length];
+    return b.enemies[(floor * 7 + index * 3) % b.enemies.length];
   }
+  // Детерминированный «случайный» выбор редкого врага: не тратит s.rng (тесты и гача не сбиваются)
+  function hash01(a, b, c) {
+    let h = (a * 374761393 + b * 668265263 + c * 2147483647) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  }
+  function rollRare(s, floor, index) {
+    const R = CONFIG.rare;
+    if (floor < R.minFloor || index === CONFIG.enemiesPerFloor) return null;
+    const x = hash01(floor, index, s.stats.kills);
+    if (x >= biomeOf(floor).rare) return null;
+    const total = R.kinds.reduce((t, k) => t + k.weight, 0);
+    let y = x / biomeOf(floor).rare * total;
+    for (const k of R.kinds) { y -= k.weight; if (y < 0) return k; }
+    return R.kinds[R.kinds.length - 1];
+  }
+  function rareDef(id) { return CONFIG.rare.kinds.find(k => k.id === id); }
 
   // Стоимость n покупок, если уже куплено k (геометрическая сумма): base·g^k·(g^n−1)/(g−1)
   function seriesCost(base, g, k, n) {
@@ -347,8 +405,11 @@
 
   function spawn(s) {
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
-    const hp = enemyMaxHp(s.floor, isBoss);
-    s.enemy = { hp, maxHp: hp, isBoss, alive: true, mark: 0, markPower: 1, name: enemyName(s.floor, s.enemyIndex, isBoss) };
+    const rare = rollRare(s, s.floor, s.enemyIndex);
+    const hp = Math.ceil(enemyMaxHp(s.floor, isBoss) * (rare ? rare.hp : 1));
+    const final = isBoss && isFinalBoss(s.floor);
+    s.enemy = { hp, maxHp: hp, isBoss, final, alive: true, mark: 0, markPower: 1, rare: rare ? rare.id : null,
+                phase: 1, vuln: 0, name: rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss) };
     s.bossTimeLeft = isBoss ? bossTime(s) : 0;
     s.respawn = 0;
   }
@@ -360,6 +421,7 @@
     if (s.buffs.team > 0) m *= s.buffs.teamPower;
     if (source === 'tap' && s.buffs.tap > 0) m *= s.buffs.tapPower;
     if (s.enemy.mark > 0) m *= s.enemy.markPower;
+    if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
     return m;
   }
 
@@ -370,6 +432,16 @@
     s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
     events.push({ type: 'hit', dmg, source, crit });
     if (s.enemy.hp <= 0) kill(s, events);
+    else if (s.enemy.isBoss) checkPhase(s, events);
+  }
+  // Фазы босса: пороги HP, на каждом — короткая уязвимость
+  function phaseThresholds(e) { const P = CONFIG.bossPhases; return e.final ? P.final : P.normal; }
+  function checkPhase(s, events) {
+    const e = s.enemy, th = phaseThresholds(e);
+    while (e.phase <= th.length && e.hp / e.maxHp <= th[e.phase - 1]) {
+      e.phase++; e.vuln = CONFIG.bossPhases.vulnSec;
+      events.push({ type: 'phase', phase: e.phase, of: th.length + 1, name: e.name });
+    }
   }
 
   function tap(s) {
@@ -384,14 +456,20 @@
     const isBoss = s.enemy.isBoss;
     s.enemy.alive = false;
     s.respawn = CONFIG.respawnDelaySec;
-    rewardKill(s, isBoss, events);
+    rewardKill(s, isBoss, events, s.enemy.rare);
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
-  function rewardKill(s, isBoss, events) {
-    const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s));
+  function rewardKill(s, isBoss, events, rareId) {
+    const rare = rareId ? rareDef(rareId) : null;
+    const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s) * (rare ? rare.gold : 1));
     s.gold += gold;
     s.stats.kills++;
-    events.push({ type: 'kill', gold, boss: isBoss });
+    events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
+    if (rare && rare.shards) {
+      const n = rare.shards * shardsForBoss(s.floor);
+      s.materials.shard += n;
+      events.push({ type: 'materials', shard: n, heart: 0, rare: true });
+    }
 
     if (isBoss) {
       s.stats.bossKills++;
@@ -416,6 +494,7 @@
       s.floor += 1;
       s.enemyIndex = 1;
       events.push({ type: 'floor', floor: s.floor });
+      if (isBiomeStart(s.floor) && s.floor >= s.maxFloor) events.push({ type: 'biome', floor: s.floor, name: biomeName(s.floor) });
     } else if (s.farming && s.enemyIndex === CONFIG.enemiesPerFloor - 1) {
       s.enemyIndex = 1;                          // фарм: крутим обычных врагов без босса
     } else {
@@ -428,7 +507,7 @@
     const events = [];
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
-    if (s.enemy.alive) s.enemy.mark = Math.max(0, s.enemy.mark - dt);
+    if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
@@ -987,6 +1066,7 @@
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    biomeOf, biomeName, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
