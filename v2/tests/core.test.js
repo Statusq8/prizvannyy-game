@@ -2064,3 +2064,57 @@ test('экран героя: описание ульта, раса и навык
   assert.ok(p[0].open && p[1].open && !p[2].open);
   assert.ok(CFG.allies.every(x => x.race && C.ultDesc(x)));
 });
+
+// ---------- 0.33: бонус за вход, путешествие во времени, сундуки ----------
+test('бонус за вход: раз в день, пропуск не сбрасывает, после 30-го — по кругу', () => {
+  const s = C.newState(NOCRIT);
+  const r1 = C.claimLogin(s, '2026-11-04');
+  assert.strictEqual(r1.day, 1); assert.strictEqual(s.tickets, CFG.login.days[0].tickets);
+  assert.strictEqual(C.claimLogin(s, '2026-11-04'), null);
+  assert.strictEqual(C.claimLogin(s, '2026-11-09').day, 2);     // пропустили дни — просто следующий
+  s.login.n = 29; assert.strictEqual(C.claimLogin(s, '2026-11-10').day, 30);
+  assert.strictEqual(C.claimLogin(s, '2026-11-11').day, 1);
+  const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.login.n, 31); assert.strictEqual(t.login.day, '2026-11-11');
+});
+
+test('путешествие во времени: 1 бесплатно, потом за билеты, лимит в день', () => {
+  const s = C.newState(NOCRIT); s.allies.irene.level = 50;
+  assert.strictEqual(C.travelCost(s, 'd1'), 0);
+  const r = C.timeTravel(s, 'd1');
+  assert.ok(r && r.seconds === CFG.timeTravel.hours * 3600 && C.B.gt(r.gold, 0));
+  assert.strictEqual(C.travelCost(s, 'd1'), CFG.timeTravel.ticketCost);
+  s.tickets = 0; assert.strictEqual(C.timeTravel(s, 'd1'), null);   // нет билетов
+  s.tickets = 100;
+  for (let i = 0; i < CFG.timeTravel.paidPerDay; i++) assert.ok(C.timeTravel(s, 'd1'));
+  assert.strictEqual(C.travelCost(s, 'd1'), null);
+  assert.strictEqual(C.travelCost(s, 'd2'), 0);                 // новый день
+});
+
+test('сундуки заданий: открываются по числу забранных ежедневных, сбрасываются с днём', () => {
+  const s = C.newState(NOCRIT);
+  C.questsReset(s, 'd1', 'w1');
+  assert.strictEqual(C.questChestReady(s, 0), false);
+  s.quests.claimed.d_kill = true;
+  assert.ok(C.openQuestChest(s, 0)); assert.strictEqual(C.openQuestChest(s, 0), null);
+  assert.strictEqual(C.questChestReady(s, 1), false);
+  const t = C.deserialize(C.serialize(s)); assert.ok(t.quests.chests[0]);
+  C.questsReset(s, 'd2', 'w1'); assert.ok(!s.quests.chests[0]);
+});
+
+test('сундук-враг: редкий враг с большим золотом', () => {
+  const k = CFG.rare.kinds.find(x => x.id === 'chest');
+  assert.ok(k && k.gold > 10);
+});
+
+test('перенос сохранения 0.32 → 0.33', () => {
+  const s = C.newState(NOCRIT), d = JSON.parse(C.serialize(s));
+  d.v = 19; delete d.login; delete d.travel; delete d.quests.chests;
+  const t = C.deserialize(JSON.stringify(d));
+  assert.ok(t); assert.strictEqual(t.login.n, 0);
+});
+
+test('путешествие во времени без авто-урона не тратит попытку', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.timeTravel(s, 'd1'), null);
+  assert.strictEqual(C.travelCost(s, 'd1'), 0);
+});

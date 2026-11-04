@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 19,
+    saveVersion: 20,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -205,6 +205,7 @@
       kinds: [
         { id: 'gold',    name: 'Золотой гоблин',   hp: 2, gold: 15, shards: 0, weight: 3 },
         { id: 'crystal', name: 'Кристальный ёж',   hp: 4, gold: 2,  shards: 1, weight: 1 },   // осколки как за босса этажа
+        { id: 'chest',   name: 'Сундук Башни',     hp: 1.5, gold: 25, shards: 0, weight: 2 },  // сундук-враг: много золота
       ],
     },
     // Фазы боссов: при падении HP ниже порога — новая фаза и короткая уязвимость (урон по боссу ×vulnMult).
@@ -393,6 +394,27 @@
     },
     // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)
     dailyGift: { tickets: 1, shard: 20 },
+    // Бонус за вход (по образцу): 30 дней, у каждого своя награда. Пропуск дня не сбрасывает — следующий вход даёт следующий день.
+    // После 30-го — по кругу с 1-го. Каждый 7-й, 14-й, 21-й, 28-й и 30-й — крупнее. Числа TBD.
+    login: {
+      days: [
+        { tickets: 1 }, { shard: 30 }, { essence: 10 }, { tickets: 1 }, { shard: 40 }, { essence: 15 }, { tickets: 3, heart: 1 },
+        { shard: 50 }, { tickets: 1 }, { essence: 20 }, { shard: 60 }, { tickets: 2 }, { essence: 25 }, { tickets: 4, heart: 2 },
+        { shard: 80 }, { tickets: 2 }, { essence: 30 }, { shard: 100 }, { tickets: 2 }, { essence: 35 }, { tickets: 5, heart: 2, shard: 100 },
+        { shard: 120 }, { tickets: 2 }, { essence: 40 }, { shard: 150 }, { tickets: 3 }, { essence: 50 }, { tickets: 6, heart: 3, shard: 150 },
+        { shard: 200 }, { tickets: 10, heart: 5, essence: 100 },
+      ],
+      big: [7, 14, 21, 28, 30],
+    },
+    // «Путешествие во времени»: мгновенно прокрутить часы офлайна. Раз в день бесплатно, потом за билеты (реклама — позже, с Android). Числа TBD.
+    timeTravel: { hours: 4, freePerDay: 1, ticketCost: 3, paidPerDay: 2 },
+    // Сундуки заданий: за выполненные (забранные) ежедневные задания открываются 4 сундука по вехам. Обновляются вместе с днём. Числа TBD.
+    questChests: [
+      { need: 1, reward: { essence: 10 } },
+      { need: 3, reward: { tickets: 1, shard: 30 } },
+      { need: 5, reward: { tickets: 2, essence: 20 } },
+      { need: 6, reward: { tickets: 3, heart: 1 } },
+    ],
     // Классы главного героя (GDD §4): только у него. Открываются на этаже unlockFloor (рекорд).
     // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за ритуал. Узел — 1 очко за уровень.
     // Сменить класс можно раз в день, очки возвращаются. Без критов. Числа TBD.
@@ -1060,7 +1082,9 @@
       pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
       mode: null,                                // текущий PvE-режим (не сохраняется)
       counters: {},                              // счётчики действий за всю игру (для заданий)
-      quests: { day: '', week: '', dayBase: {}, weekBase: {}, runBase: {}, claimed: {} },
+      quests: { day: '', week: '', dayBase: {}, weekBase: {}, runBase: {}, claimed: {}, chests: {} },
+      login: { day: '', n: 0 },                  // последний день, за который забран бонус входа, и сколько дней забрано всего
+      travel: { day: '', used: 0 },              // путешествия во времени за день
       ach: {},                                   // достижения: id → забранных ступеней
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
@@ -1517,7 +1541,7 @@
   function questsReset(s, day, week) {
     const Q = s.quests;
     if (day && Q.day !== day) {
-      Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id];
+      Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id]; Q.chests = {};
       inboxAdd(s, 'Ежедневный подарок', CONFIG.dailyGift);
     }
     if (week && Q.week !== week) { Q.week = week; Q.weekBase = { ...s.counters }; for (const q of CONFIG.quests.weekly) delete Q.claimed[q.id]; }
@@ -1565,6 +1589,45 @@
     }
     return n ? { count: n, reward: sum } : null;
   }
+  // ---------- сундуки заданий ----------
+  function dailyClaimedCount(s) { return CONFIG.quests.daily.filter(q => s.quests.claimed[q.id]).length; }
+  function questChestReady(s, i) { const c = CONFIG.questChests[i]; return !!c && !s.quests.chests[i] && dailyClaimedCount(s) >= c.need; }
+  function openQuestChest(s, i) {
+    if (!questChestReady(s, i)) return null;
+    s.quests.chests[i] = true;
+    const r = CONFIG.questChests[i].reward; grant(s, r); return r;
+  }
+  function questChestsReady(s) { return CONFIG.questChests.filter((c, i) => questChestReady(s, i)).length; }
+
+  // ---------- бонус за вход ----------
+  // Номер дня (1…30), который можно забрать сейчас, или 0 — сегодня уже забрано
+  function loginDayIndex(s) { return s.login.n % CONFIG.login.days.length; }
+  function loginAvailable(s, dayKey) { return s.login.day !== dayKey; }
+  function claimLogin(s, dayKey) {
+    if (!loginAvailable(s, dayKey)) return null;
+    const i = loginDayIndex(s), r = CONFIG.login.days[i];
+    s.login.day = dayKey; s.login.n++;
+    grant(s, r);
+    return { day: i + 1, reward: r };
+  }
+
+  // ---------- путешествие во времени ----------
+  function travelReset(s, dayKey) { if (s.travel.day !== dayKey) { s.travel.day = dayKey; s.travel.used = 0; } }
+  // Цена следующего путешествия: 0 — бесплатно, N — билетов, null — на сегодня всё
+  function travelCost(s, dayKey) {
+    travelReset(s, dayKey);
+    const T = CONFIG.timeTravel;
+    if (s.travel.used < T.freePerDay) return 0;
+    if (s.travel.used < T.freePerDay + T.paidPerDay) return T.ticketCost;
+    return null;
+  }
+  function timeTravel(s, dayKey) {
+    const cost = travelCost(s, dayKey);
+    if (cost == null || s.tickets < cost || !B.gt(offlineDps(s), 0)) return null;   // без авто-урона путешествие бесполезно — попытку не тратим
+    s.tickets -= cost; s.travel.used++;
+    return offlineProgress(s, CONFIG.timeTravel.hours * 3600);
+  }
+
   // ---------- сезон и боевой пропуск ----------
   function dayNum(dayKey) { const [y, m, d] = dayKey.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); }
   function seasonInfo(dayKey) {
@@ -2208,7 +2271,8 @@
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
-      quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, runBase: { ...s.quests.runBase }, claimed: Object.keys(s.quests.claimed) },
+      quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, runBase: { ...s.quests.runBase }, claimed: Object.keys(s.quests.claimed), chests: Object.keys(s.quests.chests).map(Number) },
+      login: { ...s.login }, travel: { ...s.travel },
       ach: { ...s.ach }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
@@ -2259,6 +2323,7 @@
     if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // 0.26 → 0.27: питомцы
     if (d.v === 17) { d.v = 18; d.ach = {}; if (d.quests) d.quests.runBase = { ...(d.counters || {}) }; }   // 0.27 → 0.28
     if (d.v === 18) { d.v = 19; d.bpity = {}; }               // 0.28 → 0.29: баннеры
+    if (d.v === 19) { d.v = 20; d.login = { day: '', n: 0 }; d.travel = { day: '', used: 0 }; if (d.quests) d.quests.chests = []; }   // 0.32 → 0.33
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2363,6 +2428,11 @@
     s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), runBase: nums(qd.runBase), claimed: {} };
     for (const a of CONFIG.achievements.list) { const t = d.ach && d.ach[a.id]; if (int(t, 1) && t <= a.goals.length) s.ach[a.id] = t; }
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
+    s.quests.chests = {};
+    if (Array.isArray(qd.chests)) for (const i of qd.chests) if (CONFIG.questChests[i]) s.quests.chests[i] = true;
+    const lg = d.login, tr = d.travel;
+    if (!lg || typeof lg.day !== 'string' || !int(lg.n, 0) || !tr || typeof tr.day !== 'string' || !int(tr.used, 0)) return null;
+    s.login = { day: lg.day, n: lg.n }; s.travel = { day: tr.day, used: tr.used };
     const cl = d.cls, bo = d.booster;
     if (!cl || typeof cl !== 'object' || !bo || typeof bo !== 'object' || typeof bo.movedAt !== 'number') return null;
     s.cls = { id: classDef(cl.id) ? cl.id : null, spent: {}, changeDay: typeof cl.changeDay === 'string' ? cl.changeDay : '' };
@@ -2471,6 +2541,8 @@
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     ultDesc, perkList,
+    dailyClaimedCount, questChestReady, openQuestChest, questChestsReady,
+    loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
