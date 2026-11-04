@@ -602,7 +602,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.23</div>
+  <div id="version">v0.24</div>
 </div>
 
 <script>
@@ -611,7 +611,7 @@
 <script>
 (function () {
   'use strict';
-  const C = Core, CFG = Core.CONFIG, fmt = Core.fmt;
+  const C = Core, CFG = Core.CONFIG, fmt = Core.fmt, B = Core.B;   // B — большие числа (золото, HP, урон, души)
   // Внешний вид союзников (временные заглушки, не финальные ассеты)
   const WEAPON = {
     bow: '<path d="M82 40 Q100 76 82 112" fill="none" stroke="#6b4a2a" stroke-width="4" stroke-linecap="round"/><path d="M82 40 L82 112" stroke="#cfd8dc" stroke-width="1.2"/><path d="M60 76 L96 76" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round"/>',
@@ -971,7 +971,7 @@
       $('hpBar').querySelectorAll('.phMark').forEach(x => x.remove());
       marks.forEach((t, i) => { const d = document.createElement('div'); d.className = 'phMark' + (en.phase > i + 1 ? ' past' : ''); d.style.left = (t * 100) + '%'; $('hpBar').appendChild(d); });
     }
-    el.hpFill.style.width = (en.hp / en.maxHp * 100) + '%';
+    el.hpFill.style.width = (B.toNum(B.div(en.hp, en.maxHp)) * 100) + '%';
     el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp);
     el.timerBar.classList.toggle('show', s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss);
     el.farmBar.classList.toggle('show', s.farming && !s.mode);
@@ -983,9 +983,9 @@
 
     const n = Math.max(1, Math.min(tcap - s.tapLevel, mult === 'max' ? Math.max(1, C.maxAffordable(s.tapLevel, s.gold)) : buyCount(s.tapLevel)));
     const cost = C.upgradeCost(s.tapLevel, n);
-    const can = cost <= s.gold;
+    const can = B.lte(cost, s.gold);
     el.tapSub.innerHTML = rankTag(s.heroRank) + (tAtCap ? 'Урон ' + fmt(C.tapHit(s)) + ' · <span class="ms">потолок — повысьте ранг</span>'
-      : 'Урон ' + fmt(C.tapHit(s)) + ' → <b>' + fmt(C.tapDamageAt(s.tapLevel + n) * C.permMult(s, 'tap')) + '</b>' + msHint(s.tapLevel));
+      : 'Урон ' + fmt(C.tapHit(s)) + ' → <b>' + fmt(B.mul(C.tapDamageAt(s.tapLevel + n), C.permMult(s, 'tap'))) + '</b>' + msHint(s.tapLevel));
     anyAffordable = false;
     renderTabs();
     if (tAtCap) setRank(el.buyTap, 'hero');
@@ -997,13 +997,13 @@
       const acap = C.allyCap(s, a.id), aAtCap = lv >= acap;
       const an = Math.max(1, Math.min(acap - lv, mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : buyCount(lv)));
       const acost = C.allyCost(s, a.id, an);
-      const pm = C.permMult(s, 'ally') * C.heroMult(s, a.id);   // души, артефакты, звёзды и эволюция
+      const pm = B.mul(C.permMult(s, 'ally'), C.heroMult(s, a.id));   // души, артефакты, звёзды и эволюция
       if (u.evo !== s.heroes[a.id].evo) { u.evo = s.heroes[a.id].evo; u.fig.innerHTML = allySvg(ALLY_VIS[a.id], u.evo); }
-      u.sub.innerHTML = aAtCap ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' · <span class="ms">потолок — повысьте ранг</span>'
-                    : lv ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an) * pm) + '</b>' + msHint(lv)
-                           : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an) * pm) + '</b>';
+      u.sub.innerHTML = aAtCap ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) + ' · <span class="ms">потолок — повысьте ранг</span>'
+                    : lv ? rankTag(s.heroes[a.id].rank) + 'DPS ' + fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) + ' → <b>' + fmt(B.mul(C.allyDpsAt(a.id, lv + an), pm)) + '</b>' + msHint(lv)
+                           : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(B.mul(C.allyDpsAt(a.id, an), pm)) + '</b>';
       if (aAtCap) setRank(u.btn, a.id);
-      else setBuy(u.btn, acost <= s.gold, an, acost, (lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : '')) + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
+      else setBuy(u.btn, B.lte(acost, s.gold), an, acost, (lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : '')) + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
       const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
       u.card.style.display = unlocked ? '' : 'none';
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
@@ -1047,7 +1047,7 @@
     btn.disabled = !can;
     if (can) anyAffordable = true;
     btn.innerHTML = can ? label + '<span>◆ ' + fmt(cost) + '</span>'
-                              : 'Не хватает<span>◆ ' + fmt(cost - s.gold) + '</span>';
+                              : 'Не хватает<span>◆ ' + fmt(B.sub(cost, s.gold)) + '</span>';
   }
 
   const BUFF_UI = [
@@ -1098,7 +1098,7 @@
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
       heroes: CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
-      souls: C.canRitual(s) || (fcost != null && s.souls >= fcost),
+      souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
     };
@@ -1110,7 +1110,7 @@
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('ticketDot').classList.toggle('on', s.tickets > 0);
     const fc = C.findCost(s);
-    $('soulDot').classList.toggle('on', C.canRitual(s) || (fc != null && s.souls >= fc));
+    $('soulDot').classList.toggle('on', C.canRitual(s) || (fc != null && B.gte(s.souls, fc)));
     if (tab === 'heroes') renderHeroes();
     if (tab === 'portal') renderPortal();
     if (tab === 'altar') renderAltar();
@@ -1560,10 +1560,10 @@
   // ---------- души, артефакты, ритуал ----------
   const TPS_PREVIEW = 5;                       // для сравнения «до / после» — ожидаемый DPS при 5 тапах в секунду
   let soulsHtml = '';
-  const pctUp = m => '+' + fmt(Math.round((m - 1) * 100)) + '%';
+  const pctUp = m => '+' + fmt(B.floor(B.mul(B.sub(m, 1), 100))) + '%';
   function dpsChange(p) {
     if (!p) return '';
-    const cls = p.after >= p.before ? 'up' : 'dn';
+    const cls = B.gte(p.after, p.before) ? 'up' : 'dn';
     return '<div class="dpsPrev">DPS ' + fmt(p.before) + ' → <b class="' + cls + '">' + fmt(p.after) + '</b></div>';
   }
   function renderSouls() {
@@ -1584,9 +1584,9 @@
     const fc = C.findCost(s);
     html += '<div class="secTitle">АРТЕФАКТЫ · найдено ' + C.foundCount(s) + '/' + CFG.artifacts.length + ' · все действуют сразу</div>';
     if (fc != null) {
-      const after = { ...s, souls: s.souls - fc };
+      const after = { ...s, souls: B.sub(s.souls, fc) };
       html += '<div class="recipe"><div>Найти случайный артефакт<small>Бонус душ ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + '</small></div>' +
-        '<button class="hBtn' + (s.souls >= fc ? ' go' : '') + '" data-act="find"' + (s.souls >= fc ? '' : ' disabled') + '>👻 ' + fmt(fc) + '</button></div>';
+        '<button class="hBtn' + (B.gte(s.souls, fc) ? ' go' : '') + '" data-act="find"' + (B.gte(s.souls, fc) ? '' : ' disabled') + '>👻 ' + fmt(fc) + '</button></div>';
     }
     const arts = CFG.artifacts.slice().sort((x, y) => (C.artLevel(s, y.id) > 0) - (C.artLevel(s, x.id) > 0));   // найденные сверху
     for (const a of arts) {
@@ -1601,7 +1601,7 @@
         '<div class="hName">' + a.name + ' · ур. ' + lv + (a.max ? '/' + a.max : '') + '</div><div class="hSub">' + a.desc + '</div>' +
         (prev ? dpsChange(prev) : '') + '</div>' +
         (c == null ? '<button class="hBtn" disabled>max</button>'
-                   : '<button class="hBtn' + (s.souls >= c ? ' go' : '') + '" data-up="' + a.id + '"' + (s.souls >= c ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
+                   : '<button class="hBtn' + (B.gte(s.souls, c) ? ' go' : '') + '" data-up="' + a.id + '"' + (B.gte(s.souls, c) ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
     }
     // дерево душ
     html += '<div class="secTitle">ДЕРЕВО ДУШ · ветви открываются ритуалами · без критов</div>';
@@ -1617,7 +1617,7 @@
         html += '<div class="hRow' + (nodeOpen || lv ? '' : ' locked') + '" style="--r:#b98cff"><div class="artIcon">' + (open ? n.icon : '?') + '</div><div class="hInfo">' +
           '<div class="hName">' + n.name + ' · ' + lv + '/' + n.max + '</div><div class="hSub">' + n.desc + ' за уровень' + extra + '</div>' + hint + '</div>' +
           (c == null ? '<button class="hBtn" disabled>max</button>'
-                     : '<button class="hBtn' + (nodeOpen && s.souls >= c ? ' go' : '') + '" data-tree="' + n.id + '"' + (nodeOpen && s.souls >= c ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
+                     : '<button class="hBtn' + (nodeOpen && B.gte(s.souls, c) ? ' go' : '') + '" data-tree="' + n.id + '"' + (nodeOpen && B.gte(s.souls, c) ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
       });
       html += '</div>';
     }
@@ -1636,7 +1636,7 @@
     } else if (d.act === 'ritual') {
       if (!C.canRitual(s)) return;
       const souls = C.ritualSouls(s), start = C.ritualStartFloor(s);
-      const after = { ...s, souls: s.souls + souls };
+      const after = { ...s, souls: B.add(s.souls, souls) };
       ask('<b>Ритуал</b><span class="askList">' +
         '<b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start +
@@ -1741,11 +1741,11 @@
     const now = performance.now();
     while (dmgLog.length && now - dmgLog[0][0] > DPS_WINDOW * 1000) dmgLog.shift();
     let tapSum = 0, allSum = 0;
-    for (const d of dmgLog) { allSum += d[1]; if (d[2] === 'tap') tapSum += d[1]; }
-    const tapDps = tapSum / DPS_WINDOW, auto = C.autoDps(s);
-    el.dps.textContent = fmt(tapDps + auto);                       // общий DPS
+    for (const d of dmgLog) { allSum = B.add(allSum, d[1]); if (d[2] === 'tap') tapSum = B.add(tapSum, d[1]); }
+    const tapDps = B.div(tapSum, DPS_WINDOW), auto = C.autoDps(s);
+    el.dps.textContent = fmt(B.add(tapDps, auto));                       // общий DPS
     if (el.statsMore.classList.contains('show'))
-      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(allSum / DPS_WINDOW) + '/с · Крит ' + Math.round(C.critChance(s) * 100) + '% ×' + C.critMult(s).toFixed(1);
+      el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(B.div(allSum, DPS_WINDOW)) + '/с · Крит ' + Math.round(C.critChance(s) * 100) + '% ×' + C.critMult(s).toFixed(1);
   }
 
   // ---------- игровой цикл ----------
