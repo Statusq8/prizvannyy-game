@@ -923,3 +923,61 @@ test('сохранение эволюции и материалов, мигра�
   const bad = JSON.parse(C.serialize(s)); bad.heroes.irene.evo = 9;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
+
+// ---------- офлайн (0.11) ----------
+test('офлайн: короче минуты — ничего; без авто-урона — только время', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.offlineProgress(s, 30), null);
+  const r = C.offlineProgress(s, 3600);
+  assert.strictEqual(r.gold, 0); assert.strictEqual(r.toFloor, 1);
+});
+
+test('офлайн: отряд проходит этажи до стены, затем фармит этаж ниже', () => {
+  const s = C.newState(NOCRIT);
+  s.allies.irene.level = 50;
+  const dps = C.offlineDps(s);
+  const r = C.offlineProgress(s, 12 * 3600);
+  assert.ok(r.floorsCleared > 0 && r.wallFloor > 1);
+  // на стене босс не успевает умереть, на этаже ниже — успевал
+  assert.ok(C.enemyMaxHp(r.wallFloor, true) / dps > C.bossTime(s));
+  assert.ok(C.enemyMaxHp(r.wallFloor - 1, true) / dps <= C.bossTime(s));
+  assert.strictEqual(r.farmFloor, r.wallFloor - 1);
+  assert.strictEqual(s.floor, r.wallFloor - 1); assert.ok(s.farming);
+  assert.strictEqual(s.maxFloor, r.wallFloor);
+  assert.ok(r.gold > 0 && r.shard > 0 && r.kills > 0);
+  assert.strictEqual(s.enemy.hp, s.enemy.maxHp);
+});
+
+test('офлайн: повторный уход не опускает ниже — снова пробует рубеж и фармит под ним', () => {
+  const s = C.newState(NOCRIT);
+  s.allies.irene.level = 50;
+  const a = C.offlineProgress(s, 12 * 3600);
+  const b = C.offlineProgress(s, 12 * 3600);
+  assert.strictEqual(b.wallFloor, a.wallFloor); assert.strictEqual(s.floor, a.wallFloor - 1);
+  assert.strictEqual(b.floorsCleared, 0);
+});
+
+test('офлайн: не больше 12 часов, фарм приносит золото пропорционально времени', () => {
+  const s1 = C.newState(NOCRIT); s1.allies.irene.level = 50;
+  const s2 = C.newState(NOCRIT); s2.allies.irene.level = 50;
+  const r1 = C.offlineProgress(s1, 12 * 3600), r2 = C.offlineProgress(s2, 48 * 3600);
+  assert.ok(r2.capped); assert.strictEqual(r2.seconds, CFG.offline.maxSec);
+  assert.strictEqual(r1.gold, r2.gold);
+  const s3 = C.newState(NOCRIT); s3.allies.irene.level = 50;
+  const r3 = C.offlineProgress(s3, 6 * 3600);
+  assert.ok(r3.gold < r1.gold);
+});
+
+test('офлайн: сильный отряд за короткое время просто продвигается без стены', () => {
+  const s = C.newState(NOCRIT);
+  s.allies.kael.level = 100;
+  const r = C.offlineProgress(s, 120);
+  assert.strictEqual(r.wallFloor, null);
+  assert.ok(s.floor > 1 && !s.farming);
+});
+
+test('время сохранения читается из сохранения', () => {
+  const s = C.newState(NOCRIT);
+  const t = C.deserialize(C.serialize(s));
+  assert.ok(Math.abs(t.savedAt - Date.now()) < 5000);
+});
