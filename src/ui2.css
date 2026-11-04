@@ -214,3 +214,6 @@
   body.clean.oldOpen #panel #groupHead, body.clean.oldOpen #panel #panelToggle, body.clean.oldOpen #panel #popBack, body.clean.oldOpen #panel #tabs, body.clean.oldOpen #panel #goldRow { display: none !important; }
   body.clean.oldOpen #pgOld { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) + 50px); z-index: 62; background: #1a0e2a; }
   #pgOld { display: none; }
+  #ui2Pop .box { max-height: 86%; overflow-y: auto; }
+  .bakRow { margin-top: 8px; padding: 8px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
+  .bakRow b { font: 800 12px system-ui; color: #fff; } .bakRow p { margin: 3px 0 6px !important; font: 600 11px system-ui !important; }

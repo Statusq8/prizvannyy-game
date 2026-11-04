@@ -7,7 +7,7 @@
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
     const MORE = [['portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
-      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика']];
+      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
     const heroImg = (document.querySelector('#cards .cardIcon img') || {}).src || '';
@@ -84,6 +84,7 @@
     $('mBody').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.sec) { click(); sec = b.dataset.sec; artSel = null; open('sec'); }
+      else if (b.dataset.old === '@backup') { click(); popBackups(); }
       else if (b.dataset.old) openOld(b.dataset.old);
     });
 
@@ -198,8 +199,27 @@
         '<div class="row">' + (x.go ? '<button class="upBtn alt" data-pgo="' + x.go + '">Подробнее</button>' : '') + '<button class="upBtn" data-pclose>Закрыть</button></div>';
       $('ui2Pop').classList.add('show');
     }
+    // Резервные копии: только прошедшие проверку; откат — с подтверждением, текущее состояние тоже сохраняется
+    function popBackups() {
+      const list = backupList();
+      const row = c => '<div class="bakRow"><b>' + (c.kind === 'ritual' ? '🕯 Перед ритуалом' : '💾 Автокопия') + ' · ' + new Date(c.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</b>' +
+        '<p>Этаж ' + c.st.floor + ' (рекорд ' + c.st.bestFloor + ') · ◆ ' + fmt(c.st.gold) + ' · 👻 ' + fmt(c.st.souls) + '</p>' +
+        '<button class="upBtn alt" style="width:100%;min-height:34px" data-rest="' + c.key + '">Вернуть эту копию</button></div>';
+      $('ui2PopBox').style.cssText = '';
+      $('ui2PopBox').innerHTML = '<div class="big">💾</div><h3>Резервные копии</h3><p>Три копии обновляются по кругу раз в 5 минут, ещё одна делается перед каждым ритуалом. Если сохранение повредится, игра сама поднимется из последней целой копии.</p>' +
+        (list.length ? list.map(row).join('') : '<p>Копий пока нет — первая появится в течение 5 минут игры.</p>') +
+        '<div class="row" style="margin-top:12px"><button class="upBtn" data-pclose>Закрыть</button></div>';
+      $('ui2Pop').classList.add('show');
+    }
     $('ui2Pop').addEventListener('click', e => {
       const b = e.target.closest('button');
+      if (b && b.dataset.rest) {
+        const c = backupList().find(x => x.key === b.dataset.rest); if (!c) return;
+        $('ui2Pop').classList.remove('show');
+        ask('<b>Вернуть копию?</b><span class="askList">Игра вернётся к состоянию от ' + new Date(c.t).toLocaleString('ru-RU') + ': этаж ' + c.st.floor + ', рекорд ' + c.st.bestFloor +
+          '.<br>Текущий прогресс тоже сохранится отдельной копией.</span>', 'Вернуть', () => restoreCopy(c.key));
+        return;
+      }
       if (e.target.id === 'ui2Pop' || (b && b.dataset.pclose !== undefined)) { click(); $('ui2Pop').classList.remove('show'); return; }
       if (b && b.dataset.pgo) { $('ui2Pop').classList.remove('show'); openOld(b.dataset.pgo); }
     });
