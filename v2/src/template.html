@@ -461,6 +461,42 @@
   /* «Бей босса» не наезжает на боковые колонки */
   #farmBar, #modeBar { top: 4px; }
   #version { bottom: auto; top: 2px; left: auto; right: 6px; }
+
+  /* ===== карточки «Прокачки» по образцу (0.31): пергамент, портрет в рамке ===== */
+  #multCycle { min-width: 76px; padding: 7px 14px; border-radius: 9px; font-size: 15px; font-weight: 900; color: #3a2a00;
+    background: linear-gradient(180deg, #f4e35a, #c9b52a); border: 2px solid #5a4a10; box-shadow: 0 0 0 2px #1a1408, inset 0 2px 0 #fff8; }
+  #cards .card { background: linear-gradient(180deg, #d8b886, #b8925e); border: 2px solid #4a3018; box-shadow: 0 0 0 2px #1a1008, inset 0 1px 0 #fff5; border-radius: 10px; padding: 8px; }
+  #cards .cardIcon { width: 58px; height: 58px; border-radius: 6px; font-size: 28px; border: 3px solid #8a8a92; box-shadow: 0 0 0 2px #2a2a30, inset 0 0 10px #0008; }
+  #cards .card.nohire .cardIcon { filter: grayscale(1) brightness(.85); opacity: .55; }
+  #cards .cardTitle { color: #3a2410; font-size: 15px; }
+  #cards .cardSub { color: #5a3a1c; font-weight: 600; }
+  #cards .cardSub b { color: #1f6a2e; } #cards .cardSub .ms { color: #8a3a10; opacity: 1; } #cards .cardSub .dim { color: #6a4a2c; }
+  #cards .badge.rs { background: #0002; color: #4a3018; } #cards .badge.sq { background: #1f6a2e33; color: #1f5a28; }
+  #cards .buy { min-width: 116px; border-radius: 10px; color: #ffe8c0; text-shadow: 0 1px 0 #0008;
+    background: linear-gradient(180deg, #d8382c, #8a1410); border: 2px solid #2a0a08; box-shadow: 0 0 0 2px #5a5a62, inset 0 2px 0 #ff9a8a66; }
+  #cards .buy.hire { background: linear-gradient(180deg, #9a4ad8, #5a1a8a); box-shadow: 0 0 0 2px #5a5a62, inset 0 2px 0 #d8a8ff66; }
+  #cards .buy span { color: #ffd36b; }
+  #cards .buy:disabled { background: linear-gradient(180deg, #4a4a52, #2a2a30); color: #a8a8b0; }
+  #cards .buy:disabled span { color: #c8c8d0; }
+  .lockCard { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px;
+    background: linear-gradient(180deg, #2a3a30, #1a2620); border: 2px solid #4a3a5a; box-shadow: 0 0 0 2px #120a18; }
+  .lockCard .cardIcon { width: 58px; height: 58px; border-radius: 6px; font-size: 26px; filter: grayscale(.6) brightness(.7); border: 3px solid #5a4a6a; display: grid; place-items: center; flex: none; }
+  .lockCard .lcInfo { flex: 1; text-align: center; }
+  .lockCard .lcName { font-weight: 800; color: #e8e0d0; }
+  .lockCard button { margin-top: 6px; padding: 7px 14px; border-radius: 8px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #4aa8e8, #1a6aa8); border: 2px solid #0a2a48; }
+  .heroDetail { padding: 10px; border-radius: 12px; margin-bottom: 8px; background: linear-gradient(180deg, #d8b886, #b8925e); border: 2px solid #4a3018; color: #3a2410; }
+  .heroDetail .hdTop { display: flex; gap: 10px; }
+  .heroDetail .hdPort { width: 76px; height: 76px; border-radius: 8px; display: grid; place-items: center; font-size: 40px; border: 3px solid #8a8a92; flex: none; }
+  .heroDetail .hdName { font-size: 16px; font-weight: 900; }
+  .heroDetail .hdStat { font-size: 12px; font-weight: 700; color: #5a3a1c; margin-top: 2px; }
+  .heroDetail .hdSlots { display: grid; grid-template-columns: repeat(3, 34px); gap: 4px; margin-left: auto; align-content: start; }
+  .heroDetail .hdSlot { width: 34px; height: 34px; border-radius: 5px; display: grid; place-items: center; font-size: 16px; background: #1a1210; border: 2px solid #5a4a3a; position: relative; }
+  .heroDetail .hdSlot.empty { opacity: .5; }
+  .heroDetail .hdSlot.empty::after { content: "✕"; position: absolute; right: 1px; bottom: -2px; font-size: 10px; color: #ff4a3a; font-weight: 900; }
+  .heroDetail .hdBtns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 8px; }
+  .heroDetail .hdBtns button { padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #2a8a6a, #145a44); border: 2px solid #0a2a20; }
+  .heroDetail .hdBtns button:disabled { background: #4a4a52; color: #a8a8b0; }
+  .hIcon { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -553,13 +589,7 @@
     <button id="panelToggle" aria-label="Закрыть меню"><span id="toggleLabel">Прокачка</span><span class="x">✕</span><span id="canBuy"></span></button>
     <div id="goldRow">
       <div id="gold">0</div>
-      <div id="mult">
-        <button class="multBtn on" data-n="1">×1</button>
-        <button class="multBtn" data-n="10">×10</button>
-        <button class="multBtn" data-n="100">×100</button>
-        <button class="multBtn" data-n="max">MAX</button>
-        <button class="multBtn" data-n="ms">ДО ×3</button>
-      </div>
+      <div id="mult"><button id="multCycle" aria-label="Сколько уровней покупать">×1</button></div>
     </div>
     <div id="tabs">
       <button class="tab on" data-tab="up">Прокачка</button>
@@ -628,7 +658,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.30</div>
+  <div id="version">v0.31</div>
 </div>
 
 <script>
@@ -696,12 +726,19 @@
       card.innerHTML = '<div class="cardIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
         '<div class="cardInfo"><div class="cardTitle"></div><div class="cardSub"></div></div><button class="buy"></button>';
       cards.appendChild(card);
+      // закрытый герой — плашка «Освободить героя»
+      const lk = document.createElement('div');
+      lk.className = 'lockCard';
+      lk.innerHTML = '<div class="cardIcon" style="background:' + v.iconBg + '">' + v.icon + '</div><div class="lcInfo"><div class="lcName">' + a.name + ' · ' + a.rarity + '</div>' +
+        '<button>Освободить героя</button></div>';
+      lk.querySelector('button').addEventListener('click', () => { tab = a.hidden ? 'altar' : a.seasonal ? 'season' : 'portal'; setCollapsed(false); render(); });
+      cards.appendChild(lk);
       const btn = card.querySelector('.buy');
       btn.addEventListener('click', () => {
         if (btn.dataset.rank) { if (C.rankUp(s, a.id)) { toast('Новый ранг · ' + a.name + '<small>потолок уровня ' + fmt(C.allyCap(s, a.id)) + '</small>'); save(); render(); } return; }
         if (C.buyAlly(s, a.id, buyCount(s.allies[a.id].level))) { save(); render(); }
       });
-      allyUi[a.id] = { evo: s.heroes[a.id].evo, fig: sp.querySelector('.fig'), card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+      allyUi[a.id] = { lock: lk, evo: s.heroes[a.id].evo, fig: sp.querySelector('.fig'), card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
   const SAVE_KEY = 'prizvannyy_v2_save';
@@ -917,11 +954,13 @@
   el.bossBtn.addEventListener('click', () => { handle(C.challengeBoss(s)); render(); });
   el.prev.addEventListener('click', () => { handle(C.goToFloor(s, s.floor - 1)); render(); save(); });
   el.next.addEventListener('click', () => { handle(C.goToFloor(s, s.floor + 1)); render(); save(); });
-  document.querySelectorAll('.multBtn').forEach(b => b.addEventListener('click', () => {
-    mult = b.dataset.n === 'max' || b.dataset.n === 'ms' ? b.dataset.n : +b.dataset.n;
-    document.querySelectorAll('.multBtn').forEach(x => x.classList.toggle('on', x === b));
+  // один переключатель: ×1 → ×10 → ×25 → ×100 → MAX → Next (до следующей вехи ×3) → ×1
+  const MULTS = [[1, '×1'], [10, '×10'], [25, '×25'], [100, '×100'], ['max', 'MAX'], ['ms', 'Next']];
+  $('multCycle').addEventListener('click', () => {
+    const i = (MULTS.findIndex(x => x[0] === mult) + 1) % MULTS.length;
+    mult = MULTS[i][0]; $('multCycle').textContent = MULTS[i][1];
     render();
-  }));
+  });
   // «ДО ×3»: ровно столько уровней, сколько осталось до следующей вехи урона
   function buyCount(level) { return mult === 'ms' ? C.nextMilestone(level) - level : mult; }
   el.buyTap.addEventListener('click', () => {
@@ -1082,6 +1121,9 @@
       else setBuy(u.btn, B.lte(acost, s.gold), an, acost, (lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : '')) + (mult === 'ms' ? ' ×' + CFG.milestoneMult : ''));
       const unlocked = s.heroes[a.id].unlocked, sq = s.squad.indexOf(a.id);
       u.card.style.display = unlocked ? '' : 'none';
+      u.card.classList.toggle('nohire', !lv);
+      u.lock.style.display = unlocked ? 'none' : '';
+      u.lock.style.order = 100 + CFG.allies.indexOf(a);
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
       u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) + '/' + fmt(acap) : a.role) +
         (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>') + (s.booster.owner === a.id ? '<span class="badge sq" style="color:var(--gold)">✦×' + CFG.booster.power + '</span>' : '');
@@ -1122,8 +1164,11 @@
     delete btn.dataset.rank;
     btn.disabled = !can;
     if (can) anyAffordable = true;
-    btn.innerHTML = can ? label + '<span>◆ ' + fmt(cost) + '</span>'
-                              : 'Не хватает<span>◆ ' + fmt(B.sub(cost, s.gold)) + '</span>';
+    const hire = /^Нанять/.test(label);
+    btn.classList.toggle('hire', hire);
+    // как в образце: «Улучшить / Нанять» и цена; сколько уровней — мелко
+    const head = (hire ? 'Нанять' : 'Улучшить') + (n > 1 ? ' <small>+' + fmt(n) + '</small>' : '');
+    btn.innerHTML = head + '<span>◆ ' + fmt(cost) + '</span>';
   }
 
   const BUFF_UI = [
@@ -1206,7 +1251,7 @@
     const M = CFG.materials, ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
     let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>' +
       M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span></div>' +
-      heroTopHtml() +
+      heroDetailHtml() + heroTopHtml() +
       '<div class="secTitle">СОЮЗНИКИ</div><div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
       'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>';
     for (const a of list) {
@@ -1224,7 +1269,7 @@
           okNo(s.materials.shard, ec.shards) + M.shard.icon + fmt(ec.shards) + '</span>' +
           (ec.hearts ? ' · ' + okNo(s.materials.heart, ec.hearts) + M.heart.icon + ec.hearts + '</span>' : '') + '</div>'
         : '<div class="evoNeed"><span class="ok">Эволюция завершена</span></div>';
-      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon +
+      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" data-hd="' + a.id + '" style="background:' + v.iconBg + '">' + v.icon +
         (h.evo ? '<span class="evoPip">' + ROMAN[h.evo] + '</span>' : '') + '</div>' +
         '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
         (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
@@ -1240,7 +1285,28 @@
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
   // ---------- класс главного героя и «Печать силы» ----------
-  let classPick = false;
+  let classPick = false, heroDetail = null;
+  // экран героя (по образцу): портрет, характеристики, 6 слотов костей, кнопки развития
+  function heroDetailHtml() {
+    const id = heroDetail, a = id && CFG.allies.find(x => x.id === id);
+    if (!a || !s.heroes[id].unlocked) return '';
+    const h = s.heroes[id], v = ALLY_VIS[id], rl = C.rankLabel(h.rank), need = C.starCost(s, id), rc = C.rankCost(s, id);
+    const slots = CFG.bones.slots.map(x => { const b = s.bones.find(o => o.on === id && o.slot === x.id);
+      return '<div class="hdSlot' + (b ? '' : ' empty') + '" title="' + x.name + '">' + x.icon + '</div>'; }).join('');
+    const sq = C.inSquad(s, id);
+    return '<div class="heroDetail"><div class="hdTop"><div class="hdPort" style="background:' + v.iconBg + '">' + v.icon + '</div><div>' +
+      '<div class="hdName">' + a.name + ' <span class="rar r-' + a.rarity + '">' + a.rarity + '</span></div>' +
+      '<div class="hdStat">' + a.role + ' · ур. ' + fmt(s.allies[id].level) + '/' + fmt(C.allyCap(s, id)) + '</div>' +
+      '<div class="hdStat">★ ' + h.stars + '/' + CFG.maxStars + ' · облик ' + h.evo + '/' + CFG.evolution.stages.length + ' · ранг ' + RN[rl.rank] + (rl.max ? ' макс' : '·' + rl.sub) + '</div>' +
+      '<div class="hdStat">DPS ' + fmt(B.mul(C.allyDps(s, id), C.permMult(s, 'ally'))) + ' · ульт: ' + a.ult.name + '</div></div>' +
+      '<div class="hdSlots">' + slots + '</div></div><div class="hdBtns">' +
+      '<button data-star="' + id + '"' + (need != null && h.copies >= need ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
+      '<button data-evo="' + id + '"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>⬆ Эволюция</button>' +
+      '<button data-hrank="' + id + '"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Ранг' + (rc ? ' 🔹' + fmt(rc.shards) : '') + '</button>' +
+      '<button data-hbones="' + id + '">Кости</button>' +
+      (sq ? '<button data-out="' + id + '">Из отряда</button>' : '<button data-in="' + id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
+      '<button data-hclose="1">Закрыть</button></div></div>';
+  }
   function heroTopHtml() {
     const K = CFG.classes, Bo = CFG.booster, dk = dayKey();
     let html = '<div class="secTitle">ГЛАВНЫЙ ГЕРОЙ · КЛАСС</div>';
@@ -1939,8 +2005,13 @@
   }
   document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
   $('heroesTab').addEventListener('click', e => {
+    const hd = e.target.closest('[data-hd]');
+    if (hd) { heroDetail = hd.dataset.hd; render(); $('heroesTab').scrollTop = 0; return; }
     const b = e.target.closest('button'); if (!b) return;
     let ok = false;
+    if (b.dataset.hclose) { heroDetail = null; ok = true; }
+    if (b.dataset.hbones) { boneWho = b.dataset.hbones; tab = 'bones'; ok = true; }
+    if (b.dataset.hrank) { ok = C.rankUp(s, b.dataset.hrank); if (ok) toast('Новый ранг<small>потолок уровня ' + fmt(C.allyCap(s, b.dataset.hrank)) + '</small>'); }
     if (b.dataset.star) ok = C.starUp(s, b.dataset.star);
     if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
