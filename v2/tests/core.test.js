@@ -1141,3 +1141,85 @@ test('сохранение дерева душ и миграция с 0.13', () 
   const bad = JSON.parse(C.serialize(s)); bad.tree.fury = 999;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
+
+// ---------- руны и тотемы (0.15) ----------
+test('руны: создание за осколки, улучшение, действует лучшая руна вида', () => {
+  const s = C.newState({ rng: () => 0 });                    // всегда первый вид — Руна мощи
+  const R = CFG.runes;
+  assert.strictEqual(C.createRune(s), null);
+  s.materials.shard = 10000;
+  const a = C.createRune(s), b = C.createRune(s);
+  assert.strictEqual(a.type, 'might'); assert.strictEqual(a.tier, 0);
+  assert.strictEqual(s.materials.shard, 10000 - 2 * R.createCost);
+  const base = C.permMult(C.newState(), 'tap');
+  assert.ok(Math.abs(C.permMult(s, 'tap') / base - (1 + R.kinds[0].base)) < 1e-9);   // две руны — действует одна
+  assert.strictEqual(C.upgradeRune(s, a.id), true);
+  assert.strictEqual(C.bestRune(s, 'might'), a);
+  assert.ok(Math.abs(C.runePower(s, 'allDmg') - R.kinds[0].base * (1 + R.perLevel)) < 1e-9);
+  a.lvl = R.maxLevel; assert.strictEqual(C.runeUpCost(a), null); assert.strictEqual(C.upgradeRune(s, a.id), false);
+});
+
+test('руны: слияние 3 → 1 следующей редкости, берёт слабейшие', () => {
+  const s = C.newState({ rng: () => 0 }); s.materials.shard = 1e6;
+  const r = [C.createRune(s), C.createRune(s), C.createRune(s), C.createRune(s)];
+  r[0].lvl = 5;
+  assert.strictEqual(C.mergeable(s, 'might', 1), false);
+  const m = C.mergeRunes(s, 'might', 0);
+  assert.strictEqual(m.tier, 1); assert.strictEqual(m.lvl, 0);
+  assert.strictEqual(s.runes.length, 2);
+  assert.ok(s.runes.includes(r[0]));                          // прокачанная осталась
+  assert.strictEqual(C.mergeRunes(s, 'might', 0), null);
+  assert.ok(C.runeValue(m) === CFG.runes.kinds[0].base * CFG.runes.tierPower);
+  // высшую редкость дальше не слить
+  s.runes = [0, 1, 2].map(i => ({ id: 100 + i, type: 'might', tier: CFG.rarities.length - 1, lvl: 0 }));
+  assert.strictEqual(C.mergeable(s, 'might', CFG.rarities.length - 1), false);
+});
+
+test('руны без критов; руны золота, осколков и боссов работают', () => {
+  for (const k of CFG.runes.kinds) assert.ok(!/crit/i.test(k.kind));
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  s.runes = [{ id: 1, type: 'wealth', tier: 1, lvl: 0 }, { id: 2, type: 'stone', tier: 2, lvl: 0 }, { id: 3, type: 'hunt', tier: 0, lvl: 0 }];
+  assert.strictEqual(C.critChance(s), C.critChance(t));
+  assert.ok(Math.abs(C.goldMult(s) - 1.2) < 1e-9);
+  assert.ok(Math.abs(C.shardMult(s) - 1.2) < 1e-9);
+  assert.ok(Math.abs(C.bossDmgMult(s) - 1.15) < 1e-9);
+});
+
+test('тотемы: за первое прохождение финального босса биома, общий DPS и бонус коллекции', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  s.floor = s.maxFloor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const ev = killCurrent(s);
+  assert.ok(ev.some(e => e.type === 'totem' && e.id === 'crypt'));
+  assert.strictEqual(s.totems.crypt, 1);
+  assert.ok(Math.abs(C.totemMult(s) - 1.1) < 1e-9);
+  // повтор не даёт второй тотем
+  respawn(s); C.goToFloor(s, 50); s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s); killCurrent(s);
+  assert.strictEqual(C.totemCount(s), 1);
+  // коллекция: 5 тотемов — ×1.25
+  for (const b of CFG.biomes.slice(0, 5)) s.totems[b.id] = 1;
+  assert.ok(Math.abs(C.totemMult(s) - 1.5 * 1.25) < 1e-9);
+});
+
+test('тотемы: улучшение за осколки, каждый 5-й уровень — ещё сердце', () => {
+  const s = C.newState(NOCRIT); s.totems = { crypt: 1 }; s.materials = { shard: 1e6, heart: 0 };
+  assert.strictEqual(C.upgradeTotem(s, 'ash'), false);        // нет тотема
+  for (let i = 0; i < 3; i++) assert.ok(C.upgradeTotem(s, 'crypt'));
+  assert.strictEqual(s.totems.crypt, 4);
+  assert.strictEqual(C.totemUpCost(s, 'crypt').hearts, 1);
+  assert.strictEqual(C.upgradeTotem(s, 'crypt'), false);
+  s.materials.heart = 1; assert.ok(C.upgradeTotem(s, 'crypt'));
+  s.totems.crypt = CFG.totems.maxLevel; assert.strictEqual(C.totemUpCost(s, 'crypt'), null);
+});
+
+test('сохранение рун и тотемов, миграция с 0.14 выдаёт тотемы за пройденных финальных боссов', () => {
+  const s = C.newState(NOCRIT);
+  s.runes = [{ id: 4, type: 'host', tier: 2, lvl: 3 }]; s.runeSeq = 5; s.totems = { crypt: 3 };
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.runes, s.runes); assert.strictEqual(t.runeSeq, 5); assert.deepStrictEqual(t.totems, { crypt: 3 });
+  const old = JSON.parse(C.serialize(s)); old.v = 8; delete old.runes; delete old.runeSeq; delete old.totems; old.heartFloor = 160;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.deepStrictEqual(m.totems, { crypt: 1, ash: 1, shade: 1 });
+  assert.deepStrictEqual(m.runes, []);
+  const bad = JSON.parse(C.serialize(s)); bad.runes[0].tier = 99;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
