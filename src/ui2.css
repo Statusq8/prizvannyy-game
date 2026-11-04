@@ -181,11 +181,11 @@
   .petTop .ln b { font: 400 13px 'Russo One', system-ui; color: #fff; }
   .petBtns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
   .petBtns .upBtn { width: auto; min-height: 44px; }
-  .abil { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; padding: 8px; margin-top: 6px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
-  .abil .ico { width: 52px; height: 52px; border-radius: 6px; display: grid; place-items: center; font-size: 26px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
-  .abil b { font: 800 12px system-ui; color: #fff; } .abil i { font-style: normal; font: 700 10px system-ui; padding: 1px 6px; border-radius: 3px; margin-right: 6px; background: #d6a640; color: #2a1a04; }
-  .abil.pas i { background: #6e4aa8; color: #fff; }
-  .abil p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+  .pAbil { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; padding: 8px; margin-top: 6px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
+  .pAbil .ico { width: 52px; height: 52px; border-radius: 6px; display: grid; place-items: center; font-size: 26px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
+  .pAbil b { font: 800 12px system-ui; color: #fff; } .pAbil i { font-style: normal; font: 700 10px system-ui; padding: 1px 6px; border-radius: 3px; margin-right: 6px; background: #d6a640; color: #2a1a04; }
+  .pAbil.pas i { background: #6e4aa8; color: #fff; }
+  .pAbil p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
 
   /* ---------- Карта Башни (этап 9, концепт v2): ровно 5 этажей на экране ---------- */
   #mapList { flex: 1; min-height: 0; overflow-y: auto; scroll-snap-type: y proximity; padding: 0 8px; }

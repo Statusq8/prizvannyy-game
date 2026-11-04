@@ -840,7 +840,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.42</div>
+  <div id="version">v0.43</div>
 </div>
 
 <script>
@@ -1170,6 +1170,12 @@
       } else if (e.type === 'bone') {
         const bs = C.boneSlot(e.bone.slot);
         setTimeout(() => toast('Кость монстра!<small>' + bs.icon + ' ' + bs.name + ' · ' + CFG.rarities[e.bone.tier] + '</small>'), 2600);
+      } else if (e.type === 'pet') {
+        const pd = C.petDef(e.id);
+        setTimeout(() => toast('Новый питомец!<small>' + pd.icon + ' ' + pd.name + ' · ' + pd.rank + ' · Меню → Питомцы</small>'), 1800);
+      } else if (e.type === 'petFrag') {
+        const pd = C.petDef(e.id);
+        toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
       } else if (e.type === 'totem') {
         setTimeout(() => toast('Тотем получен!<small>🗿 ' + e.name + ' · вкладка «Руны»</small>'), 4800);
       } else if (e.type === 'biome') {
@@ -1491,7 +1497,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) + C.questChestsReady(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -1706,25 +1712,8 @@
       html += '<span class="badge ' + (sets.includes(r) ? 'sq' : 'rs') + '"><span class="rar r-' + r + '">' + r + '</span> ' + got + '/' + pool.length + (sets.includes(r) ? ' ✓' : '') + '</span>';
     }
     html += '</div>';
-    // призванное существо
-    const P = CFG.pets;
-    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · в бою одно · бьёт долей DPS отряда</div>';
-    for (const p of P.list) {
-      const lv = C.petLevel(s, p.id), act = s.pets.active === p.id;
-      if (!lv) {
-        const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
-        const can = C.petCanUnlock(s, p.id);
-        html += '<div class="hRow' + (can ? '' : ' locked') + '" style="--r:#b98cff"><div class="artIcon">' + (can ? p.icon : '?') + '</div><div class="hInfo"><div class="hName">' + p.name + '</div>' +
-          '<div class="hSub">' + p.desc + ' · откроется: ' + cond + '</div></div>' + (can ? '<button class="hBtn go" data-pet="' + p.id + '">Призвать</button>' : '') + '</div>';
-        continue;
-      }
-      const up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up;
-      html += '<div class="hRow" style="--r:' + (act ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + p.icon + '</div><div class="hInfo">' +
-        '<div class="hName">' + p.name + ' · ур. ' + lv + '/' + P.maxLevel + (act ? ' <span class="badge sq">в бою</span>' : '') + '</div>' +
-        '<div class="hSub">' + Math.round(C.petShare(s, p.id) * 100) + '% DPS отряда · удар раз в ' + p.interval + ' с · ' + p.desc + '</div></div><div class="hBtns">' +
-        (act ? '' : '<button class="hBtn go" data-pset="' + p.id + '">В бой</button>') +
-        (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-pup="' + p.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🔹' + fmt(up) + '</button>' : '<button class="hBtn" disabled>max</button>') + '</div></div>';
-    }
+    // призванные существа — в новом интерфейсе: Меню → Питомцы
+    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · Меню → Питомцы</div>';
     return html;
   }
 
@@ -2397,9 +2386,6 @@
     if (dd.act === 'clsPick') { classPick = true; ok = true; }
     if (dd.act === 'clsBack') { classPick = false; ok = true; }
     if (dd.cnode) ok = C.buyClassNode(s, dd.cnode);
-    if (dd.pet) { ok = C.unlockPet(s, dd.pet); if (ok) toast('Призванное существо!<small>' + C.petDef(dd.pet).icon + ' ' + C.petDef(dd.pet).name + '</small>'); }
-    if (dd.pset) ok = C.setPet(s, dd.pset);
-    if (dd.pup) ok = C.upgradePet(s, dd.pup);
     if (dd.boost) { ok = C.moveBooster(s, dd.boost, Date.now()); if (ok) toast(CFG.booster.name + '<small>теперь у: ' + (dd.boost === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === dd.boost).name) + '</small>'); }
     if (b.dataset.evo) {
       const ec = C.evoCost(s, b.dataset.evo);

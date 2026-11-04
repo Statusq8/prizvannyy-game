@@ -857,11 +857,11 @@
   .petTop .ln b { font: 400 13px 'Russo One', system-ui; color: #fff; }
   .petBtns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
   .petBtns .upBtn { width: auto; min-height: 44px; }
-  .abil { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; padding: 8px; margin-top: 6px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
-  .abil .ico { width: 52px; height: 52px; border-radius: 6px; display: grid; place-items: center; font-size: 26px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
-  .abil b { font: 800 12px system-ui; color: #fff; } .abil i { font-style: normal; font: 700 10px system-ui; padding: 1px 6px; border-radius: 3px; margin-right: 6px; background: #d6a640; color: #2a1a04; }
-  .abil.pas i { background: #6e4aa8; color: #fff; }
-  .abil p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
+  .pAbil { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; padding: 8px; margin-top: 6px; border-radius: 6px; background: #120e18dd; border: 1px solid #4e4757; text-align: left; }
+  .pAbil .ico { width: 52px; height: 52px; border-radius: 6px; display: grid; place-items: center; font-size: 26px; border: 2px solid #b14dff; background: radial-gradient(#3a1a5a, #0a0710); }
+  .pAbil b { font: 800 12px system-ui; color: #fff; } .pAbil i { font-style: normal; font: 700 10px system-ui; padding: 1px 6px; border-radius: 3px; margin-right: 6px; background: #d6a640; color: #2a1a04; }
+  .pAbil.pas i { background: #6e4aa8; color: #fff; }
+  .pAbil p { font: 600 11px system-ui; color: #b9b1c3; margin-top: 2px; }
 
   /* ---------- Карта Башни (этап 9, концепт v2): ровно 5 этажей на экране ---------- */
   #mapList { flex: 1; min-height: 0; overflow-y: auto; scroll-snap-type: y proximity; padding: 0 8px; }
@@ -1108,7 +1108,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.42</div>
+  <div id="version">v0.43</div>
 </div>
 
 <script>
@@ -1118,7 +1118,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 21,
+    saveVersion: 22,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -1589,14 +1589,34 @@
     // Призванное существо — питомец (GDD §3): 1 в бою, автоатака с собственной частотой, тот же потолок критов,
     // бонусы артефактов действуют. Удар = доля (share) от DPS отряда × интервал, поэтому питомец не устаревает.
     // Уровень (за осколки) увеличивает долю; уровни постоянные, переживают ритуал. Числа TBD.
+    // Питомцы 2.0 (GDD §3, решение пользователя 2026-11-04): 27 питомцев, по 3 на ранг E…GOD. В бою один: бьёт сам
+    // (доля DPS отряда) и даёт бонус своего типа. 2 питомца ранга — за первую победу над боссом этажа, 3-й — в событии
+    // «Логово». 3 формы; эволюция за фрагменты, которые роняют мобы-«Хранители» (у каждого питомца свой биом). Числа TBD.
     pets: {
-      list: [
-        { id: 'wolf',    name: 'Теневой волк',      icon: '🐺', interval: 0.5, share: 0.12, desc: 'быстрые укусы',            unlock: { floor: 25 } },
-        { id: 'golem',   name: 'Каменный голем',    icon: '🪨', interval: 2.0, share: 0.30, boss: 0.5, desc: 'тяжёлый удар, +50% по боссам', unlock: { floor: 150 } },
-        { id: 'phoenix', name: 'Пепельный феникс',  icon: '🦅', interval: 1.0, share: 0.25, vuln: 0.15, desc: 'урон +15% по уязвимому боссу', unlock: { rituals: 1 } },
-        { id: 'drake',   name: 'Костяной дракончик', icon: '🐉', interval: 1.5, share: 0.35, desc: 'сильнейший, но редкий', unlock: { totems: 5 } },
-      ],
-      perLevel: 0.04, maxLevel: 50, upShards: 30, upGrowth: 1.22,
+      floors: { E: [150, 250], D: [350, 450], C: [600, 750], B: [900, 1100], A: [1300, 1600], S: [1900, 2200], SS: [2600, 3000], SSS: [3500, 4200], GOD: [5000, 7000] },
+      // по рангу: удар (доля DPS отряда в секунду), бонус «урон отряда / золото», «урон по боссу», «заряд ультов» — у детёныша
+      power: { E: [0.05, 0.10, 0.15, 0.03], D: [0.07, 0.15, 0.22, 0.05], C: [0.10, 0.25, 0.37, 0.07], B: [0.14, 0.40, 0.60, 0.10], A: [0.20, 0.60, 0.90, 0.14],
+               S: [0.28, 1.00, 1.50, 0.18], SS: [0.40, 1.50, 2.25, 0.24], SSS: [0.55, 2.50, 3.75, 0.30], GOD: [0.75, 4.00, 6.00, 0.40] },
+      types: ['squad', 'boss', 'gold', 'ult'],
+      typeName: { squad: 'урон отряда', boss: 'урон по боссам', gold: 'золото и добыча', ult: 'заряд ультимейтов' },
+      interval: { squad: 0.8, boss: 1.5, gold: 1.0, ult: 1.2 },
+      forms: ['Детёныш', 'Подросший', 'Пиковая форма'],
+      formMult: [1, 2, 4], formUlt: [1, 1.5, 2],
+      evoCost: [40, 150], rankGrowth: 1.5,            // фрагментов на 2-ю и 3-ю форму для E; ×1,5 за каждый ранг выше
+      keeperChance: 0.02, keeperDrop: [1, 3],         // «Хранитель» — ≈1 из 50 врагов в своём биоме; офлайн не падают
+      lairKeepers: 10, lairFrags: 3,                  // «Логово»: 10 Хранителей ранга недели → питомец события; фрагменты ×3
+      names: {
+        E: [['ash_rat', 'Пепельная крыса', '🐀'], ['bog_toad', 'Болотная жаба', '🐸'], ['cave_bat', 'Пещерная мышь', '🦇']],
+        D: [['shadow_wolf', 'Теневой волк', '🐺'], ['stone_beetle', 'Каменный жук', '🪲'], ['salamander', 'Огненная саламандра', '🦎']],
+        C: [['bone_raven', 'Костяной ворон', '🐦'], ['ice_fox', 'Ледяная лиса', '🦊'], ['ghost_cat', 'Призрачная кошка', '🐈']],
+        B: [['golem', 'Каменный голем', '🗿'], ['storm_hawk', 'Грозовой ястреб', '🦅'], ['venom_spider', 'Ядовитый паук', '🕷']],
+        A: [['phoenix', 'Пепельный феникс', '🔥'], ['blood_boar', 'Кровавый вепрь', '🐗'], ['moon_stag', 'Лунный олень', '🦌']],
+        S: [['bone_drake', 'Костяной дракончик', '🐉'], ['sea_serpent', 'Морской змей', '🐍'], ['griffin', 'Небесный грифон', '🦁']],
+        SS: [['kraken', 'Кракен бездны', '🦑'], ['chimera', 'Химера', '🐲'], ['manticore', 'Мантикора', '🦂']],
+        SSS: [['shadow_dragon', 'Теневой дракон', '🐲'], ['leviathan', 'Левиафан', '🐋'], ['cerberus', 'Цербер', '🐕']],
+        GOD: [['ash_lord', 'Владыка пепла', '☄'], ['star_whale', 'Звёздный кит', '🐳'], ['world_eater', 'Пожиратель миров', '🌑']],
+      },
+      list: [],                                       // строится ниже из names/floors/types
     },
     // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
     // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
@@ -1822,7 +1842,7 @@
   function treeDef(id) { return TREE.find(n => n.id === id); }
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
-  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')); }
+  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
   function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')); }
   // Бонусы дерева душ и класса героя одного вида складываются
   function treePower(s, kind) { let x = classPower(s, kind); for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
@@ -1936,31 +1956,81 @@
     return n ? { count: n, dust } : null;
   }
 
-  // ---------- питомцы ----------
+  // ---------- питомцы 2.0 ----------
+  (function buildPets() {
+    const P = CONFIG.pets;
+    CONFIG.rarities.forEach((r, ri) => {
+      P.names[r].forEach(([id, name, icon], j) => {
+        const type = P.types[(ri + j) % P.types.length];
+        const floor = j < 2 ? P.floors[r][j] : null;                          // 3-й — только событие «Логово»
+        const home = (floor || P.floors[r][1] + 50) + 1;                     // биом сразу после этажа выдачи
+        P.list.push({ id, name, icon, rank: r, type, floor, event: !floor, biome: biomeOf(home).id, interval: P.interval[type] });
+      });
+    });
+  })();
   function petDef(id) { return CONFIG.pets.list.find(p => p.id === id); }
-  function petLevel(s, id) { return s.pets.levels[id] | 0; }
-  function petCanUnlock(s, id) {
-    const u = petDef(id).unlock;
-    return (!u.floor || s.bestFloor >= u.floor) && (!u.rituals || s.rituals >= u.rituals) && (!u.totems || totemCount(s) >= u.totems);
+  function petForm(s, id) { return s.pets.forms[id] | 0; }                     // 0 — не получен, 1…3 — форма
+  function petLevel(s, id) { return petForm(s, id); }                          // совместимость: «получен» = форма ≥ 1
+  function petRankIdx(p) { return CONFIG.rarities.indexOf(p.rank); }
+  function petPower(p, form) {
+    const P = CONFIG.pets, w = P.power[p.rank], f = Math.max(1, form) - 1;
+    const bonus = p.type === 'ult' ? w[3] * P.formUlt[f] : (p.type === 'boss' ? w[2] : w[1]) * P.formMult[f];
+    return { share: w[0] * P.formMult[f], bonus };
   }
-  function unlockPet(s, id) {
-    if (!petDef(id) || petLevel(s, id) > 0 || !petCanUnlock(s, id)) return false;
-    s.pets.levels[id] = 1;
+  function petShare(s, id) { return petPower(petDef(id), petForm(s, id)).share; }
+  // бонус активного питомца нужного типа (0, если питомца нет или тип другой)
+  function petBonus(s, type) {
+    const p = s.pets && s.pets.active && petDef(s.pets.active);
+    return p && p.type === type ? petPower(p, petForm(s, p.id)).bonus : 0;
+  }
+  function petEvoCost(s, id) {
+    const p = petDef(id), f = petForm(s, id), P = CONFIG.pets;
+    return !p || !f || f >= P.forms.length ? null : Math.ceil(P.evoCost[f - 1] * Math.pow(P.rankGrowth, petRankIdx(p)));
+  }
+  function petFrags(s, id) { return s.pets.frags[id] | 0; }
+  function canEvolvePet(s, id) { const c = petEvoCost(s, id); return c != null && petFrags(s, id) >= c; }
+  function evolvePet(s, id) {
+    if (!canEvolvePet(s, id)) return false;
+    s.pets.frags[id] -= petEvoCost(s, id); s.pets.forms[id]++; cnt(s, 'petEvo');
+    return true;
+  }
+  function grantPet(s, id, events) {
+    if (petForm(s, id)) return false;
+    s.pets.forms[id] = 1;
     if (!s.pets.active) s.pets.active = id;
+    if (events) events.push({ type: 'pet', id });
     return true;
   }
-  function setPet(s, id) { if (!petLevel(s, id)) return false; s.pets.active = id; s.petAcc = 0; return true; }
-  function petShare(s, id) { const p = petDef(id); return p.share * (1 + CONFIG.pets.perLevel * (petLevel(s, id) - 1)); }
-  function petUpCost(s, id) { const lv = petLevel(s, id), P = CONFIG.pets; return !lv || lv >= P.maxLevel ? null : Math.ceil(P.upShards * Math.pow(P.upGrowth, lv - 1)); }
-  function upgradePet(s, id) {
-    const c = petUpCost(s, id);
-    if (!c || s.materials.shard < c) return false;
-    s.materials.shard -= c; s.pets.levels[id]++;
-    return true;
+  // башенные питомцы — за первую победу над боссом своего этажа (рекорд за всю игру; выдаются и задним числом)
+  function petsCatchUp(s, events) {
+    for (const p of CONFIG.pets.list) if (p.floor && (s.bestCleared | 0) >= p.floor) grantPet(s, p.id, events);
   }
+  // «Логово»: ранг недели по кругу E → GOD
+  function lairRank(s) { const w = s.event && s.event.week ? weekNum(s.event.week) : 0; const R = CONFIG.rarities; return R[((w % R.length) + R.length) % R.length]; }
+  function lairPet(s) { return CONFIG.pets.list.find(p => p.event && p.rank === lairRank(s)); }
+  function lairSync(s) { const wk = (s.event && s.event.week) || ''; if (s.pets.lair.week !== wk) s.pets.lair = { week: wk, kills: 0 }; }
+  // Хранитель: моб питомца в его биоме, на этажах не ниже этажа питомца; ≈1 из 50 врагов; в офлайне не появляется
+  function keeperRoll(s, events) {
+    const P = CONFIG.pets, bio = biomeOf(s.floor).id;
+    const pool = P.list.filter(p => p.biome === bio && s.floor >= (p.floor || P.floors[p.rank][1]) && petForm(s, p.id) < P.forms.length);
+    if (!pool.length) return;
+    const k = s.stats.kills;
+    if (hash01(k, s.floor, 61) >= P.keeperChance) return;
+    const p = pool[Math.floor(hash01(k, s.floor, 67) * pool.length) % pool.length];
+    lairSync(s);
+    const lair = p.rank === lairRank(s);
+    let n = P.keeperDrop[0] + Math.floor(hash01(k, s.floor, 71) * (P.keeperDrop[1] - P.keeperDrop[0] + 1));
+    if (lair) { n *= P.lairFrags; s.pets.lair.kills++; }
+    s.pets.frags[p.id] = petFrags(s, p.id) + n;
+    events.push({ type: 'petFrag', id: p.id, n });
+    const lp = lairPet(s);
+    if (lair && lp && s.pets.lair.kills >= P.lairKeepers) grantPet(s, lp.id, events);
+  }
+  function setPet(s, id) { if (!petForm(s, id)) return false; s.pets.active = id; s.petAcc = 0; return true; }
+  function recallPet(s) { s.pets.active = null; s.petAcc = 0; return true; }
   // Сырой DPS отряда (без постоянных множителей — их питомец получает сам через permMult)
   function squadRawDps(s) { return CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0); }
-  function petHit(s) { const p = s.pets.active && petDef(s.pets.active); return p ? B.mul(squadRawDps(s), petShare(s, p.id) * p.interval) : 0; }
+  function petHit(s) { const p = s.pets.active && petDef(s.pets.active); return p && petForm(s, p.id) ? B.mul(squadRawDps(s), petShare(s, p.id) * p.interval) : 0; }
   // Средний DPS питомца с постоянными множителями (для показа и офлайна)
   function petDps(s) { const p = s.pets.active && petDef(s.pets.active); return p ? B.mul(B.div(petHit(s), p.interval), permMult(s, 'pet')) : 0; }
 
@@ -2010,12 +2080,12 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')); }
+  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), m);
@@ -2218,7 +2288,8 @@
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
       heroAutoAcc: 0,                            // накопитель автоатаки героя (не сохраняется)
       reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
-      pets: { active: null, levels: {} },        // питомцы: активный и уровни (≥1 — призван)
+      pets: { active: null, forms: {}, frags: {}, lair: { week: '', kills: 0 } },   // питомцы 2.0: формы 1…3, фрагменты, «Логово»
+      bestCleared: 0,                            // рекорд пройденных боссов за всю игру (для выдачи питомцев)
       petAcc: 0,                                 // накопитель атаки питомца (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
@@ -2310,7 +2381,7 @@
     rewardKill(s, isBoss, events, s.enemy.rare);
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
-  function rewardKill(s, isBoss, events, rareId) {
+  function rewardKill(s, isBoss, events, rareId, offline) {
     const rare = rareId ? rareDef(rareId) : null;
     const gold = B.ceil(B.mul(killGold(s.floor, isBoss), goldMult(s) * (rare ? rare.gold : 1)));
     s.gold = B.add(s.gold, gold); earnGold(s, gold);
@@ -2318,6 +2389,7 @@
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare) cnt(s, 'rare');
+    if (!offline && !isBoss) keeperRoll(s, events);
     if (rare && rare.shards) {
       const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
       s.materials.shard += n;
@@ -2326,6 +2398,7 @@
 
     if (isBoss) {
       s.stats.bossKills++; cnt(s, 'boss');
+      if (s.floor > (s.bestCleared | 0)) { s.bestCleared = s.floor; petsCatchUp(s, events); }
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
         const bonus = B.ceil(B.mul(firstClearGold(s.floor), goldMult(s)));
@@ -2384,7 +2457,7 @@
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')));   // готовность копится и сохраняется между врагами
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')) * (1 + petBonus(s, 'ult')));   // готовность копится и сохраняется между врагами
     }
     tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
@@ -2434,9 +2507,7 @@
       s.petAcc += dt;
       if (s.petAcc >= pet.interval) {
         s.petAcc -= pet.interval;
-        let hit = petHit(s);
-        if (pet.boss && s.enemy.isBoss) hit = B.mul(hit, 1 + pet.boss);
-        if (pet.vuln && s.enemy.vuln > 0) hit = B.mul(hit, 1 + pet.vuln);
+        const hit = petHit(s);
         if (B.gt(hit, 0)) { dealDamage(s, hit, 'pet', events); if (!s.enemy.alive) return events; }
       }
     }
@@ -2928,7 +2999,7 @@
         if (t + kt > secs) break;
         t += kt;
         const f = s.floor;
-        rewardKill(s, isBoss, events);
+        rewardKill(s, isBoss, events, null, true);
         if (isBoss) r.floorsCleared++;
         if (s.floor !== f) events.length = 0;               // события не копим
       }
@@ -3386,7 +3457,7 @@
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
-      pets: { active: s.pets.active, levels: { ...s.pets.levels } },
+      pets: { active: s.pets.active, forms: { ...s.pets.forms }, frags: { ...s.pets.frags }, lair: { ...s.pets.lair } }, bestCleared: s.bestCleared | 0,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
@@ -3448,7 +3519,7 @@
     if (d.v === 13) { d.v = 14; d.event = { week: '', id: null, points: 0, lanterns: 0, ms: [], bought: {} }; d.inbox = []; d.inboxSeq = 1; }   // 0.22 → 0.23
     if (d.v === 14) { d.v = 15; d.cls = { id: null, spent: {}, changeDay: '' }; d.booster = { owner: null, movedAt: 0 }; }   // 0.24 → 0.25
     if (d.v === 15) { d.v = 16; d.bones = []; d.boneSeq = 1; if (d.materials) d.materials.dust = 0; }   // 0.25 → 0.26: кости монстров
-    if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // 0.26 → 0.27: питомцы
+    if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // (уровни переводятся в формы в миграции 22)   // 0.26 → 0.27: питомцы
     if (d.v === 17) { d.v = 18; d.ach = {}; if (d.quests) d.quests.runBase = { ...(d.counters || {}) }; }   // 0.27 → 0.28
     if (d.v === 18) { d.v = 19; d.bpity = {}; }               // 0.28 → 0.29: баннеры
     if (d.v === 19) { d.v = 20; d.login = { day: '', n: 0 }; d.travel = { day: '', used: 0 }; if (d.quests) d.quests.chests = []; }   // 0.32 → 0.33
@@ -3456,6 +3527,16 @@
       d.v = 21;
       for (const r of d.runes || []) if (r && r.tier === 6) r.tier = 8;
       for (const b of d.bones || []) if (b && b.tier === 6) b.tier = 8;
+    }
+    if (d.v === 21) {                                      // 0.42 → 0.43: питомцы 2.0
+      d.v = 22;
+      const old = (d.pets && d.pets.levels) || {}, map = { wolf: 'ash_rat', golem: 'bog_toad', phoenix: 'shadow_wolf', drake: 'stone_beetle' };
+      let refund = 0;                                      // осколки, потраченные на уровни старых питомцев, возвращаются
+      for (const id in old) { const lv = old[id] | 0; for (let l = 1; l < lv; l++) refund += Math.ceil(30 * Math.pow(1.22, l - 1)); }
+      const forms = {}; for (const id in map) if ((old[id] | 0) > 0) forms[map[id]] = 1;
+      d.pets = { active: map[d.pets && d.pets.active] && forms[map[d.pets.active]] ? map[d.pets.active] : null, forms, frags: {}, lair: { week: '', kills: 0 } };
+      if (d.materials) d.materials.shard = (d.materials.shard | 0) + refund;
+      d.bestCleared = Math.max(d.highestCleared | 0, (d.bestFloor | 0) - 1, 0);
     }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
@@ -3519,9 +3600,15 @@
     }
     s.boneSeq = Math.max(d.boneSeq, ...s.bones.map(b => b.id + 1));
     const pt = d.pets;
-    if (!pt || typeof pt !== 'object' || !pt.levels || typeof pt.levels !== 'object') return null;
-    for (const p of CONFIG.pets.list) { const lv = pt.levels[p.id]; if (int(lv, 1) && lv <= CONFIG.pets.maxLevel) s.pets.levels[p.id] = lv; }
-    s.pets.active = s.pets.levels[pt.active] ? pt.active : null;
+    if (!pt || typeof pt !== 'object' || !pt.forms || typeof pt.forms !== 'object' || !pt.frags || typeof pt.frags !== 'object') return null;
+    for (const p of CONFIG.pets.list) {
+      const f = pt.forms[p.id], n = pt.frags[p.id];
+      if (int(f, 1) && f <= CONFIG.pets.forms.length) s.pets.forms[p.id] = f;
+      if (int(n, 1)) s.pets.frags[p.id] = n;
+    }
+    s.pets.active = s.pets.forms[pt.active] ? pt.active : null;
+    if (pt.lair && typeof pt.lair.week === 'string' && int(pt.lair.kills, 0)) s.pets.lair = { week: pt.lair.week, kills: pt.lair.kills };
+    s.bestCleared = int(d.bestCleared, 0) ? d.bestCleared : 0;
     if (!int(d.heroRank, 0) || d.heroRank > maxSteps()) return null;
     s.heroRank = d.heroRank;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
@@ -3660,7 +3747,7 @@
     perkMult, capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
-    petDef, petLevel, petCanUnlock, unlockPet, setPet, petShare, petUpCost, upgradePet, petHit, petDps, squadRawDps,
+    petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
     boneSlot, boneValue, equippedOn, bonePower, boneMult, rollBone, equipBone, unequipBone, boneUpCost, upgradeBone,
     gradeCost, gradeUpBone, setBoneLock, recycleValue, recycleBones,
     classDef, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
@@ -4007,6 +4094,12 @@
       } else if (e.type === 'bone') {
         const bs = C.boneSlot(e.bone.slot);
         setTimeout(() => toast('Кость монстра!<small>' + bs.icon + ' ' + bs.name + ' · ' + CFG.rarities[e.bone.tier] + '</small>'), 2600);
+      } else if (e.type === 'pet') {
+        const pd = C.petDef(e.id);
+        setTimeout(() => toast('Новый питомец!<small>' + pd.icon + ' ' + pd.name + ' · ' + pd.rank + ' · Меню → Питомцы</small>'), 1800);
+      } else if (e.type === 'petFrag') {
+        const pd = C.petDef(e.id);
+        toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
       } else if (e.type === 'totem') {
         setTimeout(() => toast('Тотем получен!<small>🗿 ' + e.name + ' · вкладка «Руны»</small>'), 4800);
       } else if (e.type === 'biome') {
@@ -4328,7 +4421,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) + C.questChestsReady(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -4543,25 +4636,8 @@
       html += '<span class="badge ' + (sets.includes(r) ? 'sq' : 'rs') + '"><span class="rar r-' + r + '">' + r + '</span> ' + got + '/' + pool.length + (sets.includes(r) ? ' ✓' : '') + '</span>';
     }
     html += '</div>';
-    // призванное существо
-    const P = CFG.pets;
-    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · в бою одно · бьёт долей DPS отряда</div>';
-    for (const p of P.list) {
-      const lv = C.petLevel(s, p.id), act = s.pets.active === p.id;
-      if (!lv) {
-        const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
-        const can = C.petCanUnlock(s, p.id);
-        html += '<div class="hRow' + (can ? '' : ' locked') + '" style="--r:#b98cff"><div class="artIcon">' + (can ? p.icon : '?') + '</div><div class="hInfo"><div class="hName">' + p.name + '</div>' +
-          '<div class="hSub">' + p.desc + ' · откроется: ' + cond + '</div></div>' + (can ? '<button class="hBtn go" data-pet="' + p.id + '">Призвать</button>' : '') + '</div>';
-        continue;
-      }
-      const up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up;
-      html += '<div class="hRow" style="--r:' + (act ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + p.icon + '</div><div class="hInfo">' +
-        '<div class="hName">' + p.name + ' · ур. ' + lv + '/' + P.maxLevel + (act ? ' <span class="badge sq">в бою</span>' : '') + '</div>' +
-        '<div class="hSub">' + Math.round(C.petShare(s, p.id) * 100) + '% DPS отряда · удар раз в ' + p.interval + ' с · ' + p.desc + '</div></div><div class="hBtns">' +
-        (act ? '' : '<button class="hBtn go" data-pset="' + p.id + '">В бой</button>') +
-        (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-pup="' + p.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🔹' + fmt(up) + '</button>' : '<button class="hBtn" disabled>max</button>') + '</div></div>';
-    }
+    // призванные существа — в новом интерфейсе: Меню → Питомцы
+    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · Меню → Питомцы</div>';
     return html;
   }
 
@@ -5234,9 +5310,6 @@
     if (dd.act === 'clsPick') { classPick = true; ok = true; }
     if (dd.act === 'clsBack') { classPick = false; ok = true; }
     if (dd.cnode) ok = C.buyClassNode(s, dd.cnode);
-    if (dd.pet) { ok = C.unlockPet(s, dd.pet); if (ok) toast('Призванное существо!<small>' + C.petDef(dd.pet).icon + ' ' + C.petDef(dd.pet).name + '</small>'); }
-    if (dd.pset) ok = C.setPet(s, dd.pset);
-    if (dd.pup) ok = C.upgradePet(s, dd.pup);
     if (dd.boost) { ok = C.moveBooster(s, dd.boost, Date.now()); if (ok) toast(CFG.booster.name + '<small>теперь у: ' + (dd.boost === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === dd.boost).name) + '</small>'); }
     if (b.dataset.evo) {
       const ec = C.evoCost(s, b.dataset.evo);
@@ -5413,7 +5486,7 @@
     function renderMenu() {
       setHtml('mTop', cur('◆', fmt(s.gold), true) + cur('🎟', fmt(s.tickets)) + cur('👻', fmt(s.souls)));
       const sub = { up: 'Главный герой и союзники', art: 'Все найденные действуют сразу', bag: 'Материалы, билеты, руны, кости', pets: 'Призванное существо в бою' };
-      const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) };
+      const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) };
       let h = SECS.map(([id, ic, nm, c]) => '<button class="mCard" data-sec="' + id + '" style="--tc:' + c + '"><span class="ic">' + ic + '</span><span><span class="nm">' + nm + '</span><small>' + sub[id] + '</small></span>' +
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
       h += '<div class="secT">Другие разделы · временно в старом виде</div><div class="mMore">' +
@@ -5515,6 +5588,7 @@
       add({ id: 'tickets', cat: 'tick', icon: '🎟', name: 'Билет призыва', n: s.tickets, r: 3, desc: 'Призыв героев в портале.', go: 'portal' });
       add({ id: 'lanterns', cat: 'tick', icon: '🏮', name: 'Фонарь события', n: (s.event && s.event.lanterns) | 0, r: 4, desc: 'Валюта события недели: событийный призыв и лавка.', go: 'events' });
       add({ id: 'essence', cat: 'spec', icon: '✦', name: 'Эссенция', n: s.essence, r: 3, desc: 'Награда заданий и подземелий.' });
+      for (const pd of CFG.pets.list) { const n = C.petFrags(s, pd.id); if (n) it.push({ id: 'pf_' + pd.id, cat: 'shard', icon: '🧩', name: 'Фрагменты: ' + pd.name, n, r: CFG.rarities.indexOf(pd.rank), desc: 'Для эволюции питомца ' + pd.icon + ' ' + pd.name + '. Роняет его «Хранитель».' }); }
       for (const ru of s.runes) { const k = CFG.runes.kinds.find(x => x.id === (ru.type || ru.kind)) || {}; it.push({ id: 'r' + ru.id, cat: 'spec', icon: k.icon || 'ᚦ', name: (k.name || 'Руна') + ' · ур. ' + (ru.lvl | 0), n: 1, r: ru.tier | 0, desc: k.desc ? '+% ' + k.desc : '', go: 'runes' }); }
       for (const bo of s.bones) { const k = CFG.bones.slots.find(x => x.id === bo.slot) || {}; it.push({ id: 'b' + bo.id, cat: 'spec', icon: k.icon || '🦴', name: 'Кость: ' + (k.name || '') + ' · ур. ' + (bo.lvl | 0), n: 1, r: bo.tier | 0, desc: k.desc ? '+% ' + k.desc + (bo.on ? ' · надета' : '') : '', go: 'bones' }); }
       return it;
@@ -5563,29 +5637,45 @@
       if (b && b.dataset.pgo) { $('ui2Pop').classList.remove('show'); openOld(b.dataset.pgo); }
     });
 
-    // Питомцы: один большой выбранный сверху, остальные ниже; 1 активное + 1 пассивное умение
+    // Питомцы 2.0: один большой выбранный сверху, остальные ниже; 1 активное + 1 пассивное умение; звёзды — только после эволюции
+    let petSort = 'rar';
     function petsHtml() {
-      const P = CFG.pets, list = P.list;
-      if (!petSel || !C.petDef(petSel)) petSel = s.pets.active || (list.find(p => C.petLevel(s, p.id)) || list[0]).id;
-      const p = C.petDef(petSel), lv = C.petLevel(s, p.id), act = s.pets.active === p.id, up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up, canGet = !lv && C.petCanUnlock(s, p.id);
-      const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
-      let h = '<div class="petTop" style="' + rvar(act ? 'S' : 'B') + '"><div class="pic"' + (lv ? '' : ' style="filter:brightness(0) drop-shadow(0 0 2px #6e6678)"') + '>' + p.icon + '</div>' +
-        '<div><div class="nm">' + p.name + '</div>' + (lv ? '<div class="ln">Ур. <b>' + lv + '</b> / ' + P.maxLevel + '</div><div class="ln">⚔ <b>' + Math.round(C.petShare(s, p.id) * 100) + '%</b> DPS отряда</div>' +
-        (act ? '<div class="ln" style="color:#ffd36b">● в бою</div>' : '') : '<div class="ln">🔒 Откроется: ' + cond + '</div>') + '</div></div>';
-      h += '<div class="petBtns">' +
-        (lv ? (act ? '<button class="upBtn alt" data-pact="off">Отозвать</button>' : '<button class="upBtn gold" data-pact="on">Призвать</button>')
-            : '<button class="upBtn gold" data-pget' + (canGet ? '' : ' disabled') + '>Получить</button>') +
-        '<button class="upBtn" data-pup' + (canUp ? '' : ' disabled') + '>' + (up ? 'Улучшить<span>' + M.shard.icon + ' ' + fmt(up) + '</span>' : lv ? 'Максимум' : 'Улучшить') + '</button>' +
-        '<button class="upBtn alt" disabled>Эволюция<span>скоро</span></button></div>';
-      const pas = p.boss ? '+' + Math.round(p.boss * 100) + '% урона по боссам' : p.vuln ? '+' + Math.round(p.vuln * 100) + '% урона по уязвимому боссу' : 'Бонусы артефактов действуют на питомца';
-      h += '<div class="abil"><div class="ico">⚡</div><div><b><i>Активная</i>Удар</b><p>Раз в ' + p.interval + ' с бьёт на долю DPS отряда (' + Math.round(C.petShare(s, p.id) * 100) + '%) — ' + p.desc + '.</p></div></div>' +
-           '<div class="abil pas"><div class="ico">✦</div><div><b><i>Пассивная</i>Аура</b><p>' + pas + '.</p></div></div>';
-      h += '<div class="secT">Все питомцы · в бою один</div><div class="grid4">' + list.map(q => {
-        const ql = C.petLevel(s, q.id);
-        return '<button class="aCell' + (ql ? '' : ' lock') + '" data-psel="' + q.id + '" style="' + rvar(s.pets.active === q.id ? 'S' : q.id === petSel ? 'A' : 'B') + '">' +
-          (ql ? '<span class="lv">Ур. ' + ql + '</span>' : '') + '<span class="ai">' + q.icon + '</span><span class="an">' + q.name + '</span>' +
-          (!ql && C.petCanUnlock(s, q.id) ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
-      }).join('') + '</div><div class="secT" style="text-align:center">Новая система питомцев (27 шт., 3 формы) — после интерфейса</div>';
+      const P = CFG.pets, R = CFG.rarities;
+      if (!petSel || !C.petDef(petSel)) petSel = s.pets.active || (P.list.find(p => C.petForm(s, p.id)) || P.list[0]).id;
+      const p = C.petDef(petSel), f = C.petForm(s, p.id), act = s.pets.active === p.id, pw = C.petPower(p, f || 1);
+      const ec = C.petEvoCost(s, p.id), frags = C.petFrags(s, p.id), canEvo = C.canEvolvePet(s, p.id);
+      const pct = x => Math.round(x * 100) + '%';
+      const where = p.floor ? 'первая победа над боссом этажа ' + p.floor : 'событие «Логово» (неделя ранга ' + p.rank + ')';
+      const bio = (CFG.biomes.find(b => b.id === p.biome) || {}).name || '';
+      let h = '<div class="petTop" style="' + rvar(p.rank) + '"><div class="pic"' + (f ? '' : ' style="filter:brightness(0) drop-shadow(0 0 2px #6e6678)"') + '>' + p.icon + '<span class="rk">' + p.rank + '</span>' +
+        (f > 1 ? '<div class="stars" style="bottom:4px">' + '<b>★</b>'.repeat(f - 1) + '</div>' : '') + '</div>' +
+        '<div><div class="nm">' + p.name + '</div><div class="ln">' + (f ? P.forms[f - 1] : '🔒 не получен') + '</div>' +
+        '<div class="ln">⚔ <b>' + pct(pw.share) + '</b> DPS отряда</div><div class="ln">✦ <b>+' + pct(pw.bonus) + '</b> ' + P.typeName[p.type] + '</div>' +
+        (act ? '<div class="ln" style="color:#ffd36b">● в бою</div>' : '') + (f ? '' : '<div class="ln">Где взять: ' + where + '</div>') + '</div></div>';
+      h += '<div class="petBtns" style="grid-template-columns:1fr 1fr">' +
+        (f ? (act ? '<button class="upBtn alt" data-pact="off">Отозвать</button>' : '<button class="upBtn gold" data-pact="on">Призвать</button>')
+           : '<button class="upBtn gold" disabled>Не получен</button>') +
+        (ec != null ? '<button class="upBtn" data-pevo' + (canEvo ? '' : ' disabled') + '>Эволюция<span>🧩 ' + frags + ' / ' + ec + '</span></button>'
+                    : '<button class="upBtn alt" disabled>' + (f ? 'Пиковая форма' : 'Эволюция') + '<span>🧩 ' + frags + '</span></button>') + '</div>';
+      h += '<div class="pAbil"><div class="ico">⚡</div><div><b><i>Активная</i>Удар</b><p>Раз в ' + p.interval + ' с бьёт сам: ' + pct(pw.share) + ' DPS отряда в секунду.</p></div></div>' +
+           '<div class="pAbil pas"><div class="ico">✦</div><div><b><i>Пассивная</i>' + P.typeName[p.type][0].toUpperCase() + P.typeName[p.type].slice(1) + '</b><p>Пока питомец в бою: +' + pct(pw.bonus) + ' ' + P.typeName[p.type] + '.</p></div></div>' +
+           '<div class="pAbil"><div class="ico">🧩</div><div><b>Фрагменты</b><p>Роняет «Хранитель» в биоме «' + bio + '» на этажах от ' + (p.floor || P.floors[p.rank][1]) + ' (≈1 из 50 врагов, офлайн не падают). Эволюция усиливает удар и бонус.</p></div></div>';
+      const lr = C.lairRank(s), lp = C.lairPet(s);
+      h += '<div class="secT">Логово недели: ранг ' + lr + ' · Хранители этого ранга дают ×' + P.lairFrags + ' фрагментов' + (lp && !C.petForm(s, lp.id) ? ' · ' + (s.pets.lair.week === ((s.event && s.event.week) || '') ? s.pets.lair.kills : 0) + '/' + P.lairKeepers + ' → ' + lp.icon + ' ' + lp.name : '') + '</div>';
+      h += '<div class="sortRow">Сортировка: ' + [['rar', 'Редкость'], ['pow', 'Сила'], ['new', 'Новые']].map(([v, tx]) => '<button class="chip' + (petSort === v ? ' on' : '') + '" data-psort="' + v + '">' + tx + '</button>').join('') + '</div>';
+      const list = P.list.slice().sort((a, b) => {
+        const fa = C.petForm(s, a.id), fb = C.petForm(s, b.id);
+        if (!!fa !== !!fb) return fa ? -1 : 1;
+        if (petSort === 'pow') return C.petPower(b, fb || 1).share - C.petPower(a, fa || 1).share;
+        if (petSort === 'new') return P.list.indexOf(b) - P.list.indexOf(a);
+        return R.indexOf(b.rank) - R.indexOf(a.rank);
+      });
+      h += '<div class="grid4">' + list.map(q => {
+        const qf = C.petForm(s, q.id);
+        return '<button class="aCell' + (qf ? '' : ' lock') + '" data-psel="' + q.id + '" style="' + rvar(q.rank) + (q.id === petSel ? ';outline:2px solid #fff' : '') + '">' +
+          '<span class="lv">' + q.rank + (qf > 1 ? ' ' + '★'.repeat(qf - 1) : '') + '</span><span class="ai">' + q.icon + '</span><span class="an">' + q.name + '</span>' +
+          (s.pets.active === q.id ? '<i class="bang2" style="top:-4px;right:-4px;background:#d6a640">●</i>' : C.canEvolvePet(s, q.id) ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
+      }).join('') + '</div>';
       return h;
     }
 
@@ -5606,9 +5696,9 @@
       else if (d.item) { click(); popItem(d.item); return; }
       else if (d.bs) { click(); bagSort = d.bs; }
       else if (d.psel) { click(); petSel = d.psel; }
-      else if (d.pact) { click(); if (d.pact === 'on') C.setPet(s, petSel); else { s.pets.active = null; s.petAcc = 0; } save(); }
-      else if (d.pup !== undefined) { click(); if (C.upgradePet(s, petSel)) save(); }
-      else if (d.pget !== undefined) { click(); if (C.unlockPet(s, petSel)) { toast('Призванное существо!<small>' + C.petDef(petSel).icon + ' ' + C.petDef(petSel).name + '</small>'); save(); } }
+      else if (d.pact) { click(); if (d.pact === 'on') C.setPet(s, petSel); else C.recallPet(s); save(); }
+      else if (d.psort) { click(); petSort = d.psort; }
+      else if (d.pevo !== undefined) { click(); if (C.evolvePet(s, petSel)) { const pd = C.petDef(petSel); toast('Эволюция!<small>' + pd.icon + ' ' + pd.name + ' · ' + CFG.pets.forms[C.petForm(s, petSel) - 1] + '</small>'); save(); } }
       else return;
       render();
     });

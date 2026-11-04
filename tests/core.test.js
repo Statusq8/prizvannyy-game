@@ -1855,52 +1855,89 @@ test('кости со старыми названиями слотов (0.26) п
   assert.strictEqual(t.bones[0].on, 'hero');
 });
 
-// ---------- питомцы (0.27) ----------
-test('питомцы: открытие по условиям, один активный', () => {
+// ---------- питомцы 2.0 (0.43) ----------
+test('питомцы 2.0: 27 шт., по 3 на ранг; 2 за этажи, 3-й — событие; типы бонуса по кругу', () => {
+  const P = CFG.pets;
+  assert.strictEqual(P.list.length, 27);
+  for (const r of CFG.rarities) {
+    const l = P.list.filter(p => p.rank === r);
+    assert.strictEqual(l.length, 3);
+    assert.deepStrictEqual(l.map(p => p.floor), [...P.floors[r], null]);
+    assert.ok(l[2].event); assert.strictEqual(new Set(l.map(p => p.type)).size, 3);
+  }
+  assert.strictEqual(new Set(P.list.map(p => p.id)).size, 27);
+});
+
+test('питомец выдаётся за первую победу над боссом своего этажа, один активный; бьёт долей DPS отряда', () => {
   const s = C.newState(NOCRIT);
-  assert.strictEqual(C.unlockPet(s, 'wolf'), false);
-  s.bestFloor = 25; assert.ok(C.unlockPet(s, 'wolf')); assert.strictEqual(s.pets.active, 'wolf');
-  assert.strictEqual(C.unlockPet(s, 'golem'), false);
-  s.bestFloor = 150; assert.ok(C.unlockPet(s, 'golem')); assert.strictEqual(s.pets.active, 'wolf');
-  assert.ok(C.setPet(s, 'golem')); assert.strictEqual(s.pets.active, 'golem');
-  assert.strictEqual(C.unlockPet(s, 'phoenix'), false); s.rituals = 1; assert.ok(C.unlockPet(s, 'phoenix'));
-  assert.strictEqual(C.unlockPet(s, 'drake'), false);
-  for (const b of CFG.biomes.slice(0, 5)) s.totems[b.id] = 1;
-  assert.ok(C.unlockPet(s, 'drake'));
-  assert.strictEqual(C.setPet(s, 'nope'), false);
+  s.floor = s.maxFloor = 150; C.challengeBoss(s); s.enemy.hp = B.toNum ? 1 : 1;
+  let ev = []; for (let i = 0; i < 200 && !ev.some(e => e.type === 'pet'); i++) ev = ev.concat(C.tap(s), C.tick(s, 0.5));
+  assert.ok(ev.some(e => e.type === 'pet' && e.id === 'ash_rat'));
+  assert.strictEqual(C.petForm(s, 'ash_rat'), 1); assert.strictEqual(s.pets.active, 'ash_rat');
+  assert.strictEqual(C.petForm(s, 'bog_toad'), 0);
+  // задним числом: рекорд 300 → оба E и не D
+  const t = C.newState(NOCRIT); t.bestCleared = 300; C.petsCatchUp(t);
+  assert.ok(C.petForm(t, 'ash_rat') && C.petForm(t, 'bog_toad') && !C.petForm(t, 'cave_bat') && !C.petForm(t, 'shadow_wolf'));
+  // удар: доля × интервал
+  t.allies.irene.level = 10; const p = C.petDef('ash_rat');
+  assert.ok(Math.abs(C.petHit(t) - C.squadRawDps(t) * CFG.pets.power.E[0] * p.interval) < 1e-9 * Math.max(1, C.petHit(t)));
+  assert.ok(C.setPet(t, 'bog_toad')); assert.strictEqual(t.pets.active, 'bog_toad');
+  assert.strictEqual(C.setPet(t, 'cave_bat'), false); C.recallPet(t); assert.strictEqual(t.pets.active, null);
 });
 
-test('питомец бьёт сам с своей частотой: доля DPS отряда × интервал × постоянные множители', () => {
-  const s = C.newState(NOCRIT); s.bestFloor = 25; C.unlockPet(s, 'wolf');
-  s.squad = []; s.allies.irene.level = 10;                          // резерв, чтобы отряд не бил сам
-  s.enemy.hp = s.enemy.maxHp = 1e18;
-  const exp = C.petHit(s) * C.permMult(s, 'pet');
-  let hits = [];
-  for (let i = 0; i < 31; i++) hits = hits.concat(C.tick(s, 1 / 30).filter(e => e.type === 'hit' && e.source === 'pet'));
-  assert.strictEqual(hits.length, 2);                                // 1 с / 0.5 с
-  assert.ok(Math.abs(hits[0].dmg - exp) < 1e-6 * exp);
-  assert.ok(Math.abs(C.petHit(s) - C.squadRawDps(s) * 0.12 * 0.5) < 1e-9);
+test('бонус активного питомца по типу: урон отряда, по боссу, золото, заряд ультов', () => {
+  const s = C.newState(NOCRIT);
+  const byType = ty => CFG.pets.list.find(p => p.type === ty && p.rank === 'E') || CFG.pets.list.find(p => p.type === ty);
+  for (const ty of ['squad', 'boss', 'gold', 'ult']) {
+    const p = byType(ty); s.pets.forms = { [p.id]: 1 }; s.pets.active = p.id;
+    assert.ok(C.petBonus(s, ty) > 0);
+    for (const o of ['squad', 'boss', 'gold', 'ult']) if (o !== ty) assert.strictEqual(C.petBonus(s, o), 0);
+  }
+  const g = byType('gold'); s.pets.forms = { [g.id]: 1 }; s.pets.active = g.id;
+  const m1 = C.goldMult(s); s.pets.active = null; assert.ok(m1 > C.goldMult(s));
 });
 
-test('питомец: уровень за осколки увеличивает долю; голем сильнее по боссам; DPS в общем', () => {
-  const s = C.newState(NOCRIT); s.bestFloor = 200; s.materials.shard = 1e6; s.allies.irene.level = 10;
-  C.unlockPet(s, 'golem');
-  const sh = C.petShare(s, 'golem');
-  assert.ok(C.upgradePet(s, 'golem')); assert.ok(C.petShare(s, 'golem') > sh);
-  const auto = C.autoDps(s); s.pets.active = null; assert.ok(C.autoDps(s) < auto); s.pets.active = 'golem';
-  s.pets.levels.golem = CFG.pets.maxLevel; assert.strictEqual(C.petUpCost(s, 'golem'), null);
-  s.floor = s.maxFloor = 12; C.challengeBoss(s); s.enemy.hp = s.enemy.maxHp = 1e18; s.squad = [];
-  const hit = C.tick(s, 2.01).find(e => e.source === 'pet');
-  assert.ok(Math.abs(hit.dmg / (C.petHit(s) * C.permMult(s, 'pet') * C.damageMult(s, 'pet')) - 1.5) < 1e-6);
+test('эволюция питомца за фрагменты: 3 формы, бонус ×2 и ×4; стоимость растёт с рангом', () => {
+  const s = C.newState(NOCRIT); s.pets.forms = { ash_rat: 1 };
+  const b1 = C.petPower(C.petDef('ash_rat'), 1).bonus;
+  assert.strictEqual(C.petEvoCost(s, 'ash_rat'), 40); assert.strictEqual(C.evolvePet(s, 'ash_rat'), false);
+  s.pets.frags.ash_rat = 40; assert.ok(C.evolvePet(s, 'ash_rat')); assert.strictEqual(C.petForm(s, 'ash_rat'), 2);
+  assert.strictEqual(C.petFrags(s, 'ash_rat'), 0); assert.strictEqual(C.petEvoCost(s, 'ash_rat'), 150);
+  s.pets.frags.ash_rat = 150; assert.ok(C.evolvePet(s, 'ash_rat')); assert.strictEqual(C.petEvoCost(s, 'ash_rat'), null);
+  assert.ok(Math.abs(C.petPower(C.petDef('ash_rat'), 3).bonus - b1 * 4) < 1e-9);
+  s.pets.forms.world_eater = 1; assert.strictEqual(C.petEvoCost(s, 'world_eater'), Math.ceil(40 * Math.pow(1.5, 8)));
 });
 
-test('питомец переживает ритуал, сохраняется; миграция с 0.26', () => {
-  const s = C.newState(NOCRIT); s.bestFloor = 400; C.unlockPet(s, 'wolf'); s.pets.levels.wolf = 7;
-  s.floor = s.maxFloor = 400; C.ritual(s);
-  assert.strictEqual(s.pets.levels.wolf, 7); assert.strictEqual(s.pets.active, 'wolf');
-  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.pets, s.pets);
-  const old = JSON.parse(C.serialize(s)); old.v = 16; delete old.pets;
-  assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).pets, { active: null, levels: {} });
+test('Хранители роняют фрагменты в своём биоме, в офлайне — нет; «Логово» даёт ×3 и питомца события', () => {
+  const p = C.petDef('ash_rat');
+  const t = C.newState(NOCRIT); t.floor = t.maxFloor = 170;
+  assert.strictEqual(C.biomeOf(170).id, p.biome);
+  let ev = [];
+  for (let k = 0; k < 3000; k++) { t.stats.kills = k; C.keeperRoll(t, ev); }
+  const n = ev.filter(e => e.type === 'petFrag').length;
+  assert.ok(n > 30 && n < 100, 'примерно 1 из 50: ' + n);
+  assert.ok(ev.every(e => e.type !== 'petFrag' || C.petDef(e.id).biome === p.biome));
+  const low = C.newState(NOCRIT); low.floor = 120; ev = [];
+  for (let k = 0; k < 3000; k++) { low.stats.kills = k; C.keeperRoll(low, ev); }
+  assert.ok(!ev.some(e => e.type === 'petFrag' && e.id === 'ash_rat'), 'ниже этажа питомца Хранителя нет');
+  const o = C.newState(NOCRIT); o.floor = o.maxFloor = 170; o.allies.irene.level = 300;
+  C.offlineProgress(o, 3600);
+  assert.strictEqual(Object.keys(o.pets.frags).length, 0, 'офлайн фрагменты не падают');
+  // Логово: ранг недели по кругу; Хранители этого ранга дают ×3, 10 штук — питомец события
+  const l = C.newState(NOCRIT); C.eventReset(l, 'w2026-11-02'); const r1 = C.lairRank(l); C.eventReset(l, 'w2026-11-09');
+  assert.notStrictEqual(C.lairRank(l), r1); assert.ok(C.lairPet(l).event);
+});
+
+test('питомцы 2.0 переживают ритуал и сохранение; миграция со старых питомцев возвращает осколки', () => {
+  const s = C.newState(NOCRIT); s.pets.forms = { ash_rat: 2 }; s.pets.frags = { ash_rat: 7 }; s.pets.active = 'ash_rat'; s.bestCleared = 150;
+  s.floor = s.maxFloor = 400; s.bestFloor = 400; C.ritual(s);
+  assert.strictEqual(C.petForm(s, 'ash_rat'), 2); assert.strictEqual(s.pets.active, 'ash_rat');
+  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.pets, s.pets); assert.strictEqual(t.bestCleared, 150);
+  const old = JSON.parse(C.serialize(C.newState(NOCRIT))); old.v = 21; old.pets = { active: 'golem', levels: { wolf: 3, golem: 1 } };
+  const shard0 = old.materials.shard;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m); assert.strictEqual(m.pets.active, 'bog_toad'); assert.strictEqual(C.petForm(m, 'ash_rat'), 1);
+  assert.strictEqual(m.materials.shard - shard0, 30 + Math.ceil(30 * 1.22));
 });
 
 // ---------- ритуальные задания и достижения (0.28) ----------

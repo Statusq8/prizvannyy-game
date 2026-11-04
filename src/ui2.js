@@ -74,7 +74,7 @@
     function renderMenu() {
       setHtml('mTop', cur('◆', fmt(s.gold), true) + cur('🎟', fmt(s.tickets)) + cur('👻', fmt(s.souls)));
       const sub = { up: 'Главный герой и союзники', art: 'Все найденные действуют сразу', bag: 'Материалы, билеты, руны, кости', pets: 'Призванное существо в бою' };
-      const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) };
+      const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) };
       let h = SECS.map(([id, ic, nm, c]) => '<button class="mCard" data-sec="' + id + '" style="--tc:' + c + '"><span class="ic">' + ic + '</span><span><span class="nm">' + nm + '</span><small>' + sub[id] + '</small></span>' +
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
       h += '<div class="secT">Другие разделы · временно в старом виде</div><div class="mMore">' +
@@ -176,6 +176,7 @@
       add({ id: 'tickets', cat: 'tick', icon: '🎟', name: 'Билет призыва', n: s.tickets, r: 3, desc: 'Призыв героев в портале.', go: 'portal' });
       add({ id: 'lanterns', cat: 'tick', icon: '🏮', name: 'Фонарь события', n: (s.event && s.event.lanterns) | 0, r: 4, desc: 'Валюта события недели: событийный призыв и лавка.', go: 'events' });
       add({ id: 'essence', cat: 'spec', icon: '✦', name: 'Эссенция', n: s.essence, r: 3, desc: 'Награда заданий и подземелий.' });
+      for (const pd of CFG.pets.list) { const n = C.petFrags(s, pd.id); if (n) it.push({ id: 'pf_' + pd.id, cat: 'shard', icon: '🧩', name: 'Фрагменты: ' + pd.name, n, r: CFG.rarities.indexOf(pd.rank), desc: 'Для эволюции питомца ' + pd.icon + ' ' + pd.name + '. Роняет его «Хранитель».' }); }
       for (const ru of s.runes) { const k = CFG.runes.kinds.find(x => x.id === (ru.type || ru.kind)) || {}; it.push({ id: 'r' + ru.id, cat: 'spec', icon: k.icon || 'ᚦ', name: (k.name || 'Руна') + ' · ур. ' + (ru.lvl | 0), n: 1, r: ru.tier | 0, desc: k.desc ? '+% ' + k.desc : '', go: 'runes' }); }
       for (const bo of s.bones) { const k = CFG.bones.slots.find(x => x.id === bo.slot) || {}; it.push({ id: 'b' + bo.id, cat: 'spec', icon: k.icon || '🦴', name: 'Кость: ' + (k.name || '') + ' · ур. ' + (bo.lvl | 0), n: 1, r: bo.tier | 0, desc: k.desc ? '+% ' + k.desc + (bo.on ? ' · надета' : '') : '', go: 'bones' }); }
       return it;
@@ -224,29 +225,45 @@
       if (b && b.dataset.pgo) { $('ui2Pop').classList.remove('show'); openOld(b.dataset.pgo); }
     });
 
-    // Питомцы: один большой выбранный сверху, остальные ниже; 1 активное + 1 пассивное умение
+    // Питомцы 2.0: один большой выбранный сверху, остальные ниже; 1 активное + 1 пассивное умение; звёзды — только после эволюции
+    let petSort = 'rar';
     function petsHtml() {
-      const P = CFG.pets, list = P.list;
-      if (!petSel || !C.petDef(petSel)) petSel = s.pets.active || (list.find(p => C.petLevel(s, p.id)) || list[0]).id;
-      const p = C.petDef(petSel), lv = C.petLevel(s, p.id), act = s.pets.active === p.id, up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up, canGet = !lv && C.petCanUnlock(s, p.id);
-      const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
-      let h = '<div class="petTop" style="' + rvar(act ? 'S' : 'B') + '"><div class="pic"' + (lv ? '' : ' style="filter:brightness(0) drop-shadow(0 0 2px #6e6678)"') + '>' + p.icon + '</div>' +
-        '<div><div class="nm">' + p.name + '</div>' + (lv ? '<div class="ln">Ур. <b>' + lv + '</b> / ' + P.maxLevel + '</div><div class="ln">⚔ <b>' + Math.round(C.petShare(s, p.id) * 100) + '%</b> DPS отряда</div>' +
-        (act ? '<div class="ln" style="color:#ffd36b">● в бою</div>' : '') : '<div class="ln">🔒 Откроется: ' + cond + '</div>') + '</div></div>';
-      h += '<div class="petBtns">' +
-        (lv ? (act ? '<button class="upBtn alt" data-pact="off">Отозвать</button>' : '<button class="upBtn gold" data-pact="on">Призвать</button>')
-            : '<button class="upBtn gold" data-pget' + (canGet ? '' : ' disabled') + '>Получить</button>') +
-        '<button class="upBtn" data-pup' + (canUp ? '' : ' disabled') + '>' + (up ? 'Улучшить<span>' + M.shard.icon + ' ' + fmt(up) + '</span>' : lv ? 'Максимум' : 'Улучшить') + '</button>' +
-        '<button class="upBtn alt" disabled>Эволюция<span>скоро</span></button></div>';
-      const pas = p.boss ? '+' + Math.round(p.boss * 100) + '% урона по боссам' : p.vuln ? '+' + Math.round(p.vuln * 100) + '% урона по уязвимому боссу' : 'Бонусы артефактов действуют на питомца';
-      h += '<div class="abil"><div class="ico">⚡</div><div><b><i>Активная</i>Удар</b><p>Раз в ' + p.interval + ' с бьёт на долю DPS отряда (' + Math.round(C.petShare(s, p.id) * 100) + '%) — ' + p.desc + '.</p></div></div>' +
-           '<div class="abil pas"><div class="ico">✦</div><div><b><i>Пассивная</i>Аура</b><p>' + pas + '.</p></div></div>';
-      h += '<div class="secT">Все питомцы · в бою один</div><div class="grid4">' + list.map(q => {
-        const ql = C.petLevel(s, q.id);
-        return '<button class="aCell' + (ql ? '' : ' lock') + '" data-psel="' + q.id + '" style="' + rvar(s.pets.active === q.id ? 'S' : q.id === petSel ? 'A' : 'B') + '">' +
-          (ql ? '<span class="lv">Ур. ' + ql + '</span>' : '') + '<span class="ai">' + q.icon + '</span><span class="an">' + q.name + '</span>' +
-          (!ql && C.petCanUnlock(s, q.id) ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
-      }).join('') + '</div><div class="secT" style="text-align:center">Новая система питомцев (27 шт., 3 формы) — после интерфейса</div>';
+      const P = CFG.pets, R = CFG.rarities;
+      if (!petSel || !C.petDef(petSel)) petSel = s.pets.active || (P.list.find(p => C.petForm(s, p.id)) || P.list[0]).id;
+      const p = C.petDef(petSel), f = C.petForm(s, p.id), act = s.pets.active === p.id, pw = C.petPower(p, f || 1);
+      const ec = C.petEvoCost(s, p.id), frags = C.petFrags(s, p.id), canEvo = C.canEvolvePet(s, p.id);
+      const pct = x => Math.round(x * 100) + '%';
+      const where = p.floor ? 'первая победа над боссом этажа ' + p.floor : 'событие «Логово» (неделя ранга ' + p.rank + ')';
+      const bio = (CFG.biomes.find(b => b.id === p.biome) || {}).name || '';
+      let h = '<div class="petTop" style="' + rvar(p.rank) + '"><div class="pic"' + (f ? '' : ' style="filter:brightness(0) drop-shadow(0 0 2px #6e6678)"') + '>' + p.icon + '<span class="rk">' + p.rank + '</span>' +
+        (f > 1 ? '<div class="stars" style="bottom:4px">' + '<b>★</b>'.repeat(f - 1) + '</div>' : '') + '</div>' +
+        '<div><div class="nm">' + p.name + '</div><div class="ln">' + (f ? P.forms[f - 1] : '🔒 не получен') + '</div>' +
+        '<div class="ln">⚔ <b>' + pct(pw.share) + '</b> DPS отряда</div><div class="ln">✦ <b>+' + pct(pw.bonus) + '</b> ' + P.typeName[p.type] + '</div>' +
+        (act ? '<div class="ln" style="color:#ffd36b">● в бою</div>' : '') + (f ? '' : '<div class="ln">Где взять: ' + where + '</div>') + '</div></div>';
+      h += '<div class="petBtns" style="grid-template-columns:1fr 1fr">' +
+        (f ? (act ? '<button class="upBtn alt" data-pact="off">Отозвать</button>' : '<button class="upBtn gold" data-pact="on">Призвать</button>')
+           : '<button class="upBtn gold" disabled>Не получен</button>') +
+        (ec != null ? '<button class="upBtn" data-pevo' + (canEvo ? '' : ' disabled') + '>Эволюция<span>🧩 ' + frags + ' / ' + ec + '</span></button>'
+                    : '<button class="upBtn alt" disabled>' + (f ? 'Пиковая форма' : 'Эволюция') + '<span>🧩 ' + frags + '</span></button>') + '</div>';
+      h += '<div class="pAbil"><div class="ico">⚡</div><div><b><i>Активная</i>Удар</b><p>Раз в ' + p.interval + ' с бьёт сам: ' + pct(pw.share) + ' DPS отряда в секунду.</p></div></div>' +
+           '<div class="pAbil pas"><div class="ico">✦</div><div><b><i>Пассивная</i>' + P.typeName[p.type][0].toUpperCase() + P.typeName[p.type].slice(1) + '</b><p>Пока питомец в бою: +' + pct(pw.bonus) + ' ' + P.typeName[p.type] + '.</p></div></div>' +
+           '<div class="pAbil"><div class="ico">🧩</div><div><b>Фрагменты</b><p>Роняет «Хранитель» в биоме «' + bio + '» на этажах от ' + (p.floor || P.floors[p.rank][1]) + ' (≈1 из 50 врагов, офлайн не падают). Эволюция усиливает удар и бонус.</p></div></div>';
+      const lr = C.lairRank(s), lp = C.lairPet(s);
+      h += '<div class="secT">Логово недели: ранг ' + lr + ' · Хранители этого ранга дают ×' + P.lairFrags + ' фрагментов' + (lp && !C.petForm(s, lp.id) ? ' · ' + (s.pets.lair.week === ((s.event && s.event.week) || '') ? s.pets.lair.kills : 0) + '/' + P.lairKeepers + ' → ' + lp.icon + ' ' + lp.name : '') + '</div>';
+      h += '<div class="sortRow">Сортировка: ' + [['rar', 'Редкость'], ['pow', 'Сила'], ['new', 'Новые']].map(([v, tx]) => '<button class="chip' + (petSort === v ? ' on' : '') + '" data-psort="' + v + '">' + tx + '</button>').join('') + '</div>';
+      const list = P.list.slice().sort((a, b) => {
+        const fa = C.petForm(s, a.id), fb = C.petForm(s, b.id);
+        if (!!fa !== !!fb) return fa ? -1 : 1;
+        if (petSort === 'pow') return C.petPower(b, fb || 1).share - C.petPower(a, fa || 1).share;
+        if (petSort === 'new') return P.list.indexOf(b) - P.list.indexOf(a);
+        return R.indexOf(b.rank) - R.indexOf(a.rank);
+      });
+      h += '<div class="grid4">' + list.map(q => {
+        const qf = C.petForm(s, q.id);
+        return '<button class="aCell' + (qf ? '' : ' lock') + '" data-psel="' + q.id + '" style="' + rvar(q.rank) + (q.id === petSel ? ';outline:2px solid #fff' : '') + '">' +
+          '<span class="lv">' + q.rank + (qf > 1 ? ' ' + '★'.repeat(qf - 1) : '') + '</span><span class="ai">' + q.icon + '</span><span class="an">' + q.name + '</span>' +
+          (s.pets.active === q.id ? '<i class="bang2" style="top:-4px;right:-4px;background:#d6a640">●</i>' : C.canEvolvePet(s, q.id) ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
+      }).join('') + '</div>';
       return h;
     }
 
@@ -267,9 +284,9 @@
       else if (d.item) { click(); popItem(d.item); return; }
       else if (d.bs) { click(); bagSort = d.bs; }
       else if (d.psel) { click(); petSel = d.psel; }
-      else if (d.pact) { click(); if (d.pact === 'on') C.setPet(s, petSel); else { s.pets.active = null; s.petAcc = 0; } save(); }
-      else if (d.pup !== undefined) { click(); if (C.upgradePet(s, petSel)) save(); }
-      else if (d.pget !== undefined) { click(); if (C.unlockPet(s, petSel)) { toast('Призванное существо!<small>' + C.petDef(petSel).icon + ' ' + C.petDef(petSel).name + '</small>'); save(); } }
+      else if (d.pact) { click(); if (d.pact === 'on') C.setPet(s, petSel); else C.recallPet(s); save(); }
+      else if (d.psort) { click(); petSort = d.psort; }
+      else if (d.pevo !== undefined) { click(); if (C.evolvePet(s, petSel)) { const pd = C.petDef(petSel); toast('Эволюция!<small>' + pd.icon + ' ' + pd.name + ' · ' + CFG.pets.forms[C.petForm(s, petSel) - 1] + '</small>'); save(); } }
       else return;
       render();
     });
