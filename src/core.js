@@ -6,12 +6,15 @@
   const CONFIG = {
     saveVersion: 23,
     enemiesPerFloor: 10,
-    maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
+    maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
+    maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
-    // Кривая дальних этажей (0.49, «пока»): до knee рост ×1.18 за этаж как раньше; выше — замедляется логарифмически
-    // (наклон на knee — slope от прежнего), чтобы полностью прокачанный отряд мог дойти до вершины 100 000. То же — золото.
-    floorCurve: { knee: 1000, slope: 0.8 },
+    // Кривая дальних этажей (ответ 145): до knee рост ×1.18 за этаж; выше — логарифмически медленнее, но всегда
+    // (наклон на knee — slope от прежнего). 0.51: slope подобран бот-годом (tools/yearsim.js, 1 ч/день + 12 ч офлайна)
+    // под ⅓ Башни ≈ 33 000 этажей за год; души выше 1000 растут степенно, иначе разгон был бесконечным. То же — золото.
+    // (Запасной вариант для подбора: late — постоянный рост ×1.18^late за этаж выше knee.)
+    floorCurve: { knee: 1000, slope: 1.0 },
     bossHpMult: 6,
     bossTimeSec: 30,              // таймер босса (TBD)
     goldBase: 1,
@@ -30,9 +33,9 @@
     // Криты — единственные вторичные боевые статы (GDD §3). Действуют на любой урон.
     // Прокачиваются ТОЛЬКО артефактами (решение пользователя: нет отдельных веток критов за золото,
     // в дереве душ, рунах, костях и эволюции). Артефакты появятся на этапе 4.
-    // Потолок шанса крита 50% для всех источников вместе (обычные удары остаются всегда). Одинаков для героя,
+    // Потолок шанса крита 75% для всех источников вместе (обычные удары остаются всегда). Одинаков для героя,
     // союзников и питомца; каждый удар проверяется отдельно. Крит-урон растёт отдельно, тоже только от артефактов.
-    crit: { baseChance: 0.05, maxChance: 0.5, baseMult: 2 },
+    crit: { baseChance: 0.05, maxChance: 0.75, baseMult: 2 },   // 0.51: потолок 75% (ответ 73)
     // Защита от неконтролируемого роста (GDD §6): произведение категорий бонусов (артефакты, руны, тотемы, достижения,
     // коллекция, питомец, дерево, кости…) растёт линейно до start, выше — как start·(m/start)^power. Души — отдельно. TBD.
     softcap: { start: 1e6, power: 0.5, goldStart: 1e4 },
@@ -81,7 +84,10 @@
       floor: 400,
       // старт нового забега: этаж 1 + бонус артефакта «Врата восхождения», строго ниже 400
       // (решение пользователя: заменяет прежнее правило 1 + 20·число ритуалов)
-      soulsBase: 50, soulsGrowth: 1.04,  // души за забег: 50 · 1.04^(этаж − 400)
+      soulsBase: 50, soulsGrowth: 1.04,  // души за забег: 50 · 1.04^(этаж − 400) до soulsKnee
+      // 0.51: выше soulsKnee — степенной рост (без предела, ответ 8) с тем же наклоном на изломе: S(knee)·(этаж/knee)^(knee·ln 1.04).
+      // Экспонента душ при бесконечной Башне обгоняла HP и давала бесконечный разгон.
+      soulsKnee: 1000,
       recordBonus: 1,                    // + душа за каждый новый рекордный этаж
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
@@ -91,7 +97,7 @@
     artifacts: [
       { id: 'blade',  name: 'Клинок первого призыва', icon: '🗡', kind: 'heroAuto', per: 0.1, cost: 2, growth: 1.25,
         desc: 'Главный герой сам атакует раз в секунду. +10% урона героя за уровень' },
-      { id: 'eye',    name: 'Око охотника',      icon: '👁', kind: 'critChance', per: 0.01, cost: 2, growth: 1.3, max: 45,
+      { id: 'eye',    name: 'Око охотника',      icon: '👁', kind: 'critChance', per: 0.01, cost: 2, growth: 1.3, max: 70,
         desc: '+1% шанса крита за уровень' },
       { id: 'fang',   name: 'Клык бездны',       icon: '🦷', kind: 'critMult', per: 0.2, cost: 2, growth: 1.25,
         desc: '+0,2 к крит-урону за уровень' },
@@ -516,7 +522,7 @@
     },
     // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
     // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
-    collection: { perHero: 0.03, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
+    collection: { perHero: 0.01, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
     // Навыки героя по уровням (по образцу пользователя): у каждого союзника открываются на уровнях 10…1000.
     // own — +% к урону этого героя (складываются); bless — удар героя получает долю DPS этого союзника;
     // every — каждые N уровней ×mult урона этого героя. Без критов. Числа TBD.
@@ -583,6 +589,13 @@
         hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Вьюга', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
     ],
   };
+  // 0.51 (ответ 20): «Сердца стража» слиты в осколки. Все награды из CONFIG вида { heart: n } пересчитываются в осколки
+  // (n × heartRecipe), чтобы интерфейс и выдача показывали одну валюту. Справочник CONFIG.materials не трогаем.
+  (function heartsToShards(o, top) {
+    if (!o || typeof o !== 'object') return;
+    if (!top && typeof o.heart === 'number') { o.shard = (o.shard || 0) + o.heart * CONFIG.materials.heartRecipe; delete o.heart; }
+    for (const k in o) if (!(top && k === 'materials')) heartsToShards(o[k], false);
+  })(CONFIG, true);
 
   // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
   const LORE = {
@@ -638,7 +651,7 @@
 
   // ---------- большие числа ----------
   // Значение — обычное число, пока |x| < 1e300; дальше — Big { m, e } = m·10^e (1 ≤ |m| < 10).
-  // Все суммы золота, HP, урона, цен и душ идут через B.* — так Башня проходима до этажа 100 000.
+  // Все суммы золота, HP, урона, цен и душ идут через B.* — так Башня проходима без предела.
   function Big(m, e) { this.m = m; this.e = e; }
   Big.prototype.valueOf = function () { return B.toNum(this); };   // запасной путь для старого кода: огромное → Infinity
   Big.prototype.toString = function () { return B.str(this); };
@@ -719,7 +732,9 @@
   // «Эффективный номер этажа» для роста HP и золота: линейно до knee, выше — knee·slope·ln(f/knee)
   function floorSteps(floor) {
     const K = CONFIG.floorCurve.knee;
-    return floor <= K ? floor - 1 : (K - 1) + K * CONFIG.floorCurve.slope * Math.log(floor / K);
+    const F = CONFIG.floorCurve;
+    if (floor <= K) return floor - 1;
+    return F.late != null ? (K - 1) + (floor - K) * F.late : (K - 1) + K * F.slope * Math.log(floor / K);
   }
   function enemyMaxHp(floor, isBoss) {
     const bm = isBoss ? CONFIG.bossHpMult * (isFinalBoss(floor) ? CONFIG.finalBossHpMult : 1) : 1;
@@ -835,12 +850,12 @@
   function gradeCost(b) {
     const X = CONFIG.bones;
     if (b.lvl < X.maxLevel) return null;
-    return { dust: Math.ceil(X.gradeDust * (b.tier + 1) * Math.pow(X.gradeGrowth, b.grade - 1)), hearts: X.gradeHearts * b.grade };
+    return { dust: Math.ceil(X.gradeDust * (b.tier + 1) * Math.pow(X.gradeGrowth, b.grade - 1)), shards: heartShards(X.gradeHearts * b.grade), hearts: 0 };
   }
   function gradeUpBone(s, id) {
     const b = boneById(s, id), c = b && gradeCost(b);
-    if (!c || s.materials.dust < c.dust || s.materials.heart < c.hearts) return false;
-    s.materials.dust -= c.dust; s.materials.heart -= c.hearts; b.grade++; b.lvl = 0;
+    if (!c || s.materials.dust < c.dust || s.materials.shard < c.shards) return false;
+    s.materials.dust -= c.dust; s.materials.shard -= c.shards; b.grade++; b.lvl = 0;
     return true;
   }
   function setBoneLock(s, id, on) { const b = boneById(s, id); if (!b) return false; b.lock = !!on; return true; }
@@ -937,8 +952,9 @@
   function petDps(s) { const p = s.pets.active && petDef(s.pets.active); return p ? B.mul(B.div(petHit(s), p.interval), permMult(s, 'pet')) : 0; }
 
   // ---------- переносимый усилитель ----------
-  function boosterUnlocked(s) { return s.bestFloor >= CONFIG.booster.unlockFloor; }
-  function boosterMult(s, who) { return s.booster.owner === who ? CONFIG.booster.power : 1; }
+  // «Печать силы» убрана в 0.51 (ответ 162): не открывается, множитель всегда 1; поле сохранения оставлено для совместимости
+  function boosterUnlocked(s) { return false; }
+  function boosterMult(s, who) { return 1; }
   // Сколько мс ждать до следующего переноса (0 — можно)
   function boosterWait(s, now) { return s.booster.owner == null ? 0 : Math.max(0, s.booster.movedAt + CONFIG.booster.cooldownH * 3600e3 - now); }
   function moveBooster(s, who, now) {
@@ -1274,6 +1290,7 @@
   function tap(s) {
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
+    if (s.tpsWin.n >= CONFIG.maxTapsPerSec) return events;   // предел тапов в секунду (ответ 14)
     s.stats.taps++; cnt(s, 'tap'); s.tpsWin.n++;
     if (modeRule(s) === 'alliesOnly') { events.push({ type: 'hit', dmg: 0, source: 'tap', crit: false, blocked: true }); return events; }
     if (modeRule(s) === 'trial') {                         // равные условия: фиксированный урон, без критов и бонусов
@@ -1333,8 +1350,8 @@
         if (n) events.push({ type: 'tickets', n, floor: s.floor });
       }
       const mat = bossMaterials(s, s.floor);
-      s.materials.shard += mat.shard; s.materials.heart += mat.heart;
-      if (mat.heart) {
+      s.materials.shard += mat.shard;
+      if (mat.firstHeart) {
         s.heartFloor = s.floor;
         const b = biomeOf(s.floor);
         if (isFinalBoss(s.floor) && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
@@ -1477,7 +1494,7 @@
   }
   function personalReward(s, floor, diff) {
     const D = CONFIG.pve.personal.diffs.find(x => x.id === diff);
-    return { heart: D.hearts, shard: Math.ceil(shardsForBoss(floor) * D.shards * shardMult(s)) };
+    return { heart: 0, shard: Math.ceil(shardsForBoss(floor) * D.shards * shardMult(s)) + heartShards(D.hearts) };
   }
   // Вход в режим: тратит попытку, тот же бой, своя очередь врагов
   function enterMode(s, kind, opts, dayKey) {
@@ -1600,7 +1617,7 @@
       const r = personalReward(s, m.floor, m.diff);
       const bone = rollBone(s, CONFIG.bones.dropPersonal, m.floor);
       if (bone) r.bone = bone;
-      s.materials.heart += r.heart; s.materials.shard += r.shard;
+      s.materials.shard += r.shard + heartShards(r.heart || 0);
       res.reward = r;
     } else if (m.kind === 'trial') {
       const n = m.step - 1, e = n * P.trial.essencePer;
@@ -1710,7 +1727,7 @@
     if (r.tickets) s.tickets += r.tickets;
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
-    if (r.heart) s.materials.heart += r.heart;
+    if (r.heart) s.materials.shard += heartShards(r.heart);   // 0.51: сердца слиты в осколки
   }
   function claimQuest(s, id) {
     if (!questDef(id) || !questClaimable(s, id)) return null;
@@ -2020,8 +2037,8 @@
     const next = k + 1, newRank = next % R.subs === 0 && next < maxSteps() ? next / R.subs : 0;   // переход на ранг newRank+1
     const mult = hero ? 1 : CONFIG.evolution.rarityCost[a.rarity];
     const needEvo = !hero && newRank ? R.evoFor[newRank] || 0 : 0;
-    return { step: next, cap: capAt(next), shards: Math.ceil(R.shards * Math.pow(R.growth, k) * mult),
-             hearts: newRank ? newRank + 1 : 0, needEvo, newRank: newRank ? newRank + 1 : 0 };
+    return { step: next, cap: capAt(next), shards: Math.ceil(R.shards * Math.pow(R.growth, k) * mult) + heartShards(newRank ? newRank + 1 : 0),
+             hearts: 0, needEvo, newRank: newRank ? newRank + 1 : 0 };
   }
   function canRankUp(s, who) {
     const c = rankCost(s, who);
@@ -2176,14 +2193,14 @@
   function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
   // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
   function bossMaterials(s, f) {
-    return { shard: Math.ceil(shardsForBoss(f) * shardMult(s)), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
+    return { shard: Math.ceil(shardsForBoss(f) * shardMult(s)) + heartShards(f > s.heartFloor ? heartsForFloor(f) : 0), heart: 0, firstHeart: f > s.heartFloor && heartsForFloor(f) > 0 };
   }
   // Требования следующей ступени или null, если эволюция завершена
   function evoCost(s, id) {
     const a = allyDef(id), E = CONFIG.evolution, st = a && E.stages[s.heroes[id].evo];
     if (!st) return null;
     return { stage: s.heroes[id].evo + 1, name: st.name, stars: st.stars, mult: st.mult,
-             shards: Math.ceil(st.shards * E.rarityCost[a.rarity]), hearts: st.hearts };
+             shards: Math.ceil(st.shards * E.rarityCost[a.rarity]) + heartShards(st.hearts), hearts: 0 };
   }
   function canEvolve(s, id) {
     const c = evoCost(s, id), h = s.heroes[id];
@@ -2197,7 +2214,10 @@
     return true;
   }
   // Алтарь: гарантированная альтернатива — осколки в сердце
+  // 0.51 (ответ 20): «Сердца стража» слиты в осколки — каждое прежнее сердце = heartRecipe осколков; ковать нечего
+  function heartShards(n) { return n * CONFIG.materials.heartRecipe; }
   function forgeHeart(s, n) {
+    return false;
     const cost = CONFIG.materials.heartRecipe * n;
     if (!Number.isInteger(n) || n <= 0 || s.materials.shard < cost) return false;
     s.materials.shard -= cost; s.materials.heart += n;
@@ -2242,7 +2262,7 @@
   function totemUpCost(s, id) {
     const T = CONFIG.totems, lv = s.totems[id];
     if (!lv || lv >= T.maxLevel) return null;
-    return { shards: Math.ceil(T.upShards * Math.pow(T.upGrowth, lv - 1)), hearts: (lv + 1) % T.heartEvery === 0 ? 1 : 0 };
+    return { shards: Math.ceil(T.upShards * Math.pow(T.upGrowth, lv - 1)) + heartShards((lv + 1) % T.heartEvery === 0 ? 1 : 0), hearts: 0 };
   }
   function upgradeTotem(s, id) {
     const c = totemUpCost(s, id);
@@ -2295,14 +2315,19 @@
   function ritualSouls(s) {
     if (!canRitual(s)) return 0;
     const R = CONFIG.ritual;
-    const lb = Math.log10(R.soulsBase) + (s.maxFloor - R.floor) * Math.log10(R.soulsGrowth);
-    const base = lb >= LOGLIM ? B.fromLog10(lb) : Math.floor(R.soulsBase * Math.pow(R.soulsGrowth, s.maxFloor - R.floor));
+    const F = s.maxFloor, K = R.soulsKnee;
+    const lb = Math.log10(R.soulsBase) + (Math.min(F, K) - R.floor) * Math.log10(R.soulsGrowth)
+      + (F > K ? K * Math.log(R.soulsGrowth) * Math.log10(F / K) : 0);
+    const base = lb >= LOGLIM ? B.fromLog10(lb) : Math.floor(Math.pow(10, lb) + 1e-9);
     // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
     const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
     return B.floor(B.mul(B.add(base, record), 1 + treePower(s, 'ritualSouls')));
   }
   // «Наследие»: стартовый запас золота = per·уровень × золото за босса стартового этажа
-  function ritualStartGold(s) { return B.ceil(B.mul(treePower(s, 'startGold'), killGold(ritualStartFloor(s), true))); }
+  // 0.51: этажи, пропущенные «Вратами», считаются пройденными — их разовое золото выдаётся на старте
+  // (иначе высокий стартовый этаж с нулём золота и уровнями 0 мог запереть забег навсегда)
+  function gateStartGold(s) { let g = 0; for (let f = 1; f < ritualStartFloor(s); f++) g = B.add(g, firstClearGold(f)); return g; }
+  function ritualStartGold(s) { return B.ceil(B.add(B.mul(treePower(s, 'startGold'), killGold(ritualStartFloor(s), true)), gateStartGold(s))); }
   function ritual(s) {
     if (!canRitual(s)) return null;
     if (s.mode) exitMode(s);
@@ -2538,7 +2563,7 @@
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
-    s.materials = { shard: m.shard, heart: m.heart, dust: m.dust }; s.heartFloor = d.heartFloor;
+    s.materials = { shard: m.shard + heartShards(m.heart), heart: 0, dust: m.dust }; s.heartFloor = d.heartFloor;   // 0.51: сердца → осколки
     if (!Array.isArray(d.bones) || !int(d.boneSeq, 1)) return null;
     for (const b of d.bones) {
       if (b && CONFIG.bones.legacySlots[b.slot]) b.slot = CONFIG.bones.legacySlots[b.slot];
