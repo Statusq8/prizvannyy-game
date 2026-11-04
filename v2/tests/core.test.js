@@ -262,7 +262,7 @@ test('вехи уровней умножают урон удара и союзн
   assert.strictEqual(C.tapDamageAt(10), CFG.tapBaseDamage * 10 * m);
   assert.ok(C.tapDamageAt(10) > C.tapDamageAt(9) * 2);
   const a = CFG.allies[0];
-  assert.strictEqual(C.allyDpsAt(a.id, 25), a.baseDps * 25 * m * m);
+  assert.strictEqual(C.allyDpsAt(a.id, 25), a.baseDps * 25 * m * m * C.perkMult(25));
   assert.strictEqual(C.nextMilestone(1), 10);
   assert.strictEqual(C.nextMilestone(10), 25);
   assert.strictEqual(C.nextMilestone(100), 100 + CFG.milestoneEvery);
@@ -2018,4 +2018,25 @@ test('коллекция: каждый открытый герой и звезд
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.08) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.08 * 1.1) < 1e-9);
   assert.strictEqual(C.critChance(s), C.critChance(t));
+});
+
+// ---------- навыки героя по уровням, автопереход (0.32) ----------
+test('навыки героя: +% на 10/25/50/75/200, ×10 каждый 1000-й, благословение удара с 100-го', () => {
+  assert.strictEqual(C.perkMult(9), 1);
+  assert.strictEqual(C.perkMult(10), 2); assert.strictEqual(C.perkMult(25), 3);
+  assert.strictEqual(C.perkMult(75), 5.5); assert.strictEqual(C.perkMult(200), 7.5);
+  assert.strictEqual(C.perkMult(1000), 75); assert.strictEqual(C.perkMult(2999), 750);
+  const s = C.newState(NOCRIT), base = C.tapDamage(s);
+  s.allies.irene.level = 99; assert.strictEqual(C.tapDamage(s), base);
+  s.allies.irene.level = 100;
+  assert.ok(Math.abs(C.tapDamage(s) - (base + C.allyDpsAt('irene', 100) * 0.005)) < 1e-6);
+});
+
+test('автопереход выключен: босс открывает этаж, но игрок остаётся фармить', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e9; s.autoAdvance = false;
+  s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const ev = killCurrent(s);
+  assert.ok(ev.some(e => e.type === 'stay'));
+  assert.strictEqual(s.floor, 1); assert.strictEqual(s.maxFloor, 2); assert.ok(s.farming);
+  const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.autoAdvance, false);
 });

@@ -463,6 +463,18 @@
     // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
     // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
     collection: { perHero: 0.03, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
+    // Навыки героя по уровням (по образцу пользователя): у каждого союзника открываются на уровнях 10…1000.
+    // own — +% к урону этого героя (складываются); bless — удар героя получает долю DPS этого союзника;
+    // every — каждые N уровней ×mult урона этого героя. Без критов. Числа TBD.
+    perks: [
+      { lvl: 10,   name: 'Закалка',        kind: 'own', value: 1 },
+      { lvl: 25,   name: 'Верное оружие',  kind: 'own', value: 1 },
+      { lvl: 50,   name: 'Мастерство',     kind: 'own', value: 1 },
+      { lvl: 75,   name: 'Искусство боя',  kind: 'own', value: 1.5 },
+      { lvl: 100,  name: 'Благословение',  kind: 'bless', value: 0.005 },
+      { lvl: 200,  name: 'Сила огня',      kind: 'own', value: 2 },
+      { lvl: 1000, name: 'Сила духа',      kind: 'every', every: 1000, value: 10 },
+    ],
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -859,7 +871,13 @@
     return l >= LOGLIM ? B.fromLog10(l) : base * level * milestoneMultAt(level);
   }
   function tapDamageAt(level) { return withMilestones(CONFIG.tapBaseDamage, level); }
-  function tapDamage(s) { return tapDamageAt(s.tapLevel); }
+  // Удар героя + «Благословение» союзников 100+ уровня (доля их DPS)
+  function tapDamage(s) {
+    let d = tapDamageAt(s.tapLevel);
+    const bl = CONFIG.perks.find(p => p.kind === 'bless');
+    for (const a of CONFIG.allies) if (s.allies[a.id].level >= bl.lvl) d = B.add(d, B.mul(allyDpsAt(a.id, s.allies[a.id].level), bl.value));
+    return d;
+  }
 
   // ---------- криты ----------
   function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
@@ -922,7 +940,17 @@
 
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
-  function allyDpsAt(id, level) { return withMilestones(allyDef(id).baseDps, level); }
+  // Множитель навыков героя на этом уровне
+  function perkMult(level) {
+    let own = 1, m = 1;
+    for (const p of CONFIG.perks) {
+      if (level < p.lvl) continue;
+      if (p.kind === 'own') own += p.value;
+      else if (p.kind === 'every') m = B.mul(m, B.fromLog10(Math.floor(level / p.every) * Math.log10(p.value)));
+    }
+    return B.mul(own, m);
+  }
+  function allyDpsAt(id, level) { return B.mul(withMilestones(allyDef(id).baseDps, level), perkMult(level)); }
   function starMult(s, id) { return 1 + CONFIG.starDpsBonus * s.heroes[id].stars; }
   // Эволюция: произведение множителей пройденных ступеней
   function evoMult(s, id) {
@@ -966,7 +994,8 @@
       farming: false,
       gold: 0,
       tapLevel: 1,
-      stats: { taps: 0, kills: 0, bossKills: 0 },
+      stats: { taps: 0, kills: 0, bossKills: 0, crits: 0, maxTps: 0 },
+      autoAdvance: true,                         // «Автопереход» на следующий этаж после босса
       allies: newAllies(),
       buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
       abilities: newAbilities(),
@@ -1062,7 +1091,7 @@
   function dealDamage(s, dmg, source, events) {
     dmg = B.mul(B.mul(dmg, permMult(s, source)), damageMult(s, source));
     const crit = s.rng() < critChance(s);
-    if (crit) dmg = B.mul(dmg, critMult(s));
+    if (crit) { dmg = B.mul(dmg, critMult(s)); s.stats.crits = (s.stats.crits | 0) + 1; }
     s.enemy.hp = B.max(0, B.sub(s.enemy.hp, dmg));
     events.push({ type: 'hit', dmg, source, crit });
     if (B.lte(s.enemy.hp, 0)) { s.enemy.hp = 0; kill(s, events); }
@@ -1133,6 +1162,13 @@
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       const bone = rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor);
       if (bone) events.push({ type: 'bone', bone });
+      // «Автопереход» выключен: этаж открыт, но остаёмся и фармим текущий
+      if (!s.autoAdvance && s.floor < CONFIG.maxFloor) {
+        s.maxFloor = Math.max(s.maxFloor, s.floor + 1); s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
+        s.enemyIndex = 1; s.farming = true;
+        events.push({ type: 'stay', floor: s.floor });
+        return;
+      }
       if (s.floor >= CONFIG.maxFloor) {                 // вершина: этаж не растёт, босса можно бить снова
         s.enemyIndex = 1;
         events.push({ type: 'top', floor: s.floor });
@@ -2109,7 +2145,7 @@
       v: CONFIG.saveVersion,
       floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
       enemyIndex: s.enemyIndex, farming: s.farming,
-      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: s.stats,
+      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: s.stats, autoAdvance: s.autoAdvance,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
@@ -2188,9 +2224,9 @@
     const s = newState();
     s.floor = d.floor; s.maxFloor = d.maxFloor; s.highestCleared = d.highestCleared;
     s.enemyIndex = d.enemyIndex; s.farming = !!d.farming;
-    s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel;
+    s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel; s.autoAdvance = d.autoAdvance !== false;
     if (d.stats) s.stats = {
-      taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0,
+      taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0, crits: d.stats.crits | 0, maxTps: d.stats.maxTps | 0,
     };
     const al = d.allies && typeof d.allies === 'object' ? d.allies : {};
     for (const a of CONFIG.allies) {
@@ -2372,7 +2408,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petCanUnlock, unlockPet, setPet, petShare, petUpCost, upgradePet, petHit, petDps, squadRawDps,
