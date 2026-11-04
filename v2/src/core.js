@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 11,
+    saveVersion: 12,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -295,6 +295,11 @@
         { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первый ритуал',     reward: { heart: 3 },    go: 'souls' },
       ],
     },
+    // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
+    // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
+    // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
+    // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
+    ranks: { count: 10, subs: 10, capMin: 600, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -555,6 +560,7 @@
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
       tickets: 0,
+      heroRank: 0,                               // ступень ранга главного героя (0…100) — поднимает потолок удара
       materials: { shard: 0, heart: 0 },
       heartFloor: 0,                             // до какого этажа уже выданы сердца за боссов
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
@@ -594,7 +600,7 @@
   }
   function newHeroes() {
     const o = {};
-    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0 };
+    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0 };
     return o;
   }
   function newAllies() {
@@ -1045,8 +1051,49 @@
   }
 
   // n: число уровней или 'max'
+  // ---------- ранги и потолки уровней ----------
+  // k — число пройденных ступеней (0…100). Ранг = ⌊k/10⌋+1 (до 10), подранг = k mod 10.
+  function maxSteps() { const R = CONFIG.ranks; return R.count * R.subs; }
+  function capAt(k) {
+    const R = CONFIG.ranks, t = Math.min(k, maxSteps()) / maxSteps();
+    return Math.round(R.capMin * Math.pow(R.capMax / R.capMin, t) / 10) * 10;
+  }
+  function rankLabel(k) {
+    const R = CONFIG.ranks;
+    if (k >= maxSteps()) return { rank: R.count, sub: R.subs, max: true };
+    return { rank: Math.floor(k / R.subs) + 1, sub: k % R.subs, max: false };
+  }
+  function tapCap(s) { return capAt(s.heroRank); }
+  function allyCap(s, id) { return capAt(s.heroes[id].rank); }
+  // Цена следующей ступени: who = 'hero' или id союзника. null — предел.
+  function rankCost(s, who) {
+    const R = CONFIG.ranks, hero = who === 'hero', a = !hero && allyDef(who);
+    if (!hero && !a) return null;
+    const k = hero ? s.heroRank : s.heroes[who].rank;
+    if (k >= maxSteps()) return null;
+    const next = k + 1, newRank = next % R.subs === 0 && next < maxSteps() ? next / R.subs : 0;   // переход на ранг newRank+1
+    const mult = hero ? 1 : CONFIG.evolution.rarityCost[a.rarity];
+    const needEvo = !hero && newRank ? R.evoFor[newRank] || 0 : 0;
+    return { step: next, cap: capAt(next), shards: Math.ceil(R.shards * Math.pow(R.growth, k) * mult),
+             hearts: newRank ? newRank + 1 : 0, needEvo, newRank: newRank ? newRank + 1 : 0 };
+  }
+  function canRankUp(s, who) {
+    const c = rankCost(s, who);
+    if (!c || s.materials.shard < c.shards || s.materials.heart < c.hearts) return false;
+    if (who !== 'hero' && (!s.heroes[who].unlocked || s.heroes[who].evo < c.needEvo)) return false;
+    return true;
+  }
+  function rankUp(s, who) {
+    if (!canRankUp(s, who)) return false;
+    const c = rankCost(s, who);
+    s.materials.shard -= c.shards; s.materials.heart -= c.hearts;
+    if (who === 'hero') s.heroRank++; else s.heroes[who].rank++;
+    cnt(s, 'rank');
+    return true;
+  }
   function buyTap(s, n) {
-    const count = n === 'max' ? maxAffordable(s.tapLevel, s.gold) : n;
+    let count = n === 'max' ? maxAffordable(s.tapLevel, s.gold) : n;
+    if (Number.isInteger(count)) count = Math.min(count, tapCap(s) - s.tapLevel);
     if (!Number.isInteger(count) || count <= 0) return false;
     const cost = upgradeCost(s.tapLevel, count);
     if (cost > s.gold) return false;
@@ -1084,7 +1131,8 @@
 
   function buyAlly(s, id, n) {
     if (!allyDef(id) || !s.heroes[id].unlocked) return false;
-    const count = n === 'max' ? allyMax(s, id) : n;
+    let count = n === 'max' ? allyMax(s, id) : n;
+    if (Number.isInteger(count)) count = Math.min(count, allyCap(s, id) - s.allies[id].level);
     if (!Number.isInteger(count) || count <= 0) return false;
     const cost = allyCost(s, id, count);
     if (cost > s.gold) return false;
@@ -1378,8 +1426,8 @@
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
-      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo }])),
-      materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor,
+      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
+      materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree },
@@ -1425,6 +1473,10 @@
       d.counters = { kill: st.kills | 0, boss: st.bossKills | 0, tap: st.taps | 0, ritual: d.rituals | 0 };
       d.quests = { day: '', week: '', dayBase: {}, weekBase: {}, claimed: [] };
     }
+    if (d.v === 11) {                                      // 0.18 → 0.19: ранги и потолки уровней
+      d.v = 12; d.heroRank = 0;
+      for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].rank = 0;
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1461,11 +1513,11 @@
     if (!d.heroes || typeof d.heroes !== 'object') return null;
     for (const a of CONFIG.allies) {
       const h = d.heroes[a.id];
-      s.heroes[a.id] = { unlocked: !!h || !!a.starter, copies: 0, stars: 0, evo: 0 };
+      s.heroes[a.id] = { unlocked: !!h || !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0 };
       if (!h) continue;
       if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars ||
-          !int(h.evo, 0) || h.evo > CONFIG.evolution.stages.length) return null;
-      s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars; s.heroes[a.id].evo = h.evo;
+          !int(h.evo, 0) || h.evo > CONFIG.evolution.stages.length || !int(h.rank, 0) || h.rank > maxSteps()) return null;
+      s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars; s.heroes[a.id].evo = h.evo; s.heroes[a.id].rank = h.rank;
     }
     if (!Array.isArray(d.squad) || d.squad.length > CONFIG.squadSize) return null;
     s.squad = [];
@@ -1475,6 +1527,8 @@
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(d.heartFloor, 0)) return null;
     s.materials = { shard: m.shard, heart: m.heart }; s.heartFloor = d.heartFloor;
+    if (!int(d.heroRank, 0) || d.heroRank > maxSteps()) return null;
+    s.heroRank = d.heroRank;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
     if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
     s.essence = d.essence;
@@ -1566,6 +1620,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,

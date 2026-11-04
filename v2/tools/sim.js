@@ -9,9 +9,11 @@ const marks = new Set([10, 30, 60, 90, 120, 180, 240].map(m => m * 60));
 
 function buyBest() {
   for (;;) {
-    const opts = [{ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: (Core.tapDamageAt(s.tapLevel + 1) - Core.tapDamageAt(s.tapLevel)) * TPS }];
-    for (const a of Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked)) { const lv = s.allies[a.id].level; opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: Core.allyDpsAt(a.id, lv + 1) - Core.allyDpsAt(a.id, lv) }); }
+    const opts = [];
+    if (s.tapLevel < Core.tapCap(s)) opts.push({ kind: 'tap', cost: Core.upgradeCost(s.tapLevel, 1), gain: (Core.tapDamageAt(s.tapLevel + 1) - Core.tapDamageAt(s.tapLevel)) * TPS });
+    for (const a of Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked && s.allies[a.id].level < Core.allyCap(s, a.id))) { const lv = s.allies[a.id].level; opts.push({ kind: a.id, cost: Core.allyCost(s, a.id, 1), gain: Core.allyDpsAt(a.id, lv + 1) - Core.allyDpsAt(a.id, lv) }); }
     opts.sort((x, y) => y.gain / y.cost - x.gain / x.cost);
+    if (!opts.length) return;
     let o = opts[0];
     if (o.cost > s.gold) {
       // копим на лучшее, но берём дешёвое (<10% цены лучшего), если оно доступно
@@ -27,6 +29,7 @@ function manageHeroes() {
   if (s.tickets > 0) Core.summon(s, s.tickets);
   for (const a of Core.CONFIG.allies) while (Core.starUp(s, a.id));
   for (const a of Core.CONFIG.allies) while (Core.evolve(s, a.id));
+  for (const who of ['hero', ...s.squad]) while (Core.rankUp(s, who));
   const best = Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked)
     .sort((x, y) => (Core.allyDps(s, y.id) || y.baseDps * 1e-9) - (Core.allyDps(s, x.id) || x.baseDps * 1e-9))
     .slice(0, Core.CONFIG.squadSize).map(a => a.id);
