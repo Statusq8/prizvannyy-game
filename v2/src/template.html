@@ -273,7 +273,7 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
   .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
@@ -384,6 +384,10 @@
   .res i { font-style: normal; font-size: 14px; }
   .res b { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .res:first-child b { color: var(--gold); }
+  #inboxBtn { position: relative; flex: none; width: 30px; height: 28px; font-size: 16px; }
+  #inboxCnt { display: none; position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; font-style: normal;
+    font-size: 10px; font-weight: 900; line-height: 16px; background: #ff4a3a; color: #fff; box-shadow: 0 0 0 2px #0a0608; }
+  #inboxCnt.on { display: block; }
   #settingsBtn { position: static; flex: none; width: 30px; height: 28px; opacity: .75; }
   /* кнопки в рамках */
   .side { position: absolute; top: 8px; display: flex; flex-direction: column; gap: clamp(4px, 1dvh, 10px); z-index: 3; }
@@ -448,6 +452,7 @@
       <div class="res"><i>🎟</i><b id="resTickets">0</b></div>
       <div class="res"><i>🔹</i><b id="resShards">0</b></div>
       <div class="res"><i>👻</i><b id="resSouls">0</b></div>
+      <button id="inboxBtn" aria-label="Награды">📬<i id="inboxCnt"></i></button>
       <button id="settingsBtn" aria-label="Настройки">⚙</button>
     </div>
     <div id="floorRow">
@@ -481,6 +486,7 @@
       <button class="sideBtn" data-open="souls"><span class="ico">👻</span><span class="lbl">Души</span><i class="bang">!</i></button>
       <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
       <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
     </div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
@@ -562,6 +568,8 @@
     <div id="pveTab" class="tabBody"></div>
     <div id="questsTab" class="tabBody"></div>
     <div id="seasonTab" class="tabBody"></div>
+    <div id="eventsTab" class="tabBody"></div>
+    <div id="inboxTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
@@ -594,7 +602,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.22</div>
+  <div id="version">v0.23</div>
 </div>
 
 <script>
@@ -700,7 +708,7 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
@@ -747,6 +755,7 @@
     const r = el.arena.getBoundingClientRect();
     for (const e of events) {
       if (e.type === 'hit') {
+        if (e.blocked) { fx('dmg', x, y, 'нет урона', 500).style.color = 'var(--muted)'; continue; }
         if (e.source === 'tap') {
           dmgLog.push([performance.now(), e.dmg, 'tap']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
@@ -929,7 +938,8 @@
     const m = s.mode;
     if (m) {
       el.floorLabel.textContent = m.kind === 'endless' ? 'Волна ' + m.step : m.name;
-      $('biomeLabel').textContent = m.kind === 'dungeon' ? 'Подземелье · уровень ' + m.tier + ' · враг ' + m.step + '/' + m.total
+      $('biomeLabel').textContent = m.kind === 'event' ? 'Событие · ' + C.currentEvent(s).dungeon.ruleText + ' · ' + m.step + '/' + m.total
+        : m.kind === 'dungeon' ? 'Подземелье · уровень ' + m.tier + ' · враг ' + m.step + '/' + m.total
         : m.kind === 'endless' ? 'Бесконечное подземелье · рекорд ' + s.pve.endlessBest : 'Личный босс · ' + m.diffName;
       $('modeInfo').textContent = m.kind === 'endless' ? '✦ +' + m.essence + (m.tickets ? ' · 🎟 +' + m.tickets : '') : m.name;
       lastBiome = '';
@@ -1074,10 +1084,14 @@
   function renderTabs() {
     C.dailyReset(s, dayKey());
     C.seasonReset(s, dayKey());
+    C.eventReset(s, weekKey());
     C.questsReset(s, dayKey(), weekKey());
     $('questDot').classList.toggle('on', C.claimableCount(s) > 0);
     if (tab === 'quests') renderQuests();
     if (tab === 'season') renderSeason();
+    if (tab === 'events') renderEvents();
+    if (tab === 'inbox') renderInbox();
+    $('inboxCnt').textContent = s.inbox.length; $('inboxCnt').classList.toggle('on', s.inbox.length > 0);
     $('toggleLabel').textContent = TAB_NAMES[tab] || '';
     // «!» на боковых кнопках
     const fcost = C.findCost(s);
@@ -1086,7 +1100,7 @@
       heroes: CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && s.souls >= fcost),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
-      season: seasonBang(), altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
+      season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
     };
     const opened = !$('panel').classList.contains('collapsed');
     document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', !!bang[b.dataset.open]); b.classList.toggle('cur', opened && tab === b.dataset.open); });
@@ -1278,6 +1292,68 @@
     else if (d.act === 'all') { const r = C.claimAll(s); if (r) { toast('Забрано наград: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); } }
     else if (d.go) { if (d.go === 'arena') setCollapsed(true); else tab = d.go; }
     render();
+  });
+
+  // ---------- события недели ----------
+  let eventsHtml = '', eventTier = 0;
+  function renderEvents() {
+    const E = CFG.events, e = C.currentEvent(s), ev = s.event;
+    if (!e) { $('eventsTab').innerHTML = '<div class="hint2">Событие начнётся в понедельник.</div>'; return; }
+    const d = new Date(), left = 7 - ((d.getDay() + 6) % 7);
+    let html = '<div class="seasonHead"><b>' + e.icon + ' ' + e.name + '</b><small>' + e.desc + ' — всю неделю · осталось ' + left + ' дн. · 🏮 ' + fmt(ev.lanterns) + ' фонарей</small></div>';
+    // очки и вехи
+    const next = E.milestones.find((m, i) => !ev.ms[i]);
+    html += '<div class="secTitle">ОЧКИ СОБЫТИЯ · ' + fmt(ev.points) + ' · враг +' + E.pointsKill + ', босс +' + E.pointsBoss + ', подземелье — фонари</div>';
+    if (next) html += '<div class="passBar"><i style="width:' + Math.min(100, ev.points / next.at * 100) + '%"></i></div>';
+    E.milestones.forEach((m, i) => {
+      html += '<div class="hRow' + (ev.ms[i] ? ' claimed' : '') + '" style="--r:' + (ev.ms[i] ? 'var(--ok)' : 'var(--line)') + '"><div class="hInfo"><div class="hName">' + fmt(m.at) + ' очков</div>' +
+        '<div class="hSub">' + rewardLine(m.reward) + (ev.ms[i] ? ' · отправлено в 📬 Награды' : '') + '</div></div>' + (ev.ms[i] ? '<button class="hBtn" disabled>✓</button>' : '') + '</div>';
+    });
+    // тематическое подземелье
+    const maxT = C.maxDungeonTier(s); eventTier = Math.min(maxT, Math.max(1, eventTier || maxT));
+    const att = C.attemptsLeft(s, 'event'), can = !s.mode && att > 0;
+    html += '<div class="secTitle">ТЕМАТИЧЕСКОЕ ПОДЗЕМЕЛЬЕ · попыток ' + att + '/' + E.attempts + ' в день</div>' +
+      '<div class="hRow" style="--r:#ffb36b"><div class="artIcon">🏮</div><div class="hInfo"><div class="hName">' + e.dungeon.name + '</div>' +
+      '<div class="hSub">Условие: <b>' + e.dungeon.ruleText + '</b></div><div class="dpsPrev">Награда: <b>🏮 ' + C.eventDungeonReward(eventTier) + '</b> · враги как на этаже ' + eventTier * CFG.pve.tierFloors + '</div></div>' +
+      '<div class="hBtns"><div class="tierPick"><button data-etier="-1"' + (eventTier > 1 ? '' : ' disabled') + '>−</button><span>ур. ' + eventTier + '</span><button data-etier="1"' + (eventTier < maxT ? '' : ' disabled') + '>+</button></div>' +
+      '<button class="hBtn' + (can ? ' go' : '') + '" data-act="edun"' + (can ? '' : ' disabled') + '>Войти</button></div></div>';
+    // магазин
+    html += '<div class="secTitle">ОБМЕН ФОНАРЕЙ · лимиты обновятся с новым событием</div>';
+    for (const it of E.shop) {
+      const l = C.shopLeft(s, it.id), ok = l > 0 && ev.lanterns >= it.cost;
+      html += '<div class="hRow" style="--r:#ffb36b"><div class="hInfo"><div class="hName">' + it.name + '</div><div class="hSub">осталось ' + l + '/' + it.limit + ' на неделю</div></div>' +
+        '<button class="hBtn' + (ok ? ' go' : '') + '" data-buy="' + it.id + '"' + (ok ? '' : ' disabled') + '>🏮 ' + it.cost + '</button></div>';
+    }
+    if (html !== eventsHtml) { $('eventsTab').innerHTML = html; eventsHtml = html; }
+  }
+  $('eventsTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.etier) eventTier += +d.etier;
+    else if (d.act === 'edun') { startMode('event', { tier: eventTier }); return; }
+    else if (d.buy) { const r = C.buyEventItem(s, d.buy); if (r) { toast('Обмен<small>' + rewardLine(r) + '</small>'); save(); } }
+    render();
+  });
+  // ---------- центр наград ----------
+  let inboxHtml = '';
+  function renderInbox() {
+    let html = '<button class="claimAll" data-act="all"' + (s.inbox.length ? '' : ' disabled') + '>' + (s.inbox.length ? 'Забрать всё (' + s.inbox.length + ')' : 'Пока пусто') + '</button>' +
+      '<div class="hint2">Сюда автоматически приходят: ежедневный подарок, вехи событий, незабранные награды пропуска по итогам сезона.</div>';
+    for (const it of s.inbox.slice().reverse())
+      html += '<div class="hRow" style="--r:var(--gold)"><div class="artIcon">🎁</div><div class="hInfo"><div class="hName">' + it.title + '</div><div class="hSub">' + rewardLine(it.reward) + '</div></div>' +
+        '<button class="hBtn go" data-claim="' + it.id + '">Забрать</button></div>';
+    if (html !== inboxHtml) { $('inboxTab').innerHTML = html; inboxHtml = html; }
+  }
+  $('inboxTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.act === 'all') { const r = C.claimInboxAll(s); if (r) toast('Забрано: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); }
+    else if (b.dataset.claim) { const r = C.claimInbox(s, +b.dataset.claim); if (r) toast('Награда<small>' + rewardLine(r) + '</small>'); }
+    save(); render();
+  });
+  $('inboxBtn').addEventListener('click', () => {
+    const open = !$('panel').classList.contains('collapsed');
+    if (open && tab === 'inbox') { setCollapsed(true); return; }
+    tab = 'inbox'; setCollapsed(false); render();
   });
 
   // ---------- сезон и боевой пропуск ----------

@@ -1540,3 +1540,80 @@ test('вершина Башни — этаж 100000: выше не поднят�
   assert.ok(ev.some(e => e.type === 'top'));
   assert.strictEqual(s.floor, CFG.maxFloor); assert.strictEqual(s.maxFloor, CFG.maxFloor);
 });
+
+// ---------- события и центр наград (0.23) ----------
+test('событие недели: меняется по неделям по кругу, бонус действует', () => {
+  const ids = ['w2026-11-02', 'w2026-11-09', 'w2026-11-16', 'w2026-11-23', 'w2026-11-30'].map(w => C.eventFor(w).id);
+  assert.deepStrictEqual(ids, ['gold', 'rare', 'boss', 'moon', 'gold']);
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  C.eventReset(s, 'w2026-11-02');
+  assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 2) < 1e-9);
+  C.eventReset(s, 'w2026-11-30'); assert.strictEqual(s.event.points, 0);
+  C.eventReset(s, 'w2026-11-16');
+  assert.ok(Math.abs(C.bossDmgMult(s) - 1.5) < 1e-9);
+});
+
+test('очки события за врагов и боссов; вехи автоматически уходят в «Награды»', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  C.eventReset(s, 'w2026-11-02');
+  killCurrent(s);
+  assert.strictEqual(s.event.points, CFG.events.pointsKill);
+  s.event.points = CFG.events.milestones[0].at - 1; respawn(s); killCurrent(s);
+  assert.strictEqual(s.inbox.length, 1);
+  const t0 = s.tickets;
+  const r = C.claimInbox(s, s.inbox[0].id);
+  assert.strictEqual(s.tickets, t0 + r.tickets); assert.strictEqual(s.inbox.length, 0);
+});
+
+test('тематическое подземелье: условие «только тапы» — союзники не бьют; награда — фонари', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 100; s.allies.irene.level = 500;
+  C.eventReset(s, 'w2026-11-02');                       // Логово жадности: tapOnly
+  assert.ok(C.enterMode(s, 'event', { tier: 5 }, 'd'));
+  const hp = s.enemy.hp;
+  C.tick(s, 2);
+  assert.strictEqual(s.enemy.hp, hp);                   // союзник не нанёс урона
+  s.tapLevel = 1e15;
+  for (let i = 0; i < 100 && s.mode; i++) { if (s.enemy.alive) C.tap(s); else respawn(s); }
+  assert.strictEqual(s.event.lanterns, C.eventDungeonReward(5));
+  assert.strictEqual(C.attemptsLeft(s, 'event'), CFG.events.attempts - 1);
+});
+
+test('условие «только отряд» — тапы не наносят урона', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 100; s.tapLevel = 1e9;
+  C.eventReset(s, 'w2026-11-09');                       // Гнездо редкостей: alliesOnly
+  C.enterMode(s, 'event', { tier: 3 }, 'd');
+  const hp = s.enemy.hp; C.tap(s);
+  assert.strictEqual(s.enemy.hp, hp);
+});
+
+test('магазин события: фонари, лимит в неделю', () => {
+  const s = C.newState(NOCRIT); C.eventReset(s, 'w2026-11-02');
+  const it = CFG.events.shop[0];
+  s.event.lanterns = it.cost * (it.limit + 1);
+  for (let i = 0; i < it.limit; i++) assert.ok(C.buyEventItem(s, it.id));
+  assert.strictEqual(C.buyEventItem(s, it.id), null);
+  assert.strictEqual(s.tickets, it.reward.tickets * it.limit);
+});
+
+test('центр наград: ежедневный подарок, незабранное по итогам сезона, «Забрать всё»', () => {
+  const s = C.newState(NOCRIT);
+  C.questsReset(s, '2026-11-04', 'w'); C.questsReset(s, '2026-11-05', 'w');
+  assert.strictEqual(s.inbox.filter(x => x.title === 'Ежедневный подарок').length, 2);
+  C.seasonReset(s, '2026-11-04'); s.season.xp = 3 * CFG.season.xpPerLevel; C.claimPass(s, 1, 'free');
+  C.seasonReset(s, '2026-12-01');
+  const left = s.inbox.find(x => x.title.startsWith('Незабранное'));
+  assert.ok(left && left.reward.tickets === 2 * CFG.season.free.tickets);
+  const r = C.claimInboxAll(s);
+  assert.strictEqual(r.count, 3); assert.strictEqual(s.inbox.length, 0);
+});
+
+test('сохранение события и наград, миграция с 0.22', () => {
+  const s = C.newState(NOCRIT); C.eventReset(s, 'w2026-11-02'); s.event.points = 300; s.event.lanterns = 40; s.event.ms = { 0: true };
+  C.inboxAdd(s, 'тест', { heart: 1 });
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.event.id, 'gold'); assert.strictEqual(t.event.points, 300); assert.deepStrictEqual(t.event.ms, { 0: true });
+  assert.deepStrictEqual(t.inbox.map(x => x.title), ['тест']);
+  const old = JSON.parse(C.serialize(s)); old.v = 13; delete old.event; delete old.inbox; delete old.inboxSeq;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.strictEqual(m.event.id, null); assert.deepStrictEqual(m.inbox, []);
+});
