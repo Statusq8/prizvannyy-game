@@ -13,11 +13,10 @@ jobs:
         with: { node-version: '22' }
       - name: Тесты ядра и сборка игры
         run: |
-          cd work
-          node --test tests/*.test.js
-          node build.js
-          mkdir -p ../android/app/src/main/assets
-          cp dist/index.html ../android/app/src/main/assets/index.html
+          npm test
+          npm run build
+          mkdir -p android/app/src/main/assets
+          cp index.html android/app/src/main/assets/index.html
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: gradle/actions/setup-gradle@v3
@@ -26,7 +25,7 @@ jobs:
         run: gradle -p android assembleRelease --no-daemon
       - name: Имя файла с версией
         run: |
-          V=$(node -p "require('./work/version.json').version")
+          V=$(node -p "require('./package.json').version")
           cp android/app/build/outputs/apk/release/app-release.apk "Prizvannyy-$V.apk"
           echo "V=$V" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
