@@ -613,9 +613,15 @@
   .mapNode.cur { background: radial-gradient(circle at 50% 35%, var(--frame1), var(--frame2)); border-color: var(--frameEdge); box-shadow: 0 0 10px #ffb36b; }
   .mapNode.fin { width: 44px; height: 40px; margin-left: -22px; top: -1px; font-size: 18px; }
   .mapNode i { position: absolute; bottom: -9px; font-style: normal; font-size: 10px; color: var(--text); text-shadow: 0 0 3px #000; }
+
+  /* 0.37: чистый экран — интерфейс скрыт, логика работает; меню и кнопки возвращаем по одному. Старый интерфейс: адрес с #ui */
+  body.clean #hud, body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
+  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #toast, body.clean #ultBanner, body.clean #version,
+  body.clean #modal, body.clean .askWrap, body.clean .allyTag, body.clean .ultBar { display: none !important; }
 </style>
 </head>
 <body>
+<script>if (!/(^|#|&)ui\b/.test(location.hash)) document.body.classList.add('clean');</script>
 <div id="game">
   <div id="bgHall"><div class="img"></div></div>
   <div id="hud">
@@ -771,7 +777,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.36</div>
+  <div id="version">v0.37</div>
 </div>
 
 <script>
