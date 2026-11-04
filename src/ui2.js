@@ -100,7 +100,13 @@
 
     // Прокачка: крупные карточки; кнопка — та же покупка, что в старой панели (ранг, найм, ×N)
     const MSEL = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
-    function stars(n, max) { let t = ''; for (let i = 0; i < max; i++) t += i < n ? '<b>★</b>' : '★'; return '<div class="stars">' + t + '</div>'; }
+    // 15 звёзд (GDD 1.2) показываются 5 ячейками: 1–5 — золотые, 6–10 — алые, 11–15 — фиолетовые
+    const STAR_C = ['#ffd36b', '#ff5a3a', '#d070ff'];
+    function stars(n) {
+      const tier = n ? Math.floor((n - 1) / 5) : 0, k = n ? ((n - 1) % 5) + 1 : 0;
+      let t = ''; for (let i = 0; i < 5; i++) t += i < k ? '<b>★</b>' : '★';
+      return '<div class="stars" style="--sc:' + STAR_C[tier] + '">' + t + '</div>';
+    }
     function upHtml() {
       let h = '<div class="upTool"><select id="u2mult">' + MSEL.map(([v, t]) => '<option value="' + v + '"' + (v === mult ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>';
       const r = C.rankLabel(s.heroRank), RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
@@ -119,13 +125,13 @@
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
         const fig = '<div style="width:100%;height:100%">' + allySvg(ALLY_VIS[a.id], hh.evo) + '</div>';
         if (!hh.unlocked) {
-          h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0, CFG.maxStars) + '</div>' +
+          h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0) + '</div>' +
             '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +
             '<button class="upBtn alt" data-free="' + a.id + '">🔒 Освободить героя</button></div>';
           continue;
         }
         const dps = lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—';
-        h += '<div class="hCard" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars, CFG.maxStars) + '</div>' +
+        h += '<div class="hCard" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars) + '</div>' +
           '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. <b>' + (lv ? fmt(lv) : '--') + '</b>' + (lv ? ' / ' + fmt(C.allyCap(s, a.id)) : '') + '</div>' +
           '<div class="ln">⚔ <b>' + dps + '</b> DPS</div><span class="fac">' + a.role + (C.inSquad(s, a.id) ? ' · в отряде' : ' · резерв') + '</span></div>' +
           '<button class="upBtn" data-ub="' + a.id + '"' + (u.btn.disabled ? ' disabled' : '') + '>' + u.btn.innerHTML + '</button></div>';
@@ -173,21 +179,21 @@
       for (const bo of s.bones) { const k = CFG.bones.slots.find(x => x.id === bo.slot) || {}; it.push({ id: 'b' + bo.id, cat: 'spec', icon: k.icon || '🦴', name: 'Кость: ' + (k.name || '') + ' · ур. ' + (bo.lvl | 0), n: 1, r: bo.tier | 0, desc: k.desc ? '+% ' + k.desc + (bo.on ? ' · надета' : '') : '', go: 'bones' }); }
       return it;
     }
-    const RAR_BY_N = ['E', 'D', 'C', 'B', 'A', 'S', 'GOD'];
+    const RAR_BY_N = CFG.rarities;
     function bagHtml() {
       const cats = [['all', 'Все'], ['mat', 'Материалы'], ['shard', 'Осколки'], ['cons', 'Расходники'], ['tick', 'Билеты'], ['spec', 'Особые']];
       let list = bagItems().filter(x => (bagCat === 'all' || x.cat === bagCat) && (!bagQ || x.name.toLowerCase().includes(bagQ)));
       list.sort(bagSort === 'type' ? (a, b) => a.cat.localeCompare(b.cat) : bagSort === 'new' ? (a, b) => 0 : (a, b) => b.r - a.r);
       let h = '<div class="bagTool"><input id="bagQ" placeholder="🔍 Поиск предметов…" value="' + bagQ.replace(/"/g, '') + '"><select id="bagCat">' + cats.map(([v, t]) => '<option value="' + v + '"' + (v === bagCat ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
         '<div class="sortRow">Сортировка: ' + [['rar', 'Редкость'], ['type', 'Тип'], ['new', 'Новые']].map(([v, t]) => '<button class="chip' + (bagSort === v ? ' on' : '') + '" data-bs="' + v + '">' + t + '</button>').join('') + '</div>';
-      const cells = list.map(x => '<button class="iCell" data-item="' + x.id + '" style="' + rvar(RAR_BY_N[Math.min(6, x.r)]) + '">' + x.icon + (x.n > 1 ? '<span class="q">' + fmt(x.n) + '</span>' : '') + '</button>');
+      const cells = list.map(x => '<button class="iCell" data-item="' + x.id + '" style="' + rvar(RAR_BY_N[Math.min(RAR_BY_N.length - 1, x.r)]) + '">' + x.icon + (x.n > 1 ? '<span class="q">' + fmt(x.n) + '</span>' : '') + '</button>');
       const total = Math.max(25, Math.ceil(cells.length / 5) * 5 + 5);
       for (let i = cells.length; i < total; i++) cells.push('<div class="iCell empty">✦</div>');
       return h + '<div class="grid5">' + cells.join('') + '</div>';
     }
     function popItem(id) {
       const x = bagItems().find(i => i.id === id); if (!x) return;
-      $('ui2PopBox').style.cssText = rvar(RAR_BY_N[Math.min(6, x.r)]);
+      $('ui2PopBox').style.cssText = rvar(RAR_BY_N[Math.min(RAR_BY_N.length - 1, x.r)]);
       $('ui2PopBox').innerHTML = '<div class="big">' + x.icon + '</div><h3>' + x.name + '</h3><div class="ln" style="font:400 15px Russo One,system-ui">× ' + fmt(x.n) + '</div><p>' + (x.desc || '') + '</p>' +
         '<div class="row">' + (x.go ? '<button class="upBtn alt" data-pgo="' + x.go + '">Подробнее</button>' : '') + '<button class="upBtn" data-pclose>Закрыть</button></div>';
       $('ui2Pop').classList.add('show');

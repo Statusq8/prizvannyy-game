@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 20,
+    saveVersion: 21,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -40,15 +40,17 @@
     // Герои (GDD §4): редкость E → GOD, портал открывает навсегда, в бою отряд из squadSize.
     // Нанятые резервные бьют на полный урон (решение пользователя), ненанятые — ничего.
     // Отряд определяет, чьи фигуры на арене и чьи ультимейты срабатывают. Звёзды повышают только индивидуальный DPS.
-    rarities: ['E', 'D', 'C', 'B', 'A', 'S', 'GOD'],
+    rarities: ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'GOD'],
+    // GDD 1.2 (решение пользователя): SS выпадает только после этажа 1000, SSS — после 2500, GOD — после 4000 (по рекорду за всю игру)
+    rarityGates: { SS: 1000, SSS: 2500, GOD: 4000 },
     squadSize: 4,
     reserveShare: 1,                          // резерв — 100% (решение пользователя)
-    maxStars: 10,
+    maxStars: 15,                             // GDD 1.2: 15 звёзд (было 10)
     starDpsBonus: 0.5,                        // +50% индивидуального DPS за звезду (TBD)
-    starCopies: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5], // копий на 1-ю … 10-ю звезду (TBD)
+    starCopies: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8], // копий на 1-ю … 15-ю звезду (TBD)
     // Портал: обычный баннер. Шансы в %, гарантии (pity) раздельные: A+ и S+ (TBD)
     portal: {
-      odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, GOD: 0.3 },
+      odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, SS: 0.6, SSS: 0.3, GOD: 0.15 },   // TBD
       pityA: 30, pityS: 90,
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
       // «Возрастающие шансы»: после softS призывов без S+ шанс S растёт на softStep п.п. за призыв (до гарантии)
@@ -116,7 +118,7 @@
         { name: 'Возвышение',     stars: 6,  shards: 150, hearts: 1, mult: 2 },
         { name: 'Истинный облик', stars: 10, shards: 600, hearts: 3, mult: 2 },
       ],
-      rarityCost: { E: 1, D: 1.5, C: 2, B: 3, A: 4, S: 6, GOD: 10 },   // множитель цены в осколках
+      rarityCost: { E: 1, D: 1.5, C: 2, B: 3, A: 4, S: 6, SS: 7, SSS: 8.5, GOD: 10 },   // множитель цены в осколках
     },
     // Офлайн (решение пользователя, заменяет GDD §6 «по выбранному этажу»): отряд сам проходит этажи
     // авто-DPS без тапов и ультимейтов, пока не упрётся в босса, затем фармит этаж ниже. Не дольше 12 ч.
@@ -467,7 +469,7 @@
       gradeDust: 50, gradeGrowth: 2, gradeHearts: 1,   // грейд: 50·(редкость+1)·2^(грейд−1) пыли + сердца = грейд
       recycleDust: 10,              // переработка: 10·2^редкость·грейд пыли
       dropBoss: 0.08, dropFinal: 1, dropPersonal: 1, dropEndless: 0.25,   // шанс выпадения
-      rarityWeights: [50, 26, 13, 6, 3, 1.5, 0.5],      // E … GOD; сдвигаются выше с этажом
+      rarityWeights: [50, 26, 13, 6, 3, 1.5, 0.6, 0.3, 0.15],   // E … GOD; сдвигаются выше с этажом; SS/SSS/GOD — с порогов этажей
       rarityFloorStep: 500,         // каждые 500 этажей рекорда — +1 к минимальной редкости броска (до A)
     },
     // Призванное существо — питомец (GDD §3): 1 в бою, автоатака с собственной частотой, тот же потолок критов,
@@ -499,9 +501,9 @@
     ],
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
-      essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
+      essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, SS: 60, SSS: 80, GOD: 100 },
       ticketCost: 30,                                              // «Слеза портала»: эссенция → 1 билет
-      traceCost: { E: 10, D: 20, C: 40, B: 80, A: 160, S: 400, GOD: 1000 },   // «След героя»: копия выбранного открытого
+      traceCost: { E: 10, D: 20, C: 40, B: 80, A: 160, S: 400, SS: 600, SSS: 800, GOD: 1000 },   // «След героя»: копия выбранного открытого
       rareConfirmFrom: 'A',                                        // для A, S, GOD — дополнительное подтверждение
     },
     // Каталог героев. Уровень 0 = не нанят в этом забеге. starter — открыт с начала игры.
@@ -534,6 +536,10 @@
         hireCost: 1e9, costGrowth: 1.05, ult: { name: 'Знамя мёртвых', kind: 'teamBuff', charge: 20, power: 2.5, duration: 6 } },
       { id: 'seiren', name: 'Сэйрен', role: 'Повелительница бурь', rarity: 'S', baseDps: 3e11, attackInterval: 0.7,
         hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
+      { id: 'kassian', name: 'Кассиан', role: 'Тёмный паладин', rarity: 'SS', baseDps: 2e12, attackInterval: 1.0,
+        hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Клятва тьмы', kind: 'teamBuff', charge: 20, power: 3, duration: 7 } },
+      { id: 'nyx', name: 'Никс', role: 'Королева ночи', rarity: 'SSS', baseDps: 7e12, attackInterval: 0.8,
+        hireCost: 5e11, costGrowth: 1.05, ult: { name: 'Беззвёздная ночь', kind: 'nuke', charge: 15, power: 30 } },
       { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
         hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд пепла', kind: 'nuke', charge: 15, power: 40 } },
       // скрытая: рецепт — пожертвовать за раз по копии всех четырёх героев стартового отряда
@@ -561,6 +567,8 @@
     velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.' },
     ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.' },
     seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.' },
+    kassian: { race: 'Падший паладин', cls: 'Страж',   quote: 'Мой свет погас. Осталась клятва.' },
+    nyx:    { race: 'Дитя ночи',      cls: 'Тень',      quote: 'Звёзды гаснут, когда я прихожу.' },
     azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.' },
     morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.' },
     carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!' },
@@ -763,7 +771,7 @@
     s.counters.boneRoll = (s.counters.boneRoll || 0) + 1;
     if (hash01(k, salt, 17) >= chance) return null;
     const minT = Math.min(4, Math.floor(s.bestFloor / X.rarityFloorStep));
-    const w = X.rarityWeights.map((v, i) => (i < minT ? 0 : v)), tot = w.reduce((a, b) => a + b, 0);
+    const w = X.rarityWeights.map((v, i) => (i < minT || !tierOpen(s, i) ? 0 : v)), tot = w.reduce((a, b) => a + b, 0);
     let y = hash01(k, salt, 29) * tot, tier = w.length - 1;
     for (let i = 0; i < w.length; i++) { y -= w[i]; if (y < 0) { tier = i; break; } }
     const slot = X.slots[Math.floor(hash01(k, salt, 41) * X.slots.length) % X.slots.length].id;
@@ -1347,7 +1355,9 @@
     const P = CONFIG.pve, f = tier * P.tierFloors, d = dungeonDef(id);
     if (d.reward === 'gold') return { gold: B.ceil(B.mul(killGold(f, true), P.vaultGold * goldMult(s))) };
     if (d.reward === 'shard') return { shard: Math.ceil(shardsForBoss(f) * P.mineShards * shardMult(s)) };
-    return { runeTier: Math.min(CONFIG.rarities.length - 1, Math.floor(tier / P.forgeTierEvery)) };
+    let rt = Math.min(CONFIG.rarities.length - 1, Math.floor(tier / P.forgeTierEvery));
+    while (rt > 0 && !tierOpen(s, rt)) rt--;               // SS/SSS/GOD — только после порогов этажей
+    return { runeTier: rt };
   }
   // Личные боссы — финальные боссы биомов, чей тотем уже получен
   function personalBosses(s) {
@@ -1950,10 +1960,14 @@
     return f % 10 === 0 ? p.ticketsPerTenth : f % 5 === 0 ? p.ticketsPerFifth : 0;
   }
   const RANK = r => CONFIG.rarities.indexOf(r);
+  // Редкость открыта по рекорду этажа (GDD 1.2): SS ≥ 1000, SSS ≥ 2500, GOD ≥ 4000
+  function rarityOpen(s, r) { const g = CONFIG.rarityGates[r]; return !g || (s.bestFloor | 0) >= g; }
+  function tierOpen(s, i) { return rarityOpen(s, CONFIG.rarities[i]); }
   function rollRarity(s, minRank, sPity) {
     const P = CONFIG.portal, odds = { ...P.odds };
     if (sPity != null && sPity > P.softS) odds.S += (sPity - P.softS) * P.softStep;   // возрастающие шансы
-    const pool = CONFIG.rarities.filter(r => RANK(r) >= minRank);
+    let pool = CONFIG.rarities.filter(r => RANK(r) >= minRank && rarityOpen(s, r) && CONFIG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal));
+    if (!pool.length) pool = ['S'];
     const total = pool.reduce((x, r) => x + odds[r], 0);
     let roll = s.rng() * total;
     for (const r of pool) { roll -= odds[r]; if (roll < 0) return r; }
@@ -2324,6 +2338,11 @@
     if (d.v === 17) { d.v = 18; d.ach = {}; if (d.quests) d.quests.runBase = { ...(d.counters || {}) }; }   // 0.27 → 0.28
     if (d.v === 18) { d.v = 19; d.bpity = {}; }               // 0.28 → 0.29: баннеры
     if (d.v === 19) { d.v = 20; d.login = { day: '', n: 0 }; d.travel = { day: '', used: 0 }; if (d.quests) d.quests.chests = []; }   // 0.32 → 0.33
+    if (d.v === 20) {                                      // 0.40 → 0.41: редкости SS и SSS между S и GOD — GOD теперь ступень 8
+      d.v = 21;
+      for (const r of d.runes || []) if (r && r.tier === 6) r.tier = 8;
+      for (const b of d.bones || []) if (b && b.tier === 6) b.tier = 8;
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2523,7 +2542,7 @@
     totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
-    summon, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     perkMult, capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,

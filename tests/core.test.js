@@ -1992,7 +1992,8 @@ test('тематический баннер: два героя недели, и�
   C.eventReset(s, 'w2026-11-09'); assert.notDeepStrictEqual(C.featuredHeroes(s), f);
   const fa = CFG.allies.find(a => a.id === C.featuredHeroes(s)[0]);
   // редкость героя недели; второй бросок < 0.5 → герой недели
-  const odds = CFG.portal.odds, R = CFG.rarities, tot = R.reduce((x, r) => x + odds[r], 0);
+  // пул — только открытые по рекорду этажа редкости, у которых есть герои портала (GDD 1.2)
+  const odds = CFG.portal.odds, R = CFG.rarities.filter(r => C.rarityOpen(s, r) && CFG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal)), tot = R.reduce((x, r) => x + odds[r], 0);
   let acc = 0; for (const r of R) { if (r === fa.rarity) break; acc += odds[r]; }
   const t = C.newState({ rng: seqRng([(acc + 0.01) / tot, 0.1, 0]) }); t.event = s.event; t.tickets = 2;
   assert.strictEqual(C.summon(t, 1, 'theme')[0].id, fa.id);
@@ -2117,4 +2118,32 @@ test('путешествие во времени без авто-урона не
   const s = C.newState(NOCRIT);
   assert.strictEqual(C.timeTravel(s, 'd1'), null);
   assert.strictEqual(C.travelCost(s, 'd1'), 0);
+});
+
+test('GDD 1.2: SS/SSS/GOD — только после этажей 1000 / 2500 / 4000; 15 звёзд', () => {
+  assert.deepStrictEqual(CFG.rarities, ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'GOD']);
+  assert.strictEqual(CFG.maxStars, 15); assert.strictEqual(CFG.starCopies.length, 15);
+  assert.ok(CFG.allies.some(a => a.rarity === 'SS') && CFG.allies.some(a => a.rarity === 'SSS'));
+  const s = C.newState(NOCRIT);
+  s.bestFloor = 999; assert.ok(!C.rarityOpen(s, 'SS')); assert.ok(C.rarityOpen(s, 'S'));
+  s.bestFloor = 1000; assert.ok(C.rarityOpen(s, 'SS')); assert.ok(!C.rarityOpen(s, 'SSS'));
+  s.bestFloor = 2500; assert.ok(C.rarityOpen(s, 'SSS')); assert.ok(!C.rarityOpen(s, 'GOD'));
+  s.bestFloor = 4000; assert.ok(C.rarityOpen(s, 'GOD'));
+  // ранний игрок: 2000 призывов без SS, SSS и GOD
+  const t = C.newState(); t.tickets = 2000; t.bestFloor = 1;
+  const r = C.summon(t, 2000, 'normal');
+  assert.ok(r.every(x => !['SS', 'SSS', 'GOD'].includes(x.rarity)));
+  assert.ok(r.some(x => x.rarity === 'S'));            // гарантия S+ остаётся — даёт S
+  // после этажа 4000 все редкости доступны
+  const u = C.newState(); u.tickets = 5000; u.bestFloor = 4000;
+  const r2 = C.summon(u, 5000, 'normal');
+  assert.ok(['SS', 'SSS', 'GOD'].every(x => r2.some(y => y.rarity === x)));
+});
+
+test('миграция 21: руны и кости GOD (ступень 6) → ступень 8', () => {
+  const s = C.newState(NOCRIT);
+  s.runes = [{ id: 1, type: 'might', tier: 8, lvl: 0 }]; s.runeSeq = 2;
+  const d = JSON.parse(C.serialize(s)); d.v = 20; d.runes[0].tier = 6;
+  const back = C.deserialize(JSON.stringify(d));
+  assert.ok(back); assert.strictEqual(back.runes[0].tier, 8);
 });
