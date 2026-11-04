@@ -1654,13 +1654,14 @@ test('сохранение больших чисел: строкой «m·e», �
 test('Башня на этаже 50 000: HP и золото конечны, бой и награды работают', () => {
   const s = C.newState(NOCRIT);
   s.floor = s.maxFloor = s.bestFloor = 50000; C.goToFloor(s, 49999); C.goToFloor(s, 50000);
-  assert.ok(B.isBig(s.enemy.maxHp));
-  assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + 49999 * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
+  assert.ok(isFinite(B.log10(s.enemy.maxHp)));
+  assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + (CFG.floorCurve.knee - 1 + CFG.floorCurve.knee * CFG.floorCurve.slope * Math.log(50000 / CFG.floorCurve.knee)) * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
   s.tapLevel = 15000; s.souls = B.fromLog10(3600);
   let i = 0; while (s.enemy.alive && i++ < 1000) C.tap(s);
   assert.ok(!s.enemy.alive, 'враг убит');
-  assert.ok(B.isBig(s.gold) && B.gt(s.gold, 0));
+  assert.ok(B.gt(s.gold, 0));
   assert.strictEqual(C.fmt(s.gold).includes('∞'), false);
+  assert.ok(B.isBig(C.enemyMaxHp(100000, true)));                    // вершина — большие числа
 });
 
 test('покупки с огромным золотом: MAX упирается в потолок, цена конечна', () => {
@@ -2266,4 +2267,12 @@ test('обычные мобы иногда роняют осколки (≈8%, 3
   }
   assert.ok(n > 40 && n < 220, 'дропов: ' + n);
   assert.ok(got >= n);
+});
+
+test('кривая дальних этажей: до 1000 — как раньше (×1.18), выше — медленнее; полностью прокачанный отряд проходит 100 000', () => {
+  const l = f => B.log10(C.enemyMaxHp(f, false));
+  assert.ok(Math.abs(l(500) - l(499) - Math.log10(1.18)) < 1e-9);
+  assert.ok(l(2000) - l(1999) < Math.log10(1.18));
+  assert.ok(l(100000) > l(50000));                                   // рост остаётся до вершины
+  assert.ok(B.log10(C.enemyMaxHp(100000, true)) < 345);              // вершина по силам максимальному отряду (tools/godsim.js)
 });

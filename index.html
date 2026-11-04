@@ -1222,7 +1222,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.48</div>
+  <div id="version">v0.49</div>
 </div>
 
 <script>
@@ -1237,6 +1237,9 @@
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
+    // Кривая дальних этажей (0.49, «пока»): до knee рост ×1.18 за этаж как раньше; выше — замедляется логарифмически
+    // (наклон на knee — slope от прежнего), чтобы полностью прокачанный отряд мог дойти до вершины 100 000. То же — золото.
+    floorCurve: { knee: 1000, slope: 0.8 },
     bossHpMult: 6,
     bossTimeSec: 30,              // таймер босса (TBD)
     goldBase: 1,
@@ -1941,11 +1944,16 @@
   function cnt(s, key, n) { s.counters[key] = (s.counters[key] || 0) + (n === undefined ? 1 : n); }
 
   // ---------- формулы ----------
+  // «Эффективный номер этажа» для роста HP и золота: линейно до knee, выше — knee·slope·ln(f/knee)
+  function floorSteps(floor) {
+    const K = CONFIG.floorCurve.knee;
+    return floor <= K ? floor - 1 : (K - 1) + K * CONFIG.floorCurve.slope * Math.log(floor / K);
+  }
   function enemyMaxHp(floor, isBoss) {
     const bm = isBoss ? CONFIG.bossHpMult * (isFinalBoss(floor) ? CONFIG.finalBossHpMult : 1) : 1;
-    const l = Math.log10(CONFIG.enemyBaseHp * biomeOf(floor).hp * bm) + (floor - 1) * Math.log10(CONFIG.enemyHpGrowth);
+    const l = Math.log10(CONFIG.enemyBaseHp * biomeOf(floor).hp * bm) + floorSteps(floor) * Math.log10(CONFIG.enemyHpGrowth);
     if (l >= LOGLIM) return B.fromLog10(l);
-    const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1) * biomeOf(floor).hp;
+    const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floorSteps(floor)) * biomeOf(floor).hp;
     return Math.ceil(isBoss ? hp * bm : hp);
   }
   // ---------- души и артефакты ----------
@@ -2214,15 +2222,15 @@
   }
 
   function killGold(floor, isBoss) {
-    const l = Math.log10(CONFIG.goldBase * biomeOf(floor).gold * (isBoss ? CONFIG.bossGoldMult : 1)) + (floor - 1) * Math.log10(CONFIG.goldGrowth);
+    const l = Math.log10(CONFIG.goldBase * biomeOf(floor).gold * (isBoss ? CONFIG.bossGoldMult : 1)) + floorSteps(floor) * Math.log10(CONFIG.goldGrowth);
     if (l >= LOGLIM) return B.fromLog10(l);
-    const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * biomeOf(floor).gold;
+    const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floorSteps(floor)) * biomeOf(floor).gold;
     return Math.ceil(isBoss ? g * CONFIG.bossGoldMult : g);
   }
   function firstClearGold(floor) {
-    const l = Math.log10(CONFIG.goldBase * CONFIG.firstClearGoldMult) + (floor - 1) * Math.log10(CONFIG.goldGrowth);
+    const l = Math.log10(CONFIG.goldBase * CONFIG.firstClearGoldMult) + floorSteps(floor) * Math.log10(CONFIG.goldGrowth);
     if (l >= LOGLIM) return B.fromLog10(l);
-    return Math.ceil(CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * CONFIG.firstClearGoldMult);
+    return Math.ceil(CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floorSteps(floor)) * CONFIG.firstClearGoldMult);
   }
   // Сколько вех пройдено на этом уровне
   function milestonesReached(level) {
