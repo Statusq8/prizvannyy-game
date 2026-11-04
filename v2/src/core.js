@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 12,
+    saveVersion: 13,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -300,6 +300,32 @@
     // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
     ranks: { count: 10, subs: 10, capMin: 600, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
+    // Сезоны и боевой пропуск (GDD §11). Сезон — 28 дней, считается по дате устройства от epoch (понедельник).
+    // Сезонный герой чередуется по номеру сезона. Тропа сезона — линейные задания. Числа TBD.
+    season: {
+      epoch: '2026-11-02', days: 28,
+      names: ['Пепельный карнавал', 'Вечная зима'],
+      heroes: ['carna', 'yuki'],
+      trail: [   // каждое задание считается с момента, когда стало текущим
+        { key: 'kill', goal: 300,  name: 'Расчистить тропу: враги' },
+        { key: 'boss', goal: 10,   name: 'Сломить стражей тропы' },
+        { key: 'dungeon', goal: 2, name: 'Спуститься в подземелья' },
+        { key: 'tap', goal: 3000,  name: 'Пробить врата ударами' },
+        { key: 'summon', goal: 5,  name: 'Призвать союзников' },
+        { key: 'kill', goal: 1500, name: 'Карнавальная толпа' },
+        { key: 'boss', goal: 40,   name: 'Маски боссов' },
+        { key: 'wave', goal: 50,   name: 'Бесконечный маскарад' },
+        { key: 'personal', goal: 3, name: 'Личные испытания' },
+        { key: 'kill', goal: 5000, name: 'Финал сезона' },
+      ],
+      trailTokens: 60, trailXp: 250, heroCost: 400, copyCost: 150,   // жетоны 🎭; финал тропы открывает сезонного героя
+      passLevels: 30, xpPerLevel: 1000,
+      questXp: { daily: 100, weekly: 300, intro: 150 },
+      catchupXp: 500,                     // догон: раз в день, если уровень пропуска ниже ожидаемого по дню сезона
+      // награды уровня: free — бесплатная дорожка, paid — премиум (больше билетов и ресурсов, без эксклюзивных героев)
+      free: { tickets: 1, shard: 40, tokens: 15 }, paid: { tickets: 2, shard: 100, essence: 20, tokens: 30 },
+      milestoneEvery: 5, milestoneFree: { heart: 1, tickets: 2 }, milestonePaid: { heart: 2, tickets: 5 },
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -343,6 +369,11 @@
       { id: 'morra', name: 'Морра', role: 'Хранительница Алтаря', rarity: 'A', hidden: true, baseDps: 1e8, attackInterval: 1.2,
         hireCost: 2e7, costGrowth: 1.05, ult: { name: 'Печать жертвы', kind: 'teamBuff', charge: 20, power: 2.2, duration: 7 },
         recipe: ['irene', 'borg', 'lia', 'kael'] },
+      // сезонные (GDD §11): не выпадают в портале; бесплатно — тропой сезона или обменом жетонов; возвращаются в следующих сезонах
+      { id: 'carna', name: 'Карна', role: 'Маска карнавала', rarity: 'S', seasonal: true, baseDps: 2e11, attackInterval: 0.8,
+        hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Фейерверк', kind: 'nuke', charge: 14, power: 30 } },
+      { id: 'yuki', name: 'Юки', role: 'Снежная жрица', rarity: 'S', seasonal: true, baseDps: 1.5e11, attackInterval: 1.0,
+        hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Вьюга', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
     ],
   };
 
@@ -577,6 +608,7 @@
       mode: null,                                // текущий PvE-режим (не сохраняется)
       counters: {},                              // счётчики действий за всю игру (для заданий)
       quests: { day: '', week: '', dayBase: {}, weekBase: {}, claimed: {} },
+      season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -954,6 +986,7 @@
     s.quests.claimed[id] = true;
     const r = questDef(id).reward;
     grant(s, r);
+    s.season.xp += CONFIG.season.questXp[questDef(id).period] || 0;
     return r;
   }
   // «Забрать всё»: суммарная награда; «все задания дня» проверяется последним
@@ -967,6 +1000,91 @@
     }
     return n ? { count: n, reward: sum } : null;
   }
+  // ---------- сезон и боевой пропуск ----------
+  function dayNum(dayKey) { const [y, m, d] = dayKey.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); }
+  function seasonInfo(dayKey) {
+    const S = CONFIG.season, d = dayNum(dayKey) - dayNum(S.epoch);
+    const n = Math.floor(d / S.days) + 1, day = ((d % S.days) + S.days) % S.days + 1;
+    const i = ((n - 1) % S.names.length + S.names.length) % S.names.length;
+    return { n, day, daysLeft: S.days - day, name: S.names[i], hero: S.heroes[((n - 1) % S.heroes.length + S.heroes.length) % S.heroes.length] };
+  }
+  function newSeason(n) { return { n, xp: 0, tokens: 0, premium: false, free: {}, paid: {}, trail: 0, trailBase: null, catchupDay: '' }; }
+  // Новый сезон: пропуск, тропа и жетоны начинаются заново; герои и их копии остаются навсегда
+  function seasonReset(s, dayKey) {
+    const info = seasonInfo(dayKey);
+    if (s.season.n !== info.n) s.season = newSeason(info.n);
+    if (!s.season.trailBase) s.season.trailBase = { ...s.counters };
+    return info;
+  }
+  function passLevel(s) { const S = CONFIG.season; return Math.min(S.passLevels, Math.floor(s.season.xp / S.xpPerLevel)); }
+  function passReward(level, track) {
+    const S = CONFIG.season, ms = level % S.milestoneEvery === 0;
+    const base = track === 'paid' ? S.paid : S.free, extra = ms ? (track === 'paid' ? S.milestonePaid : S.milestoneFree) : {};
+    const r = { ...base };
+    for (const k in extra) r[k] = (r[k] || 0) + extra[k];
+    return r;
+  }
+  function grantSeason(s, r) { grant(s, r); if (r.tokens) s.season.tokens += r.tokens; }
+  function claimPass(s, level, track) {
+    const ss = s.season;
+    if (!Number.isInteger(level) || level < 1 || level > passLevel(s)) return null;
+    if (track === 'paid' && !ss.premium) return null;
+    const box = track === 'paid' ? ss.paid : ss.free;
+    if (box[level]) return null;
+    box[level] = true;
+    const r = passReward(level, track);
+    grantSeason(s, r);
+    return r;
+  }
+  function claimPassAll(s) {
+    const sum = {}; let n = 0;
+    for (let l = 1; l <= passLevel(s); l++) for (const t of ['free', 'paid']) {
+      const r = claimPass(s, l, t);
+      if (r) { n++; for (const k in r) sum[k] = (sum[k] || 0) + r[k]; }
+    }
+    return n ? { count: n, reward: sum } : null;
+  }
+  // Премиум-дорожка: в прототипе включается бесплатно, для проверки (оплаты нет)
+  function setPremium(s, on) { s.season.premium = !!on; }
+  // Догон: ожидаемый уровень = доля прошедших дней сезона × все уровни
+  function expectedPassLevel(dayKey) { const S = CONFIG.season, i = seasonInfo(dayKey); return Math.floor(S.passLevels * i.day / S.days); }
+  function catchupAvailable(s, dayKey) { return s.season.catchupDay !== dayKey && passLevel(s) < expectedPassLevel(dayKey) && passLevel(s) < CONFIG.season.passLevels; }
+  function useCatchup(s, dayKey) {
+    if (!catchupAvailable(s, dayKey)) return false;
+    s.season.catchupDay = dayKey; s.season.xp += CONFIG.season.catchupXp;
+    return true;
+  }
+  // Тропа сезона: одно текущее задание, прогресс с момента, когда оно стало текущим
+  function trailStep(s) { return CONFIG.season.trail[s.season.trail] || null; }
+  function trailProgress(s) {
+    const t = trailStep(s);
+    if (!t) return 0;
+    return Math.min(t.goal, Math.max(0, (s.counters[t.key] || 0) - ((s.season.trailBase || {})[t.key] || 0)));
+  }
+  function claimTrail(s, dayKey) {
+    const S = CONFIG.season, t = trailStep(s);
+    if (!t || trailProgress(s) < t.goal) return null;
+    s.season.trail++; s.season.trailBase = { ...s.counters };
+    s.season.tokens += S.trailTokens; s.season.xp += S.trailXp;
+    const r = { tokens: S.trailTokens, xp: S.trailXp };
+    if (s.season.trail === S.trail.length) {             // финал тропы — сезонный герой бесплатно
+      const id = seasonInfo(dayKey).hero, h = s.heroes[id];
+      if (h.unlocked) h.copies++; else h.unlocked = true;
+      r.hero = id;
+    }
+    return r;
+  }
+  // Гарантированный обмен жетонов на сезонного героя (или его копию)
+  function seasonHeroCost(s, dayKey) { const id = seasonInfo(dayKey).hero; return s.heroes[id].unlocked ? CONFIG.season.copyCost : CONFIG.season.heroCost; }
+  function buySeasonHero(s, dayKey) {
+    const id = seasonInfo(dayKey).hero, cost = seasonHeroCost(s, dayKey);
+    if (s.season.tokens < cost) return null;
+    s.season.tokens -= cost;
+    const h = s.heroes[id];
+    if (h.unlocked) h.copies++; else h.unlocked = true;
+    return id;
+  }
+
   function claimableCount(s) { return QUESTS.filter(q => questClaimable(s, q.id)).length; }
 
   // ---------- офлайн ----------
@@ -1167,7 +1285,7 @@
       const rarity = rollRarity(s, min);
       if (RANK(rarity) >= RANK('A')) s.pity.a = 0;
       if (RANK(rarity) >= RANK('S')) s.pity.s = 0;
-      const pool = CONFIG.allies.filter(a => a.rarity === rarity && !a.hidden);
+      const pool = CONFIG.allies.filter(a => a.rarity === rarity && !a.hidden && !a.seasonal);
       const hero = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
       const h = s.heroes[hero.id];
       const isNew = !h.unlocked;
@@ -1434,6 +1552,8 @@
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
       pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest },
       counters: { ...s.counters },
+      season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
+                trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
       quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, claimed: Object.keys(s.quests.claimed) }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
@@ -1477,6 +1597,7 @@
       d.v = 12; d.heroRank = 0;
       for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].rank = 0;
     }
+    if (d.v === 12) { d.v = 13; d.season = { n: 0, xp: 0, tokens: 0, premium: false, free: [], paid: [], trail: 0, trailBase: null, catchupDay: '' }; }   // 0.20 → 0.21
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1562,6 +1683,14 @@
     s.counters = nums(d.counters);
     s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), claimed: {} };
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
+    const se = d.season;
+    if (!se || typeof se !== 'object' || !Number.isInteger(se.n) || !int(se.xp, 0) || !int(se.tokens, 0) || !int(se.trail, 0) ||
+        se.trail > CONFIG.season.trail.length || !Array.isArray(se.free) || !Array.isArray(se.paid)) return null;
+    s.season = newSeason(se.n);
+    Object.assign(s.season, { xp: se.xp, tokens: se.tokens, premium: !!se.premium, trail: se.trail,
+      trailBase: se.trailBase ? nums(se.trailBase) : null, catchupDay: typeof se.catchupDay === 'string' ? se.catchupDay : '' });
+    for (const l of se.free) if (int(l, 1)) s.season.free[l] = true;
+    for (const l of se.paid) if (int(l, 1)) s.season.paid[l] = true;
     const pv = d.pve;
     if (!pv || typeof pv !== 'object' || typeof pv.day !== 'string' || !pv.used || typeof pv.used !== 'object' || !int(pv.endlessBest, 0)) return null;
     s.pve = { day: pv.day, used: {}, endlessBest: pv.endlessBest };
@@ -1623,6 +1752,8 @@
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
+    trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,

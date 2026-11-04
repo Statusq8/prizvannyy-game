@@ -1440,3 +1440,94 @@ test('ранги переживают ритуал и сохраняются; м
   const m = C.deserialize(JSON.stringify(old));
   assert.strictEqual(m.heroRank, 0); assert.strictEqual(m.heroes.irene.rank, 0);
 });
+
+// ---------- сезон и боевой пропуск (0.21) ----------
+test('сезон: 28 дней по дате, герой и название чередуются', () => {
+  const a = C.seasonInfo('2026-11-02'), b = C.seasonInfo('2026-11-29'), c2 = C.seasonInfo('2026-11-30');
+  assert.deepStrictEqual([a.n, a.day, a.daysLeft], [1, 1, 27]);
+  assert.deepStrictEqual([b.n, b.day], [1, 28]);
+  assert.strictEqual(c2.n, 2); assert.notStrictEqual(c2.hero, a.hero); assert.notStrictEqual(c2.name, a.name);
+  assert.strictEqual(C.seasonInfo('2026-12-28').hero, a.hero);   // герой возвращается
+});
+
+test('сезонные герои не выпадают в портале', () => {
+  const s = C.newState({ rng: () => 0.999 }); s.tickets = 500; s.pity = { a: 0, s: 89 };
+  C.summon(s, 500);
+  assert.strictEqual(s.heroes.carna.unlocked, false); assert.strictEqual(s.heroes.yuki.unlocked, false);
+});
+
+test('пропуск: опыт за задания, уровни, бесплатная и премиум дорожки', () => {
+  const s = C.newState(NOCRIT); const day = '2026-11-04';
+  C.seasonReset(s, day); C.questsReset(s, day, 'w');
+  s.counters.kill = (s.counters.kill || 0) + 600;
+  C.claimQuest(s, 'd_kill');
+  assert.strictEqual(s.season.xp, CFG.season.questXp.daily);
+  s.season.xp = 5 * CFG.season.xpPerLevel;
+  assert.strictEqual(C.passLevel(s), 5);
+  const t0 = s.tickets;
+  const r = C.claimPass(s, 5, 'free');
+  assert.strictEqual(r.heart, CFG.season.milestoneFree.heart);    // 5-й уровень — веха
+  assert.strictEqual(s.tickets, t0 + r.tickets);
+  assert.strictEqual(C.claimPass(s, 5, 'free'), null);
+  assert.strictEqual(C.claimPass(s, 6, 'free'), null);            // уровень не достигнут
+  assert.strictEqual(C.claimPass(s, 1, 'paid'), null);            // без премиума
+  C.setPremium(s, true);
+  assert.ok(C.claimPass(s, 1, 'paid').tickets > CFG.season.free.tickets);
+  const all = C.claimPassAll(s);
+  assert.strictEqual(all.count, 4 + 4);                           // free 1–4, paid 2–5
+});
+
+test('догон: раз в день и только при отставании', () => {
+  const s = C.newState(NOCRIT);
+  C.seasonReset(s, '2026-11-02');
+  s.season.xp = 5 * CFG.season.xpPerLevel;                           // впереди графика — догона нет
+  assert.strictEqual(C.catchupAvailable(s, '2026-11-02'), false);
+  s.season.xp = 0;
+  C.seasonReset(s, '2026-11-20');
+  assert.ok(C.expectedPassLevel('2026-11-20') > 0);
+  assert.ok(C.useCatchup(s, '2026-11-20'));
+  assert.strictEqual(s.season.xp, CFG.season.catchupXp);
+  assert.strictEqual(C.useCatchup(s, '2026-11-20'), false);
+  assert.ok(C.useCatchup(s, '2026-11-21'));
+});
+
+test('тропа сезона: линейные задания, жетоны, финал открывает сезонного героя', () => {
+  const s = C.newState(NOCRIT); const day = '2026-11-04';
+  const info = C.seasonReset(s, day);
+  for (let i = 0; i < CFG.season.trail.length; i++) {
+    const t = C.trailStep(s);
+    assert.strictEqual(C.claimTrail(s, day), null);
+    s.counters[t.key] = (s.counters[t.key] || 0) + t.goal;
+    const r = C.claimTrail(s, day);
+    assert.strictEqual(r.tokens, CFG.season.trailTokens);
+    if (i === CFG.season.trail.length - 1) assert.strictEqual(r.hero, info.hero);
+  }
+  assert.strictEqual(C.trailStep(s), null);
+  assert.ok(s.heroes[info.hero].unlocked);
+  assert.strictEqual(s.season.tokens, CFG.season.trailTokens * CFG.season.trail.length);
+});
+
+test('обмен жетонов на сезонного героя, потом на копии; новый сезон сбрасывает пропуск, герой остаётся', () => {
+  const s = C.newState(NOCRIT); const day = '2026-11-04';
+  const info = C.seasonReset(s, day);
+  s.season.tokens = CFG.season.heroCost - 1;
+  assert.strictEqual(C.buySeasonHero(s, day), null);
+  s.season.tokens = CFG.season.heroCost + CFG.season.copyCost;
+  assert.strictEqual(C.buySeasonHero(s, day), info.hero);
+  assert.strictEqual(C.seasonHeroCost(s, day), CFG.season.copyCost);
+  C.buySeasonHero(s, day); assert.strictEqual(s.heroes[info.hero].copies, 1);
+  s.season.xp = 9999;
+  C.seasonReset(s, '2026-12-01');
+  assert.strictEqual(s.season.xp, 0); assert.strictEqual(s.season.tokens, 0);
+  assert.ok(s.heroes[info.hero].unlocked);
+});
+
+test('сохранение сезона и миграция с 0.20', () => {
+  const s = C.newState(NOCRIT); C.seasonReset(s, '2026-11-04');
+  s.season.xp = 3200; s.season.tokens = 77; s.season.premium = true; s.season.free = { 1: true, 2: true }; s.season.trail = 3;
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.season.xp, 3200); assert.strictEqual(t.season.tokens, 77); assert.ok(t.season.premium);
+  assert.deepStrictEqual(t.season.free, { 1: true, 2: true }); assert.strictEqual(t.season.trail, 3);
+  const old = JSON.parse(C.serialize(s)); old.v = 12; delete old.season;
+  assert.strictEqual(C.deserialize(JSON.stringify(old)).season.n, 0);
+});
