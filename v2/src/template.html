@@ -417,7 +417,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.9</div>
+  <div id="version">v0.9.1</div>
 </div>
 
 <script>
@@ -903,7 +903,7 @@
     // ритуал
     const ready = C.canRitual(s);
     html += '<div class="ritualBox' + (ready ? ' ready' : '') + '"><b>Ритуал</b>' +
-      (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s.rituals + 1) +
+      (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) +
                '. Чем выше этаж, тем больше душ.</p>'
              : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor +
                (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
@@ -943,7 +943,7 @@
       if (C.upgradeArtifact(s, d.up)) save();
     } else if (d.act === 'ritual') {
       if (!C.canRitual(s)) return;
-      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s.rituals + 1);
+      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s);
       const after = { ...s, souls: s.souls + souls };
       ask('<b>Ритуал</b><span class="askList">' +
         '<b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +

@@ -726,8 +726,7 @@ test('ритуал: сбрасывает забег, сохраняет пост
   assert.strictEqual(s.rituals, 1);
   // сброс
   assert.strictEqual(s.gold, 0); assert.strictEqual(s.tapLevel, 1); assert.strictEqual(s.allies.irene.level, 0);
-  assert.strictEqual(s.floor, C.ritualStartFloor(1)); assert.strictEqual(s.maxFloor, s.floor);
-  assert.ok(s.floor > 1 && s.floor < CFG.ritual.floor);
+  assert.strictEqual(s.floor, 1); assert.strictEqual(s.maxFloor, s.floor);   // без «Врат восхождения» — с 1-го
   // сохранение
   assert.strictEqual(s.heroes.irene.stars, 3); assert.strictEqual(s.heroes.irene.copies, 5);
   assert.strictEqual(s.tickets, 7); assert.strictEqual(s.essence, 11); assert.strictEqual(s.artifacts.grail, 2);
@@ -737,13 +736,22 @@ test('ритуал: сбрасывает забег, сохраняет пост
   assert.strictEqual(C.canRitual(s), false);
 });
 
-test('старт после N ритуалов растёт, но всегда строго ниже 400', () => {
+test('Врата восхождения: старт после ритуала растёт с уровнем, всегда строго ниже 400', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.ritualStartFloor(s), 1);
+  s.rituals = 50; assert.strictEqual(C.ritualStartFloor(s), 1);       // число ритуалов больше не влияет
+  const gate = CFG.artifacts.find(a => a.id === 'gate');
   let prev = 0;
-  for (let n = 1; n < 100; n++) {
-    const f = C.ritualStartFloor(n);
-    assert.ok(f >= prev && f < CFG.ritual.floor);
+  for (let lv = 1; lv <= gate.max; lv++) {
+    s.artifacts.gate = lv;
+    const f = C.ritualStartFloor(s);
+    assert.ok(f > prev && f < CFG.ritual.floor);
     prev = f;
   }
+  assert.strictEqual(C.upgradeArtCost(s, 'gate'), null);              // дальше не качается
+  s.artifacts.gate = 3; reach(s, 400);
+  assert.strictEqual(C.ritual(s).start, 31);
+  assert.strictEqual(s.floor, 31); assert.strictEqual(s.maxFloor, 31);
 });
 
 test('души за ритуал растут с этажом и дают бонус за новый рекорд', () => {

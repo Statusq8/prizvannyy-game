@@ -39,7 +39,7 @@ function manageSouls() {
   for (;;) {
     const fc = Core.findCost(s);
     if (fc != null && s.souls >= fc) { Core.findArtifact(s); continue; }
-    const opts = ['grail', 'gaunt', 'banner', 'eye', 'fang', 'blade'].map(id => ({ id, c: Core.upgradeArtCost(s, id) })).filter(o => o.c != null && o.c <= s.souls);
+    const opts = ['grail', 'gaunt', 'banner', 'eye', 'fang', 'blade', 'gate'].map(id => ({ id, c: Core.upgradeArtCost(s, id) })).filter(o => o.c != null && o.c <= s.souls);
     if (!opts.length) return;
     opts.sort((x, y) => x.c - y.c);
     Core.upgradeArtifact(s, opts[0].id);
