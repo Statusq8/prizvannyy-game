@@ -273,7 +273,7 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
   .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
@@ -487,6 +487,7 @@
       <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
       <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
       <button class="sideBtn" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="bones"><span class="ico">🦴</span><span class="lbl">Кости</span><i class="bang">!</i></button>
     </div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
@@ -570,6 +571,7 @@
     <div id="seasonTab" class="tabBody"></div>
     <div id="eventsTab" class="tabBody"></div>
     <div id="inboxTab" class="tabBody"></div>
+    <div id="bonesTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
@@ -602,7 +604,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.25</div>
+  <div id="version">v0.26</div>
 </div>
 
 <script>
@@ -708,7 +710,7 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
@@ -804,6 +806,9 @@
       } else if (e.type === 'modeStart') {
         const b = $('ultBanner'); b.textContent = e.name; b.style.color = '#8fb8ff';
         b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      } else if (e.type === 'bone') {
+        const bs = C.boneSlot(e.bone.slot);
+        setTimeout(() => toast('Кость монстра!<small>' + bs.icon + ' ' + bs.name + ' · ' + CFG.rarities[e.bone.tier] + '</small>'), 2600);
       } else if (e.type === 'totem') {
         setTimeout(() => toast('Тотем получен!<small>🗿 ' + e.name + ' · вкладка «Руны»</small>'), 4800);
       } else if (e.type === 'biome') {
@@ -1091,6 +1096,7 @@
     if (tab === 'season') renderSeason();
     if (tab === 'events') renderEvents();
     if (tab === 'inbox') renderInbox();
+    if (tab === 'bones') renderBones();
     $('inboxCnt').textContent = s.inbox.length; $('inboxCnt').classList.toggle('on', s.inbox.length > 0);
     $('toggleLabel').textContent = TAB_NAMES[tab] || '';
     // «!» на боковых кнопках
@@ -1100,6 +1106,7 @@
       heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
+      bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
       season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
     };
     const opened = !$('panel').classList.contains('collapsed');
@@ -1336,6 +1343,72 @@
     render();
   });
 
+  // ---------- кости монстров ----------
+  let bonesHtml = '', boneWho = 'hero';
+  function boneLine(b) {
+    const x = C.boneSlot(b.slot), r = CFG.rarities[b.tier];
+    return '<span class="rar r-' + r + '">' + r + '</span> ' + x.icon + ' ' + x.name + ' · G' + b.grade + ' · ур. ' + b.lvl + '/' + CFG.bones.maxLevel;
+  }
+  const bonePct = b => '+' + fmt(Math.round(C.boneValue(b) * 100)) + '% ' + C.boneSlot(b.slot).desc;
+  function renderBones() {
+    const X = CFG.bones, M = CFG.materials;
+    const who = ['hero', ...s.squad, ...CFG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id)];
+    if (!who.includes(boneWho)) boneWho = 'hero';
+    const nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name;
+    let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
+      '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после ритуала.</div>';
+    html += '<div class="spare" style="margin-bottom:6px">' + who.map(id => '<button class="hBtn' + (id === boneWho ? ' go' : '') + '" data-bwho="' + id + '">' + nm(id) + ' · ' + C.equippedOn(s, id).length + '/6</button>').join('') + '</div>';
+    html += '<div class="secTitle">СЛОТЫ · ' + nm(boneWho).toUpperCase() + '</div>';
+    for (const x of X.slots) {
+      const b = s.bones.find(o => o.on === boneWho && o.slot === x.id);
+      const spare = s.bones.filter(o => !o.on && o.slot === x.id).sort((p, q) => C.boneValue(q) - C.boneValue(p));
+      if (!b) {
+        html += '<div class="hRow locked" style="--r:#3a2a4a;opacity:.8"><div class="artIcon">' + x.icon + '</div><div class="hInfo"><div class="hName">' + x.name + ' — пусто</div><div class="hSub">' + x.desc + '</div></div>' +
+          (spare.length ? '<button class="hBtn go" data-bput="' + spare[0].id + '">Надеть лучшую</button>' : '') + '</div>';
+        continue;
+      }
+      const up = C.boneUpCost(b), gc = C.gradeCost(b);
+      const canUp = up && s.materials.dust >= up, canG = gc && s.materials.dust >= gc.dust && s.materials.heart >= gc.hearts;
+      const better = spare.find(o => C.boneValue(o) > C.boneValue(b));
+      html += '<div class="hRow r-' + CFG.rarities[b.tier] + '"><div class="artIcon">' + x.icon + '</div><div class="hInfo"><div class="hName">' + boneLine(b) + '</div><div class="hSub">' + bonePct(b) + '</div></div><div class="hBtns">' +
+        (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-bup="' + b.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🦴' + fmt(up) + '</button>'
+            : '<button class="hBtn' + (canG ? ' evo' : '') + '" data-bgr="' + b.id + '"' + (canG ? '' : ' disabled') + '>G' + (b.grade + 1) + ' 🦴' + fmt(gc.dust) + ' ' + M.heart.icon + gc.hearts + '</button>') +
+        (better ? '<button class="hBtn go" data-bput="' + better.id + '">Лучше: ' + CFG.rarities[better.tier] + '</button>' : '<button class="hBtn" data-boff="' + b.id + '">Снять</button>') + '</div></div>';
+    }
+    // хранилище
+    const inv = s.bones.filter(b => !b.on).sort((p, q) => q.tier - p.tier || C.boneValue(q) - C.boneValue(p));
+    const junk = inv.filter(b => !b.lock), junkDust = junk.reduce((t, b) => t + C.recycleValue(b), 0);
+    html += '<div class="secTitle">ХРАНИЛИЩЕ · ' + inv.length + ' · 🔒 — защита от переработки (A и выше — сразу)</div>' +
+      '<button class="sacBtn" data-act="brec"' + (junk.length ? '' : ' disabled') + '>' + (junk.length ? 'Переработать незащищённые (' + junk.length + ') → 🦴 ' + fmt(junkDust) : 'Нечего перерабатывать') + '</button>';
+    for (const b of inv.slice(0, 60)) {
+      html += '<div class="hRow r-' + CFG.rarities[b.tier] + '"><div class="hInfo"><div class="hName">' + boneLine(b) + '</div><div class="hSub">' + bonePct(b) + '</div></div>' +
+        '<button class="lockBtn' + (b.lock ? ' on' : '') + '" data-block="' + b.id + '">' + (b.lock ? '🔒' : '🔓') + '</button>' +
+        '<button class="hBtn go" data-bput="' + b.id + '">Надеть</button>' +
+        (b.lock ? '' : '<button class="hBtn" data-brec="' + b.id + '">🦴 ' + C.recycleValue(b) + '</button>') + '</div>';
+    }
+    if (inv.length > 60) html += '<div class="hint2">…и ещё ' + (inv.length - 60) + '</div>';
+    if (html !== bonesHtml) { $('bonesTab').innerHTML = html; bonesHtml = html; }
+  }
+  $('bonesTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.bwho) boneWho = d.bwho;
+    else if (d.bput) C.equipBone(s, +d.bput, boneWho);
+    else if (d.boff) C.unequipBone(s, +d.boff);
+    else if (d.bup) C.upgradeBone(s, +d.bup);
+    else if (d.bgr) { if (C.gradeUpBone(s, +d.bgr)) toast('Новый грейд<small>сила кости ×' + CFG.bones.gradePower + '</small>'); }
+    else if (d.block) { const x = s.bones.find(o => o.id === +d.block); C.setBoneLock(s, x.id, !x.lock); }
+    else if (d.brec) { const r = C.recycleBones(s, [+d.brec]); if (r) toast('Переработано<small>🦴 +' + r.dust + '</small>'); }
+    else if (d.act === 'brec') {
+      const ids = s.bones.filter(o => !o.on && !o.lock).map(o => o.id);
+      ask('Переработать <b>' + ids.length + '</b> незащищённых костей? Они исчезнут навсегда.', 'Переработать', () => {
+        const r = C.recycleBones(s, ids); if (r) toast('Переработано: ' + r.count + '<small>🦴 +' + fmt(r.dust) + '</small>'); save(); render();
+      });
+      return;
+    }
+    save(); render();
+  });
+
   // ---------- события недели ----------
   let eventsHtml = '', eventTier = 0;
   function renderEvents() {
@@ -1477,6 +1550,7 @@
     if (r.gold) parts.push('◆ ' + fmt(r.gold));
     if (r.shard) parts.push(M.shard.icon + ' ' + fmt(r.shard));
     if (r.heart) parts.push(M.heart.icon + ' ' + r.heart);
+    if (r.bone) parts.push('кость ' + CFG.rarities[r.bone.tier] + ' · ' + C.boneSlot(r.bone.slot).name);
     if (r.runeTier != null) parts.push('руна ' + CFG.rarities[r.runeTier] + (r.runeType ? ' · ' + C.runeKind(r.runeType).name : ''));
     return parts.join(' · ');
   }

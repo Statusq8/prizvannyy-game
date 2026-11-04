@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 15,
+    saveVersion: 16,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -385,6 +385,28 @@
     // Переносимый усилитель героя (GDD §8): один на всю игру, ×power к урону владельца (главный герой или союзник).
     // Перенос не чаще раза в cooldownH часов (TBD). Не связан с артефактом автоатаки.
     booster: { name: 'Печать силы', power: 3, unlockFloor: 150, cooldownH: 8 },
+    // Кости монстров (GDD §9, этап 6): ровно 6 слотов на героя (и у главного героя). Череп, рёбра, позвоночник, когти —
+    // утверждены; таз и конечности — рабочие названия. У кости: редкость E–GOD, уровень и грейд G1, G2… без предела.
+    // Эффекты — рабочая гипотеза GDD, без критов. Комплекты 2/4/6 не утверждены — не делаем. Всё сохраняется после ритуала.
+    bones: {
+      slots: [
+        { id: 'skull',  name: 'Череп',      icon: '💀', kind: 'bossDmg', base: 0.10, desc: 'урона по боссам' },
+        { id: 'ribs',   name: 'Рёбра',      icon: '🦴', kind: 'selfDps', base: 0.15, desc: 'урона этого героя' },
+        { id: 'spine',  name: 'Позвоночник', icon: '🐍', kind: 'selfMult', base: 0.08, desc: 'множитель урона героя' },
+        { id: 'claws',  name: 'Когти',      icon: '🐾', kind: 'mobDmg',  base: 0.12, desc: 'урона по обычным врагам' },
+        { id: 'pelvis', name: 'Таз',        icon: '🦷', kind: 'gold',    base: 0.06, desc: 'золота (всему отряду)' },
+        { id: 'limbs',  name: 'Конечности', icon: '🦿', kind: 'shards',  base: 0.04, desc: 'осколков (всему отряду)' },
+      ],
+      tierPower: 2,                 // каждая редкость ×2
+      perLevel: 0.1, maxLevel: 10,  // уровень: +10% силы кости; на 10-м — можно поднять грейд
+      gradePower: 1.5,              // каждый грейд ×1.5 к силе, уровень сбрасывается
+      upDust: 5, upGrowth: 1.3,     // уровень: 5·(редкость+1)·1.3^ур костяной пыли
+      gradeDust: 50, gradeGrowth: 2, gradeHearts: 1,   // грейд: 50·(редкость+1)·2^(грейд−1) пыли + сердца = грейд
+      recycleDust: 10,              // переработка: 10·2^редкость·грейд пыли
+      dropBoss: 0.08, dropFinal: 1, dropPersonal: 1, dropEndless: 0.25,   // шанс выпадения
+      rarityWeights: [50, 26, 13, 6, 3, 1.5, 0.5],      // E … GOD; сдвигаются выше с этажом
+      rarityFloorStep: 500,         // каждые 500 этажей рекорда — +1 к минимальной редкости броска (до A)
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -551,7 +573,7 @@
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
   function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')); }
-  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')); }
   // Бонусы дерева душ и класса героя одного вида складываются
   function treePower(s, kind) { let x = classPower(s, kind); for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
   // ---------- классы главного героя ----------
@@ -581,6 +603,89 @@
     s.cls.spent[nid] = (s.cls.spent[nid] | 0) + 1;
     return true;
   }
+  // ---------- кости монстров ----------
+  function boneSlot(id) { return CONFIG.bones.slots.find(x => x.id === id); }
+  function boneValue(b) {
+    const X = CONFIG.bones;
+    return boneSlot(b.slot).base * Math.pow(X.tierPower, b.tier) * (1 + X.perLevel * b.lvl) * Math.pow(X.gradePower, b.grade - 1);
+  }
+  function equippedOn(s, who) { return s.bones.filter(b => b.on === who); }
+  // Бонус костей вида kind у героя who (или у всех — для золота и осколков)
+  function bonePower(s, kind, who) {
+    let x = 0;
+    for (const b of s.bones) if (b.on && (who === undefined || b.on === who) && boneSlot(b.slot).kind === kind) x += boneValue(b);
+    return x;
+  }
+  // Личный множитель героя от костей: рёбра (+%) × позвоночник (множитель)
+  function boneMult(s, who) { return (1 + bonePower(s, 'selfDps', who)) * (1 + bonePower(s, 'selfMult', who)); }
+  // Чей это урон: главный герой или союзник
+  function damageOwner(source) {
+    if (source === 'tap' || source === 'heroAuto') return 'hero';
+    if (source.startsWith('ult:')) return source.slice(4);
+    return source === 'reserve' ? null : source;
+  }
+  function boneEnemyMult(s, source) {
+    const who = damageOwner(source);
+    if (!who) return 1;
+    return 1 + bonePower(s, s.enemy.isBoss ? 'bossDmg' : 'mobDmg', who);
+  }
+  // Выпадение кости: детерминированный бросок (не тратит s.rng) — шанс, редкость, слот
+  function rollBone(s, chance, salt) {
+    const X = CONFIG.bones, k = s.stats.kills + (s.counters.boneRoll || 0) * 7919;
+    s.counters.boneRoll = (s.counters.boneRoll || 0) + 1;
+    if (hash01(k, salt, 17) >= chance) return null;
+    const minT = Math.min(4, Math.floor(s.bestFloor / X.rarityFloorStep));
+    const w = X.rarityWeights.map((v, i) => (i < minT ? 0 : v)), tot = w.reduce((a, b) => a + b, 0);
+    let y = hash01(k, salt, 29) * tot, tier = w.length - 1;
+    for (let i = 0; i < w.length; i++) { y -= w[i]; if (y < 0) { tier = i; break; } }
+    const slot = X.slots[Math.floor(hash01(k, salt, 41) * X.slots.length) % X.slots.length].id;
+    const b = { id: s.boneSeq++, slot, tier, lvl: 0, grade: 1, on: null, lock: tier >= 4 };   // A+ сразу под защитой
+    s.bones.push(b);
+    return b;
+  }
+  function boneById(s, id) { return s.bones.find(b => b.id === id); }
+  function equipBone(s, id, who) {
+    const b = boneById(s, id);
+    if (!b || (who !== 'hero' && (!allyDef(who) || !s.heroes[who].unlocked))) return false;
+    for (const o of s.bones) if (o.on === who && o.slot === b.slot) o.on = null;   // в слоте одна кость
+    b.on = who;
+    return true;
+  }
+  function unequipBone(s, id) { const b = boneById(s, id); if (!b || !b.on) return false; b.on = null; return true; }
+  function boneUpCost(b) { const X = CONFIG.bones; return b.lvl >= X.maxLevel ? null : Math.ceil(X.upDust * (b.tier + 1) * Math.pow(X.upGrowth, b.lvl)); }
+  function upgradeBone(s, id) {
+    const b = boneById(s, id), c = b && boneUpCost(b);
+    if (!c || s.materials.dust < c) return false;
+    s.materials.dust -= c; b.lvl++;
+    return true;
+  }
+  // Грейд — следующий этап силы, без предела (GDD §9); нужен полный уровень
+  function gradeCost(b) {
+    const X = CONFIG.bones;
+    if (b.lvl < X.maxLevel) return null;
+    return { dust: Math.ceil(X.gradeDust * (b.tier + 1) * Math.pow(X.gradeGrowth, b.grade - 1)), hearts: X.gradeHearts * b.grade };
+  }
+  function gradeUpBone(s, id) {
+    const b = boneById(s, id), c = b && gradeCost(b);
+    if (!c || s.materials.dust < c.dust || s.materials.heart < c.hearts) return false;
+    s.materials.dust -= c.dust; s.materials.heart -= c.hearts; b.grade++; b.lvl = 0;
+    return true;
+  }
+  function setBoneLock(s, id, on) { const b = boneById(s, id); if (!b) return false; b.lock = !!on; return true; }
+  function recycleValue(b) { return CONFIG.bones.recycleDust * Math.pow(2, b.tier) * b.grade; }
+  // Переработка: исчезает навсегда, даёт пыль. Защищённые и надетые — нельзя
+  function recycleBones(s, ids) {
+    let dust = 0, n = 0;
+    for (const id of ids) {
+      const b = boneById(s, id);
+      if (!b || b.lock || b.on) continue;
+      dust += recycleValue(b); n++;
+      s.bones = s.bones.filter(x => x !== b);
+    }
+    s.materials.dust += dust;
+    return n ? { count: n, dust } : null;
+  }
+
   // ---------- переносимый усилитель ----------
   function boosterUnlocked(s) { return s.bestFloor >= CONFIG.booster.unlockFloor; }
   function boosterMult(s, who) { return s.booster.owner === who ? CONFIG.booster.power : 1; }
@@ -627,13 +732,13 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')); }
+  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
     let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero');
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
     return B.mul(soulMult(s), m);
   }
@@ -742,7 +847,7 @@
     return m;
   }
   // Постоянная сила самого героя: звёзды × эволюция
-  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id); }
+  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   function inSquad(s, id) { return s.squad.includes(id); }
@@ -786,7 +891,8 @@
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
       tickets: 0,
       heroRank: 0,                               // ступень ранга главного героя (0…100) — поднимает потолок удара
-      materials: { shard: 0, heart: 0 },
+      materials: { shard: 0, heart: 0, dust: 0 },   // dust — костяная пыль
+      bones: [], boneSeq: 1,                     // кости: { id, slot, tier, lvl, grade, on (кто носит), lock }
       heartFloor: 0,                             // до какого этажа уже выданы сердца за боссов
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
       pity: { a: 0, s: 0 },
@@ -861,6 +967,7 @@
     if (s.enemy.mark > 0) m *= s.enemy.markPower;
     if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
     if (s.enemy.isBoss) m *= bossDmgMult(s);
+    m *= boneEnemyMult(s, source);
     return m;
   }
 
@@ -935,6 +1042,8 @@
         if (isFinalBoss(s.floor) && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
       }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
+      const bone = rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor);
+      if (bone) events.push({ type: 'bone', bone });
       if (s.floor >= CONFIG.maxFloor) {                 // вершина: этаж не растёт, босса можно бить снова
         s.enemyIndex = 1;
         events.push({ type: 'top', floor: s.floor });
@@ -1111,6 +1220,8 @@
         const e = P.endless.essenceBase + Math.floor(m.step / P.endless.essenceStep);
         m.essence += e; s.essence += e;
         if (m.step > s.pve.endlessBest) { m.tickets++; s.tickets++; }   // новый рекордный рубеж — билет
+        const bone = rollBone(s, CONFIG.bones.dropEndless, m.step);
+        if (bone) events.push({ type: 'bone', bone });
       }
       s.pve.endlessBest = Math.max(s.pve.endlessBest, m.step);
       m.step++;
@@ -1145,6 +1256,8 @@
       res.reward = r;
     } else if (m.kind === 'personal' && win) {
       const r = personalReward(s, m.floor, m.diff);
+      const bone = rollBone(s, CONFIG.bones.dropPersonal, m.floor);
+      if (bone) r.bone = bone;
       s.materials.heart += r.heart; s.materials.shard += r.shard;
       res.reward = r;
     } else if (m.kind === 'endless') {
@@ -1826,7 +1939,8 @@
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
-      materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor, heroRank: s.heroRank,
+      materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
+      bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
@@ -1884,6 +1998,7 @@
     if (d.v === 12) { d.v = 13; d.season = { n: 0, xp: 0, tokens: 0, premium: false, free: [], paid: [], trail: 0, trailBase: null, catchupDay: '' }; }   // 0.20 → 0.21
     if (d.v === 13) { d.v = 14; d.event = { week: '', id: null, points: 0, lanterns: 0, ms: [], bought: {} }; d.inbox = []; d.inboxSeq = 1; }   // 0.22 → 0.23
     if (d.v === 14) { d.v = 15; d.cls = { id: null, spent: {}, changeDay: '' }; d.booster = { owner: null, movedAt: 0 }; }   // 0.24 → 0.25
+    if (d.v === 15) { d.v = 16; d.bones = []; d.boneSeq = 1; if (d.materials) d.materials.dust = 0; }   // 0.25 → 0.26: кости монстров
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1932,8 +2047,16 @@
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     const m = d.materials;
-    if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(d.heartFloor, 0)) return null;
-    s.materials = { shard: m.shard, heart: m.heart }; s.heartFloor = d.heartFloor;
+    if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
+    s.materials = { shard: m.shard, heart: m.heart, dust: m.dust }; s.heartFloor = d.heartFloor;
+    if (!Array.isArray(d.bones) || !int(d.boneSeq, 1)) return null;
+    for (const b of d.bones) {
+      if (!b || !int(b.id, 1) || !boneSlot(b.slot) || !int(b.tier, 0) || b.tier >= CONFIG.rarities.length ||
+          !int(b.lvl, 0) || b.lvl > CONFIG.bones.maxLevel || !int(b.grade, 1)) return null;
+      s.bones.push({ id: b.id, slot: b.slot, tier: b.tier, lvl: b.lvl, grade: b.grade, lock: !!b.lock,
+                     on: b.on === 'hero' || allyDef(b.on) ? b.on : null });
+    }
+    s.boneSeq = Math.max(d.boneSeq, ...s.bones.map(b => b.id + 1));
     if (!int(d.heroRank, 0) || d.heroRank > maxSteps()) return null;
     s.heroRank = d.heroRank;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
@@ -2064,6 +2187,8 @@
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    boneSlot, boneValue, equippedOn, bonePower, boneMult, rollBone, equipBone, unequipBone, boneUpCost, upgradeBone,
+    gradeCost, gradeUpBone, setBoneLock, recycleValue, recycleBones,
     classDef, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
     boosterUnlocked, boosterMult, boosterWait, moveBooster,
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,

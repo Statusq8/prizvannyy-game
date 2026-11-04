@@ -861,9 +861,9 @@ test('материалы: осколки за каждого босса (и по
 
 test('материалы и эволюция переживают ритуал; сердца после ритуала не повторяются', () => {
   const s = C.newState(NOCRIT);
-  s.materials = { shard: 77, heart: 4 }; s.heartFloor = 400; s.heroes.irene.evo = 2;
+  s.materials = { shard: 77, heart: 4, dust: 0 }; s.heartFloor = 400; s.heroes.irene.evo = 2;
   reach(s, 400); C.ritual(s);
-  assert.deepStrictEqual(s.materials, { shard: 77, heart: 4 });
+  assert.deepStrictEqual(s.materials, { shard: 77, heart: 4, dust: 0 });
   assert.strictEqual(s.heroes.irene.evo, 2);
   assert.strictEqual(C.bossMaterials(s, 50).heart, 0);
   assert.strictEqual(C.bossMaterials(s, 450).heart, 1);
@@ -905,20 +905,20 @@ test('Алтарь: осколки в сердце — гарантирован�
   s.materials.shard = r * 2 - 1;
   assert.strictEqual(C.forgeHeart(s, 2), false);
   assert.strictEqual(C.forgeHeart(s, 1), true);
-  assert.deepStrictEqual(s.materials, { shard: r - 1, heart: 1 });
+  assert.deepStrictEqual(s.materials, { shard: r - 1, heart: 1, dust: 0 });
 });
 
 test('сохранение эволюции и материалов, миграция с 0.9 начисляет материалы за пройденных боссов', () => {
   const s = C.newState(NOCRIT);
   s.materials = { shard: 15, heart: 2 }; s.heartFloor = 100; s.heroes.irene.evo = 1;
   const t = C.deserialize(C.serialize(s));
-  assert.deepStrictEqual(t.materials, { shard: 15, heart: 2 });
+  assert.deepStrictEqual(t.materials, { shard: 15, heart: 2, dust: 0 });
   assert.strictEqual(t.heartFloor, 100); assert.strictEqual(t.heroes.irene.evo, 1);
   const old = JSON.parse(C.serialize(s)); old.v = 6; delete old.materials; delete old.heartFloor; old.ticketFloor = 100;
   for (const id in old.heroes) delete old.heroes[id].evo;
   const m = C.deserialize(JSON.stringify(old));
   let sh = 0; for (let f = 1; f <= 100; f++) sh += C.shardsForBoss(f);
-  assert.deepStrictEqual(m.materials, { shard: sh, heart: 2 });
+  assert.deepStrictEqual(m.materials, { shard: sh, heart: 2, dust: 0 });
   assert.strictEqual(m.heartFloor, 100); assert.strictEqual(m.heroes.irene.evo, 0);
   const bad = JSON.parse(C.serialize(s)); bad.heroes.irene.evo = 9;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
@@ -1751,4 +1751,96 @@ test('сохранение класса и печати, миграция с 0.2
   const old = JSON.parse(C.serialize(s)); old.v = 14; delete old.cls; delete old.booster;
   const m = C.deserialize(JSON.stringify(old));
   assert.strictEqual(m.cls.id, null); assert.strictEqual(m.booster.owner, null);
+});
+
+// ---------- кости монстров (0.26) ----------
+function mkBone(s, slot, tier, extra) { const b = { id: s.boneSeq++, slot, tier, lvl: 0, grade: 1, on: null, lock: false, ...(extra || {}) }; s.bones.push(b); return b; }
+
+test('кости: ровно 6 слотов, утверждённые названия, без критов', () => {
+  assert.strictEqual(CFG.bones.slots.length, 6);
+  const names = CFG.bones.slots.map(x => x.name);
+  for (const n of ['Череп', 'Рёбра', 'Позвоночник', 'Когти']) assert.ok(names.includes(n));
+  for (const x of CFG.bones.slots) assert.ok(!/crit/i.test(x.kind));
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  for (const x of CFG.bones.slots) C.equipBone(s, mkBone(s, x.id, 6).id, 'hero');
+  assert.strictEqual(C.critChance(s), C.critChance(t)); assert.strictEqual(C.critMult(s), C.critMult(t));
+});
+
+test('рёбра и позвоночник усиливают носителя; в слоте одна кость', () => {
+  const s = C.newState(NOCRIT); s.allies.irene.level = 10;
+  const base = C.allyDps(s, 'irene');
+  const r = mkBone(s, 'ribs', 1);
+  assert.ok(C.equipBone(s, r.id, 'irene'));
+  assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r))) < 1e-9);
+  const r2 = mkBone(s, 'ribs', 2); C.equipBone(s, r2.id, 'irene');
+  assert.strictEqual(r.on, null); assert.strictEqual(C.equippedOn(s, 'irene').length, 1);
+  const sp = mkBone(s, 'spine', 0); C.equipBone(s, sp.id, 'irene');
+  assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r2)) * (1 + C.boneValue(sp))) < 1e-9);
+  assert.strictEqual(C.equipBone(s, r.id, 'azrael'), false);     // не открыт
+});
+
+test('череп — по боссам, когти — по обычным; таз и конечности — для всех', () => {
+  const s = C.newState(NOCRIT); s.enemy.hp = s.enemy.maxHp = 1e18;
+  const cl = mkBone(s, 'claws', 0); C.equipBone(s, cl.id, 'hero');
+  const d1 = C.tap(s).find(e => e.type === 'hit').dmg;
+  assert.ok(Math.abs(d1 / C.tapHit(s) - (1 + C.boneValue(cl))) < 1e-9);
+  const pv = mkBone(s, 'pelvis', 2); C.equipBone(s, pv.id, 'irene');
+  assert.ok(Math.abs(C.goldMult(s) - (1 + C.boneValue(pv))) < 1e-9);
+  const lm = mkBone(s, 'limbs', 0); C.equipBone(s, lm.id, 'borg');
+  assert.ok(Math.abs(C.shardMult(s) - (1 + C.boneValue(lm))) < 1e-9);
+  s.floor = s.maxFloor = 12; C.challengeBoss(s); s.enemy.hp = s.enemy.maxHp = 1e18;
+  const sk = mkBone(s, 'skull', 1); C.equipBone(s, sk.id, 'hero');
+  const d2 = C.tap(s).find(e => e.type === 'hit').dmg;
+  assert.ok(Math.abs(d2 / C.tapHit(s) - C.damageMult(s, 'tap')) < 1e-9);
+  assert.ok(C.damageMult(s, 'tap') >= 1 + C.boneValue(sk) - 1e-9);
+});
+
+test('уровень за пыль до 10, грейд без предела (пыль и сердца), сила растёт', () => {
+  const s = C.newState(NOCRIT); s.materials = { shard: 0, heart: 1000, dust: 1e9 };
+  const b = mkBone(s, 'ribs', 3);
+  assert.strictEqual(C.gradeUpBone(s, b.id), false);              // уровень ещё не полный
+  const v0 = C.boneValue(b);
+  for (let i = 0; i < 10; i++) assert.ok(C.upgradeBone(s, b.id));
+  assert.strictEqual(C.upgradeBone(s, b.id), false);
+  assert.ok(C.boneValue(b) > v0);
+  for (let g = 1; g <= 7; g++) {
+    if (b.lvl < 10) for (let i = 0; i < 10; i++) C.upgradeBone(s, b.id);
+    const before = C.boneValue(b);
+    assert.ok(C.gradeUpBone(s, b.id)); assert.strictEqual(b.lvl, 0);
+    assert.ok(C.boneValue(b) > before * 0.7);
+  }
+  assert.strictEqual(b.grade, 8);
+});
+
+test('переработка: пыль, защищённые и надетые не трогаются', () => {
+  const s = C.newState(NOCRIT);
+  const a = mkBone(s, 'claws', 0), b = mkBone(s, 'claws', 2, { grade: 3 }), l = mkBone(s, 'skull', 5, { lock: true }), w = mkBone(s, 'ribs', 1);
+  C.equipBone(s, w.id, 'hero');
+  const r = C.recycleBones(s, [a.id, b.id, l.id, w.id]);
+  assert.strictEqual(r.count, 2);
+  assert.strictEqual(s.materials.dust, C.recycleValue(a) + C.recycleValue(b));
+  assert.ok(s.bones.includes(l) && s.bones.includes(w));
+});
+
+test('выпадение: финальный босс — всегда, A+ сразу защищены; кости переживают ритуал', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  s.floor = s.maxFloor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const ev = killCurrent(s);
+  assert.ok(ev.some(e => e.type === 'bone'));
+  assert.strictEqual(s.bones.length, 1);
+  for (let i = 0; i < 300; i++) C.rollBone(s, 1, i);
+  assert.ok(s.bones.every(b => b.lock === (b.tier >= 4)));
+  assert.ok(new Set(s.bones.map(b => b.slot)).size === 6);
+  C.equipBone(s, s.bones[0].id, 'hero');
+  s.floor = s.maxFloor = 400; C.ritual(s);
+  assert.strictEqual(s.bones.length, 301); assert.strictEqual(s.bones[0].on, 'hero');
+});
+
+test('сохранение костей и пыли, миграция с 0.25', () => {
+  const s = C.newState(NOCRIT); mkBone(s, 'spine', 4, { lvl: 3, grade: 5, on: 'hero', lock: true }); s.materials.dust = 77;
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.bones, s.bones); assert.strictEqual(t.materials.dust, 77);
+  const old = JSON.parse(C.serialize(s)); old.v = 15; delete old.bones; delete old.boneSeq; delete old.materials.dust;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.deepStrictEqual(m.bones, []); assert.strictEqual(m.materials.dust, 0);
 });
