@@ -1223,3 +1223,98 @@ test('сохранение рун и тотемов, миграция с 0.14 в
   const bad = JSON.parse(C.serialize(s)); bad.runes[0].tier = 99;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
+
+// ---------- доп. PvE (0.16) ----------
+function strong(s) { s.tapLevel = 1e15; }
+function clearMode(s) {
+  let ev = [];
+  for (let i = 0; i < 1000 && s.mode; i++) { if (s.enemy.alive) ev = ev.concat(C.tap(s)); else ev = ev.concat(respawn(s)); }
+  return ev;
+}
+
+test('ежедневные подземелья: попытки в день, уровень до рекорда/10, фиксированная награда', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = s.maxFloor = 120; strong(s);
+  assert.strictEqual(C.maxDungeonTier(s), 12);
+  assert.strictEqual(C.enterMode(s, 'dungeon', { id: 'vault', tier: 13 }, '2026-11-04'), null);
+  const gold0 = s.gold, exp = C.dungeonReward(s, 'vault', 12).gold;
+  assert.ok(C.enterMode(s, 'dungeon', { id: 'vault', tier: 12 }, '2026-11-04'));
+  assert.strictEqual(s.floor, 1);                              // Башня не трогается
+  const ev = clearMode(s);
+  const end = ev.find(e => e.type === 'modeEnd');
+  assert.ok(end.win); assert.strictEqual(end.reward.gold, exp);
+  assert.strictEqual(s.gold, gold0 + exp);
+  assert.strictEqual(s.mode, null); assert.strictEqual(s.floor, 1);
+  assert.ok(C.enterMode(s, 'dungeon', { id: 'vault', tier: 1 }, '2026-11-04')); clearMode(s);
+  assert.strictEqual(C.attemptsLeft(s, 'vault'), 0);
+  assert.strictEqual(C.enterMode(s, 'dungeon', { id: 'vault', tier: 1 }, '2026-11-04'), null);
+  assert.ok(C.enterMode(s, 'dungeon', { id: 'vault', tier: 1 }, '2026-11-05'));   // новый день
+});
+
+test('подземелье: время вышло — без награды, попытка потрачена', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 100;
+  C.enterMode(s, 'dungeon', { id: 'mine', tier: 10 }, 'd');
+  const ev = C.tick(s, CFG.pve.dungeonTime + 1);
+  const end = ev.find(e => e.type === 'modeEnd');
+  assert.strictEqual(end.win, false); assert.strictEqual(s.materials.shard, 0);
+  assert.strictEqual(C.attemptsLeft(s, 'mine'), CFG.pve.dailyAttempts - 1);
+});
+
+test('рунная кузня и шахта: руна редкости по уровню, осколки', () => {
+  const s = C.newState({ rng: () => 0 }); s.bestFloor = 400; strong(s);
+  C.enterMode(s, 'dungeon', { id: 'forge', tier: 25 }, 'd'); clearMode(s);
+  assert.strictEqual(s.runes.length, 1); assert.strictEqual(s.runes[0].tier, 2);
+  C.enterMode(s, 'dungeon', { id: 'mine', tier: 5 }, 'd'); clearMode(s);
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(50) * CFG.pve.mineShards);
+});
+
+test('бесконечное подземелье: волны, контрольный босс с таймером, эссенция, рекорд и билет за новый рубеж', () => {
+  const s = C.newState(NOCRIT); strong(s);
+  assert.ok(C.enterMode(s, 'endless', {}, 'd'));
+  for (let i = 0; i < 25; i++) { killCurrent(s); respawn(s); }
+  assert.strictEqual(s.mode.step, 26);
+  assert.strictEqual(s.pve.endlessBest, 25);
+  assert.ok(s.essence > 0); assert.strictEqual(s.tickets, 2);
+  s.tapLevel = 1;
+  for (let i = 0; i < 4; i++) { killCurrent(s); respawn(s); }    // до 30-й волны
+  // слабый удар: контрольный босс 30 не умирает, таймер
+  const ev = C.tick(s, CFG.pve.endless.bossTime + 1);
+  const end = ev.find(e => e.type === 'modeEnd');
+  assert.ok(end); assert.strictEqual(end.reward.best, s.pve.endlessBest);
+  assert.strictEqual(s.mode, null);
+  // повторный забег не даёт билеты за старые рубежи
+  strong(s); C.enterMode(s, 'endless', {}, 'd');
+  const t0 = s.tickets;
+  for (let i = 0; i < 20; i++) { killCurrent(s); respawn(s); }
+  assert.strictEqual(s.tickets, t0);
+});
+
+test('личные боссы: только с полученным тотемом, сложность, награда — сердца и осколки', () => {
+  const s = C.newState(NOCRIT); strong(s);
+  assert.strictEqual(C.enterMode(s, 'personal', { id: 'crypt', diff: 'normal' }, 'd'), null);
+  s.totems.crypt = 1;
+  assert.deepStrictEqual(C.personalBosses(s).map(b => b.id), ['crypt']);
+  C.enterMode(s, 'personal', { id: 'crypt', diff: 'night' }, 'd');
+  assert.strictEqual(s.enemy.maxHp, Math.ceil(C.enemyMaxHp(50, true) * 25));
+  assert.ok(s.enemy.final);
+  const exp = C.personalReward(s, 50, 'night');
+  clearMode(s);
+  assert.strictEqual(s.materials.heart, exp.heart); assert.strictEqual(s.materials.shard, exp.shard);
+  assert.strictEqual(C.attemptsLeft(s, 'personal'), CFG.pve.personal.attempts - 1);
+});
+
+test('в режиме нельзя менять этаж и звать босса; выход и офлайн возвращают в Башню', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 50; s.maxFloor = 5; s.floor = 3;
+  C.enterMode(s, 'dungeon', { id: 'vault', tier: 2 }, 'd');
+  assert.deepStrictEqual(C.goToFloor(s, 4), []); assert.deepStrictEqual(C.challengeBoss(s), []);
+  assert.strictEqual(C.enterMode(s, 'endless', {}, 'd'), null);   // уже в режиме
+  C.leaveMode(s); assert.strictEqual(s.mode, null); assert.strictEqual(s.floor, 3);
+  C.enterMode(s, 'endless', {}, 'd'); C.offlineProgress(s, 3600); assert.strictEqual(s.mode, null);
+});
+
+test('сохранение PvE и миграция с 0.15', () => {
+  const s = C.newState(NOCRIT); s.pve = { day: '2026-11-04', used: { vault: 1, endless: 2 }, endlessBest: 33 };
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.pve, s.pve);
+  const old = JSON.parse(C.serialize(s)); old.v = 9; delete old.pve;
+  assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).pve, { day: '', used: {}, endlessBest: 0 });
+});

@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 9,
+    saveVersion: 10,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -240,6 +240,29 @@
     // прохождение его финального босса. Уровень — за осколки и сердца. Числа TBD.
     totems: { dpsPerLevel: 0.1, collection: [5, 10, 15, 20], collectionMult: 1.25, maxLevel: 20,
               upShards: 50, upGrowth: 1.4, heartEvery: 5 },   // каждый 5-й уровень требует ещё 1 сердце
+    // Доп. PvE (GDD §10). Режимы используют тот же бой (тапы, союзники, ульты, способности), но свои враги и таймеры.
+    // Попытка тратится при входе. Ежедневные попытки обновляются в полночь по времени устройства. Числа TBD.
+    pve: {
+      // Ежедневные подземелья: 5 врагов + страж за общий таймер, фиксированная награда по уровню сложности
+      dungeons: [
+        { id: 'vault', name: 'Сокровищница', icon: '◆', reward: 'gold',  desc: 'Много золота для текущего забега' },
+        { id: 'mine',  name: 'Шахта осколков', icon: '🔹', reward: 'shard', desc: 'Осколки для эволюции, рун и тотемов' },
+        { id: 'forge', name: 'Рунная кузня', icon: 'ᚦ', reward: 'rune',  desc: 'Руна; на высоком уровне — сразу редкая' },
+      ],
+      dailyAttempts: 2, dungeonEnemies: 6, dungeonTime: 45, tierFloors: 10,   // уровень N ≈ этаж 10·N; открыт до рекорда/10
+      vaultGold: 30, mineShards: 5, forgeTierEvery: 10,                        // кузня: редкость руны = уровень / 10
+      // Бесконечное подземелье: волны по одному врагу, каждые 10 — контрольный босс с таймером; рекорд волн
+      endless: { attempts: 3, bossEvery: 10, hpMult: 3, bossTime: 30, essenceBase: 1, essenceStep: 20 },
+      // Личные боссы: финальные боссы пройденных биомов, выбор сложности, ручные попытки
+      personal: {
+        attempts: 3, time: 40,
+        diffs: [
+          { id: 'normal', name: 'Обычный', hp: 1,  hearts: 1, shards: 2 },
+          { id: 'hard',   name: 'Сложный', hp: 5,  hearts: 2, shards: 5 },
+          { id: 'night',  name: 'Кошмар',  hp: 25, hearts: 4, shards: 12 },
+        ],
+      },
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -509,6 +532,8 @@
       tree: {},                                  // дерево душ: id узла → уровень
       runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
       totems: {},                                // id биома → уровень тотема
+      pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
+      mode: null,                                // текущий PvE-режим (не сохраняется)
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -543,6 +568,7 @@
   }
 
   function spawn(s) {
+    if (s.mode) return spawnMode(s);
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const rare = rollRare(s, s.floor, s.enemyIndex);
     const hp = Math.ceil(enemyMaxHp(s.floor, isBoss) * (rare ? rare.hp : 1));
@@ -596,6 +622,7 @@
     const isBoss = s.enemy.isBoss;
     s.enemy.alive = false;
     s.respawn = CONFIG.respawnDelaySec;
+    if (s.mode) return modeKill(s, events);
     rewardKill(s, isBoss, events, s.enemy.rare);
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
@@ -696,6 +723,7 @@
       s.reserveAcc += dt;
       if (s.reserveAcc >= 1) { s.reserveAcc -= 1; dealDamage(s, rd, 'reserve', events); if (!s.enemy.alive) return events; }
     }
+    if (s.mode) { modeTimer(s, dt, events); return events; }
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
       if (s.bossTimeLeft <= 0) {
@@ -708,6 +736,143 @@
     return events;
   }
 
+  // ---------- доп. PvE ----------
+  // Сброс ежедневных попыток: dayKey — дата устройства 'ГГГГ-ММ-ДД' (передаёт интерфейс)
+  function dailyReset(s, dayKey) {
+    if (s.pve.day !== dayKey) { s.pve.day = dayKey; s.pve.used = {}; }
+  }
+  function attemptsLeft(s, key) {
+    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'personal' ? P.personal.attempts : P.dailyAttempts;
+    return Math.max(0, max - (s.pve.used[key] | 0));
+  }
+  function maxDungeonTier(s) { return Math.max(1, Math.floor(s.bestFloor / CONFIG.pve.tierFloors)); }
+  function dungeonDef(id) { return CONFIG.pve.dungeons.find(d => d.id === id); }
+  // Фиксированная награда подземелья на уровне tier
+  function dungeonReward(s, id, tier) {
+    const P = CONFIG.pve, f = tier * P.tierFloors, d = dungeonDef(id);
+    if (d.reward === 'gold') return { gold: Math.ceil(killGold(f, true) * P.vaultGold * goldMult(s)) };
+    if (d.reward === 'shard') return { shard: Math.ceil(shardsForBoss(f) * P.mineShards * shardMult(s)) };
+    return { runeTier: Math.min(CONFIG.rarities.length - 1, Math.floor(tier / P.forgeTierEvery)) };
+  }
+  // Личные боссы — финальные боссы биомов, чей тотем уже получен
+  function personalBosses(s) {
+    const out = [];
+    CONFIG.biomes.forEach((b, i) => { if (s.totems[b.id]) out.push({ id: b.id, name: b.final, floor: (i + 1) * CONFIG.biomeFloors, biome: b.name }); });
+    return out;
+  }
+  function personalReward(s, floor, diff) {
+    const D = CONFIG.pve.personal.diffs.find(x => x.id === diff);
+    return { heart: D.hearts, shard: Math.ceil(shardsForBoss(floor) * D.shards * shardMult(s)) };
+  }
+  // Вход в режим: тратит попытку, тот же бой, своя очередь врагов
+  function enterMode(s, kind, opts, dayKey) {
+    if (s.mode) return null;
+    if (dayKey) dailyReset(s, dayKey);
+    const P = CONFIG.pve;
+    let m;
+    if (kind === 'dungeon') {
+      const d = dungeonDef(opts.id), tier = opts.tier | 0;
+      if (!d || tier < 1 || tier > maxDungeonTier(s) || !attemptsLeft(s, d.id)) return null;
+      m = { kind, id: d.id, name: d.name, tier, step: 1, total: P.dungeonEnemies, timeLeft: P.dungeonTime, timeMax: P.dungeonTime };
+      s.pve.used[d.id] = (s.pve.used[d.id] | 0) + 1;
+    } else if (kind === 'endless') {
+      if (!attemptsLeft(s, 'endless')) return null;
+      m = { kind, id: 'endless', name: 'Бесконечное подземелье', step: 1, timeLeft: 0, timeMax: P.endless.bossTime, essence: 0, tickets: 0 };
+      s.pve.used.endless = (s.pve.used.endless | 0) + 1;
+    } else if (kind === 'personal') {
+      const b = personalBosses(s).find(x => x.id === opts.id), D = P.personal.diffs.find(x => x.id === opts.diff);
+      if (!b || !D || !attemptsLeft(s, 'personal')) return null;
+      m = { kind, id: b.id, name: b.name, floor: b.floor, diff: D.id, diffName: D.name, step: 1, total: 1, timeLeft: P.personal.time, timeMax: P.personal.time };
+      s.pve.used.personal = (s.pve.used.personal | 0) + 1;
+    } else return null;
+    s.mode = m;
+    s.buffs = { team: 0, tap: 0, teamPower: 1, tapPower: 1 };
+    spawn(s);
+    return [{ type: 'modeStart', kind, name: m.name }, { type: 'spawn' }];
+  }
+  function spawnMode(s) {
+    const m = s.mode, P = CONFIG.pve;
+    let hp, isBoss, name;
+    if (m.kind === 'dungeon') {
+      const f = m.tier * P.tierFloors;
+      isBoss = m.step === m.total;
+      hp = enemyMaxHp(f, isBoss);
+      name = isBoss ? 'Страж: ' + m.name : enemyName(f, m.step, false);
+    } else if (m.kind === 'endless') {
+      isBoss = m.step % P.endless.bossEvery === 0;
+      hp = Math.ceil(enemyMaxHp(m.step, isBoss) * P.endless.hpMult);
+      name = (isBoss ? 'Контрольный босс · ' : '') + enemyName(m.step, m.step % 9 + 1, isBoss);
+      if (isBoss) m.timeLeft = P.endless.bossTime;
+    } else {
+      isBoss = true;
+      hp = Math.ceil(enemyMaxHp(m.floor, true) * P.personal.diffs.find(x => x.id === m.diff).hp);
+      name = m.name + ' · ' + m.diffName;
+    }
+    const final = m.kind === 'personal';
+    s.enemy = { hp, maxHp: hp, isBoss, final, alive: true, mark: 0, markPower: 1, rare: null, phase: 1, vuln: 0, name };
+    s.bossTimeLeft = m.timeLeft;
+    s.respawn = 0;
+  }
+  function modeKill(s, events) {
+    const m = s.mode, P = CONFIG.pve;
+    s.stats.kills++;
+    events.push({ type: 'kill', gold: 0, boss: s.enemy.isBoss, mode: true });
+    if (m.kind === 'endless') {
+      if (s.enemy.isBoss) {
+        const e = P.endless.essenceBase + Math.floor(m.step / P.endless.essenceStep);
+        m.essence += e; s.essence += e;
+        if (m.step > s.pve.endlessBest) { m.tickets++; s.tickets++; }   // новый рекордный рубеж — билет
+      }
+      s.pve.endlessBest = Math.max(s.pve.endlessBest, m.step);
+      m.step++;
+      return;
+    }
+    if (m.step < m.total) { m.step++; return; }
+    finishMode(s, true, events);
+  }
+  function modeTimer(s, dt, events) {
+    const m = s.mode;
+    if (m.kind === 'endless' && !s.enemy.isBoss) return;     // таймер только у контрольного босса
+    m.timeLeft -= dt; s.bossTimeLeft = m.timeLeft;
+    if (m.timeLeft <= 0) finishMode(s, m.kind === 'endless', events);
+  }
+  // Итог режима: награда при победе (в бесконечном — уже начислена по ходу), возврат в Башню
+  function finishMode(s, win, events) {
+    const m = s.mode, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
+    if (m.kind === 'dungeon' && win) {
+      const r = dungeonReward(s, m.id, m.tier);
+      if (r.gold) s.gold += r.gold;
+      if (r.shard) s.materials.shard += r.shard;
+      if (r.runeTier != null) {
+        const R = CONFIG.runes, k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
+        s.runes.push({ id: s.runeSeq++, type: k.id, tier: r.runeTier, lvl: 0 }); r.runeType = k.id;
+      }
+      res.reward = r;
+    } else if (m.kind === 'personal' && win) {
+      const r = personalReward(s, m.floor, m.diff);
+      s.materials.heart += r.heart; s.materials.shard += r.shard;
+      res.reward = r;
+    } else if (m.kind === 'endless') {
+      res.reward = { waves: m.step - 1, essence: m.essence, tickets: m.tickets, best: s.pve.endlessBest };
+    }
+    exitMode(s);
+    events.push(res, { type: 'spawn' });
+    return res;
+  }
+  // Сдаться / выйти: попытка уже потрачена
+  function leaveMode(s) {
+    if (!s.mode) return [];
+    const ev = [];
+    finishMode(s, s.mode.kind === 'endless', ev);
+    return ev;
+  }
+  function exitMode(s) {
+    s.mode = null;
+    s.buffs = { team: 0, tap: 0, teamPower: 1, tapPower: 1 };
+    s.enemyIndex = Math.min(s.enemyIndex, CONFIG.enemiesPerFloor);
+    spawn(s);
+  }
+
   // ---------- офлайн ----------
   // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
   function offlineDps(s) { return autoDps(s) * (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)) * (1 + treePower(s, 'offlineDmg')); }
@@ -717,6 +882,7 @@
   function offlineProgress(s, seconds) {
     const O = CONFIG.offline;
     if (!(seconds >= O.minSec)) return null;
+    if (s.mode) exitMode(s);                                // ушёл из подземелья — вернулся в Башню
     const secs = Math.min(seconds, O.maxSec);
     const r = { seconds: secs, capped: seconds > O.maxSec, fromFloor: s.floor, gold: 0, kills: 0,
                 floorsCleared: 0, wallFloor: null, farmFloor: null, shard: 0, heart: 0, tickets: 0 };
@@ -772,6 +938,7 @@
   }
 
   function challengeBoss(s) {
+    if (s.mode) return [];
     s.farming = false;
     s.enemyIndex = CONFIG.enemiesPerFloor;
     spawn(s);
@@ -779,7 +946,7 @@
   }
 
   function goToFloor(s, floor) {
-    if (!Number.isInteger(floor) || floor < 1 || floor > s.maxFloor || floor === s.floor) return [];
+    if (s.mode || !Number.isInteger(floor) || floor < 1 || floor > s.maxFloor || floor === s.floor) return [];
     s.floor = floor;
     s.enemyIndex = 1;
     s.farming = floor < s.maxFloor ? s.farming : false;
@@ -1027,6 +1194,7 @@
   function ritualStartGold(s) { return Math.ceil(treePower(s, 'startGold') * killGold(ritualStartFloor(s), true)); }
   function ritual(s) {
     if (!canRitual(s)) return null;
+    if (s.mode) exitMode(s);
     const souls = ritualSouls(s);
     s.souls += souls;
     s.rituals++;
@@ -1125,7 +1293,8 @@
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree },
-      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
+      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
+      pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -1157,6 +1326,7 @@
       d.v = 9; d.runes = []; d.runeSeq = 1; d.totems = {};
       for (let f = CONFIG.biomeFloors; f <= (d.heartFloor | 0); f += CONFIG.biomeFloors) d.totems[biomeOf(f).id] = 1;
     }
+    if (d.v === 9) { d.v = 10; d.pve = { day: '', used: {}, endlessBest: 0 }; }   // 0.15 → 0.16: доп. PvE
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1233,6 +1403,10 @@
       if (!int(lv, 1) || lv > CONFIG.totems.maxLevel) return null;
       s.totems[b.id] = lv;
     }
+    const pv = d.pve;
+    if (!pv || typeof pv !== 'object' || typeof pv.day !== 'string' || !pv.used || typeof pv.used !== 'object' || !int(pv.endlessBest, 0)) return null;
+    s.pve = { day: pv.day, used: {}, endlessBest: pv.endlessBest };
+    for (const k in pv.used) if (int(pv.used[k], 0)) s.pve.used[k] = pv.used[k];
     if (!d.tree || typeof d.tree !== 'object') return null;
     for (const n of TREE) {
       const lv = d.tree[n.id];
@@ -1289,6 +1463,7 @@
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     serialize, deserialize, fmt,
   };
