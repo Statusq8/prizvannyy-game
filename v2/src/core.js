@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 13,
+    saveVersion: 14,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -327,6 +327,33 @@
       free: { tickets: 1, shard: 40, tokens: 15 }, paid: { tickets: 2, shard: 100, essence: 20, tokens: 30 },
       milestoneEvery: 5, milestoneFree: { heart: 1, tickets: 2 }, milestonePaid: { heart: 2, tickets: 5 },
     },
+    // Еженедельные события (GDD §11) с тематическим подземельем (GDD §10: условие и особый ресурс 🏮 фонари).
+    // Событие меняется каждую неделю (с понедельника) по кругу. Бонус события действует на всю игру всю неделю. Числа TBD.
+    events: {
+      list: [
+        { id: 'gold',  name: 'Золотая лихорадка', icon: '◆', desc: 'Золото в Башне ×2', buff: { gold: 1 },
+          dungeon: { name: 'Логово жадности', rule: 'tapOnly', ruleText: 'урон только от тапов и способностей героя' } },
+        { id: 'rare',  name: 'Нашествие редких',  icon: '✦', desc: 'Редкие враги встречаются в 3 раза чаще', buff: { rareChance: 2 },
+          dungeon: { name: 'Гнездо редкостей', rule: 'alliesOnly', ruleText: 'тапы не наносят урона — бьёт только отряд' } },
+        { id: 'boss',  name: 'Охота на боссов',   icon: '👹', desc: 'Урон по боссам +50%, осколки +50%', buff: { bossDmg: 0.5, shards: 0.5 },
+          dungeon: { name: 'Арена чемпионов', rule: 'noUlts', ruleText: 'ультимейты союзников не срабатывают' } },
+        { id: 'moon',  name: 'Кровавая луна',     icon: '🌕', desc: 'Урон союзников +50%', buff: { allyDmg: 0.5 },
+          dungeon: { name: 'Алтарь луны', rule: 'fast', ruleText: 'всего 25 секунд на всех врагов' } },
+      ],
+      pointsKill: 1, pointsBoss: 10, attempts: 3, fastTime: 25, dungeonLanterns: 60, lanternsPerTier: 4,
+      milestones: [                         // по набранным очкам за неделю — награда автоматически в «Награды»
+        { at: 200,  reward: { tickets: 2 } }, { at: 600,  reward: { shard: 150 } }, { at: 1200, reward: { heart: 2 } },
+        { at: 2500, reward: { tickets: 5 } }, { at: 5000, reward: { essence: 100, heart: 3 } },
+      ],
+      shop: [                               // обмен 🏮 фонарей, лимит в неделю
+        { id: 'tk',  name: '5 билетов',        cost: 120, limit: 4, reward: { tickets: 5 } },
+        { id: 'hr',  name: '2 сердца стража',  cost: 150, limit: 4, reward: { heart: 2 } },
+        { id: 'sh',  name: '300 осколков',      cost: 80,  limit: 8, reward: { shard: 300 } },
+        { id: 'es',  name: '60 эссенции',       cost: 90,  limit: 4, reward: { essence: 60 } },
+      ],
+    },
+    // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)
+    dailyGift: { tickets: 1, shard: 20 },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -411,8 +438,9 @@
   const TREE = treeNodes();
   function treeDef(id) { return TREE.find(n => n.id === id); }
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
-  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')); }
-  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')); }
+  function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
+  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')); }
   function treePower(s, kind) { let x = 0; for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
   function branchOpen(s, b) { return s.rituals >= b.rituals; }
   function treeNodeOpen(s, id) {
@@ -449,14 +477,14 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')); }
+  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
     let m = soulMult(s) * (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg'));
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg'));
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
     return m;
   }
 
@@ -508,7 +536,7 @@
     const R = CONFIG.rare;
     if (floor < R.minFloor || index === CONFIG.enemiesPerFloor) return null;
     const x = hash01(floor, index, s.stats.kills);
-    const chance = biomeOf(floor).rare * (1 + treePower(s, 'rareChance'));
+    const chance = biomeOf(floor).rare * (1 + treePower(s, 'rareChance')) * (1 + eventBuff(s, 'rareChance'));
     if (x >= chance) return null;
     const total = R.kinds.reduce((t, k) => t + k.weight, 0);
     let y = x / chance * total;
@@ -610,6 +638,8 @@
       counters: {},                              // счётчики действий за всю игру (для заданий)
       quests: { day: '', week: '', dayBase: {}, weekBase: {}, claimed: {} },
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
+      event: newEventState('', null),            // событие недели
+      inbox: [], inboxSeq: 1,                    // центр наград
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -690,6 +720,7 @@
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
     s.stats.taps++; cnt(s, 'tap');
+    if (modeRule(s) === 'alliesOnly') { events.push({ type: 'hit', dmg: 0, source: 'tap', crit: false, blocked: true }); return events; }
     dealDamage(s, tapDamage(s), 'tap', events);
     return events;
   }
@@ -707,6 +738,7 @@
     const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s) * (rare ? rare.gold : 1));
     s.gold += gold;
     s.stats.kills++; cnt(s, 'kill');
+    addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare && rare.shards) {
       const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
@@ -770,9 +802,11 @@
       if (s.respawn <= 0) { spawn(s); events.push({ type: 'spawn' }); }
       return events;
     }
+    const rule = modeRule(s);
     // Ультимейты срабатывают автоматически, как только заряжены и враг жив
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
+      if (rule === 'noUlts' || rule === 'tapOnly') break;
       if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
       st.ult = 0;
       fireUlt(s, a, events);
@@ -781,7 +815,7 @@
     // Автоатаки отряда: перезарядка идёт только пока враг жив
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level <= 0) continue;
+      if (st.level <= 0 || rule === 'tapOnly') continue;
       st.cd -= dt;
       if (st.cd <= 0 && s.enemy.alive) {
         st.cd += a.attackInterval;
@@ -790,7 +824,7 @@
       if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
     }
     // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
-    if (hasHeroAuto(s)) {
+    if (hasHeroAuto(s) && rule !== 'alliesOnly') {
       s.heroAutoAcc += dt;
       if (s.heroAutoAcc >= CONFIG.heroAutoInterval) {
         s.heroAutoAcc -= CONFIG.heroAutoInterval;
@@ -799,7 +833,7 @@
       }
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
-    const rd = reserveDps(s);
+    const rd = rule === 'tapOnly' ? 0 : reserveDps(s);
     if (rd > 0) {
       s.reserveAcc += dt;
       if (s.reserveAcc >= 1) { s.reserveAcc -= 1; dealDamage(s, rd, 'reserve', events); if (!s.enemy.alive) return events; }
@@ -823,7 +857,7 @@
     if (s.pve.day !== dayKey) { s.pve.day = dayKey; s.pve.used = {}; }
   }
   function attemptsLeft(s, key) {
-    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'personal' ? P.personal.attempts : P.dailyAttempts;
+    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'personal' ? P.personal.attempts : key === 'event' ? CONFIG.events.attempts : P.dailyAttempts;
     return Math.max(0, max - (s.pve.used[key] | 0));
   }
   function maxDungeonTier(s) { return Math.max(1, Math.floor(s.bestFloor / CONFIG.pve.tierFloors)); }
@@ -856,6 +890,12 @@
       if (!d || tier < 1 || tier > maxDungeonTier(s) || !attemptsLeft(s, d.id)) return null;
       m = { kind, id: d.id, name: d.name, tier, step: 1, total: P.dungeonEnemies, timeLeft: P.dungeonTime, timeMax: P.dungeonTime };
       s.pve.used[d.id] = (s.pve.used[d.id] | 0) + 1;
+    } else if (kind === 'event') {
+      const e = currentEvent(s), tier = opts.tier | 0;
+      if (!e || tier < 1 || tier > maxDungeonTier(s) || !attemptsLeft(s, 'event')) return null;
+      const t = e.dungeon.rule === 'fast' ? CONFIG.events.fastTime : P.dungeonTime;
+      m = { kind, id: 'event', name: e.dungeon.name, rule: e.dungeon.rule, tier, step: 1, total: P.dungeonEnemies, timeLeft: t, timeMax: t };
+      s.pve.used.event = (s.pve.used.event | 0) + 1;
     } else if (kind === 'endless') {
       if (!attemptsLeft(s, 'endless')) return null;
       m = { kind, id: 'endless', name: 'Бесконечное подземелье', step: 1, timeLeft: 0, timeMax: P.endless.bossTime, essence: 0, tickets: 0 };
@@ -874,7 +914,7 @@
   function spawnMode(s) {
     const m = s.mode, P = CONFIG.pve;
     let hp, isBoss, name;
-    if (m.kind === 'dungeon') {
+    if (m.kind === 'dungeon' || m.kind === 'event') {
       const f = m.tier * P.tierFloors;
       isBoss = m.step === m.total;
       hp = enemyMaxHp(f, isBoss);
@@ -921,7 +961,7 @@
   // Итог режима: награда при победе (в бесконечном — уже начислена по ходу), возврат в Башню
   function finishMode(s, win, events) {
     const m = s.mode, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
-    if (win && m.kind === 'dungeon') cnt(s, 'dungeon');
+    if (win && (m.kind === 'dungeon' || m.kind === 'event')) cnt(s, 'dungeon');
     if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
       const r = dungeonReward(s, m.id, m.tier);
@@ -931,6 +971,10 @@
         const R = CONFIG.runes, k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
         s.runes.push({ id: s.runeSeq++, type: k.id, tier: r.runeTier, lvl: 0 }); r.runeType = k.id;
       }
+      res.reward = r;
+    } else if (m.kind === 'event' && win) {
+      const r = { lanterns: eventDungeonReward(m.tier) };
+      s.event.lanterns += r.lanterns; addEventPoints(s, r.lanterns);
       res.reward = r;
     } else if (m.kind === 'personal' && win) {
       const r = personalReward(s, m.floor, m.diff);
@@ -957,6 +1001,54 @@
     spawn(s);
   }
 
+  // ---------- еженедельные события ----------
+  function weekNum(weekKey) { return Math.floor((dayNum(weekKey.replace(/^w/, '')) - dayNum(CONFIG.season.epoch)) / 7); }
+  function eventFor(weekKey) { const L = CONFIG.events.list, n = weekNum(weekKey); return L[((n % L.length) + L.length) % L.length]; }
+  function currentEvent(s) { return s.event && CONFIG.events.list.find(x => x.id === s.event.id) || null; }
+  function newEventState(week, id) { return { week, id, points: 0, lanterns: 0, ms: {}, bought: {} }; }
+  // Новая неделя — новое событие. Незабранные вехи уже лежат в «Наградах», фонари сгорают
+  function eventReset(s, weekKey) {
+    if (s.event.week !== weekKey) s.event = newEventState(weekKey, eventFor(weekKey).id);
+    return currentEvent(s);
+  }
+  function addEventPoints(s, n) {
+    if (!s.event || !s.event.id || !n) return;
+    s.event.points += n;
+    CONFIG.events.milestones.forEach((m, i) => {
+      if (s.event.points >= m.at && !s.event.ms[i]) {
+        s.event.ms[i] = true;
+        inboxAdd(s, 'Событие «' + currentEvent(s).name + '»: ' + m.at + ' очков', m.reward);
+      }
+    });
+  }
+  function eventDungeonReward(tier) { const E = CONFIG.events; return E.dungeonLanterns + E.lanternsPerTier * tier; }
+  function shopLeft(s, id) { const it = CONFIG.events.shop.find(x => x.id === id); return it ? it.limit - (s.event.bought[id] | 0) : 0; }
+  function buyEventItem(s, id) {
+    const it = CONFIG.events.shop.find(x => x.id === id);
+    if (!it || !currentEvent(s) || shopLeft(s, id) <= 0 || s.event.lanterns < it.cost) return null;
+    s.event.lanterns -= it.cost; s.event.bought[id] = (s.event.bought[id] | 0) + 1;
+    grant(s, it.reward);
+    return it.reward;
+  }
+  function modeRule(s) { return s.mode && s.mode.rule || null; }
+
+  // ---------- центр наград ----------
+  function inboxAdd(s, title, reward) { s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
+  function claimInbox(s, id) {
+    const i = s.inbox.findIndex(x => x.id === id);
+    if (i < 0) return null;
+    const it = s.inbox.splice(i, 1)[0];
+    grantSeason(s, it.reward);
+    return it.reward;
+  }
+  function claimInboxAll(s) {
+    if (!s.inbox.length) return null;
+    const sum = {}, n = s.inbox.length;
+    for (const it of s.inbox) { grantSeason(s, it.reward); for (const k in it.reward) sum[k] = (sum[k] || 0) + it.reward[k]; }
+    s.inbox = [];
+    return { count: n, reward: sum };
+  }
+
   // ---------- задания ----------
   function allQuests() { const Q = CONFIG.quests; return [...Q.daily.map(q => ({ ...q, period: 'daily' })), ...Q.weekly.map(q => ({ ...q, period: 'weekly' })), ...Q.intro.map(q => ({ ...q, period: 'intro' }))]; }
   const QUESTS = allQuests();
@@ -964,7 +1056,10 @@
   // Новый день / неделя: запоминаем счётчики на начало периода, отметки «забрано» сбрасываются
   function questsReset(s, day, week) {
     const Q = s.quests;
-    if (day && Q.day !== day) { Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id]; }
+    if (day && Q.day !== day) {
+      Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id];
+      inboxAdd(s, 'Ежедневный подарок', CONFIG.dailyGift);
+    }
     if (week && Q.week !== week) { Q.week = week; Q.weekBase = { ...s.counters }; for (const q of CONFIG.quests.weekly) delete Q.claimed[q.id]; }
   }
   function questProgress(s, id) {
@@ -1018,7 +1113,19 @@
   // Новый сезон: пропуск, тропа и жетоны начинаются заново; герои и их копии остаются навсегда
   function seasonReset(s, dayKey) {
     const info = seasonInfo(dayKey);
-    if (s.season.n !== info.n) s.season = newSeason(info.n);
+    if (s.season.n !== info.n) {
+      // незабранные награды пропуска прошлого сезона — автоматически в «Награды»
+      if (s.season.n > 0) {
+        const sum = {}; let n = 0;
+        for (let l = 1; l <= passLevel(s); l++) for (const t of ['free', 'paid']) {
+          if ((t === 'paid' && !s.season.premium) || (t === 'paid' ? s.season.paid[l] : s.season.free[l])) continue;
+          const r = passReward(l, t); delete r.tokens; n++;
+          for (const k in r) sum[k] = (sum[k] || 0) + r[k];
+        }
+        if (n) inboxAdd(s, 'Незабранное за сезон ' + s.season.n + ' (' + n + ' наград)', sum);
+      }
+      s.season = newSeason(info.n);
+    }
     if (!s.season.trailBase) s.season.trailBase = { ...s.counters };
     return info;
   }
@@ -1137,7 +1244,7 @@
         const n = Math.floor((secs - t) / kt);
         const per = CONFIG.enemiesPerFloor - 1;
         s.gold += n * Math.ceil(killGold(s.floor, false) * goldMult(s));
-        s.stats.kills += n; cnt(s, 'kill', n);
+        s.stats.kills += n; cnt(s, 'kill', n); addEventPoints(s, n * CONFIG.events.pointsKill);
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
     }
@@ -1245,7 +1352,7 @@
       if (st.active > 0) {
         if (def.id === 'flurry' && s.enemy.alive) {
           st.acc += dt * def.tapsPerSec;
-          while (st.acc >= 1 && s.enemy.alive) { st.acc -= 1; dealDamage(s, tapDamage(s), 'tap', events); }
+          while (st.acc >= 1 && s.enemy.alive) { st.acc -= 1; if (modeRule(s) !== 'alliesOnly') dealDamage(s, tapDamage(s), 'tap', events); }
         }
         st.active = Math.max(0, st.active - dt);
       }
@@ -1558,6 +1665,8 @@
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
       pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest },
       counters: { ...s.counters },
+      event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
+      inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
       quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, claimed: Object.keys(s.quests.claimed) }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
@@ -1604,6 +1713,7 @@
       for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].rank = 0;
     }
     if (d.v === 12) { d.v = 13; d.season = { n: 0, xp: 0, tokens: 0, premium: false, free: [], paid: [], trail: 0, trailBase: null, catchupDay: '' }; }   // 0.20 → 0.21
+    if (d.v === 13) { d.v = 14; d.event = { week: '', id: null, points: 0, lanterns: 0, ms: [], bought: {} }; d.inbox = []; d.inboxSeq = 1; }   // 0.22 → 0.23
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1689,6 +1799,15 @@
     s.counters = nums(d.counters);
     s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), claimed: {} };
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
+    const ev = d.event;
+    if (!ev || typeof ev !== 'object' || typeof ev.week !== 'string' || !int(ev.points, 0) || !int(ev.lanterns, 0) || !Array.isArray(ev.ms) ||
+        !Array.isArray(d.inbox) || !int(d.inboxSeq, 1)) return null;
+    s.event = newEventState(ev.week, CONFIG.events.list.some(x => x.id === ev.id) ? ev.id : null);
+    s.event.points = ev.points; s.event.lanterns = ev.lanterns;
+    for (const i of ev.ms) if (int(i, 0)) s.event.ms[i] = true;
+    s.event.bought = nums(ev.bought);
+    for (const it of d.inbox) if (it && int(it.id, 1) && typeof it.title === 'string') s.inbox.push({ id: it.id, title: it.title, reward: nums(it.reward) });
+    s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
     const se = d.season;
     if (!se || typeof se !== 'object' || !Number.isInteger(se.n) || !int(se.xp, 0) || !int(se.tokens, 0) || !int(se.trail, 0) ||
         se.trail > CONFIG.season.trail.length || !Array.isArray(se.free) || !Array.isArray(se.paid)) return null;
@@ -1758,6 +1877,7 @@
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
