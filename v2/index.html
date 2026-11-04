@@ -421,13 +421,20 @@
     </div>
   </div>
   <!-- Своё окно подтверждения: системные confirm() в некоторых просмотрщиках заблокированы и молча отвечают «нет» -->
+  <div id="away" class="askWrap">
+    <div class="askBox">
+      <p><b>Пока вас не было</b> <span id="awayTime" style="color:var(--muted)"></span></p>
+      <span class="askList" id="awayList"></span>
+      <button class="mBtn" id="awayOk">Забрать</button>
+    </div>
+  </div>
   <div id="ask" class="askWrap">
     <div class="askBox">
       <p id="askText"></p>
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.10</div>
+  <div id="version">v0.11</div>
 </div>
 
 <script>
@@ -538,6 +545,9 @@
       ],
       rarityCost: { E: 1, D: 1.5, C: 2, B: 3, A: 4, S: 6, GOD: 10 },   // множитель цены в осколках
     },
+    // Офлайн (решение пользователя, заменяет GDD §6 «по выбранному этажу»): отряд сам проходит этажи
+    // авто-DPS без тапов и ультимейтов, пока не упрётся в босса, затем фармит этаж ниже. Не дольше 12 ч.
+    offline: { maxSec: 12 * 3600, minSec: 60, minKillSec: 0.5 },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -814,6 +824,10 @@
     const isBoss = s.enemy.isBoss;
     s.enemy.alive = false;
     s.respawn = CONFIG.respawnDelaySec;
+    rewardKill(s, isBoss, events);
+  }
+  // Награды и переход к следующему врагу — общие для боя и офлайна
+  function rewardKill(s, isBoss, events) {
     const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s));
     s.gold += gold;
     s.stats.kills++;
@@ -909,6 +923,60 @@
       }
     }
     return events;
+  }
+
+  // ---------- офлайн ----------
+  // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
+  function offlineDps(s) { return autoDps(s) * (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)); }
+  function killTime(hp, dps) { return Math.max(hp / dps, CONFIG.offline.minKillSec) + CONFIG.respawnDelaySec; }
+  // Проиграть отсутствие: продвижение до стены (босс не успевает умереть за таймер), потом фарм этажа ниже.
+  // Возвращает сводку или null, если отсутствие короче minSec.
+  function offlineProgress(s, seconds) {
+    const O = CONFIG.offline;
+    if (!(seconds >= O.minSec)) return null;
+    const secs = Math.min(seconds, O.maxSec);
+    const r = { seconds: secs, capped: seconds > O.maxSec, fromFloor: s.floor, gold: 0, kills: 0,
+                floorsCleared: 0, wallFloor: null, farmFloor: null, shard: 0, heart: 0, tickets: 0 };
+    const gold0 = s.gold, kills0 = s.stats.kills, sh0 = s.materials.shard, he0 = s.materials.heart, t0 = s.tickets;
+    for (const a of CONFIG.abilities) s.abilities[a.id].cd = Math.max(0, s.abilities[a.id].cd - secs);
+    const dps = offlineDps(s);
+    let t = 0;
+    if (dps > 0) {
+      // Был в фарме после проигрыша — снова пробуем рубеж (самый высокий открытый этаж)
+      if (s.farming) { s.floor = s.maxFloor; s.enemyIndex = CONFIG.enemiesPerFloor; s.farming = false; }
+      const events = [];
+      while (!s.farming) {
+        const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
+        const hp = enemyMaxHp(s.floor, isBoss);
+        if (isBoss && hp / dps > bossTime(s)) {             // стена: босс не умирает за таймер
+          r.wallFloor = s.floor;
+          s.floor = Math.max(1, s.floor - 1); s.enemyIndex = 1; s.farming = true;
+          break;
+        }
+        const kt = killTime(hp, dps);
+        if (t + kt > secs) break;
+        t += kt;
+        const f = s.floor;
+        rewardKill(s, isBoss, events);
+        if (isBoss) r.floorsCleared++;
+        if (s.floor !== f) events.length = 0;               // события не копим
+      }
+      if (s.farming) {
+        // Фарм обычных врагов 1–9 этажа ниже стены — сразу за всё оставшееся время
+        r.farmFloor = s.floor;
+        const kt = killTime(enemyMaxHp(s.floor, false), dps);
+        const n = Math.floor((secs - t) / kt);
+        const per = CONFIG.enemiesPerFloor - 1;
+        s.gold += n * Math.ceil(killGold(s.floor, false) * goldMult(s));
+        s.stats.kills += n;
+        s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
+      }
+    }
+    r.toFloor = s.floor;
+    r.gold = s.gold - gold0; r.kills = s.stats.kills - kills0;
+    r.shard = s.materials.shard - sh0; r.heart = s.materials.heart - he0; r.tickets = s.tickets - t0;
+    spawn(s);
+    return r;
   }
 
   function fireUlt(s, a, events) {
@@ -1316,6 +1384,7 @@
     for (const id of d.locks) if (allyDef(id)) s.locks[id] = true;
     for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
+    s.savedAt = typeof d.savedAt === 'number' && isFinite(d.savedAt) ? d.savedAt : null;
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
@@ -1357,6 +1426,7 @@
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
+    offlineDps, offlineProgress,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
@@ -1608,7 +1678,36 @@
       el.modal.classList.remove('show'); restartAnim('spawn'); render();
     });
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  // ---------- офлайн: отряд сам идёт вверх до стены, затем фармит этаж ниже ----------
+  function dur(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+    return (h ? h + ' ч ' : '') + m + ' мин';
+  }
+  function applyOffline(seconds) {
+    const r = C.offlineProgress(s, seconds);
+    if (!r) return;
+    dmgLog.length = 0;
+    $('awayTime').textContent = dur(r.seconds) + (r.capped ? ' (больше 12 ч не считается)' : '');
+    const M = CFG.materials, lines = [];
+    if (C.offlineDps(s) <= 0) lines.push('Отряд не нанят — без союзников и автоатаки офлайн-дохода нет.');
+    else {
+      lines.push(r.floorsCleared ? '<b>Пройдено этажей:</b> ' + r.floorsCleared + ' (' + r.fromFloor + ' → ' + (r.wallFloor || r.toFloor) + ')'
+                                 : '<b>Новых этажей нет</b>');
+      if (r.wallFloor) lines.push('Босс этажа ' + r.wallFloor + ' оказался не по силам — отряд фармит этаж ' + r.farmFloor);
+      lines.push('<b>Золото:</b> +' + fmt(r.gold) + ' ◆ · врагов ' + fmt(r.kills));
+      if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
+      if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
+    }
+    $('awayList').innerHTML = lines.join('<br>');
+    $('away').classList.add('show');
+    save(); render();
+  }
+  $('awayOk').addEventListener('click', () => $('away').classList.remove('show'));
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); save(); }
+    else if (hiddenAt) { const gap = (Date.now() - hiddenAt) / 1000; hiddenAt = 0; last = performance.now(); applyOffline(gap); }
+  });
   window.addEventListener('pagehide', save);
   document.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -2040,6 +2139,7 @@
   buildAllies();
   buildAbilities();
   render();
+  if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
   requestAnimationFrame(loop);
 })();
 </script>

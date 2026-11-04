@@ -421,13 +421,20 @@
     </div>
   </div>
   <!-- Своё окно подтверждения: системные confirm() в некоторых просмотрщиках заблокированы и молча отвечают «нет» -->
+  <div id="away" class="askWrap">
+    <div class="askBox">
+      <p><b>Пока вас не было</b> <span id="awayTime" style="color:var(--muted)"></span></p>
+      <span class="askList" id="awayList"></span>
+      <button class="mBtn" id="awayOk">Забрать</button>
+    </div>
+  </div>
   <div id="ask" class="askWrap">
     <div class="askBox">
       <p id="askText"></p>
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.10</div>
+  <div id="version">v0.11</div>
 </div>
 
 <script>
@@ -677,7 +684,36 @@
       el.modal.classList.remove('show'); restartAnim('spawn'); render();
     });
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  // ---------- офлайн: отряд сам идёт вверх до стены, затем фармит этаж ниже ----------
+  function dur(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+    return (h ? h + ' ч ' : '') + m + ' мин';
+  }
+  function applyOffline(seconds) {
+    const r = C.offlineProgress(s, seconds);
+    if (!r) return;
+    dmgLog.length = 0;
+    $('awayTime').textContent = dur(r.seconds) + (r.capped ? ' (больше 12 ч не считается)' : '');
+    const M = CFG.materials, lines = [];
+    if (C.offlineDps(s) <= 0) lines.push('Отряд не нанят — без союзников и автоатаки офлайн-дохода нет.');
+    else {
+      lines.push(r.floorsCleared ? '<b>Пройдено этажей:</b> ' + r.floorsCleared + ' (' + r.fromFloor + ' → ' + (r.wallFloor || r.toFloor) + ')'
+                                 : '<b>Новых этажей нет</b>');
+      if (r.wallFloor) lines.push('Босс этажа ' + r.wallFloor + ' оказался не по силам — отряд фармит этаж ' + r.farmFloor);
+      lines.push('<b>Золото:</b> +' + fmt(r.gold) + ' ◆ · врагов ' + fmt(r.kills));
+      if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
+      if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
+    }
+    $('awayList').innerHTML = lines.join('<br>');
+    $('away').classList.add('show');
+    save(); render();
+  }
+  $('awayOk').addEventListener('click', () => $('away').classList.remove('show'));
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); save(); }
+    else if (hiddenAt) { const gap = (Date.now() - hiddenAt) / 1000; hiddenAt = 0; last = performance.now(); applyOffline(gap); }
+  });
   window.addEventListener('pagehide', save);
   document.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -1109,6 +1145,7 @@
   buildAllies();
   buildAbilities();
   render();
+  if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
   requestAnimationFrame(loop);
 })();
 </script>
