@@ -26,6 +26,7 @@ function buyBest() {
 function manageHeroes() {
   if (s.tickets > 0) Core.summon(s, s.tickets);
   for (const a of Core.CONFIG.allies) while (Core.starUp(s, a.id));
+  for (const a of Core.CONFIG.allies) while (Core.evolve(s, a.id));
   const best = Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked)
     .sort((x, y) => (Core.allyDps(s, y.id) || y.baseDps * 1e-9) - (Core.allyDps(s, x.id) || x.baseDps * 1e-9))
     .slice(0, Core.CONFIG.squadSize).map(a => a.id);
@@ -58,4 +59,5 @@ while (t < MIN * 60) {
 }
 
 console.log(ritualLog.join('\n'));
+console.log(`материалы: 🔹${s.materials.shard} 🔥${s.materials.heart}, эволюций ${Core.CONFIG.allies.reduce((n, a) => n + s.heroes[a.id].evo, 0)}`);
 console.log(`итог: ритуалов ${s.rituals}, душ ${s.souls}, рекорд ${s.bestFloor}, артефактов ${Core.foundCount(s)}`);

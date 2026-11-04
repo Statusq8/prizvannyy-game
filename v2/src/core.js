@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 6,
+    saveVersion: 7,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -87,6 +87,24 @@
       { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 398,
         desc: 'После ритуала новый забег начинается на 1 этаж выше за уровень (всегда ниже 400)' },
     ],
+    // Материалы (GDD §6): от боссов, переживают ритуал. Гарантированная альтернатива — рецепт Алтаря (TBD)
+    materials: {
+      shard: { name: 'Осколок Башни', icon: '🔹' },   // за каждого побеждённого босса, в т. ч. повторно (фарм)
+      heart: { name: 'Сердце стража', icon: '🔥' },   // за первое в игре прохождение босса каждого heartEvery-го этажа
+      shardsPerBoss: 1, shardsFloorStep: 25,          // осколков за босса: 1 + floor(этаж / 25)
+      heartEvery: 50,
+      heartRecipe: 40,                                // Алтарь: 40 осколков → 1 сердце
+    },
+    // Эволюция (GDD §4): постоянная, ступенчатая, требует звёзды и материалы, открывает новый облик.
+    // Даёт только индивидуальный DPS — никаких критов. Все пороги и цены TBD.
+    evolution: {
+      stages: [
+        { name: 'Пробуждение',    stars: 3,  shards: 30,  hearts: 0, mult: 2 },
+        { name: 'Возвышение',     stars: 6,  shards: 150, hearts: 1, mult: 2 },
+        { name: 'Истинный облик', stars: 10, shards: 600, hearts: 3, mult: 2 },
+      ],
+      rarityCost: { E: 1, D: 1.5, C: 2, B: 3, A: 4, S: 6, GOD: 10 },   // множитель цены в осколках
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -232,8 +250,16 @@
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
   function allyDpsAt(id, level) { return allyDef(id).baseDps * level * milestoneMultAt(level); }
   function starMult(s, id) { return 1 + CONFIG.starDpsBonus * s.heroes[id].stars; }
-  // Индивидуальный DPS героя (со звёздами), как если бы он был в отряде
-  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level) * starMult(s, id); }
+  // Эволюция: произведение множителей пройденных ступеней
+  function evoMult(s, id) {
+    let m = 1;
+    for (let i = 0; i < s.heroes[id].evo; i++) m *= CONFIG.evolution.stages[i].mult;
+    return m;
+  }
+  // Постоянная сила самого героя: звёзды × эволюция
+  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id); }
+  // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
+  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level) * heroMult(s, id); }
   function inSquad(s, id) { return s.squad.includes(id); }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return allyDps(s, id) * (inSquad(s, id) ? 1 : CONFIG.reserveShare); }
@@ -274,6 +300,8 @@
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
       tickets: 0,
+      materials: { shard: 0, heart: 0 },
+      heartFloor: 0,                             // до какого этажа уже выданы сердца за боссов
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
       pity: { a: 0, s: 0 },
       essence: 0,
@@ -304,7 +332,7 @@
   }
   function newHeroes() {
     const o = {};
-    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0 };
+    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0 };
     return o;
   }
   function newAllies() {
@@ -372,6 +400,10 @@
         s.tickets += n;
         if (n) events.push({ type: 'tickets', n, floor: s.floor });
       }
+      const mat = bossMaterials(s, s.floor);
+      s.materials.shard += mat.shard; s.materials.heart += mat.heart;
+      if (mat.heart) s.heartFloor = s.floor;
+      events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
       s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
       s.floor += 1;
@@ -578,6 +610,39 @@
     return true;
   }
 
+  // ---------- материалы и эволюция ----------
+  function shardsForBoss(f) { const M = CONFIG.materials; return M.shardsPerBoss + Math.floor(f / M.shardsFloorStep); }
+  function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
+  // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
+  function bossMaterials(s, f) {
+    return { shard: shardsForBoss(f), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
+  }
+  // Требования следующей ступени или null, если эволюция завершена
+  function evoCost(s, id) {
+    const a = allyDef(id), E = CONFIG.evolution, st = a && E.stages[s.heroes[id].evo];
+    if (!st) return null;
+    return { stage: s.heroes[id].evo + 1, name: st.name, stars: st.stars, mult: st.mult,
+             shards: Math.ceil(st.shards * E.rarityCost[a.rarity]), hearts: st.hearts };
+  }
+  function canEvolve(s, id) {
+    const c = evoCost(s, id), h = s.heroes[id];
+    return !!c && h.unlocked && h.stars >= c.stars && s.materials.shard >= c.shards && s.materials.heart >= c.hearts;
+  }
+  function evolve(s, id) {
+    if (!canEvolve(s, id)) return false;
+    const c = evoCost(s, id);
+    s.materials.shard -= c.shards; s.materials.heart -= c.hearts;
+    s.heroes[id].evo++;
+    return true;
+  }
+  // Алтарь: гарантированная альтернатива — осколки в сердце
+  function forgeHeart(s, n) {
+    const cost = CONFIG.materials.heartRecipe * n;
+    if (!Number.isInteger(n) || n <= 0 || s.materials.shard < cost) return false;
+    s.materials.shard -= cost; s.materials.heart += n;
+    return true;
+  }
+
   // ---------- артефакты за души ----------
   function foundCount(s) { return CONFIG.artifacts.filter(a => artLevel(s, a.id) > 0).length; }
   function findCost(s) {
@@ -641,7 +706,7 @@
     s.floor = start; s.maxFloor = start; s.highestCleared = start - 1;
     s.enemyIndex = 1; s.farming = false; s.reserveAcc = 0; s.heroAutoAcc = 0;
     spawn(s);
-    // сохраняется: герои, звёзды, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
+    // сохраняется: герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
     return { souls, start };
   }
 
@@ -721,7 +786,8 @@
       gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
-      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars }])),
+      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo }])),
+      materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: s.souls, artifacts: { ...s.artifacts }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
@@ -744,6 +810,13 @@
     }
     if (d.v === 4) { d.v = 5; d.essence = 0; d.locks = []; d.discovered = []; }   // 0.7 → 0.8: Алтарь
     if (d.v === 5) { d.v = 6; d.souls = 0; d.artifacts = {}; d.rituals = 0; d.bestFloor = d.maxFloor; d.bestRecordAtRunStart = 1; }   // 0.8 → 0.9
+    if (d.v === 6) {                                       // 0.9 → 0.10: материалы за уже пройденных боссов
+      d.v = 7;
+      let sh = 0, he = 0;
+      for (let f = 1; f <= (d.ticketFloor | 0); f++) { sh += shardsForBoss(f); he += heartsForFloor(f); }
+      d.materials = { shard: sh, heart: he }; d.heartFloor = d.ticketFloor | 0;
+      for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].evo = 0;
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -780,16 +853,20 @@
     if (!d.heroes || typeof d.heroes !== 'object') return null;
     for (const a of CONFIG.allies) {
       const h = d.heroes[a.id];
-      s.heroes[a.id] = { unlocked: !!h || !!a.starter, copies: 0, stars: 0 };
+      s.heroes[a.id] = { unlocked: !!h || !!a.starter, copies: 0, stars: 0, evo: 0 };
       if (!h) continue;
-      if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars) return null;
-      s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars;
+      if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars ||
+          !int(h.evo, 0) || h.evo > CONFIG.evolution.stages.length) return null;
+      s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars; s.heroes[a.id].evo = h.evo;
     }
     if (!Array.isArray(d.squad) || d.squad.length > CONFIG.squadSize) return null;
     s.squad = [];
     for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    const m = d.materials;
+    if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(d.heartFloor, 0)) return null;
+    s.materials = { shard: m.shard, heart: m.heart }; s.heartFloor = d.heartFloor;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
     if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
     s.essence = d.essence;
@@ -845,7 +922,7 @@
     findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
-    summon, starUp, starCost, starMult, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     serialize, deserialize, fmt,
   };

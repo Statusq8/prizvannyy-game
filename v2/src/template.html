@@ -270,6 +270,16 @@
   .hBtn { padding: 6px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; background: var(--panel); border: 1px solid var(--line); white-space: nowrap; }
   .hBtn.go { border-color: var(--accent); color: var(--text); }
   .hBtn:disabled { opacity: .4; }
+  .hBtns { display: flex; flex-direction: column; gap: 4px; flex: none; }
+  .hBtns .hBtn { width: 100%; }
+  .hBtn.evo { border-color: #ff9a3d; color: #ffd0a0; }
+  .matHead { display: flex; gap: 14px; font-size: 14px; font-weight: 700; margin: 0 2px 6px; }
+  .matHead b { color: var(--text); }
+  .evoTag { color: #ffb36b; font-weight: 800; }
+  .evoNeed { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .evoNeed .ok { color: var(--ok); } .evoNeed .no { color: #ff8a8a; }
+  .hIcon { position: relative; }
+  .hIcon .evoPip { position: absolute; right: -3px; bottom: -3px; font-size: 9px; font-weight: 900; padding: 0 3px; border-radius: 5px; background: #ff9a3d; color: #1a0a08; }
   .hint2 { font-size: 11px; color: var(--muted); margin: 0 2px 6px; }
   /* портал */
   .portalHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -417,7 +427,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.9.1</div>
+  <div id="version">v0.10</div>
 </div>
 
 <script>
@@ -455,12 +465,19 @@
     { pos: 'left:7%', side: 'L', back: true },  { pos: 'right:7%', side: 'R', back: true },
   ];
 
-  function allySvg(v) {
-    return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' +
+  // Облики эволюции (временные заглушки): I — сияние, II — наплечники и плащ, III — корона и ореол
+  function allySvg(v, evo) {
+    evo = evo || 0;
+    const aura = evo >= 1 ? '<ellipse cx="50" cy="80" rx="44" ry="52" fill="' + v.eye + '" opacity="' + (0.10 + 0.05 * evo) + '"/>' : '';
+    const cape = evo >= 2 ? '<path d="M30 60 Q16 96 20 126 L34 124 Z M70 60 Q84 96 80 126 L66 124 Z" fill="' + v.eye + '" opacity=".55" stroke="#0a0a10" stroke-width="2"/>' +
+      '<path d="M26 64 Q34 52 44 58 L40 70 Z M74 64 Q66 52 56 58 L60 70 Z" fill="#c8ccd4" stroke="#0a0a10" stroke-width="2.5"/>' : '';
+    const crown = evo >= 3 ? '<ellipse cx="50" cy="12" rx="17" ry="4.5" fill="none" stroke="' + v.eye + '" stroke-width="2.5"/>' +
+      '<path d="M38 22 L41 12 L46 19 L50 9 L54 19 L59 12 L62 22 Z" fill="#ffd36b" stroke="#5a3a0a" stroke-width="1.5"/>' : '';
+    return '<svg viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="34" ry="5" fill="#00000070"/>' + aura + cape +
       '<path d="M22 124 L34 58 Q50 46 66 58 L78 124 Q50 116 22 124Z" fill="' + v.body + '" stroke="#0a0a10" stroke-width="3"/>' +
       '<path d="M32 52 Q32 22 50 18 Q68 22 68 52 Q60 60 50 60 Q40 60 32 52Z" fill="' + v.hood + '" stroke="#0a0a10" stroke-width="3"/>' +
       '<ellipse cx="44" cy="44" rx="3" ry="2.4" fill="' + v.eye + '"/><ellipse cx="57" cy="44" rx="3" ry="2.4" fill="' + v.eye + '"/>' +
-      WEAPON[v.weapon] + '</svg>';
+      WEAPON[v.weapon] + crown + '</svg>';
   }
   const allyUi = {};                 // id → { sprite, title, sub, btn }
   function buildAllies() {
@@ -469,7 +486,7 @@
       const v = ALLY_VIS[a.id];
       const sp = document.createElement('div');
       sp.className = 'ally';
-      sp.innerHTML = '<div class="fig">' + allySvg(v) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div><div class="ultBar" style="color:' + v.eye + '"><i></i></div>';
+      sp.innerHTML = '<div class="fig">' + allySvg(v, s.heroes[a.id].evo) + '</div><div class="allyTag" style="color:' + v.eye + '">' + a.name + '</div><div class="ultBar" style="color:' + v.eye + '"><i></i></div>';
       layer.appendChild(sp);
       const card = document.createElement('div');
       card.className = 'card';
@@ -478,7 +495,7 @@
       cards.appendChild(card);
       const btn = card.querySelector('.buy');
       btn.addEventListener('click', () => { if (C.buyAlly(s, a.id, mult)) { save(); render(); } });
-      allyUi[a.id] = { card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
+      allyUi[a.id] = { evo: s.heroes[a.id].evo, fig: sp.querySelector('.fig'), card, ultBar: sp.querySelector('.ultBar'), ultFill: sp.querySelector('.ultBar i'), sprite: sp, title: card.querySelector('.cardTitle'), sub: card.querySelector('.cardSub'), btn, color: v.eye };
     }
   }
   const SAVE_KEY = 'prizvannyy_v2_save';
@@ -584,6 +601,9 @@
         restartAnim('dead');
         fx('dmg gold', r.width / 2, r.height * 0.35, '+' + fmt(e.gold) + ' ◆', 700);
         if (e.boss) save();
+      } else if (e.type === 'materials') {
+        fx('dmg gold', r.width / 2, r.height * 0.28, '+' + e.shard + ' ' + CFG.materials.shard.icon, 900).style.color = '#8fd0ff';
+        if (e.heart) setTimeout(() => toast('Сердце стража!<small>+' + e.heart + ' ' + CFG.materials.heart.icon + ' — для эволюции героев</small>'), 3200);
       } else if (e.type === 'tickets') {
         setTimeout(() => toast('Билеты портала<small>+' + e.n + ' 🎟</small>'), 1700);
       } else if (e.type === 'firstClear') {
@@ -698,7 +718,8 @@
       const u = allyUi[a.id], lv = s.allies[a.id].level;
       const an = mult === 'max' ? Math.max(1, C.allyMax(s, a.id)) : mult;
       const acost = C.allyCost(s, a.id, an);
-      const pm = C.permMult(s, 'ally') * C.starMult(s, a.id);   // души, артефакты и звёзды
+      const pm = C.permMult(s, 'ally') * C.heroMult(s, a.id);   // души, артефакты, звёзды и эволюция
+      if (u.evo !== s.heroes[a.id].evo) { u.evo = s.heroes[a.id].evo; u.fig.innerHTML = allySvg(ALLY_VIS[a.id], u.evo); }
       u.sub.innerHTML = lv ? 'DPS ' + fmt(C.allyDps(s, a.id) * C.permMult(s, 'ally')) + ' → <b>' + fmt(C.allyDpsAt(a.id, lv + an) * pm) + '</b>' + msHint(lv)
                            : '<span class="dim">' + a.role + ' · удар раз в ' + a.attackInterval + ' с</span> DPS <b>' + fmt(C.allyDpsAt(a.id, an) * pm) + '</b>';
       setBuy(u.btn, acost <= s.gold, an, acost, lv ? '+' + fmt(an) + ' ур.' : 'Нанять' + (an > 1 ? ' +' + fmt(an - 1) : ''));
@@ -776,8 +797,11 @@
       if (ua !== ub) return ua ? -1 : 1;
       return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
     });
-    let html = '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
-      'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала.</div>';
+    const M = CFG.materials, ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+    let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>' +
+      M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span></div>' +
+      '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
+      'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>';
     for (const a of list) {
       const h = s.heroes[a.id], v = ALLY_VIS[a.id];
       if (!h.unlocked) {
@@ -785,17 +809,26 @@
           '<div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ???</div><div class="hSub">' + (a.hidden ? 'Скрытый рецепт Алтаря' : 'Откройте в портале') + '</div></div></div>';
         continue;
       }
-      const sq = C.inSquad(s, a.id), need = C.starCost(s, a.id);
+      const sq = C.inSquad(s, a.id), need = C.starCost(s, a.id), ec = C.evoCost(s, a.id), canEvo = C.canEvolve(s, a.id);
       const stars = '★ ' + h.stars + '/' + CFG.maxStars;
-      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon + '</div>' +
+      const nEvo = CFG.evolution.stages.length;
+      const okNo = (have, want) => '<span class="' + (have >= want ? 'ok' : 'no') + '">';
+      const evoNeed = ec ? '<div class="evoNeed">' + ec.name + ' (×' + ec.mult + ' DPS): ' + okNo(h.stars, ec.stars) + '★' + ec.stars + '</span> · ' +
+          okNo(s.materials.shard, ec.shards) + M.shard.icon + fmt(ec.shards) + '</span>' +
+          (ec.hearts ? ' · ' + okNo(s.materials.heart, ec.hearts) + M.heart.icon + ec.hearts + '</span>' : '') + '</div>'
+        : '<div class="evoNeed"><span class="ok">Эволюция завершена</span></div>';
+      html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" style="background:' + v.iconBg + '">' + v.icon +
+        (h.evo ? '<span class="evoPip">' + ROMAN[h.evo] + '</span>' : '') + '</div>' +
         '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
         (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
-        '<div class="hSub"><span class="stars">' + stars + '</span> · копий ' + h.copies + ' · ' + a.ult.name + '</div></div>' +
+        '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
+        ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
                       : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
         (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'
             : '<button class="hBtn go" data-in="' + a.id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
-        '</div>';
+        (ec ? '<button class="hBtn' + (canEvo ? ' evo' : '') + '" data-evo="' + a.id + '"' + (canEvo ? '' : ' disabled') + '>⬆ ' + ROMAN[ec.stage] + '</button>' : '') +
+        '</div></div>';
     }
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
@@ -839,6 +872,9 @@
       html += '<div class="recipe" style="border-style:solid"><div><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + '</div>' +
         '<button class="hBtn' + (s.essence >= c ? ' go' : '') + '" data-trace="' + a.id + '"' + (s.essence >= c ? '' : ' disabled') + '>+1 копия ✦' + fmt(c) + '</button></div>';
     }
+    { const M = CFG.materials, r = M.heartRecipe, can = s.materials.shard >= r;
+      html += '<div class="recipe"><div>' + M.heart.icon + ' Сердце стража<small>' + r + ' ' + M.shard.icon + ' осколков → 1 сердце (есть ' + fmt(s.materials.shard) + ')</small></div>' +
+        '<button class="hBtn' + (can ? ' go' : '') + '" data-act="heart"' + (can ? '' : ' disabled') + '>Создать</button></div>'; }
     for (const h of CFG.allies.filter(a => a.hidden)) {
       html += s.discovered[h.id]
         ? '<div class="recipe" style="border-color:var(--gold)"><div>' + ALLY_VIS[h.id].icon + ' ' + h.name + ' — скрытый рецепт<small>Пожертвовать за раз по копии: ' +
@@ -858,6 +894,7 @@
       if (!Object.keys(altarSel).length) toast('Нечего выбрать<small style="color:var(--muted)">Нет копий без 🔒 — их дают повторы в портале</small>');
     }
     else if (d.act === 'none') altarSel = {};
+    else if (d.act === 'heart') { if (C.forgeHeart(s, 1)) { toast('Сердце стража<small>+1 ' + CFG.materials.heart.icon + '</small>'); save(); } }
     else if (d.act === 'tear') { if (C.tearOfPortal(s, 1)) { toast('Слеза портала<small>+1 🎟</small>'); save(); } }
     else if (d.trace) { if (C.heroTrace(s, d.trace)) { toast('След героя<small>+1 копия · ' + CFG.allies.find(a => a.id === d.trace).name + '</small>'); save(); } }
     else if (d.act === 'sac') {
@@ -948,7 +985,7 @@
       ask('<b>Ритуал</b><span class="askList">' +
         '<b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + '<br>' +
-        '<b>Сохранится:</b> герои, звёзды, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        '<b>Сохранится:</b> герои, звёзды, эволюции, материалы, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
         const r = C.ritual(s);
         if (!r) return;
         dmgLog.length = 0;
@@ -985,6 +1022,11 @@
     if (b.dataset.star) ok = C.starUp(s, b.dataset.star);
     if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
+    if (b.dataset.evo) {
+      const ec = C.evoCost(s, b.dataset.evo);
+      ok = C.evolve(s, b.dataset.evo);
+      if (ok) toast('Эволюция · ' + ec.name + '!<small>' + CFG.allies.find(a => a.id === b.dataset.evo).name + ': новый облик, ×' + ec.mult + ' DPS</small>');
+    }
     if (ok) { save(); render(); }
   });
   function pull(n) {
