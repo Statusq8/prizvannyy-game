@@ -36,7 +36,8 @@
   .navBtn:disabled { opacity: .25; }
   #floorLabel { font-size: 17px; font-weight: 800; min-width: 100px; }
   #settingsBtn { position: absolute; right: 12px; top: 10px; font-size: 18px; opacity: .6; width: 34px; height: 34px; }
-  #dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+  #biomeLabel { font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--muted); margin-top: 3px; text-transform: uppercase; }
+  #dots { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
   .dot { width: 18px; height: 6px; border-radius: 3px; background: var(--line); }
   .dot.done { background: var(--accent); }
   .dot.cur { background: var(--text); }
@@ -44,6 +45,14 @@
   .dot.boss.cur { background: var(--boss); }
   #enemyName { margin-top: 8px; font-size: 15px; font-weight: 700; }
   #enemyName.boss { color: var(--boss); }
+  #enemyName.rare { color: var(--gold); }
+  #enemyName.rare.crystal { color: #8fe6ff; }
+  .phMark { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ffffffb0; box-shadow: 0 0 3px #000; z-index: 1; }
+  .phMark.past { background: #ffffff30; }
+  #enemy.rare-gold .body { filter: drop-shadow(0 0 12px #ffd36b) drop-shadow(0 0 4px #fff3b0); }
+  #enemy.rare-crystal .body { filter: drop-shadow(0 0 12px #8fe6ff) drop-shadow(0 0 4px #e0faff); }
+  #enemy.vuln .body { animation: vulnPulse .5s ease-in-out infinite alternate; }
+  @keyframes vulnPulse { to { filter: brightness(1.6) drop-shadow(0 0 14px #ff6b4a); } }
   #hpBar {
     position: relative; margin-top: 6px; height: 18px; border-radius: 9px;
     background: var(--hp-dark); border: 1px solid #00000080; overflow: hidden;
@@ -320,6 +329,7 @@
       <div id="floorLabel">Этаж 1</div>
       <button class="navBtn" id="nextFloor" aria-label="Этаж выше">›</button>
     </div>
+    <div id="biomeLabel"></div>
     <div id="dots"></div>
     <div id="enemyName"></div>
     <div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div>
@@ -434,7 +444,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.11</div>
+  <div id="version">v0.12</div>
 </div>
 
 <script>
@@ -607,10 +617,18 @@
       } else if (e.type === 'kill') {
         restartAnim('dead');
         fx('dmg gold', r.width / 2, r.height * 0.35, '+' + fmt(e.gold) + ' ◆', 700);
+        if (e.rare) toast(C.rareDef(e.rare).name + '!<small>+' + fmt(e.gold) + ' ◆' + (e.rare === 'crystal' ? ' и осколки' : '') + '</small>');
         if (e.boss) save();
       } else if (e.type === 'materials') {
         fx('dmg gold', r.width / 2, r.height * 0.28, '+' + e.shard + ' ' + CFG.materials.shard.icon, 900).style.color = '#8fd0ff';
         if (e.heart) setTimeout(() => toast('Сердце стража!<small>+' + e.heart + ' ' + CFG.materials.heart.icon + ' — для эволюции героев</small>'), 3200);
+      } else if (e.type === 'phase') {
+        const b = $('ultBanner');
+        b.textContent = 'Фаза ' + e.phase + '/' + e.of + ' · босс уязвим!';
+        b.style.color = 'var(--boss)';
+        b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      } else if (e.type === 'biome') {
+        setTimeout(() => toast('Новый биом<small>' + e.name + '</small>'), 600);
       } else if (e.type === 'tickets') {
         setTimeout(() => toast('Билеты портала<small>+' + e.n + ' 🎟</small>'), 1700);
       } else if (e.type === 'firstClear') {
@@ -718,9 +736,16 @@
   document.addEventListener('contextmenu', e => e.preventDefault());
 
   // ---------- отрисовка ----------
+  let lastBiome = '', lastMarks = '';
   function render() {
     const en = s.enemy;
     el.floorLabel.textContent = 'Этаж ' + s.floor;
+    const bio = C.biomeOf(s.floor);
+    if (lastBiome !== C.biomeName(s.floor)) {
+      lastBiome = C.biomeName(s.floor);
+      $('biomeLabel').textContent = lastBiome;
+      $('game').style.setProperty('--bg2', bio.sky[0]); $('game').style.setProperty('--bg1', bio.sky[1]);
+    }
     el.prev.disabled = s.floor <= 1;
     el.next.disabled = s.floor >= s.maxFloor;
     [...el.dots.children].forEach((d, i) => {
@@ -728,10 +753,24 @@
       d.classList.toggle('done', idx < s.enemyIndex);
       d.classList.toggle('cur', idx === s.enemyIndex);
     });
-    el.enemyName.textContent = en.isBoss ? 'БОСС · ' + en.name : en.name;
+    el.enemyName.textContent = en.isBoss ? (en.final ? 'ФИНАЛЬНЫЙ БОСС · ' : 'БОСС · ') + en.name : en.rare ? '✦ ' + en.name + ' ✦' : en.name;
     el.enemyName.classList.toggle('boss', en.isBoss);
+    el.enemyName.classList.toggle('rare', !!en.rare);
+    el.enemyName.classList.toggle('crystal', en.rare === 'crystal');
     el.enemy.classList.toggle('boss', en.isBoss);
-    el.enemy.style.filter = en.isBoss ? 'hue-rotate(130deg) saturate(1.3)' : 'hue-rotate(' + ((s.floor * 37 + s.enemyIndex * 11) % 360) + 'deg)';
+    el.enemy.classList.toggle('rare-gold', en.rare === 'gold');
+    el.enemy.classList.toggle('rare-crystal', en.rare === 'crystal');
+    // оттенок от биома + небольшой разброс; редкие и боссы — свои
+    el.enemy.style.filter = en.rare ? 'none' : en.isBoss ? 'hue-rotate(' + (bio.hue + 130) + 'deg) saturate(1.3)' + (en.final ? ' contrast(1.15)' : '')
+      : 'hue-rotate(' + (bio.hue + (s.floor * 37 + s.enemyIndex * 11) % 60 - 30) + 'deg)';
+    // отметки фаз на полоске HP босса
+    const marks = en.isBoss ? (en.final ? CFG.bossPhases.final : CFG.bossPhases.normal) : [];
+    const mk = marks.map((t, i) => t + ':' + (en.phase > i + 1 ? 1 : 0)).join();
+    if (mk !== lastMarks) {
+      lastMarks = mk;
+      $('hpBar').querySelectorAll('.phMark').forEach(x => x.remove());
+      marks.forEach((t, i) => { const d = document.createElement('div'); d.className = 'phMark' + (en.phase > i + 1 ? ' past' : ''); d.style.left = (t * 100) + '%'; $('hpBar').appendChild(d); });
+    }
     el.hpFill.style.width = (en.hp / en.maxHp * 100) + '%';
     el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp);
     el.timerBar.classList.toggle('show', en.isBoss);
@@ -804,6 +843,8 @@
       const left = s.buffs[b.key];
       if (left > 0) parts.push('<span class="buff" style="color:' + b.color + '">' + CFG.allies.find(a => a.ult.kind === b.kind).ult.name + ' ' + Math.ceil(left) + 'с</span>');
     }
+    if (s.enemy.vuln > 0 && s.enemy.alive) parts.push('<span class="buff" style="color:#ff6b4a">Уязвим ' + Math.ceil(s.enemy.vuln) + 'с</span>');
+    el.enemy.classList.toggle('vuln', s.enemy.vuln > 0 && s.enemy.alive);
     if (s.enemy.mark > 0) parts.push('<span class="buff" style="color:#ffb36b">Метка ' + Math.ceil(s.enemy.mark) + 'с</span>');
     const html = parts.join('');
     if (html !== lastBuffHtml) { $('buffs').innerHTML = html; lastBuffHtml = html; }

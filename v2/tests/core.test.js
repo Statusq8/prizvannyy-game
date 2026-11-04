@@ -981,3 +981,81 @@ test('время сохранения читается из сохранения
   const t = C.deserialize(C.serialize(s));
   assert.ok(Math.abs(t.savedAt - Date.now()) < 5000);
 });
+
+// ---------- полная Башня (0.12) ----------
+test('биомы: по 50 этажей, по кругу после 400, свои враги и финальный босс', () => {
+  assert.strictEqual(C.biomeOf(1).id, 'crypt'); assert.strictEqual(C.biomeOf(50).id, 'crypt');
+  assert.strictEqual(C.biomeOf(51).id, 'ash'); assert.strictEqual(C.biomeOf(400).id, 'throne');
+  assert.strictEqual(C.biomeOf(401).id, 'crypt'); assert.strictEqual(C.biomeName(401), 'Гнилые катакомбы II');
+  assert.strictEqual(C.biomeName(1), 'Гнилые катакомбы');
+  assert.ok(C.isFinalBoss(50) && !C.isFinalBoss(49));
+  const s = C.newState(NOCRIT);
+  s.floor = s.maxFloor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  assert.strictEqual(s.enemy.name, CFG.biomes[0].final); assert.ok(s.enemy.final);
+  // финальный босс крепче обычного (с поправкой на рост этажа)
+  const ratio = C.enemyMaxHp(50, true) / C.enemyMaxHp(49, true);
+  assert.ok(ratio > CFG.enemyHpGrowth * 1.3);
+});
+
+test('биомы меняют сложность и золото', () => {
+  const b = CFG.biomes[5];   // Кровавая арена: 251–300
+  const f = 255;
+  const plain = CFG.enemyBaseHp * Math.pow(CFG.enemyHpGrowth, f - 1);
+  assert.strictEqual(C.enemyMaxHp(f, false), Math.ceil(plain * b.hp));
+  assert.strictEqual(C.killGold(f, false), Math.ceil(CFG.goldBase * Math.pow(CFG.goldGrowth, f - 1) * b.gold));
+});
+
+test('переход в новый биом даёт событие', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  s.floor = s.maxFloor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const ev = killCurrent(s);
+  assert.ok(ev.some(e => e.type === 'biome' && e.floor === 51 && e.name === 'Пепельные шахты'));
+});
+
+test('редкие враги: не раньше 10 этажа, не боссы, крепче и дают больше', () => {
+  const s = C.newState(NOCRIT);
+  for (let k = 0; k < 2000; k++) { s.stats.kills = k; assert.strictEqual(C.rollRare(s, 5, 3), null); assert.strictEqual(C.rollRare(s, 20, 10), null); }
+  let found = {}, n = 0;
+  for (let k = 0; k < 5000; k++) { s.stats.kills = k; const r = C.rollRare(s, 20, 3); if (r) { found[r.id] = 1; n++; } }
+  assert.ok(found.gold && found.crystal);
+  assert.ok(n > 5000 * 0.01 && n < 5000 * 0.08);        // около шанса биома (3%)
+  // находим ход, где появится золотой гоблин, и проверяем награду
+  let k = 0; do { s.stats.kills = k++; } while (!(C.rollRare(s, 20, 3) || {}).id || C.rollRare(s, 20, 3).id !== 'gold');
+  const t = C.newState(NOCRIT); Object.assign(t, { floor: 20, maxFloor: 20, enemyIndex: 3, tapLevel: 1e12 }); t.stats.kills = k - 1;
+  C.tick(t, 0); t.enemy.alive = false; t.respawn = 0; C.tick(t, 0.001);
+  assert.strictEqual(t.enemy.rare, 'gold');
+  assert.strictEqual(t.enemy.maxHp, Math.ceil(C.enemyMaxHp(20, false) * C.rareDef('gold').hp));
+  const ev = killCurrent(t);
+  assert.strictEqual(ev.find(e => e.type === 'kill').gold, C.killGold(20, false) * C.rareDef('gold').gold);
+});
+
+test('кристальный ёж даёт осколки', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  Object.assign(s, { floor: 30, maxFloor: 30, enemyIndex: 4 });
+  let k = 0; do { s.stats.kills = k++; } while (((C.rollRare(s, 30, 4) || {}).id) !== 'crystal');
+  s.enemy.alive = false; s.respawn = 0; C.tick(s, 0.001);
+  assert.strictEqual(s.enemy.rare, 'crystal');
+  const ev = killCurrent(s);
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(30));
+  assert.ok(ev.some(e => e.type === 'materials' && e.rare));
+});
+
+test('фазы босса: обычный — 2 фазы, финальный — 3; на смене фазы короткая уязвимость', () => {
+  const s = C.newState(NOCRIT);
+  s.floor = s.maxFloor = 12; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const e = s.enemy;
+  e.hp = e.maxHp * 0.6; C.tap(s);
+  assert.strictEqual(e.phase, 1); assert.strictEqual(e.vuln, 0);
+  e.hp = e.maxHp * 0.5 + C.tapDamage(s) * 0.5;
+  const ev = C.tap(s);
+  assert.ok(ev.some(x => x.type === 'phase' && x.phase === 2 && x.of === 2));
+  assert.strictEqual(e.vuln, CFG.bossPhases.vulnSec);
+  const before = e.hp; C.tap(s);
+  assert.ok(Math.abs((before - e.hp) - C.tapDamage(s) * CFG.bossPhases.vulnMult) < 1e-6);
+  C.tick(s, CFG.bossPhases.vulnSec + 0.1);
+  assert.strictEqual(e.vuln, 0);
+  // финальный: две смены фаз, можно обе за один удар
+  s.floor = s.maxFloor = 50; C.challengeBoss(s);
+  s.enemy.hp = s.enemy.maxHp * 0.2; C.tap(s);
+  assert.strictEqual(s.enemy.phase, 3);
+});
