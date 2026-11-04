@@ -526,6 +526,44 @@
     ],
   };
 
+  // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
+  const LORE = {
+    irene:  { race: 'Эльфийка тени',  cls: 'Стрелок',   quote: 'Тень не промахивается.' },
+    borg:   { race: 'Орк',            cls: 'Воин',      quote: 'Больше врагов — больше ярости!' },
+    lia:    { race: 'Человек',        cls: 'Маг огня',  quote: 'Всё сгорит — и станет светом.' },
+    kael:   { race: 'Полудемон',      cls: 'Убийца',    quote: 'Бездна смотрит моими глазами.' },
+    garret: { race: 'Человек',        cls: 'Страж',     quote: 'Я не герой. Я просто не отступаю.' },
+    saya:   { race: 'Полуэльфийка',   cls: 'Убийца',    quote: 'Один нож — один ответ.' },
+    drake:  { race: 'Драконорождённый', cls: 'Воин',    quote: 'Копьё помнит каждого врага.' },
+    noa:    { race: 'Человек',        cls: 'Маг бури',  quote: 'Гром — это просто мой голос.' },
+    velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.' },
+    ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.' },
+    seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.' },
+    azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.' },
+    morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.' },
+    carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!' },
+    yuki:   { race: 'Дух снега',      cls: 'Жрица',     quote: 'Тишина зимы крепче стали.' },
+  };
+  for (const a of CONFIG.allies) Object.assign(a, LORE[a.id] || {});
+  // Понятное описание ультимейта по его виду
+  function ultDesc(a) {
+    const u = a.ult, n = x => String(x).replace('.', ',');
+    if (u.kind === 'nuke') return 'Мгновенный удар: урон = ' + n(u.power) + '× DPS героя. Заряд ' + u.charge + ' с.';
+    if (u.kind === 'teamBuff') return 'Весь урон отряда и тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
+    if (u.kind === 'mark') return 'Урон по текущему врагу ×' + n(u.power) + ' на ' + u.duration + ' с (пропадает с новым врагом). Заряд ' + u.charge + ' с.';
+    if (u.kind === 'tapBuff') return 'Урон тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
+    return '';
+  }
+  // Навыки героя по уровням: описание и открыт ли (для экрана героя)
+  function perkList(level) {
+    return CONFIG.perks.map(p => ({
+      lvl: p.lvl, name: p.name, open: level >= p.lvl,
+      desc: p.kind === 'own' ? '+' + Math.round(p.value * 100) + '% урона героя'
+          : p.kind === 'bless' ? 'Удар Призванного получает ' + String(p.value * 100).replace('.', ',') + '% DPS героя'
+          : '×' + p.value + ' урона героя на каждом ' + p.every + '-м уровне' + (level >= p.lvl ? ' (сейчас ×' + fmt(B.fromLog10(Math.floor(level / p.every) * Math.log10(p.value))) + ')' : ''),
+    }));
+  }
+
   // ---------- биомы ----------
   const ROMAN = ['', '', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X'];
   function biomeIndex(floor) { return Math.floor((floor - 1) / CONFIG.biomeFloors); }
@@ -994,7 +1032,8 @@
       farming: false,
       gold: 0,
       tapLevel: 1,
-      stats: { taps: 0, kills: 0, bossKills: 0, crits: 0, maxTps: 0 },
+      stats: { taps: 0, kills: 0, bossKills: 0, crits: 0, maxTps: 0, goldEarned: 0, soulsEarned: 0, playTime: 0 },
+      tpsWin: { t: 0, n: 0 },                    // окно 1 с для «макс. тапов в секунду» (не сохраняется)
       autoAdvance: true,                         // «Автопереход» на следующий этаж после босса
       allies: newAllies(),
       buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
@@ -1107,10 +1146,11 @@
     }
   }
 
+  function earnGold(s, g) { s.stats.goldEarned = B.add(s.stats.goldEarned, g); }
   function tap(s) {
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
-    s.stats.taps++; cnt(s, 'tap');
+    s.stats.taps++; cnt(s, 'tap'); s.tpsWin.n++;
     if (modeRule(s) === 'alliesOnly') { events.push({ type: 'hit', dmg: 0, source: 'tap', crit: false, blocked: true }); return events; }
     dealDamage(s, tapDamage(s), 'tap', events);
     return events;
@@ -1127,7 +1167,7 @@
   function rewardKill(s, isBoss, events, rareId) {
     const rare = rareId ? rareDef(rareId) : null;
     const gold = B.ceil(B.mul(killGold(s.floor, isBoss), goldMult(s) * (rare ? rare.gold : 1)));
-    s.gold = B.add(s.gold, gold);
+    s.gold = B.add(s.gold, gold); earnGold(s, gold);
     s.stats.kills++; cnt(s, 'kill');
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
@@ -1143,7 +1183,7 @@
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
         const bonus = B.ceil(B.mul(firstClearGold(s.floor), goldMult(s)));
-        s.gold = B.add(s.gold, bonus);
+        s.gold = B.add(s.gold, bonus); earnGold(s, bonus);
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
       if (s.floor > s.ticketFloor) {
@@ -1190,6 +1230,9 @@
   // Фиксированный шаг симуляции
   function tick(s, dt) {
     const events = [];
+    s.stats.playTime += dt;
+    const w = s.tpsWin; w.t += dt;
+    if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
@@ -1380,7 +1423,7 @@
     if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
       const r = dungeonReward(s, m.id, m.tier);
-      if (r.gold) s.gold = B.add(s.gold, r.gold);
+      if (r.gold) { s.gold = B.add(s.gold, r.gold); earnGold(s, r.gold); }
       if (r.shard) s.materials.shard += r.shard;
       if (r.runeTier != null) {
         const R = CONFIG.runes, k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
@@ -1497,7 +1540,7 @@
   function questDone(s, id) { return questProgress(s, id) >= questDef(id).goal; }
   function questClaimable(s, id) { return questDone(s, id) && !s.quests.claimed[id]; }
   function grant(s, r) {
-    if (r.souls) s.souls = B.add(s.souls, r.souls);
+    if (r.souls) { s.souls = B.add(s.souls, r.souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, r.souls); }
     if (r.tickets) s.tickets += r.tickets;
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
@@ -1708,7 +1751,8 @@
         const kt = killTime(enemyMaxHp(s.floor, false), dps);
         const n = Math.floor((secs - t) / kt);
         const per = CONFIG.enemiesPerFloor - 1;
-        s.gold = B.add(s.gold, B.mul(n, B.ceil(B.mul(killGold(s.floor, false), goldMult(s)))));
+        const fg = B.mul(n, B.ceil(B.mul(killGold(s.floor, false), goldMult(s))));
+        s.gold = B.add(s.gold, fg); earnGold(s, fg);
         s.stats.kills += n; cnt(s, 'kill', n); addEventPoints(s, n * CONFIG.events.pointsKill);
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
@@ -2053,7 +2097,7 @@
     if (!canRitual(s)) return null;
     if (s.mode) exitMode(s);
     const souls = ritualSouls(s);
-    s.souls = B.add(s.souls, souls);
+    s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
     // ритуальные задания начинаются заново
     s.quests.runBase = { ...s.counters };
@@ -2145,7 +2189,7 @@
       v: CONFIG.saveVersion,
       floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
       enemyIndex: s.enemyIndex, farming: s.farming,
-      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: s.stats, autoAdvance: s.autoAdvance,
+      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: { ...s.stats, goldEarned: B.str(s.stats.goldEarned), soulsEarned: B.str(s.stats.soulsEarned) }, autoAdvance: s.autoAdvance,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
@@ -2227,6 +2271,8 @@
     s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel; s.autoAdvance = d.autoAdvance !== false;
     if (d.stats) s.stats = {
       taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0, crits: d.stats.crits | 0, maxTps: d.stats.maxTps | 0,
+      goldEarned: d.stats.goldEarned ? B.parse(d.stats.goldEarned) : 0, soulsEarned: d.stats.soulsEarned ? B.parse(d.stats.soulsEarned) : 0,
+      playTime: +d.stats.playTime > 0 ? +d.stats.playTime : 0,
     };
     const al = d.allies && typeof d.allies === 'object' ? d.allies : {};
     for (const a of CONFIG.allies) {
@@ -2424,6 +2470,7 @@
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
+    ultDesc, perkList,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
