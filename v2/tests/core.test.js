@@ -986,7 +986,12 @@ test('время сохранения читается из сохранения
 test('биомы: по 50 этажей, по кругу после 400, свои враги и финальный босс', () => {
   assert.strictEqual(C.biomeOf(1).id, 'crypt'); assert.strictEqual(C.biomeOf(50).id, 'crypt');
   assert.strictEqual(C.biomeOf(51).id, 'ash'); assert.strictEqual(C.biomeOf(400).id, 'throne');
-  assert.strictEqual(C.biomeOf(401).id, 'crypt'); assert.strictEqual(C.biomeName(401), 'Гнилые катакомбы II');
+  assert.strictEqual(CFG.biomes.length, 20); assert.strictEqual(C.biomeOf(1000).id, 'heart');
+  assert.strictEqual(C.biomeOf(1001).id, 'crypt'); assert.strictEqual(C.biomeName(1001), 'Гнилые катакомбы II');
+  assert.strictEqual(C.hallOf(1), CFG.halls[0]); assert.strictEqual(C.hallOf(10), CFG.halls[0]);
+  assert.strictEqual(C.hallOf(11), CFG.halls[1]); assert.strictEqual(C.hallOf(50), CFG.halls[4]);
+  assert.strictEqual(C.hallOf(51), CFG.halls[0]); assert.strictEqual(C.hallOf(1000), CFG.halls[4]);
+  for (const b of CFG.biomes) assert.ok(b.bg.length === 3 && b.enemies.length === 4 && b.bosses.length === 2 && b.final);
   assert.strictEqual(C.biomeName(1), 'Гнилые катакомбы');
   assert.ok(C.isFinalBoss(50) && !C.isFinalBoss(49));
   const s = C.newState(NOCRIT);

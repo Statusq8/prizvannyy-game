@@ -22,9 +22,19 @@
   #game {
     position: relative; height: 100%; height: 100dvh; max-width: calc(100dvh * 9 / 16); margin: 0 auto;
     background: radial-gradient(ellipse at 50% 45%, var(--bg2) 0%, var(--bg1) 70%);
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex; flex-direction: column; overflow: hidden; isolation: isolate;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
+
+  /* фон этажа: зал Башни (одна картинка, оттенок по биому) */
+  #bgHall { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  #bgHall .img { position: absolute; inset: 0; background: url("__BG_HALL__") center 62% / cover no-repeat;
+    filter: hue-rotate(var(--bh, 0deg)) saturate(var(--bs, 1)) brightness(var(--bb, 1));
+    transform: translateX(var(--hx, 0%)) scale(var(--hz, 1)) scaleX(var(--hf, 1)); transform-origin: 50% 62%;
+    transition: filter .8s, transform .8s; }
+  /* затемнение сверху (HUD) и снизу (панель), чтобы текст читался */
+  #bgHall::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, #0d0a12f0 0%, #0d0a12a0 18%, #0d0a1230 38%, #0d0a1210 60%, #0d0a1280 80%, #0d0a12f0 100%); }
 
   /* ---------- верхний HUD ---------- */
   #hud { padding: 10px 16px 6px; text-align: center; position: relative; z-index: 2; }
@@ -322,6 +332,7 @@
 </head>
 <body>
 <div id="game">
+  <div id="bgHall"><div class="img"></div></div>
   <div id="hud">
     <button id="settingsBtn" aria-label="Настройки">⚙</button>
     <div id="floorRow">
@@ -444,7 +455,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.12</div>
+  <div id="version">v0.13</div>
 </div>
 
 <script>
@@ -741,10 +752,14 @@
     const en = s.enemy;
     el.floorLabel.textContent = 'Этаж ' + s.floor;
     const bio = C.biomeOf(s.floor);
-    if (lastBiome !== C.biomeName(s.floor)) {
-      lastBiome = C.biomeName(s.floor);
-      $('biomeLabel').textContent = lastBiome;
-      $('game').style.setProperty('--bg2', bio.sky[0]); $('game').style.setProperty('--bg1', bio.sky[1]);
+    const hall = C.hallOf(s.floor), place = C.biomeName(s.floor) + ' · ' + hall.name;
+    if (lastBiome !== place) {
+      lastBiome = place;
+      $('biomeLabel').textContent = place;
+      const g = $('game').style;
+      g.setProperty('--bg2', bio.sky[0]); g.setProperty('--bg1', bio.sky[1]);
+      g.setProperty('--bh', (bio.bg[0] + hall.hue) + 'deg'); g.setProperty('--bs', bio.bg[1]); g.setProperty('--bb', bio.bg[2] * hall.bri);
+      g.setProperty('--hx', hall.x + '%'); g.setProperty('--hz', hall.zoom); g.setProperty('--hf', hall.flip ? -1 : 1);
     }
     el.prev.disabled = s.floor <= 1;
     el.next.disabled = s.floor >= s.maxFloor;
