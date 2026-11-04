@@ -78,7 +78,7 @@
       const bang = { up: navBang.up, art: navBang.souls, bag: false, pets: CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) };
       let h = SECS.map(([id, ic, nm, c]) => '<button class="mCard" data-sec="' + id + '" style="--tc:' + c + '"><span class="ic">' + ic + '</span><span><span class="nm">' + nm + '</span><small>' + sub[id] + '</small></span>' +
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
-      h += '<div class="secT">Другие разделы · временно в старом виде</div><div class="mMore">' +
+      h += '<div class="secT">Другие разделы</div><div class="mMore">' +
         MORE.map(([id, ic, nm]) => '<button data-old="' + id + '"><b>' + ic + '</b>' + nm + (navBang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('') + '</div>';
       setHtml('mBody', h);
     }
