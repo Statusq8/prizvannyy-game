@@ -359,13 +359,82 @@
   @keyframes allyAtkL { 40% { transform: translate(14px,-6px) rotate(6deg); } 100% { transform: none; } }
   @keyframes allyAtkR { 40% { transform: translate(-14px,-6px) rotate(-6deg); } 100% { transform: none; } }
   #version { position: absolute; bottom: 2px; left: 8px; font-size: 10px; color: #ffffff30; pointer-events: none; }
+
+  /* ===== интерфейс в стиле образца (0.20): весь экран — бой, меню по бокам, шторка снизу ===== */
+  :root { --frame1: #b3302a; --frame2: #6a1512; --frameEdge: #e0a85a; --frameDark: #3a0c0a; }
+  #hud { padding-top: 6px; }
+  #resBar { display: flex; gap: 5px; align-items: center; margin-bottom: 6px; }
+  .res { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 28px; padding: 0 8px 0 6px;
+    border-radius: 8px; background: #0a0608cc; border: 1px solid #ffffff14; box-shadow: inset 0 1px 0 #ffffff0d; }
+  .res i { font-style: normal; font-size: 14px; }
+  .res b { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res:first-child b { color: var(--gold); }
+  #settingsBtn { position: static; flex: none; width: 30px; height: 28px; opacity: .75; }
+  /* кнопки в рамках */
+  .side { position: absolute; top: 8px; display: flex; flex-direction: column; gap: clamp(4px, 1dvh, 10px); z-index: 3; }
+  .side.L { left: 8px; } .side.R { right: 8px; }
+  .sideBtn { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; width: clamp(44px, 6.6dvh, 58px); }
+  .sideBtn .ico { width: 100%; aspect-ratio: 1; display: grid; place-items: center; font-size: clamp(20px, 3.4dvh, 28px); border-radius: 12px;
+    background: radial-gradient(circle at 50% 35%, var(--frame1), var(--frame2)); border: 2px solid var(--frameEdge);
+    box-shadow: 0 0 0 2px var(--frameDark), inset 0 0 0 2px #00000040, inset 0 2px 0 #ffffff30, 0 4px 8px #0008; }
+  .sideBtn .lbl { font-size: 10px; font-weight: 800; color: #fff; text-shadow: 0 1px 0 #000, 0 0 4px #000; white-space: nowrap; }
+  .sideBtn .bang { display: none; position: absolute; top: -6px; right: -6px; width: 18px; height: 22px; font-style: normal; font-size: 15px; font-weight: 900; line-height: 22px;
+    color: #3a1a00; background: linear-gradient(180deg, #ffe08a, #ffa628); border-radius: 6px 6px 9px 9px; box-shadow: 0 0 0 2px #5a2a00, 0 2px 4px #000a; animation: bang 1.4s ease-in-out infinite; }
+  .sideBtn.on .bang { display: block; }
+  .sideBtn.cur .ico { border-color: #fff3c0; box-shadow: 0 0 0 2px var(--frameDark), 0 0 12px #ffd36b99, inset 0 2px 0 #ffffff30; }
+  .sideBtn:active .ico { transform: scale(.94); }
+  @keyframes bang { 50% { transform: translateY(-3px) rotate(8deg); } }
+  /* «Бей босса» — большая кнопка по центру */
+  #farmBar { left: 50%; right: auto; transform: translateX(-50%); top: 6px; flex-direction: column; gap: 4px; padding: 0; background: none; border: none; z-index: 3; }
+  #farmBar .plate { padding: 3px 14px; border-radius: 6px; background: #2a120ccc; color: #ffcf8a; font-size: 12px; font-weight: 800; }
+  #bossBtn { padding: 10px 30px; border-radius: 12px; font-size: 18px; font-weight: 900; color: #fff; text-shadow: 0 1px 0 #6a2a00;
+    background: linear-gradient(180deg, #ffb347, #e8741c 55%, #c2500f); border: 2px solid #ffe08a; box-shadow: 0 0 0 3px #5a2400, 0 4px 10px #000a; }
+  #modeBar { left: 50%; right: auto; transform: translateX(-50%); top: 6px; width: min(62%, 260px); }
+  /* способности — в нижних углах, рамки как у меню */
+  #abilityBar { background: none; border: none; justify-content: space-between; align-items: flex-end; padding: 4px 8px 6px; z-index: 3; }
+  #abilityBar .abil { flex: none; width: clamp(62px, 9dvh, 76px); height: auto; flex-direction: column; background: none; border: none; overflow: visible; }
+  .abilUse { flex: none; width: 100%; aspect-ratio: 1; flex-direction: column; justify-content: center; gap: 0; padding: 0; text-align: center; border-radius: 12px; overflow: hidden;
+    background: radial-gradient(circle at 50% 35%, var(--frame1), var(--frame2)); border: 2px solid var(--frameEdge); box-shadow: 0 0 0 2px var(--frameDark), inset 0 2px 0 #ffffff30, 0 4px 8px #0008; }
+  .abilIcon { font-size: clamp(20px, 3.4dvh, 26px); }
+  .abilText { width: 100%; }
+  .abilName { font-size: 9px; text-shadow: 0 1px 0 #000; }
+  .abilState { font-size: 9px; color: #ffe6c0; }
+  .abilCd { left: 0; right: 0; top: auto; bottom: 0; width: auto !important; height: 0; background: #000000a0; }
+  .abilAuto { width: 100%; height: 20px; margin-top: 4px; border: 1px solid #ffffff20; border-radius: 7px; background: #0a0608cc; font-size: 9px; }
+  .abil.ready .abilUse { border-color: #fff3c0; box-shadow: 0 0 0 2px var(--frameDark), 0 0 12px #ffd36b88; }
+  .abil.active .abilUse { border-color: var(--gold); box-shadow: 0 0 0 2px var(--frameDark), 0 0 16px #ffd36bcc; }
+  .abil.ready, .abil.active { border: none; box-shadow: none; }
+  /* меню — шторка снизу поверх боя */
+  #game { position: relative; }
+  #panel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; height: 62%; display: flex; flex-direction: column;
+    border-radius: 18px 18px 0 0; border: 2px solid var(--frameEdge); border-bottom: none; box-shadow: 0 -2px 0 var(--frameDark), 0 -10px 30px #000c;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)); transition: transform .22s ease-out; }
+  #panel.collapsed { transform: translateY(105%); pointer-events: none; }
+  #panelToggle { height: 34px; justify-content: space-between; padding: 0 4px; font-size: 14px; font-weight: 800; color: var(--text); }
+  #panelToggle .x { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  #panel.collapsed #canBuy.on { display: none; }
+  .tabBody, #cards { max-height: none; flex: 1; min-height: 0; }
+  #panel #cards { overflow-y: auto; }
+  #panel .tabBody { overflow-y: auto; }
+  #panel { overflow: hidden; }
+  /* задний ряд союзников — внутрь, чтобы не прятаться за боковыми кнопками */
+  .ally.back { margin: 0 9%; }
+  /* «Бей босса» не наезжает на боковые колонки */
+  #farmBar, #modeBar { top: 4px; }
+  #version { bottom: auto; top: 2px; left: auto; right: 6px; }
 </style>
 </head>
 <body>
 <div id="game">
   <div id="bgHall"><div class="img"></div></div>
   <div id="hud">
-    <button id="settingsBtn" aria-label="Настройки">⚙</button>
+    <div id="resBar">
+      <div class="res"><i>◆</i><b id="resGold">0</b></div>
+      <div class="res"><i>🎟</i><b id="resTickets">0</b></div>
+      <div class="res"><i>🔹</i><b id="resShards">0</b></div>
+      <div class="res"><i>👻</i><b id="resSouls">0</b></div>
+      <button id="settingsBtn" aria-label="Настройки">⚙</button>
+    </div>
     <div id="floorRow">
       <button class="navBtn" id="prevFloor" aria-label="Этаж ниже">‹</button>
       <div id="floorLabel">Этаж 1</div>
@@ -383,7 +452,20 @@
   <div id="arena">
     <div id="ultBanner"></div>
     <div id="modeBar"><span id="modeInfo"></span><button id="leaveBtn">Выйти</button></div>
-    <div id="farmBar"><span>Фарм этажа</span><button id="bossBtn">Вызвать босса</button></div>
+    <div id="farmBar"><span class="plate">Фарм этажа</span><button id="bossBtn">Бей босса</button></div>
+    <!-- боковое меню: кнопки в рамках, «!» — есть что сделать -->
+    <div class="side L">
+      <button class="sideBtn" data-open="heroes"><span class="ico">🪖</span><span class="lbl">Герои</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="portal"><span class="ico">🌀</span><span class="lbl">Портал</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="altar"><span class="ico">🕯</span><span class="lbl">Алтарь</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="quests"><span class="ico">📜</span><span class="lbl">Задания</span><i class="bang">!</i></button>
+    </div>
+    <div class="side R">
+      <button class="sideBtn" data-open="up"><span class="ico">⚔</span><span class="lbl">Прокачка</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="souls"><span class="ico">👻</span><span class="lbl">Души</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
+      <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
+    </div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
       <svg viewBox="0 0 200 230">
@@ -423,8 +505,8 @@
   </div>
 
   <div id="abilityBar"></div>
-  <div id="panel">
-    <button id="panelToggle" aria-label="Свернуть или развернуть улучшения"><span class="bar"></span><span id="toggleLabel">Свернуть</span><span class="chev">▼</span><span id="canBuy"></span></button>
+  <div id="panel" class="collapsed">
+    <button id="panelToggle" aria-label="Закрыть меню"><span id="toggleLabel">Прокачка</span><span class="x">✕</span><span id="canBuy"></span></button>
     <div id="goldRow">
       <div id="gold">0</div>
       <div id="mult">
@@ -494,7 +576,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.19</div>
+  <div id="version">v0.20</div>
 </div>
 
 <script>
@@ -2231,13 +2313,19 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
+  const TAB_NAMES = { up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
-    $('toggleLabel').textContent = on ? 'Улучшения' : 'Свернуть';
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
   }
-  try { setCollapsed(!!(JSON.parse(localStorage.getItem(UI_KEY) || '{}').collapsed)); } catch (e) { setCollapsed(false); }
-  $('panelToggle').addEventListener('click', () => setCollapsed(!$('panel').classList.contains('collapsed')));
+  setCollapsed(true);                    // на старте меню закрыто — весь экран под бой
+  $('panelToggle').addEventListener('click', () => setCollapsed(true));
+  // боковые кнопки открывают нужный раздел; повторное нажатие закрывает
+  document.querySelectorAll('.sideBtn').forEach(b => b.addEventListener('click', () => {
+    const open = !$('panel').classList.contains('collapsed');
+    if (open && tab === b.dataset.open) { setCollapsed(true); return; }
+    tab = b.dataset.open; setCollapsed(false); render();
+  }));
   const dmgLog = [];                    // [время, урон] для DPS
   let tapped = s.stats.taps > 0;
 
@@ -2351,7 +2439,7 @@
 
   // ---------- ввод ----------
   el.arena.addEventListener('pointerdown', e => {
-    if (e.target.closest('#farmBar') || e.target.closest('#modeBar')) return;
+    if (e.target.closest('#farmBar') || e.target.closest('#modeBar') || e.target.closest('.side')) return;
     e.preventDefault();
     const r = el.arena.getBoundingClientRect();
     const ev = C.tap(s);
@@ -2531,6 +2619,7 @@
       }
     }
     $('canBuy').classList.toggle('on', anyAffordable);
+    const upBtn = document.querySelector('.sideBtn[data-open="up"]'); if (upBtn) upBtn.classList.toggle('on', anyAffordable);
   }
 
   // Подсказка о следующей вехе уровня
@@ -2598,6 +2687,20 @@
     C.questsReset(s, dayKey(), weekKey());
     $('questDot').classList.toggle('on', C.claimableCount(s) > 0);
     if (tab === 'quests') renderQuests();
+    $('toggleLabel').textContent = TAB_NAMES[tab] || '';
+    // «!» на боковых кнопках
+    const fcost = C.findCost(s);
+    const bang = {
+      up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
+      heroes: CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      souls: C.canRitual(s) || (fcost != null && s.souls >= fcost),
+      pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
+      altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
+    };
+    const opened = !$('panel').classList.contains('collapsed');
+    document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', !!bang[b.dataset.open]); b.classList.toggle('cur', opened && tab === b.dataset.open); });
+    $('resGold').textContent = fmt(s.gold); $('resTickets').textContent = fmt(s.tickets);
+    $('resShards').textContent = fmt(s.materials.shard); $('resSouls').textContent = fmt(s.souls);
     $('panel').dataset.tab = tab;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('ticketDot').classList.toggle('on', s.tickets > 0);
@@ -3086,7 +3189,7 @@
       u.state.textContent = !unlocked ? 'с этажа ' + a.unlockFloor
         : st.active > 0 ? 'действует ' + Math.ceil(st.active) + 'с'
         : st.cd > 0 ? 'через ' + Math.ceil(st.cd) + 'с' : 'готово';
-      u.cd.style.width = (unlocked && st.active <= 0 && st.cd > 0 ? st.cd / a.cooldown * 100 : 0) + '%';
+      u.cd.style.height = (unlocked && st.active <= 0 && st.cd > 0 ? Math.min(1, st.cd / a.cooldown) * 100 : 0) + '%';
     }
   }
 
