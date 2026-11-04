@@ -788,6 +788,8 @@
         b.textContent = 'Фаза ' + e.phase + '/' + e.of + ' · босс уязвим!';
         b.style.color = 'var(--boss)';
         b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      } else if (e.type === 'top') {
+        toast('Вершина Башни!<small>Этаж ' + fmt(e.floor) + ' — выше пока не подняться</small>');
       } else if (e.type === 'modeEnd') {
         dmgLog.length = 0; save(); showModeEnd(e);
       } else if (e.type === 'modeStart') {

@@ -1383,8 +1383,8 @@ test('сохранение заданий и миграция с 0.16', () => {
 });
 
 // ---------- ранги и потолки (0.19) ----------
-test('потолок: 600 на старте, 100000 на пределе, растёт с каждой ступенью', () => {
-  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 100000);
+test('потолок: 600 на старте, 15000 на пределе, растёт с каждой ступенью', () => {
+  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 15000);
   assert.strictEqual(C.maxSteps(), 100);
   for (let k = 1; k <= 100; k++) assert.ok(C.capAt(k) > C.capAt(k - 1));
   assert.deepStrictEqual(C.rankLabel(0), { rank: 1, sub: 0, max: false });
@@ -1530,4 +1530,13 @@ test('сохранение сезона и миграция с 0.20', () => {
   assert.deepStrictEqual(t.season.free, { 1: true, 2: true }); assert.strictEqual(t.season.trail, 3);
   const old = JSON.parse(C.serialize(s)); old.v = 12; delete old.season;
   assert.strictEqual(C.deserialize(JSON.stringify(old)).season.n, 0);
+});
+
+test('вершина Башни — этаж 100000: выше не подняться', () => {
+  const s = C.newState(NOCRIT);
+  s.floor = s.maxFloor = s.bestFloor = CFG.maxFloor; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  s.enemy.hp = 1;
+  const ev = C.tap(s);
+  assert.ok(ev.some(e => e.type === 'top'));
+  assert.strictEqual(s.floor, CFG.maxFloor); assert.strictEqual(s.maxFloor, CFG.maxFloor);
 });

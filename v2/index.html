@@ -605,7 +605,8 @@
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
     saveVersion: 13,
-    enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
+    enemiesPerFloor: 10,
+    maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
     bossHpMult: 6,
@@ -896,10 +897,10 @@
       ],
     },
     // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
-    // Каждая ступень поднимает потолок уровня: от 600 до 100 000 (плавно, кратно 10; решение пользователя — «пока»). Подранг — за осколки,
+    // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
     // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
-    ranks: { count: 10, subs: 10, capMin: 600, capMax: 100000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
+    ranks: { count: 10, subs: 10, capMin: 600, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
     // Сезоны и боевой пропуск (GDD §11). Сезон — 28 дней, считается по дате устройства от epoch (понедельник).
     // Сезонный герой чередуется по номеру сезона. Тропа сезона — линейные задания. Числа TBD.
     season: {
@@ -1335,6 +1336,11 @@
         if (isFinalBoss(s.floor) && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
       }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
+      if (s.floor >= CONFIG.maxFloor) {                 // вершина: этаж не растёт, босса можно бить снова
+        s.enemyIndex = 1;
+        events.push({ type: 'top', floor: s.floor });
+        return;
+      }
       s.maxFloor = Math.max(s.maxFloor, s.floor + 1);
       s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
       s.floor += 1;
@@ -2552,6 +2558,8 @@
         b.textContent = 'Фаза ' + e.phase + '/' + e.of + ' · босс уязвим!';
         b.style.color = 'var(--boss)';
         b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      } else if (e.type === 'top') {
+        toast('Вершина Башни!<small>Этаж ' + fmt(e.floor) + ' — выше пока не подняться</small>');
       } else if (e.type === 'modeEnd') {
         dmgLog.length = 0; save(); showModeEnd(e);
       } else if (e.type === 'modeStart') {
