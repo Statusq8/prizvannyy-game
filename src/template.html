@@ -840,7 +840,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.41</div>
+  <div id="version">v0.42</div>
 </div>
 
 <script>
@@ -941,13 +941,47 @@
   };
 
   // ---------- сохранение ----------
+  // ---------- страховка сохранений (GDD §17, 0.42): 3 циклические копии раз в 5 минут + снимок перед ритуалом ----------
+  // Основное сохранение не удаляется никогда: если оно повреждено, его копия кладётся в «_broken», игра поднимается
+  // из последней целой резервной копии. Ручной откат — только к копии, которая прошла проверку (deserialize).
+  const BAK_N = 3, BAK_EVERY = 5 * 60 * 1000, BAK_KEY = i => SAVE_KEY + '_bak' + i, PRE_RIT = SAVE_KEY + '_preRitual';
+  let restoredFrom = null;
+  function readCopy(key) {
+    try { const w = JSON.parse(localStorage.getItem(key) || 'null'); if (!w || !w.data) return null;
+      const st = C.deserialize(w.data); return st ? { key, t: +w.t || 0, st, data: w.data } : null; } catch (e) { return null; }
+  }
+  function backupList() {
+    const out = [];
+    for (let i = 0; i < BAK_N; i++) { const c = readCopy(BAK_KEY(i)); if (c) out.push({ ...c, kind: 'auto' }); }
+    const pr = readCopy(PRE_RIT); if (pr) out.push({ ...pr, kind: 'ritual' });
+    return out.sort((a, b) => b.t - a.t);
+  }
   function load() {
-    try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = C.deserialize(raw); if (s) return s; } } catch (e) {}
+    let raw = null;
+    try { raw = localStorage.getItem(SAVE_KEY); if (raw) { const st = C.deserialize(raw); if (st) return st; } } catch (e) {}
+    const list = backupList();
+    if (raw && list.length) { try { localStorage.setItem(SAVE_KEY + '_broken', raw); } catch (e) {} }
+    if (list.length) { restoredFrom = list[0]; return list[0].st; }
     return C.newState();
   }
-  let lastSave = 0;
+  function writeCopy(key) { try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), data: C.serialize(s) })); } catch (e) {} }
+  let lastSave = 0, lastBak = 0;
+  try { lastBak = Math.max(0, ...[0, 1, 2].map(i => (+JSON.parse(localStorage.getItem(BAK_KEY(i)) || '{}').t || 0))); } catch (e) {}
+  let blockSave = false;                                   // после отката — не перезаписать возвращённую копию при перезагрузке
   function save() {
+    if (blockSave) return;
     try { localStorage.setItem(SAVE_KEY, C.serialize(s)); lastSave = Date.now(); } catch (e) {}
+    if (Date.now() - lastBak >= BAK_EVERY) {                 // самая старая из трёх копий заменяется новой
+      let oldest = 0, ot = Infinity;
+      for (let i = 0; i < BAK_N; i++) { let tt = 0; try { tt = +JSON.parse(localStorage.getItem(BAK_KEY(i)) || '{}').t || 0; } catch (e) {} if (tt < ot) { ot = tt; oldest = i; } }
+      writeCopy(BAK_KEY(oldest)); lastBak = Date.now();
+    }
+  }
+  function restoreCopy(key) {
+    const c = readCopy(key); if (!c) return false;
+    writeCopy(SAVE_KEY + '_beforeRestore');                  // текущее состояние не теряется и при откате
+    try { localStorage.setItem(SAVE_KEY, c.data); } catch (e) { return false; }
+    blockSave = true; location.reload(); return true;
   }
 
   let s = load();
@@ -2305,6 +2339,7 @@
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start +
         (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
         '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        writeCopy(PRE_RIT);                                  // защищённый снимок перед ритуалом
         const r = C.ritual(s);
         if (!r) return;
         dmgLog.length = 0;
@@ -2466,6 +2501,7 @@
   render();
   if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
 /*__UI2_JS__*/
+  if (restoredFrom) setTimeout(() => toast('Сохранение восстановлено<small>из резервной копии от ' + new Date(restoredFrom.t).toLocaleString('ru-RU') + '</small>'), 600);
   if (C.loginAvailable(s, dayKey())) setTimeout(() => toast('📬 Бонус за вход ждёт<small>день ' + (C.loginDayIndex(s) + 1) + ' из ' + CFG.login.days.length + '</small>'), 1200);
   requestAnimationFrame(loop);
 })();
