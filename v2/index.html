@@ -293,7 +293,7 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab, #panel[data-tab="stats"] #statsTab, #panel[data-tab="map"] #mapTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
   .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
@@ -497,6 +497,41 @@
   .heroDetail .hdBtns button { padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #2a8a6a, #145a44); border: 2px solid #0a2a20; }
   .heroDetail .hdBtns button:disabled { background: #4a4a52; color: #a8a8b0; }
   .hIcon { cursor: pointer; }
+  /* экран героя: описание, ульт, навыки (0.32) */
+  .hdLore { margin-top: 8px; padding: 7px 9px; border-radius: 9px; background: #3a1e0c1c; border: 1px solid #5a3a1a30; font-size: 12px; color: #5a3a1e; font-weight: 700; }
+  .hdLore q { display: block; font-style: italic; color: #2a1608; font-weight: 600; margin-bottom: 3px; }
+  .hdUlt { margin-top: 6px; font-size: 12px; line-height: 1.35; color: #2a1608; }
+  .hdUlt b { color: #8a2a10; }
+  .heroDetail .secTitle { color: #6a3a1a; }
+  .hdPerks { margin-top: 6px; display: grid; gap: 4px; }
+  .hdPerk { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 8px; background: #3a1e0c1c; font-size: 12px; color: #2a1608; }
+  .hdPerk .pl { flex: none; min-width: 42px; text-align: center; padding: 2px 4px; border-radius: 6px; font-weight: 900; font-size: 11px; background: #2a8a6a; color: #fff; }
+  .hdPerk .pd { flex: 1; min-width: 0; } .hdPerk .pd b { display: block; }
+  .hdPerk.lock { color: #6a5a4a; } .hdPerk.lock .pl { background: #6a6056; }
+  .hdPerk .pk { flex: none; font-size: 11px; font-weight: 700; color: #8a2a10; white-space: nowrap; }
+  /* статистика */
+  .stGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stCell { padding: 7px 9px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--line); }
+  .stCell span { display: block; font-size: 11px; color: var(--muted); }
+  .stCell b { font-size: 15px; }
+  /* карта Башни */
+  #floorLabel { cursor: pointer; }
+  #floorLabel::after { content: " 🗺"; font-size: 13px; opacity: .7; }
+  .mapHead { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .mapHead .mt { flex: 1; text-align: center; font-weight: 800; font-size: 13px; }
+  .mapHead .mt small { display: block; font-weight: 600; color: var(--muted); font-size: 11px; }
+  .mapBar { display: flex; gap: 6px; margin-bottom: 8px; }
+  .mapBar button { flex: 1; }
+  .mapPath { position: relative; padding: 4px 0 10px; }
+  .mapPath::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: repeating-linear-gradient(#c9962e80 0 8px, transparent 8px 14px); }
+  .mapHall { position: relative; margin: 8px auto 4px; width: max-content; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--gold); background: #0a0608; border: 1px solid #c9962e60; }
+  .mapRow { position: relative; height: 38px; }
+  .mapNode { position: absolute; top: 3px; width: 34px; height: 32px; margin-left: -17px; border-radius: 50%; font-size: 11px; font-weight: 900; color: #fff;
+    background: radial-gradient(circle at 50% 35%, #3a8a5a, #1a4a2a); border: 2px solid #8fe6a0; display: grid; place-items: center; }
+  .mapNode.lock { background: #2a2a30; border-color: #4a4a52; color: #8a8a90; }
+  .mapNode.cur { background: radial-gradient(circle at 50% 35%, var(--frame1), var(--frame2)); border-color: var(--frameEdge); box-shadow: 0 0 10px #ffb36b; }
+  .mapNode.fin { width: 44px; height: 40px; margin-left: -22px; top: -1px; font-size: 18px; }
+  .mapNode i { position: absolute; bottom: -9px; font-style: normal; font-size: 10px; color: var(--text); text-shadow: 0 0 3px #000; }
 </style>
 </head>
 <body>
@@ -623,6 +658,8 @@
     <div id="eventsTab" class="tabBody"></div>
     <div id="inboxTab" class="tabBody"></div>
     <div id="bonesTab" class="tabBody"></div>
+    <div id="statsTab" class="tabBody"></div>
+    <div id="mapTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="spare" id="bannerPick" style="margin-bottom:6px"></div>
       <div class="hint2" id="bannerInfo"></div>
@@ -640,6 +677,7 @@
       <h3>Настройки</h3>
       <div id="setList"></div>
       <p id="saveInfo"></p>
+      <button class="mBtn" id="statsBtn">📊 Статистика</button>
       <button class="mBtn" id="closeModal">Закрыть</button>
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
     </div>
@@ -658,7 +696,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.31</div>
+  <div id="version">v0.32</div>
 </div>
 
 <script>
@@ -1127,6 +1165,18 @@
     // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
     // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
     collection: { perHero: 0.03, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
+    // Навыки героя по уровням (по образцу пользователя): у каждого союзника открываются на уровнях 10…1000.
+    // own — +% к урону этого героя (складываются); bless — удар героя получает долю DPS этого союзника;
+    // every — каждые N уровней ×mult урона этого героя. Без критов. Числа TBD.
+    perks: [
+      { lvl: 10,   name: 'Закалка',        kind: 'own', value: 1 },
+      { lvl: 25,   name: 'Верное оружие',  kind: 'own', value: 1 },
+      { lvl: 50,   name: 'Мастерство',     kind: 'own', value: 1 },
+      { lvl: 75,   name: 'Искусство боя',  kind: 'own', value: 1.5 },
+      { lvl: 100,  name: 'Благословение',  kind: 'bless', value: 0.005 },
+      { lvl: 200,  name: 'Сила огня',      kind: 'own', value: 2 },
+      { lvl: 1000, name: 'Сила духа',      kind: 'every', every: 1000, value: 10 },
+    ],
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -1177,6 +1227,44 @@
         hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Вьюга', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
     ],
   };
+
+  // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
+  const LORE = {
+    irene:  { race: 'Эльфийка тени',  cls: 'Стрелок',   quote: 'Тень не промахивается.' },
+    borg:   { race: 'Орк',            cls: 'Воин',      quote: 'Больше врагов — больше ярости!' },
+    lia:    { race: 'Человек',        cls: 'Маг огня',  quote: 'Всё сгорит — и станет светом.' },
+    kael:   { race: 'Полудемон',      cls: 'Убийца',    quote: 'Бездна смотрит моими глазами.' },
+    garret: { race: 'Человек',        cls: 'Страж',     quote: 'Я не герой. Я просто не отступаю.' },
+    saya:   { race: 'Полуэльфийка',   cls: 'Убийца',    quote: 'Один нож — один ответ.' },
+    drake:  { race: 'Драконорождённый', cls: 'Воин',    quote: 'Копьё помнит каждого врага.' },
+    noa:    { race: 'Человек',        cls: 'Маг бури',  quote: 'Гром — это просто мой голос.' },
+    velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.' },
+    ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.' },
+    seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.' },
+    azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.' },
+    morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.' },
+    carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!' },
+    yuki:   { race: 'Дух снега',      cls: 'Жрица',     quote: 'Тишина зимы крепче стали.' },
+  };
+  for (const a of CONFIG.allies) Object.assign(a, LORE[a.id] || {});
+  // Понятное описание ультимейта по его виду
+  function ultDesc(a) {
+    const u = a.ult, n = x => String(x).replace('.', ',');
+    if (u.kind === 'nuke') return 'Мгновенный удар: урон = ' + n(u.power) + '× DPS героя. Заряд ' + u.charge + ' с.';
+    if (u.kind === 'teamBuff') return 'Весь урон отряда и тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
+    if (u.kind === 'mark') return 'Урон по текущему врагу ×' + n(u.power) + ' на ' + u.duration + ' с (пропадает с новым врагом). Заряд ' + u.charge + ' с.';
+    if (u.kind === 'tapBuff') return 'Урон тапов ×' + n(u.power) + ' на ' + u.duration + ' с. Заряд ' + u.charge + ' с.';
+    return '';
+  }
+  // Навыки героя по уровням: описание и открыт ли (для экрана героя)
+  function perkList(level) {
+    return CONFIG.perks.map(p => ({
+      lvl: p.lvl, name: p.name, open: level >= p.lvl,
+      desc: p.kind === 'own' ? '+' + Math.round(p.value * 100) + '% урона героя'
+          : p.kind === 'bless' ? 'Удар Призванного получает ' + String(p.value * 100).replace('.', ',') + '% DPS героя'
+          : '×' + p.value + ' урона героя на каждом ' + p.every + '-м уровне' + (level >= p.lvl ? ' (сейчас ×' + fmt(B.fromLog10(Math.floor(level / p.every) * Math.log10(p.value))) + ')' : ''),
+    }));
+  }
 
   // ---------- биомы ----------
   const ROMAN = ['', '', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X'];
@@ -1523,7 +1611,13 @@
     return l >= LOGLIM ? B.fromLog10(l) : base * level * milestoneMultAt(level);
   }
   function tapDamageAt(level) { return withMilestones(CONFIG.tapBaseDamage, level); }
-  function tapDamage(s) { return tapDamageAt(s.tapLevel); }
+  // Удар героя + «Благословение» союзников 100+ уровня (доля их DPS)
+  function tapDamage(s) {
+    let d = tapDamageAt(s.tapLevel);
+    const bl = CONFIG.perks.find(p => p.kind === 'bless');
+    for (const a of CONFIG.allies) if (s.allies[a.id].level >= bl.lvl) d = B.add(d, B.mul(allyDpsAt(a.id, s.allies[a.id].level), bl.value));
+    return d;
+  }
 
   // ---------- криты ----------
   function abilityDef(id) { return CONFIG.abilities.find(a => a.id === id); }
@@ -1586,7 +1680,17 @@
 
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
-  function allyDpsAt(id, level) { return withMilestones(allyDef(id).baseDps, level); }
+  // Множитель навыков героя на этом уровне
+  function perkMult(level) {
+    let own = 1, m = 1;
+    for (const p of CONFIG.perks) {
+      if (level < p.lvl) continue;
+      if (p.kind === 'own') own += p.value;
+      else if (p.kind === 'every') m = B.mul(m, B.fromLog10(Math.floor(level / p.every) * Math.log10(p.value)));
+    }
+    return B.mul(own, m);
+  }
+  function allyDpsAt(id, level) { return B.mul(withMilestones(allyDef(id).baseDps, level), perkMult(level)); }
   function starMult(s, id) { return 1 + CONFIG.starDpsBonus * s.heroes[id].stars; }
   // Эволюция: произведение множителей пройденных ступеней
   function evoMult(s, id) {
@@ -1630,7 +1734,9 @@
       farming: false,
       gold: 0,
       tapLevel: 1,
-      stats: { taps: 0, kills: 0, bossKills: 0 },
+      stats: { taps: 0, kills: 0, bossKills: 0, crits: 0, maxTps: 0, goldEarned: 0, soulsEarned: 0, playTime: 0 },
+      tpsWin: { t: 0, n: 0 },                    // окно 1 с для «макс. тапов в секунду» (не сохраняется)
+      autoAdvance: true,                         // «Автопереход» на следующий этаж после босса
       allies: newAllies(),
       buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
       abilities: newAbilities(),
@@ -1726,7 +1832,7 @@
   function dealDamage(s, dmg, source, events) {
     dmg = B.mul(B.mul(dmg, permMult(s, source)), damageMult(s, source));
     const crit = s.rng() < critChance(s);
-    if (crit) dmg = B.mul(dmg, critMult(s));
+    if (crit) { dmg = B.mul(dmg, critMult(s)); s.stats.crits = (s.stats.crits | 0) + 1; }
     s.enemy.hp = B.max(0, B.sub(s.enemy.hp, dmg));
     events.push({ type: 'hit', dmg, source, crit });
     if (B.lte(s.enemy.hp, 0)) { s.enemy.hp = 0; kill(s, events); }
@@ -1742,10 +1848,11 @@
     }
   }
 
+  function earnGold(s, g) { s.stats.goldEarned = B.add(s.stats.goldEarned, g); }
   function tap(s) {
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
-    s.stats.taps++; cnt(s, 'tap');
+    s.stats.taps++; cnt(s, 'tap'); s.tpsWin.n++;
     if (modeRule(s) === 'alliesOnly') { events.push({ type: 'hit', dmg: 0, source: 'tap', crit: false, blocked: true }); return events; }
     dealDamage(s, tapDamage(s), 'tap', events);
     return events;
@@ -1762,7 +1869,7 @@
   function rewardKill(s, isBoss, events, rareId) {
     const rare = rareId ? rareDef(rareId) : null;
     const gold = B.ceil(B.mul(killGold(s.floor, isBoss), goldMult(s) * (rare ? rare.gold : 1)));
-    s.gold = B.add(s.gold, gold);
+    s.gold = B.add(s.gold, gold); earnGold(s, gold);
     s.stats.kills++; cnt(s, 'kill');
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
@@ -1778,7 +1885,7 @@
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
         const bonus = B.ceil(B.mul(firstClearGold(s.floor), goldMult(s)));
-        s.gold = B.add(s.gold, bonus);
+        s.gold = B.add(s.gold, bonus); earnGold(s, bonus);
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
       if (s.floor > s.ticketFloor) {
@@ -1797,6 +1904,13 @@
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       const bone = rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor);
       if (bone) events.push({ type: 'bone', bone });
+      // «Автопереход» выключен: этаж открыт, но остаёмся и фармим текущий
+      if (!s.autoAdvance && s.floor < CONFIG.maxFloor) {
+        s.maxFloor = Math.max(s.maxFloor, s.floor + 1); s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
+        s.enemyIndex = 1; s.farming = true;
+        events.push({ type: 'stay', floor: s.floor });
+        return;
+      }
       if (s.floor >= CONFIG.maxFloor) {                 // вершина: этаж не растёт, босса можно бить снова
         s.enemyIndex = 1;
         events.push({ type: 'top', floor: s.floor });
@@ -1818,6 +1932,9 @@
   // Фиксированный шаг симуляции
   function tick(s, dt) {
     const events = [];
+    s.stats.playTime += dt;
+    const w = s.tpsWin; w.t += dt;
+    if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
@@ -2008,7 +2125,7 @@
     if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
       const r = dungeonReward(s, m.id, m.tier);
-      if (r.gold) s.gold = B.add(s.gold, r.gold);
+      if (r.gold) { s.gold = B.add(s.gold, r.gold); earnGold(s, r.gold); }
       if (r.shard) s.materials.shard += r.shard;
       if (r.runeTier != null) {
         const R = CONFIG.runes, k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
@@ -2125,7 +2242,7 @@
   function questDone(s, id) { return questProgress(s, id) >= questDef(id).goal; }
   function questClaimable(s, id) { return questDone(s, id) && !s.quests.claimed[id]; }
   function grant(s, r) {
-    if (r.souls) s.souls = B.add(s.souls, r.souls);
+    if (r.souls) { s.souls = B.add(s.souls, r.souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, r.souls); }
     if (r.tickets) s.tickets += r.tickets;
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
@@ -2336,7 +2453,8 @@
         const kt = killTime(enemyMaxHp(s.floor, false), dps);
         const n = Math.floor((secs - t) / kt);
         const per = CONFIG.enemiesPerFloor - 1;
-        s.gold = B.add(s.gold, B.mul(n, B.ceil(B.mul(killGold(s.floor, false), goldMult(s)))));
+        const fg = B.mul(n, B.ceil(B.mul(killGold(s.floor, false), goldMult(s))));
+        s.gold = B.add(s.gold, fg); earnGold(s, fg);
         s.stats.kills += n; cnt(s, 'kill', n); addEventPoints(s, n * CONFIG.events.pointsKill);
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
@@ -2681,7 +2799,7 @@
     if (!canRitual(s)) return null;
     if (s.mode) exitMode(s);
     const souls = ritualSouls(s);
-    s.souls = B.add(s.souls, souls);
+    s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
     // ритуальные задания начинаются заново
     s.quests.runBase = { ...s.counters };
@@ -2773,7 +2891,7 @@
       v: CONFIG.saveVersion,
       floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
       enemyIndex: s.enemyIndex, farming: s.farming,
-      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: s.stats,
+      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: { ...s.stats, goldEarned: B.str(s.stats.goldEarned), soulsEarned: B.str(s.stats.soulsEarned) }, autoAdvance: s.autoAdvance,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
@@ -2852,9 +2970,11 @@
     const s = newState();
     s.floor = d.floor; s.maxFloor = d.maxFloor; s.highestCleared = d.highestCleared;
     s.enemyIndex = d.enemyIndex; s.farming = !!d.farming;
-    s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel;
+    s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel; s.autoAdvance = d.autoAdvance !== false;
     if (d.stats) s.stats = {
-      taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0,
+      taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0, crits: d.stats.crits | 0, maxTps: d.stats.maxTps | 0,
+      goldEarned: d.stats.goldEarned ? B.parse(d.stats.goldEarned) : 0, soulsEarned: d.stats.soulsEarned ? B.parse(d.stats.soulsEarned) : 0,
+      playTime: +d.stats.playTime > 0 ? +d.stats.playTime : 0,
     };
     const al = d.allies && typeof d.allies === 'object' ? d.allies : {};
     for (const a of CONFIG.allies) {
@@ -3036,7 +3156,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petCanUnlock, unlockPet, setPet, petShare, petUpCost, upgradePet, petHit, petDps, squadRawDps,
@@ -3052,6 +3172,7 @@
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
+    ultDesc, perkList,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
@@ -3166,7 +3287,7 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
@@ -3608,6 +3729,8 @@
     if (tab === 'events') renderEvents();
     if (tab === 'inbox') renderInbox();
     if (tab === 'bones') renderBones();
+    if (tab === 'stats') renderStats();
+    if (tab === 'map') renderMap();
     $('inboxCnt').textContent = s.inbox.length; $('inboxCnt').classList.toggle('on', s.inbox.length > 0);
     $('toggleLabel').textContent = TAB_NAMES[tab] || '';
     // «!» на боковых кнопках
@@ -3679,6 +3802,78 @@
     }
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
+  // ---------- статистика (0.32) ----------
+  let liveTapDps = 0, liveAllDps = 0;
+  const goldLog = [];                      // [время, заработано золота] раз в секунду — для «золото/мин»
+  function goldSample(now) {
+    if (goldLog.length && now - goldLog[goldLog.length - 1][0] < 1000) return;
+    goldLog.push([now, s.stats.goldEarned]);
+    while (goldLog.length > 61) goldLog.shift();
+  }
+  function goldPerMin() {
+    if (goldLog.length < 2) return 0;
+    const a = goldLog[0], b = goldLog[goldLog.length - 1], span = (b[0] - a[0]) / 60000;
+    return span > 0 ? B.max(0, B.div(B.sub(b[1], a[1]), span)) : 0;
+  }
+  function playTimeTxt(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+    return h ? h + ' ч ' + m + ' мин' : m + ' мин';
+  }
+  function renderStats() {
+    const st = s.stats, auto = C.autoDps(s);
+    const cells = [
+      ['Общий DPS', fmt(B.add(liveTapDps, auto))], ['Реальный средний', fmt(liveAllDps)],
+      ['Урон за тап', fmt(C.tapHit(s))], ['Авто DPS', fmt(auto)],
+      ['Шанс крита', Math.round(C.critChance(s) * 100) + '%'], ['Крит-урон', '×' + C.critMult(s).toFixed(1)],
+      ['Критов всего', fmt(st.crits)], ['Золото в минуту', fmt(goldPerMin())],
+      ['Золота заработано', fmt(st.goldEarned)], ['Души сейчас', fmt(s.souls)],
+      ['Душ получено', fmt(st.soulsEarned)], ['Тапов', fmt(st.taps)],
+      ['Макс. тапов в секунду', fmt(st.maxTps)], ['Врагов побеждено', fmt(st.kills)],
+      ['Боссов побеждено', fmt(st.bossKills)], ['Рекорд этажа', fmt(s.bestFloor)],
+      ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
+    ];
+    $('statsTab').innerHTML = '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
+      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>';
+  }
+  $('statsBtn').addEventListener('click', () => { el.modal.classList.remove('show'); tab = 'stats'; setCollapsed(false); render(); });
+
+  // ---------- карта Башни (0.32): путь по этажам биома, замки, финальный босс ----------
+  let mapPage = null, mapHtml = '';
+  function renderMap() {
+    const BF = CFG.biomeFloors, lastPage = Math.floor((Math.min(CFG.maxFloor, s.maxFloor) - 1) / BF);
+    if (mapPage == null) mapPage = Math.floor((s.floor - 1) / BF);
+    mapPage = Math.max(0, Math.min(lastPage, mapPage));
+    const lo = mapPage * BF + 1, hi = Math.min(CFG.maxFloor, lo + BF - 1);
+    let html = '<div class="mapHead"><button class="navBtn" data-mp="-1"' + (mapPage > 0 ? '' : ' disabled') + '>‹</button>' +
+      '<div class="mt">' + C.biomeName(lo) + '<small>этажи ' + fmt(lo) + '–' + fmt(hi) + ' · открыто до ' + fmt(s.maxFloor) + '</small></div>' +
+      '<button class="navBtn" data-mp="1"' + (mapPage < lastPage ? '' : ' disabled') + '>›</button></div>' +
+      '<div class="mapBar"><button class="hBtn' + (s.autoAdvance ? ' go' : '') + '" data-act="autoAdv">Автопереход: ' + (s.autoAdvance ? 'вкл' : 'выкл') + '</button>' +
+      '<button class="hBtn" data-act="mapCur">К этажу ' + s.floor + '</button></div>' +
+      '<div class="hint2">' + (s.autoAdvance ? 'После победы над боссом — сразу на следующий этаж.' : 'После победы над боссом этаж открывается, но вы остаётесь фармить текущий.') + ' Нажмите на открытый этаж, чтобы перейти.</div><div class="mapPath">';
+    for (let f = hi; f >= lo; f--) {
+      const fin = C.isFinalBoss(f), open = f <= s.maxFloor, cur = f === s.floor;
+      const x = 50 + Math.sin(f * 0.9) * 26;
+      html += '<div class="mapRow"><button class="mapNode' + (fin ? ' fin' : '') + (open ? '' : ' lock') + (cur ? ' cur' : '') + '" style="left:' + x + '%"' +
+        (open && !s.mode ? ' data-mf="' + f + '"' : '') + '>' + (fin ? '💀' : open ? f : '🔒') + (fin || !open ? '<i>' + f + '</i>' : '') + '</button></div>';
+      if ((f - 1) % CFG.hallFloors === 0) html += '<div class="mapHall">' + C.hallOf(f).name + '</div>';
+    }
+    html += '</div>';
+    if (html !== mapHtml) { $('mapTab').innerHTML = html; mapHtml = html; }
+  }
+  $('mapTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.mp) { mapPage += +b.dataset.mp; render(); return; }
+    if (b.dataset.act === 'autoAdv') { s.autoAdvance = !s.autoAdvance; save(); render(); return; }
+    if (b.dataset.act === 'mapCur') { mapPage = null; render(); return; }
+    if (b.dataset.mf) { handle(C.goToFloor(s, +b.dataset.mf)); render(); save(); }
+  });
+  el.floorLabel.addEventListener('click', () => {
+    const open = !$('panel').classList.contains('collapsed');
+    if (open && tab === 'map') { setCollapsed(true); return; }
+    if (s.mode) return;
+    tab = 'map'; mapPage = null; setCollapsed(false); render();
+  });
+
   // ---------- класс главного героя и «Печать силы» ----------
   let classPick = false, heroDetail = null;
   // экран героя (по образцу): портрет, характеристики, 6 слотов костей, кнопки развития
@@ -3694,7 +3889,13 @@
       '<div class="hdStat">' + a.role + ' · ур. ' + fmt(s.allies[id].level) + '/' + fmt(C.allyCap(s, id)) + '</div>' +
       '<div class="hdStat">★ ' + h.stars + '/' + CFG.maxStars + ' · облик ' + h.evo + '/' + CFG.evolution.stages.length + ' · ранг ' + RN[rl.rank] + (rl.max ? ' макс' : '·' + rl.sub) + '</div>' +
       '<div class="hdStat">DPS ' + fmt(B.mul(C.allyDps(s, id), C.permMult(s, 'ally'))) + ' · ульт: ' + a.ult.name + '</div></div>' +
-      '<div class="hdSlots">' + slots + '</div></div><div class="hdBtns">' +
+      '<div class="hdSlots">' + slots + '</div></div>' +
+      '<div class="hdLore"><q>' + a.quote + '</q>' + a.race + ' · ' + a.cls + ' · ' + a.role + '</div>' +
+      '<div class="hdUlt"><b>Ульт «' + a.ult.name + '»</b> — ' + C.ultDesc(a) + '</div>' +
+      '<div class="secTitle">НАВЫКИ</div><div class="hdPerks">' + C.perkList(s.allies[id].level).map(p =>
+        '<div class="hdPerk' + (p.open ? '' : ' lock') + '"><span class="pl">' + (p.open ? 'ур. ' : '🔒 ') + p.lvl + '</span><span class="pd"><b>' + p.name + '</b>' + p.desc + '</span>' +
+        (p.open ? '<span class="pk" style="color:#1a6a3a">✓</span>' : '<span class="pk">Требуется ур. ' + p.lvl + '</span>') + '</div>').join('') + '</div>' +
+      '<div class="hdBtns">' +
       '<button data-star="' + id + '"' + (need != null && h.copies >= need ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
       '<button data-evo="' + id + '"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>⬆ Эволюция</button>' +
       '<button data-hrank="' + id + '"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Ранг' + (rc ? ' 🔹' + fmt(rc.shards) : '') + '</button>' +
@@ -4486,6 +4687,8 @@
     for (const d of dmgLog) { allSum = B.add(allSum, d[1]); if (d[2] === 'tap') tapSum = B.add(tapSum, d[1]); }
     const tapDps = B.div(tapSum, DPS_WINDOW), auto = C.autoDps(s);
     el.dps.textContent = fmt(B.add(tapDps, auto));                       // общий DPS
+    liveTapDps = tapDps; liveAllDps = B.div(allSum, DPS_WINDOW);
+    goldSample(now);
     if (el.statsMore.classList.contains('show'))
       el.statsMore.textContent = 'Тап ' + fmt(tapDps) + '/с · Авто ' + fmt(auto) + '/с · Реальный средний ' + fmt(B.div(allSum, DPS_WINDOW)) + '/с · Крит ' + Math.round(C.critChance(s) * 100) + '% ×' + C.critMult(s).toFixed(1);
   }

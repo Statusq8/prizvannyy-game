@@ -2040,3 +2040,27 @@ test('автопереход выключен: босс открывает эт�
   assert.strictEqual(s.floor, 1); assert.strictEqual(s.maxFloor, 2); assert.ok(s.farming);
   const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.autoAdvance, false);
 });
+
+test('статистика: макс. тапов/с, заработанное золото, время игры — сохраняются', () => {
+  const s = C.newState(NOCRIT);
+  for (let i = 0; i < 7; i++) C.tap(s);
+  C.tick(s, 1);
+  assert.strictEqual(s.stats.maxTps, 7);
+  killCurrent(s);
+  assert.ok(C.B.gt(s.stats.goldEarned, 0));
+  assert.ok(s.stats.playTime >= 1);
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.stats.maxTps, 7);
+  assert.strictEqual(C.B.str(t.stats.goldEarned), C.B.str(s.stats.goldEarned));
+  assert.ok(t.stats.playTime >= 1);
+});
+
+test('экран героя: описание ульта, раса и навыки с замком', () => {
+  const a = CFG.allies.find(x => x.id === 'borg');
+  assert.ok(a.race && a.cls && a.quote);
+  assert.ok(/×2/.test(C.ultDesc(a)));
+  const p = C.perkList(30);
+  assert.strictEqual(p.length, CFG.perks.length);
+  assert.ok(p[0].open && p[1].open && !p[2].open);
+  assert.ok(CFG.allies.every(x => x.race && C.ultDesc(x)));
+});
