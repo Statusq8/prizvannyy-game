@@ -385,18 +385,20 @@
     // Переносимый усилитель героя (GDD §8): один на всю игру, ×power к урону владельца (главный герой или союзник).
     // Перенос не чаще раза в cooldownH часов (TBD). Не связан с артефактом автоатаки.
     booster: { name: 'Печать силы', power: 3, unlockFloor: 150, cooldownH: 8 },
-    // Кости монстров (GDD §9, этап 6): ровно 6 слотов на героя (и у главного героя). Череп, рёбра, позвоночник, когти —
-    // утверждены; таз и конечности — рабочие названия. У кости: редкость E–GOD, уровень и грейд G1, G2… без предела.
+    // Кости монстров (GDD §9, этап 6): ровно 6 слотов на героя (и у главного героя): голова, 2 руки, 2 ноги, нагрудник
+    // (решение пользователя, заменяет «череп, рёбра, позвоночник, когти…»). У кости: редкость E–GOD, уровень и грейд G1, G2… без предела.
     // Эффекты — рабочая гипотеза GDD, без критов. Комплекты 2/4/6 не утверждены — не делаем. Всё сохраняется после ритуала.
     bones: {
       slots: [
-        { id: 'skull',  name: 'Череп',      icon: '💀', kind: 'bossDmg', base: 0.10, desc: 'урона по боссам' },
-        { id: 'ribs',   name: 'Рёбра',      icon: '🦴', kind: 'selfDps', base: 0.15, desc: 'урона этого героя' },
-        { id: 'spine',  name: 'Позвоночник', icon: '🐍', kind: 'selfMult', base: 0.08, desc: 'множитель урона героя' },
-        { id: 'claws',  name: 'Когти',      icon: '🐾', kind: 'mobDmg',  base: 0.12, desc: 'урона по обычным врагам' },
-        { id: 'pelvis', name: 'Таз',        icon: '🦷', kind: 'gold',    base: 0.06, desc: 'золота (всему отряду)' },
-        { id: 'limbs',  name: 'Конечности', icon: '🦿', kind: 'shards',  base: 0.04, desc: 'осколков (всему отряду)' },
+        { id: 'head',  name: 'Голова',       icon: '💀', kind: 'bossDmg',  base: 0.10, desc: 'урона по боссам' },
+        { id: 'chest', name: 'Нагрудник',    icon: '🛡', kind: 'selfMult', base: 0.08, desc: 'множитель урона героя' },
+        { id: 'armR',  name: 'Правая рука',  icon: '🦾', kind: 'selfDps',  base: 0.15, desc: 'урона этого героя' },
+        { id: 'armL',  name: 'Левая рука',   icon: '🤚', kind: 'mobDmg',   base: 0.12, desc: 'урона по обычным врагам' },
+        { id: 'legR',  name: 'Правая нога',  icon: '🦿', kind: 'shards',   base: 0.04, desc: 'осколков (всему отряду)' },
+        { id: 'legL',  name: 'Левая нога',   icon: '🦵', kind: 'gold',     base: 0.06, desc: 'золота (всему отряду)' },
       ],
+      // старые названия слотов (0.26) → новые, эффект тот же
+      legacySlots: { skull: 'head', spine: 'chest', ribs: 'armR', claws: 'armL', limbs: 'legR', pelvis: 'legL' },
       tierPower: 2,                 // каждая редкость ×2
       perLevel: 0.1, maxLevel: 10,  // уровень: +10% силы кости; на 10-м — можно поднять грейд
       gradePower: 1.5,              // каждый грейд ×1.5 к силе, уровень сбрасывается
@@ -2051,6 +2053,7 @@
     s.materials = { shard: m.shard, heart: m.heart, dust: m.dust }; s.heartFloor = d.heartFloor;
     if (!Array.isArray(d.bones) || !int(d.boneSeq, 1)) return null;
     for (const b of d.bones) {
+      if (b && CONFIG.bones.legacySlots[b.slot]) b.slot = CONFIG.bones.legacySlots[b.slot];
       if (!b || !int(b.id, 1) || !boneSlot(b.slot) || !int(b.tier, 0) || b.tier >= CONFIG.rarities.length ||
           !int(b.lvl, 0) || b.lvl > CONFIG.bones.maxLevel || !int(b.grade, 1)) return null;
       s.bones.push({ id: b.id, slot: b.slot, tier: b.tier, lvl: b.lvl, grade: b.grade, lock: !!b.lock,

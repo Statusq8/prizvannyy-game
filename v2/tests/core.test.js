@@ -1756,10 +1756,10 @@ test('сохранение класса и печати, миграция с 0.2
 // ---------- кости монстров (0.26) ----------
 function mkBone(s, slot, tier, extra) { const b = { id: s.boneSeq++, slot, tier, lvl: 0, grade: 1, on: null, lock: false, ...(extra || {}) }; s.bones.push(b); return b; }
 
-test('кости: ровно 6 слотов, утверждённые названия, без критов', () => {
+test('кости: ровно 6 слотов — голова, 2 руки, 2 ноги, нагрудник; без критов', () => {
   assert.strictEqual(CFG.bones.slots.length, 6);
   const names = CFG.bones.slots.map(x => x.name);
-  for (const n of ['Череп', 'Рёбра', 'Позвоночник', 'Когти']) assert.ok(names.includes(n));
+  assert.deepStrictEqual(names, ['Голова', 'Нагрудник', 'Правая рука', 'Левая рука', 'Правая нога', 'Левая нога']);
   for (const x of CFG.bones.slots) assert.ok(!/crit/i.test(x.kind));
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
   for (const x of CFG.bones.slots) C.equipBone(s, mkBone(s, x.id, 6).id, 'hero');
@@ -1769,27 +1769,27 @@ test('кости: ровно 6 слотов, утверждённые назва
 test('рёбра и позвоночник усиливают носителя; в слоте одна кость', () => {
   const s = C.newState(NOCRIT); s.allies.irene.level = 10;
   const base = C.allyDps(s, 'irene');
-  const r = mkBone(s, 'ribs', 1);
+  const r = mkBone(s, 'armR', 1);
   assert.ok(C.equipBone(s, r.id, 'irene'));
   assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r))) < 1e-9);
-  const r2 = mkBone(s, 'ribs', 2); C.equipBone(s, r2.id, 'irene');
+  const r2 = mkBone(s, 'armR', 2); C.equipBone(s, r2.id, 'irene');
   assert.strictEqual(r.on, null); assert.strictEqual(C.equippedOn(s, 'irene').length, 1);
-  const sp = mkBone(s, 'spine', 0); C.equipBone(s, sp.id, 'irene');
+  const sp = mkBone(s, 'chest', 0); C.equipBone(s, sp.id, 'irene');
   assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r2)) * (1 + C.boneValue(sp))) < 1e-9);
   assert.strictEqual(C.equipBone(s, r.id, 'azrael'), false);     // не открыт
 });
 
 test('череп — по боссам, когти — по обычным; таз и конечности — для всех', () => {
   const s = C.newState(NOCRIT); s.enemy.hp = s.enemy.maxHp = 1e18;
-  const cl = mkBone(s, 'claws', 0); C.equipBone(s, cl.id, 'hero');
+  const cl = mkBone(s, 'armL', 0); C.equipBone(s, cl.id, 'hero');
   const d1 = C.tap(s).find(e => e.type === 'hit').dmg;
   assert.ok(Math.abs(d1 / C.tapHit(s) - (1 + C.boneValue(cl))) < 1e-9);
-  const pv = mkBone(s, 'pelvis', 2); C.equipBone(s, pv.id, 'irene');
+  const pv = mkBone(s, 'legL', 2); C.equipBone(s, pv.id, 'irene');
   assert.ok(Math.abs(C.goldMult(s) - (1 + C.boneValue(pv))) < 1e-9);
-  const lm = mkBone(s, 'limbs', 0); C.equipBone(s, lm.id, 'borg');
+  const lm = mkBone(s, 'legR', 0); C.equipBone(s, lm.id, 'borg');
   assert.ok(Math.abs(C.shardMult(s) - (1 + C.boneValue(lm))) < 1e-9);
   s.floor = s.maxFloor = 12; C.challengeBoss(s); s.enemy.hp = s.enemy.maxHp = 1e18;
-  const sk = mkBone(s, 'skull', 1); C.equipBone(s, sk.id, 'hero');
+  const sk = mkBone(s, 'head', 1); C.equipBone(s, sk.id, 'hero');
   const d2 = C.tap(s).find(e => e.type === 'hit').dmg;
   assert.ok(Math.abs(d2 / C.tapHit(s) - C.damageMult(s, 'tap')) < 1e-9);
   assert.ok(C.damageMult(s, 'tap') >= 1 + C.boneValue(sk) - 1e-9);
@@ -1797,7 +1797,7 @@ test('череп — по боссам, когти — по обычным; та
 
 test('уровень за пыль до 10, грейд без предела (пыль и сердца), сила растёт', () => {
   const s = C.newState(NOCRIT); s.materials = { shard: 0, heart: 1000, dust: 1e9 };
-  const b = mkBone(s, 'ribs', 3);
+  const b = mkBone(s, 'armR', 3);
   assert.strictEqual(C.gradeUpBone(s, b.id), false);              // уровень ещё не полный
   const v0 = C.boneValue(b);
   for (let i = 0; i < 10; i++) assert.ok(C.upgradeBone(s, b.id));
@@ -1814,7 +1814,7 @@ test('уровень за пыль до 10, грейд без предела (п
 
 test('переработка: пыль, защищённые и надетые не трогаются', () => {
   const s = C.newState(NOCRIT);
-  const a = mkBone(s, 'claws', 0), b = mkBone(s, 'claws', 2, { grade: 3 }), l = mkBone(s, 'skull', 5, { lock: true }), w = mkBone(s, 'ribs', 1);
+  const a = mkBone(s, 'armL', 0), b = mkBone(s, 'armL', 2, { grade: 3 }), l = mkBone(s, 'head', 5, { lock: true }), w = mkBone(s, 'armR', 1);
   C.equipBone(s, w.id, 'hero');
   const r = C.recycleBones(s, [a.id, b.id, l.id, w.id]);
   assert.strictEqual(r.count, 2);
@@ -1837,10 +1837,20 @@ test('выпадение: финальный босс — всегда, A+ ср�
 });
 
 test('сохранение костей и пыли, миграция с 0.25', () => {
-  const s = C.newState(NOCRIT); mkBone(s, 'spine', 4, { lvl: 3, grade: 5, on: 'hero', lock: true }); s.materials.dust = 77;
+  const s = C.newState(NOCRIT); mkBone(s, 'chest', 4, { lvl: 3, grade: 5, on: 'hero', lock: true }); s.materials.dust = 77;
   const t = C.deserialize(C.serialize(s));
   assert.deepStrictEqual(t.bones, s.bones); assert.strictEqual(t.materials.dust, 77);
   const old = JSON.parse(C.serialize(s)); old.v = 15; delete old.bones; delete old.boneSeq; delete old.materials.dust;
   const m = C.deserialize(JSON.stringify(old));
   assert.deepStrictEqual(m.bones, []); assert.strictEqual(m.materials.dust, 0);
+});
+
+test('кости со старыми названиями слотов (0.26) переносятся в новые', () => {
+  const s = C.newState(NOCRIT);
+  const d = JSON.parse(C.serialize(s));
+  d.bones = [{ id: 1, slot: 'ribs', tier: 2, lvl: 3, grade: 1, on: 'hero', lock: false }, { id: 2, slot: 'pelvis', tier: 0, lvl: 0, grade: 1, on: null, lock: false }];
+  d.boneSeq = 3;
+  const t = C.deserialize(JSON.stringify(d));
+  assert.deepStrictEqual(t.bones.map(b => b.slot), ['armR', 'legL']);
+  assert.strictEqual(t.bones[0].on, 'hero');
 });
