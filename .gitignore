@@ -1,16 +1,7 @@
-# тяжёлые старые прототипы (есть в исходном архиве автора)
-legacy/prototypes/
-work/dist/
-work/tests/e2e/shots/
+node_modules/
 android/app/build/
 android/.gradle/
 android/app/src/main/assets/index.html
 .gradle/
-node_modules/
 __pycache__/
 *.pyc
-# старые выпуски — в репозитории только последний
-releases/stable/0.[1-9].*/
-
-# концепт-листы UI с текстом (есть в архиве автора, в игре не используются)
-assets_src/ui/

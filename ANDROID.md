@@ -1,6 +1,6 @@
 # Сборка Android APK
 
-Приложение — обёртка WebView над той же игрой (`work/dist/index.html`). Пакет `ru.prizvannyy.game`, только вертикальный экран,
+Приложение — обёртка WebView над той же игрой (`index.html` в корне). Пакет `ru.prizvannyy.game`, только вертикальный экран,
 полноэкранный режим, кнопка «Назад» закрывает окна игры, сохранение при сворачивании + копия в файле приложения,
 экспорт сохранения через «Поделиться». Все версии подписываются одним ключом `android/keystore/prizvannyy-release.jks`,
 поэтому обновления ставятся поверх без потери прогресса. **Репозиторий держать приватным, ключ не терять.**
@@ -12,7 +12,7 @@
 4. На телефоне открыть APK → разрешить установку из этого источника → установить.
 
 ## Вариант 2 — Android Studio
-1. `cd work && node build.js && cp dist/index.html ../android/app/src/main/assets/index.html`
+1. `npm run build && cp index.html android/app/src/main/assets/index.html`
 2. Android Studio → Open → папка `android` → дождаться синхронизации Gradle.
 3. Build → Build App Bundle(s) / APK(s) → Build APK(s). Файл: `android/app/build/outputs/apk/release/app-release.apk`.
 
