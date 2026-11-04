@@ -1617,3 +1617,74 @@ test('сохранение события и наград, миграция с 0
   const m = C.deserialize(JSON.stringify(old));
   assert.strictEqual(m.event.id, null); assert.deepStrictEqual(m.inbox, []);
 });
+
+// ---------- большие числа (0.24) ----------
+const B = C.B;
+test('большие числа: арифметика и сравнение за пределами 1e308', () => {
+  const a = B.fromLog10(5000), b = B.fromLog10(4999);
+  assert.ok(B.isBig(a)); assert.ok(B.gt(a, b)); assert.ok(B.lt(b, a));
+  assert.ok(Math.abs(B.log10(B.add(a, b)) - Math.log10(1.1) - 5000) < 1e-9);
+  assert.ok(Math.abs(B.log10(B.mul(a, b)) - 9999) < 1e-9);
+  assert.ok(Math.abs(B.toNum(B.div(a, b)) - 10) < 1e-9);
+  assert.ok(Math.abs(B.log10(B.sub(a, b)) - (5000 + Math.log10(0.9))) < 1e-9);
+  assert.strictEqual(B.add(1, 2), 3);                       // малые числа остаются обычными
+  assert.strictEqual(B.mul(B.fromLog10(400), B.fromLog10(-200)), 1e200);
+  assert.strictEqual(B.cmp(B.fromLog10(400), 1e300), 1); assert.strictEqual(B.cmp(-5, B.fromLog10(400)), -1);
+  assert.ok(B.gt(B.fromLog10(400), 0));
+});
+
+test('формат: K, M … aa … zz, затем три буквы', () => {
+  assert.strictEqual(C.fmt(1.25e6), '1.25M');
+  assert.strictEqual(C.fmt(B.fromLog10(300)), C.fmt(1e300));
+  assert.strictEqual(C.fmt(B.fromLog10(2040)), '1zz');
+  assert.strictEqual(C.fmt(B.fromLog10(2043)), '1aaa');
+  assert.strictEqual(C.fmt(B.fromLog10(5000)), '100blx');
+});
+
+test('сохранение больших чисел: строкой «m·e», обратно — то же значение', () => {
+  const s = C.newState(NOCRIT);
+  s.gold = B.fromLog10(4321.5); s.souls = B.fromLog10(1234.2);
+  const t = C.deserialize(C.serialize(s));
+  assert.ok(Math.abs(B.log10(t.gold) - 4321.5) < 1e-9);
+  assert.ok(Math.abs(B.log10(t.souls) - 1234.2) < 1e-9);
+  const bad = JSON.parse(C.serialize(s)); bad.gold = 'abc';
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
+
+test('Башня на этаже 50 000: HP и золото конечны, бой и награды работают', () => {
+  const s = C.newState(NOCRIT);
+  s.floor = s.maxFloor = s.bestFloor = 50000; C.goToFloor(s, 49999); C.goToFloor(s, 50000);
+  assert.ok(B.isBig(s.enemy.maxHp));
+  assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + 49999 * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
+  s.tapLevel = 15000; s.souls = B.fromLog10(3600);
+  let i = 0; while (s.enemy.alive && i++ < 1000) C.tap(s);
+  assert.ok(!s.enemy.alive, 'враг убит');
+  assert.ok(B.isBig(s.gold) && B.gt(s.gold, 0));
+  assert.strictEqual(C.fmt(s.gold).includes('∞'), false);
+});
+
+test('покупки с огромным золотом: MAX упирается в потолок, цена конечна', () => {
+  const s = C.newState(NOCRIT); s.gold = B.fromLog10(2000);
+  assert.ok(C.buyTap(s, 'max')); assert.strictEqual(s.tapLevel, C.tapCap(s));
+  s.heroRank = 100; s.gold = B.fromLog10(1200);
+  assert.ok(C.buyTap(s, 'max'));
+  assert.ok(s.tapLevel > 15000 * 0.5 && s.tapLevel <= 15000);
+  assert.ok(B.gte(s.gold, 0));
+  const cost = C.upgradeCost(s.tapLevel, 1);
+  assert.ok(B.isBig(cost) && B.gt(cost, s.gold) === B.gt(cost, s.gold));
+});
+
+test('ритуал на высоком этаже даёт огромное число душ, бонус урона растёт', () => {
+  const s = C.newState(NOCRIT); s.floor = s.maxFloor = s.bestFloor = 20000;
+  const souls = C.ritualSouls(s);
+  assert.ok(B.isBig(souls));
+  C.ritual(s);
+  assert.ok(B.isBig(C.soulMult(s)) && B.isBig(C.permMult(s, 'tap')));
+});
+
+test('офлайн на огромных этажах не ломается', () => {
+  const s = C.newState(NOCRIT); s.floor = s.maxFloor = s.bestFloor = 30000;
+  s.allies.irene.level = 15000; s.heroes.irene.rank = 100; s.souls = B.fromLog10(5100);
+  const r = C.offlineProgress(s, 3600);
+  assert.ok(r && B.gte(r.gold, 0));
+});

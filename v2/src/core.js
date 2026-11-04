@@ -415,13 +415,93 @@
   function isFinalBoss(floor) { return floor % CONFIG.biomeFloors === 0; }
   function isBiomeStart(floor) { return (floor - 1) % CONFIG.biomeFloors === 0; }
 
+
+  // ---------- большие числа ----------
+  // Значение — обычное число, пока |x| < 1e300; дальше — Big { m, e } = m·10^e (1 ≤ |m| < 10).
+  // Все суммы золота, HP, урона, цен и душ идут через B.* — так Башня проходима до этажа 100 000.
+  function Big(m, e) { this.m = m; this.e = e; }
+  Big.prototype.valueOf = function () { return B.toNum(this); };   // запасной путь для старого кода: огромное → Infinity
+  Big.prototype.toString = function () { return B.str(this); };
+  const LIM = 1e300, LOGLIM = 290;
+  const B = {
+    isBig: x => x instanceof Big,
+    norm(m, e) {
+      if (m === 0 || !isFinite(m)) return m === 0 ? 0 : m;
+      const k = Math.floor(Math.log10(Math.abs(m)));
+      m /= Math.pow(10, k); e += k;
+      if (Math.abs(m) >= 10) { m /= 10; e++; }
+      if (Math.abs(m) < 1) { m *= 10; e--; }
+      if (e < 300) return m * Math.pow(10, e);
+      return new Big(m, e);
+    },
+    // 10^l: число, если влезает, иначе Big
+    fromLog10(l) { if (l < LOGLIM) return Math.pow(10, l); const e = Math.floor(l); return new Big(Math.pow(10, l - e), e); },
+    toBig(x) {
+      if (x instanceof Big) return x;
+      if (x === 0) return new Big(0, 0);
+      const e = Math.floor(Math.log10(Math.abs(x))); let m = x / Math.pow(10, e);
+      if (Math.abs(m) >= 10) return new Big(m / 10, e + 1);
+      return new Big(m, e);
+    },
+    toNum(x) { return x instanceof Big ? (x.e > 308 ? (x.m < 0 ? -Infinity : Infinity) : x.m * Math.pow(10, x.e)) : x; },
+    log10(x) { return x instanceof Big ? x.e + Math.log10(Math.abs(x.m)) : Math.log10(Math.abs(x)); },
+    sign(x) { const v = x instanceof Big ? x.m : x; return v > 0 ? 1 : v < 0 ? -1 : 0; },
+    add(a, b) {
+      if (!(a instanceof Big) && !(b instanceof Big)) { const r = a + b; if (Math.abs(r) < LIM) return r; }
+      const A = B.toBig(a), C2 = B.toBig(b);
+      if (A.m === 0) return b; if (C2.m === 0) return a;
+      const [x, y] = A.e >= C2.e ? [A, C2] : [C2, A], d = x.e - y.e;
+      if (d > 17) return x.e < 300 ? x.m * Math.pow(10, x.e) : x;
+      return B.norm(x.m + y.m * Math.pow(10, -d), x.e);
+    },
+    sub(a, b) { return B.add(a, B.neg(b)); },
+    neg(x) { return x instanceof Big ? new Big(-x.m, x.e) : -x; },
+    mul(a, b) {
+      if (!(a instanceof Big) && !(b instanceof Big)) { const r = a * b; if (Math.abs(r) < LIM) return r; }
+      const A = B.toBig(a), C2 = B.toBig(b);
+      if (A.m === 0 || C2.m === 0) return 0;
+      return B.norm(A.m * C2.m, A.e + C2.e);
+    },
+    div(a, b) {
+      if (!(a instanceof Big) && !(b instanceof Big)) return a / b;
+      const A = B.toBig(a), C2 = B.toBig(b);
+      if (A.m === 0) return 0;
+      return B.norm(A.m / C2.m, A.e - C2.e);
+    },
+    cmp(a, b) {
+      if (!(a instanceof Big) && !(b instanceof Big)) return a < b ? -1 : a > b ? 1 : 0;
+      const sa = B.sign(a), sb = B.sign(b);
+      if (sa !== sb) return sa < sb ? -1 : 1;
+      if (sa === 0) return 0;
+      const la = B.log10(a), lb = B.log10(b);
+      return la === lb ? 0 : (la < lb ? -sa : sa);
+    },
+    lt: (a, b) => B.cmp(a, b) < 0, lte: (a, b) => B.cmp(a, b) <= 0,
+    gt: (a, b) => B.cmp(a, b) > 0, gte: (a, b) => B.cmp(a, b) >= 0,
+    max: (a, b) => (B.cmp(a, b) >= 0 ? a : b), min: (a, b) => (B.cmp(a, b) <= 0 ? a : b),
+    ceil: x => (x instanceof Big ? x : Math.ceil(x)),
+    floor: x => (x instanceof Big ? x : Math.floor(x)),
+    // сохранение: число как есть, Big — строкой «1.2345e678»
+    str: x => (x instanceof Big ? x.m.toPrecision(15) + 'e' + x.e : x),
+    parse(v) {
+      if (typeof v === 'number') return isFinite(v) ? v : null;
+      if (typeof v !== 'string') return null;
+      const r = /^(-?\d+(?:\.\d+)?)e(\d+)$/.exec(v);
+      if (!r) return null;
+      return B.norm(Number(r[1]), Number(r[2]));
+    },
+  };
+
   // Счётчики действий для заданий
   function cnt(s, key, n) { s.counters[key] = (s.counters[key] || 0) + (n === undefined ? 1 : n); }
 
   // ---------- формулы ----------
   function enemyMaxHp(floor, isBoss) {
+    const bm = isBoss ? CONFIG.bossHpMult * (isFinalBoss(floor) ? CONFIG.finalBossHpMult : 1) : 1;
+    const l = Math.log10(CONFIG.enemyBaseHp * biomeOf(floor).hp * bm) + (floor - 1) * Math.log10(CONFIG.enemyHpGrowth);
+    if (l >= LOGLIM) return B.fromLog10(l);
     const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floor - 1) * biomeOf(floor).hp;
-    return Math.ceil(isBoss ? hp * CONFIG.bossHpMult * (isFinalBoss(floor) ? CONFIG.finalBossHpMult : 1) : hp);
+    return Math.ceil(isBoss ? hp * bm : hp);
   }
   // ---------- души и артефакты ----------
   function artDef(id) { return CONFIG.artifacts.find(a => a.id === id); }
@@ -432,7 +512,7 @@
     for (const a of CONFIG.artifacts) if (a.kind === kind) x += a.per * artLevel(s, a.id);
     return x;
   }
-  function soulMult(s) { return 1 + CONFIG.souls.dpsPerSoul * s.souls; }
+  function soulMult(s) { return B.add(1, B.mul(CONFIG.souls.dpsPerSoul, s.souls)); }
   // ---------- дерево душ ----------
   function treeNodes() { const o = []; for (const b of CONFIG.soulTree) b.nodes.forEach((n, i) => o.push({ ...n, branch: b, index: i })); return o; }
   const TREE = treeNodes();
@@ -454,8 +534,8 @@
   }
   function buyTreeNode(s, id) {
     const cost = treeCost(s, id);
-    if (cost == null || !treeNodeOpen(s, id) || s.souls < cost) return false;
-    s.souls -= cost;
+    if (cost == null || !treeNodeOpen(s, id) || B.lt(s.souls, cost)) return false;
+    s.souls = B.sub(s.souls, cost);
     s.tree[id] = treeLevel(s, id) + 1;
     return true;
   }
@@ -482,17 +562,21 @@
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = soulMult(s) * (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg'));
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
-    return m;
+    return B.mul(soulMult(s), m);
   }
 
   function killGold(floor, isBoss) {
+    const l = Math.log10(CONFIG.goldBase * biomeOf(floor).gold * (isBoss ? CONFIG.bossGoldMult : 1)) + (floor - 1) * Math.log10(CONFIG.goldGrowth);
+    if (l >= LOGLIM) return B.fromLog10(l);
     const g = CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * biomeOf(floor).gold;
     return Math.ceil(isBoss ? g * CONFIG.bossGoldMult : g);
   }
   function firstClearGold(floor) {
+    const l = Math.log10(CONFIG.goldBase * CONFIG.firstClearGoldMult) + (floor - 1) * Math.log10(CONFIG.goldGrowth);
+    if (l >= LOGLIM) return B.fromLog10(l);
     return Math.ceil(CONFIG.goldBase * Math.pow(CONFIG.goldGrowth, floor - 1) * CONFIG.firstClearGoldMult);
   }
   // Сколько вех пройдено на этом уровне
@@ -509,7 +593,13 @@
     const last = CONFIG.milestones[CONFIG.milestones.length - 1];
     return last + (Math.floor((level - last) / CONFIG.milestoneEvery) + 1) * CONFIG.milestoneEvery;
   }
-  function tapDamageAt(level) { return CONFIG.tapBaseDamage * level * milestoneMultAt(level); }
+  // Урон с вехами: level · 3^вех — при большом числе вех считаем через логарифм
+  function withMilestones(base, level) {
+    if (level <= 0) return 0;
+    const l = Math.log10(base * level) + milestonesReached(level) * Math.log10(CONFIG.milestoneMult);
+    return l >= LOGLIM ? B.fromLog10(l) : base * level * milestoneMultAt(level);
+  }
+  function tapDamageAt(level) { return withMilestones(CONFIG.tapBaseDamage, level); }
   function tapDamage(s) { return tapDamageAt(s.tapLevel); }
 
   // ---------- криты ----------
@@ -548,14 +638,19 @@
   // Стоимость n покупок, если уже куплено k (геометрическая сумма): base·g^k·(g^n−1)/(g−1)
   function seriesCost(base, g, k, n) {
     if (n <= 0) return 0;
-    return Math.ceil(base * Math.pow(g, k) * (Math.pow(g, n) - 1) / (g - 1));
+    const lg = Math.log10(g), lf = Math.log10(base) + k * lg;
+    if (lf + n * lg < LOGLIM) return Math.ceil(base * Math.pow(g, k) * (Math.pow(g, n) - 1) / (g - 1));
+    const ls = n * lg > 15 ? n * lg - Math.log10(g - 1) : Math.log10((Math.pow(g, n) - 1) / (g - 1));
+    return B.fromLog10(lf + ls);
   }
   function seriesMax(base, g, k, gold) {
-    const first = base * Math.pow(g, k);
-    let n = Math.floor(Math.log(gold * (g - 1) / first + 1) / Math.log(g));
+    if (B.lte(gold, 0)) return 0;
+    const lg = Math.log10(g), lf = Math.log10(base) + k * lg;
+    const x = B.log10(gold) + Math.log10(g - 1) - lf;          // log10(gold·(g−1)/first)
+    let n = Math.floor((x > 15 ? x : Math.log10(Math.pow(10, x) + 1)) / lg);
     if (!isFinite(n) || n < 0) n = 0;
-    while (n > 0 && seriesCost(base, g, k, n) > gold) n--;   // защита от округления
-    while (seriesCost(base, g, k, n + 1) <= gold) n++;
+    while (n > 0 && B.gt(seriesCost(base, g, k, n), gold)) n--;   // защита от округления
+    while (B.lte(seriesCost(base, g, k, n + 1), gold)) n++;
     return n;
   }
   // Удар: уровень 1 — бесплатный стартовый, поэтому куплено (level − 1)
@@ -568,7 +663,7 @@
 
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
-  function allyDpsAt(id, level) { return allyDef(id).baseDps * level * milestoneMultAt(level); }
+  function allyDpsAt(id, level) { return withMilestones(allyDef(id).baseDps, level); }
   function starMult(s, id) { return 1 + CONFIG.starDpsBonus * s.heroes[id].stars; }
   // Эволюция: произведение множителей пройденных ступеней
   function evoMult(s, id) {
@@ -579,24 +674,24 @@
   // Постоянная сила самого героя: звёзды × эволюция
   function heroMult(s, id) { return starMult(s, id) * evoMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
-  function allyDps(s, id) { return allyDpsAt(id, s.allies[id].level) * heroMult(s, id); }
+  function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   function inSquad(s, id) { return s.squad.includes(id); }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
-  function contribDps(s, id) { return allyDps(s, id) * (inSquad(s, id) ? 1 : CONFIG.reserveShare); }
+  function contribDps(s, id) { return B.mul(allyDps(s, id), inSquad(s, id) ? 1 : CONFIG.reserveShare); }
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
   function autoDps(s) {
-    const allies = CONFIG.allies.reduce((sum, a) => sum + contribDps(s, a.id), 0) * permMult(s, 'ally');
-    const hero = hasHeroAuto(s) ? tapDamage(s) * permMult(s, 'heroAuto') / CONFIG.heroAutoInterval : 0;
-    return allies + hero;
+    const allies = B.mul(CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0), permMult(s, 'ally'));
+    const hero = hasHeroAuto(s) ? B.div(B.mul(tapDamage(s), permMult(s, 'heroAuto')), CONFIG.heroAutoInterval) : 0;
+    return B.add(allies, hero);
   }
   // Урон тапа с постоянными множителями (для показа)
-  function tapHit(s) { return tapDamage(s) * permMult(s, 'tap'); }
+  function tapHit(s) { return B.mul(tapDamage(s), permMult(s, 'tap')); }
   // Ожидаемый DPS при заданной частоте тапов с учётом критов — для сравнения «до / после» трат душ
   function expectedDps(s, tps) {
     const critF = 1 + critChance(s) * (critMult(s) - 1);
-    return (autoDps(s) + tapHit(s) * tps) * critF;
+    return B.mul(B.add(autoDps(s), B.mul(tapHit(s), tps)), critF);
   }
-  function reserveDps(s) { return CONFIG.allies.reduce((sum, a) => sum + (inSquad(s, a.id) ? 0 : contribDps(s, a.id)), 0); }
+  function reserveDps(s) { return CONFIG.allies.reduce((sum, a) => (inSquad(s, a.id) ? sum : B.add(sum, contribDps(s, a.id))), 0); }
   function squadDefs(s) { return s.squad.map(allyDef); }
   // Уровень 0 → первая покупка = найм по hireCost
   function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
@@ -677,7 +772,7 @@
     if (s.mode) return spawnMode(s);
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const rare = rollRare(s, s.floor, s.enemyIndex);
-    const hp = Math.ceil(enemyMaxHp(s.floor, isBoss) * (rare ? rare.hp : 1));
+    const hp = B.ceil(B.mul(enemyMaxHp(s.floor, isBoss), rare ? rare.hp : 1));
     const final = isBoss && isFinalBoss(s.floor);
     s.enemy = { hp, maxHp: hp, isBoss, final, alive: true, mark: 0, markPower: 1, rare: rare ? rare.id : null,
                 phase: 1, vuln: 0, name: rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss) };
@@ -698,19 +793,19 @@
   }
 
   function dealDamage(s, dmg, source, events) {
-    dmg *= permMult(s, source) * damageMult(s, source);
+    dmg = B.mul(B.mul(dmg, permMult(s, source)), damageMult(s, source));
     const crit = s.rng() < critChance(s);
-    if (crit) dmg *= critMult(s);
-    s.enemy.hp = Math.max(0, s.enemy.hp - dmg);
+    if (crit) dmg = B.mul(dmg, critMult(s));
+    s.enemy.hp = B.max(0, B.sub(s.enemy.hp, dmg));
     events.push({ type: 'hit', dmg, source, crit });
-    if (s.enemy.hp <= 0) kill(s, events);
+    if (B.lte(s.enemy.hp, 0)) { s.enemy.hp = 0; kill(s, events); }
     else if (s.enemy.isBoss) checkPhase(s, events);
   }
   // Фазы босса: пороги HP, на каждом — короткая уязвимость
   function phaseThresholds(e) { const P = CONFIG.bossPhases; return e.final ? P.final : P.normal; }
   function checkPhase(s, events) {
     const e = s.enemy, th = phaseThresholds(e);
-    while (e.phase <= th.length && e.hp / e.maxHp <= th[e.phase - 1]) {
+    while (e.phase <= th.length && B.toNum(B.div(e.hp, e.maxHp)) <= th[e.phase - 1]) {
       e.phase++; e.vuln = CONFIG.bossPhases.vulnSec + treePower(s, 'vulnSec');
       events.push({ type: 'phase', phase: e.phase, of: th.length + 1, name: e.name });
     }
@@ -735,8 +830,8 @@
   // Награды и переход к следующему врагу — общие для боя и офлайна
   function rewardKill(s, isBoss, events, rareId) {
     const rare = rareId ? rareDef(rareId) : null;
-    const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s) * (rare ? rare.gold : 1));
-    s.gold += gold;
+    const gold = B.ceil(B.mul(killGold(s.floor, isBoss), goldMult(s) * (rare ? rare.gold : 1)));
+    s.gold = B.add(s.gold, gold);
     s.stats.kills++; cnt(s, 'kill');
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
@@ -750,8 +845,8 @@
       s.stats.bossKills++; cnt(s, 'boss');
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
-        const bonus = Math.ceil(firstClearGold(s.floor) * goldMult(s));
-        s.gold += bonus;
+        const bonus = B.ceil(B.mul(firstClearGold(s.floor), goldMult(s)));
+        s.gold = B.add(s.gold, bonus);
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
       if (s.floor > s.ticketFloor) {
@@ -865,7 +960,7 @@
   // Фиксированная награда подземелья на уровне tier
   function dungeonReward(s, id, tier) {
     const P = CONFIG.pve, f = tier * P.tierFloors, d = dungeonDef(id);
-    if (d.reward === 'gold') return { gold: Math.ceil(killGold(f, true) * P.vaultGold * goldMult(s)) };
+    if (d.reward === 'gold') return { gold: B.ceil(B.mul(killGold(f, true), P.vaultGold * goldMult(s))) };
     if (d.reward === 'shard') return { shard: Math.ceil(shardsForBoss(f) * P.mineShards * shardMult(s)) };
     return { runeTier: Math.min(CONFIG.rarities.length - 1, Math.floor(tier / P.forgeTierEvery)) };
   }
@@ -921,12 +1016,12 @@
       name = isBoss ? 'Страж: ' + m.name : enemyName(f, m.step, false);
     } else if (m.kind === 'endless') {
       isBoss = m.step % P.endless.bossEvery === 0;
-      hp = Math.ceil(enemyMaxHp(m.step, isBoss) * P.endless.hpMult);
+      hp = B.ceil(B.mul(enemyMaxHp(m.step, isBoss), P.endless.hpMult));
       name = (isBoss ? 'Контрольный босс · ' : '') + enemyName(m.step, m.step % 9 + 1, isBoss);
       if (isBoss) m.timeLeft = P.endless.bossTime;
     } else {
       isBoss = true;
-      hp = Math.ceil(enemyMaxHp(m.floor, true) * P.personal.diffs.find(x => x.id === m.diff).hp);
+      hp = B.ceil(B.mul(enemyMaxHp(m.floor, true), P.personal.diffs.find(x => x.id === m.diff).hp));
       name = m.name + ' · ' + m.diffName;
     }
     const final = m.kind === 'personal';
@@ -965,7 +1060,7 @@
     if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
       const r = dungeonReward(s, m.id, m.tier);
-      if (r.gold) s.gold += r.gold;
+      if (r.gold) s.gold = B.add(s.gold, r.gold);
       if (r.shard) s.materials.shard += r.shard;
       if (r.runeTier != null) {
         const R = CONFIG.runes, k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
@@ -1202,8 +1297,8 @@
 
   // ---------- офлайн ----------
   // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
-  function offlineDps(s) { return autoDps(s) * (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)) * (1 + treePower(s, 'offlineDmg')); }
-  function killTime(hp, dps) { return Math.max(hp / dps, CONFIG.offline.minKillSec) + CONFIG.respawnDelaySec; }
+  function offlineDps(s) { return B.mul(autoDps(s), (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)) * (1 + treePower(s, 'offlineDmg'))); }
+  function killTime(hp, dps) { return Math.max(B.toNum(B.div(hp, dps)), CONFIG.offline.minKillSec) + CONFIG.respawnDelaySec; }
   // Проиграть отсутствие: продвижение до стены (босс не успевает умереть за таймер), потом фарм этажа ниже.
   // Возвращает сводку или null, если отсутствие короче minSec.
   function offlineProgress(s, seconds) {
@@ -1217,14 +1312,14 @@
     for (const a of CONFIG.abilities) s.abilities[a.id].cd = Math.max(0, s.abilities[a.id].cd - secs);
     const dps = offlineDps(s);
     let t = 0;
-    if (dps > 0) {
+    if (B.gt(dps, 0)) {
       // Был в фарме после проигрыша — снова пробуем рубеж (самый высокий открытый этаж)
       if (s.farming) { s.floor = s.maxFloor; s.enemyIndex = CONFIG.enemiesPerFloor; s.farming = false; }
       const events = [];
       while (!s.farming) {
         const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
         const hp = enemyMaxHp(s.floor, isBoss);
-        if (isBoss && hp / (dps * bossDmgMult(s)) > bossTime(s)) {             // стена: босс не умирает за таймер
+        if (isBoss && B.toNum(B.div(hp, B.mul(dps, bossDmgMult(s)))) > bossTime(s)) {             // стена: босс не умирает за таймер
           r.wallFloor = s.floor;
           s.floor = Math.max(1, s.floor - 1); s.enemyIndex = 1; s.farming = true;
           break;
@@ -1243,13 +1338,13 @@
         const kt = killTime(enemyMaxHp(s.floor, false), dps);
         const n = Math.floor((secs - t) / kt);
         const per = CONFIG.enemiesPerFloor - 1;
-        s.gold += n * Math.ceil(killGold(s.floor, false) * goldMult(s));
+        s.gold = B.add(s.gold, B.mul(n, B.ceil(B.mul(killGold(s.floor, false), goldMult(s)))));
         s.stats.kills += n; cnt(s, 'kill', n); addEventPoints(s, n * CONFIG.events.pointsKill);
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
     }
     r.toFloor = s.floor;
-    r.gold = s.gold - gold0; r.kills = s.stats.kills - kills0;
+    r.gold = B.sub(s.gold, gold0); r.kills = s.stats.kills - kills0;
     r.shard = s.materials.shard - sh0; r.heart = s.materials.heart - he0; r.tickets = s.tickets - t0;
     spawn(s);
     return r;
@@ -1327,8 +1422,8 @@
     if (Number.isInteger(count)) count = Math.min(count, tapCap(s) - s.tapLevel);
     if (!Number.isInteger(count) || count <= 0) return false;
     const cost = upgradeCost(s.tapLevel, count);
-    if (cost > s.gold) return false;
-    s.gold -= cost;
+    if (B.gt(cost, s.gold)) return false;
+    s.gold = B.sub(s.gold, cost);
     s.tapLevel += count;
     return true;
   }
@@ -1366,8 +1461,8 @@
     if (Number.isInteger(count)) count = Math.min(count, allyCap(s, id) - s.allies[id].level);
     if (!Number.isInteger(count) || count <= 0) return false;
     const cost = allyCost(s, id, count);
-    if (cost > s.gold) return false;
-    s.gold -= cost;
+    if (B.gt(cost, s.gold)) return false;
+    s.gold = B.sub(s.gold, cost);
     s.allies[id].level += count;
     return true;
   }
@@ -1519,10 +1614,10 @@
   // Найти случайный ещё не найденный артефакт
   function findArtifact(s) {
     const cost = findCost(s);
-    if (cost == null || s.souls < cost) return null;
+    if (cost == null || B.lt(s.souls, cost)) return null;
     const pool = CONFIG.artifacts.filter(a => artLevel(s, a.id) === 0);
     const a = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
-    s.souls -= cost;
+    s.souls = B.sub(s.souls, cost);
     s.artifacts[a.id] = 1;
     return a.id;
   }
@@ -1533,8 +1628,8 @@
   }
   function upgradeArtifact(s, id) {
     const cost = upgradeArtCost(s, id);
-    if (cost == null || s.souls < cost) return false;
-    s.souls -= cost;
+    if (cost == null || B.lt(s.souls, cost)) return false;
+    s.souls = B.sub(s.souls, cost);
     s.artifacts[id]++;
     return true;
   }
@@ -1542,8 +1637,8 @@
   function previewSpend(s, action, id, tps) {
     const before = expectedDps(s, tps);
     const t = { ...s, souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree } };
-    if (action === 'upgrade') { const c = upgradeArtCost(s, id); if (c == null) return null; t.souls -= c; t.artifacts[id]++; }
-    if (action === 'tree') { const c = treeCost(s, id); if (c == null) return null; t.souls -= c; t.tree[id] = treeLevel(s, id) + 1; }
+    if (action === 'upgrade') { const c = upgradeArtCost(s, id); if (c == null) return null; t.souls = B.sub(t.souls, c); t.artifacts[id]++; }
+    if (action === 'tree') { const c = treeCost(s, id); if (c == null) return null; t.souls = B.sub(t.souls, c); t.tree[id] = treeLevel(s, id) + 1; }
     return { before, after: expectedDps(t, tps) };
   }
 
@@ -1554,18 +1649,19 @@
   function ritualSouls(s) {
     if (!canRitual(s)) return 0;
     const R = CONFIG.ritual;
-    const base = Math.floor(R.soulsBase * Math.pow(R.soulsGrowth, s.maxFloor - R.floor));
+    const lb = Math.log10(R.soulsBase) + (s.maxFloor - R.floor) * Math.log10(R.soulsGrowth);
+    const base = lb >= LOGLIM ? B.fromLog10(lb) : Math.floor(R.soulsBase * Math.pow(R.soulsGrowth, s.maxFloor - R.floor));
     // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
     const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
-    return Math.floor((base + record) * (1 + treePower(s, 'ritualSouls')));
+    return B.floor(B.mul(B.add(base, record), 1 + treePower(s, 'ritualSouls')));
   }
   // «Наследие»: стартовый запас золота = per·уровень × золото за босса стартового этажа
-  function ritualStartGold(s) { return Math.ceil(treePower(s, 'startGold') * killGold(ritualStartFloor(s), true)); }
+  function ritualStartGold(s) { return B.ceil(B.mul(treePower(s, 'startGold'), killGold(ritualStartFloor(s), true))); }
   function ritual(s) {
     if (!canRitual(s)) return null;
     if (s.mode) exitMode(s);
     const souls = ritualSouls(s);
-    s.souls += souls;
+    s.souls = B.add(s.souls, souls);
     s.rituals++; cnt(s, 'ritual');
     s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
     s.bestRecordAtRunStart = s.bestFloor;
@@ -1654,14 +1750,14 @@
       v: CONFIG.saveVersion,
       floor: s.floor, maxFloor: s.maxFloor, highestCleared: s.highestCleared,
       enemyIndex: s.enemyIndex, farming: s.farming,
-      gold: s.gold, tapLevel: s.tapLevel, stats: s.stats,
+      gold: B.str(s.gold), tapLevel: s.tapLevel, stats: s.stats,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
       materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
-      souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree },
+      souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
       pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest },
       counters: { ...s.counters },
@@ -1718,12 +1814,12 @@
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
         !int(d.enemyIndex, 1) || d.enemyIndex > CONFIG.enemiesPerFloor ||
-        !int(d.tapLevel, 1) || typeof d.gold !== 'number' || !isFinite(d.gold) || d.gold < 0 ||
+        !int(d.tapLevel, 1) || B.parse(d.gold) == null || B.lt(B.parse(d.gold), 0) ||
         d.floor > d.maxFloor) return null;
     const s = newState();
     s.floor = d.floor; s.maxFloor = d.maxFloor; s.highestCleared = d.highestCleared;
     s.enemyIndex = d.enemyIndex; s.farming = !!d.farming;
-    s.gold = d.gold; s.tapLevel = d.tapLevel;
+    s.gold = B.parse(d.gold); s.tapLevel = d.tapLevel;
     if (d.stats) s.stats = {
       taps: d.stats.taps | 0, kills: d.stats.kills | 0, bossKills: d.stats.bossKills | 0,
     };
@@ -1736,8 +1832,8 @@
     }
     // Прокачка критов за золото убрана: возвращаем потраченное золото (сохранения 0.6)
     const rf = CONFIG.legacyCritRefund;
-    if (int(d.critChanceLevel, 1)) s.gold += seriesCost(rf.chanceCost, rf.chanceGrowth, 0, d.critChanceLevel);
-    if (int(d.critMultLevel, 1)) s.gold += seriesCost(rf.multCost, rf.multGrowth, 0, d.critMultLevel);
+    if (int(d.critChanceLevel, 1)) s.gold = B.add(s.gold, seriesCost(rf.chanceCost, rf.chanceGrowth, 0, d.critChanceLevel));
+    if (int(d.critMultLevel, 1)) s.gold = B.add(s.gold, seriesCost(rf.multCost, rf.multGrowth, 0, d.critMultLevel));
     const ab = d.abilities && typeof d.abilities === 'object' ? d.abilities : {};
     for (const a of CONFIG.abilities) {
       const x = ab[a.id];
@@ -1769,9 +1865,10 @@
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
     if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
     s.essence = d.essence;
-    if (!int(d.souls, 0) || !int(d.rituals, 0) || !int(d.bestFloor, 1) || !int(d.bestRecordAtRunStart, 1) ||
+    const souls = B.parse(d.souls);
+    if (souls == null || B.lt(souls, 0) || (typeof souls === 'number' && !Number.isInteger(souls)) || !int(d.rituals, 0) || !int(d.bestFloor, 1) || !int(d.bestRecordAtRunStart, 1) ||
         !d.artifacts || typeof d.artifacts !== 'object') return null;
-    s.souls = d.souls; s.rituals = d.rituals;
+    s.souls = souls; s.rituals = d.rituals;
     s.bestFloor = Math.max(d.bestFloor, d.maxFloor); s.bestRecordAtRunStart = d.bestRecordAtRunStart;
     for (const a of CONFIG.artifacts) {
       const lv = d.artifacts[a.id];
@@ -1841,10 +1938,21 @@
   const SHORT = ['', 'K', 'M', 'B', 'T'];
   function suffix(tier) {
     if (tier < SHORT.length) return SHORT[tier];
-    const i = tier - SHORT.length;
-    return String.fromCharCode(97 + Math.floor(i / 26) % 26) + String.fromCharCode(97 + i % 26);
+    let i = tier - SHORT.length, len = 2;
+    while (i >= Math.pow(26, len)) { i -= Math.pow(26, len); len++; }   // aa…zz, затем aaa…zzz и т. д.
+    let out = '';
+    for (let k = 0; k < len; k++) { out = String.fromCharCode(97 + i % 26) + out; i = Math.floor(i / 26); }
+    return out;
   }
   function fmt(n) {
+    if (n instanceof Big) {
+      if (n.m < 0) return '-' + fmt(B.neg(n));
+      const tier = Math.floor(n.e / 3), v = n.m * Math.pow(10, n.e - tier * 3);
+      const dec = v < 10 ? 2 : v < 100 ? 1 : 0, k = Math.pow(10, dec);
+      let txt = (Math.floor(v * k + 1e-9) / k).toFixed(dec);
+      if (dec) txt = txt.replace(/\.?0+$/, '');
+      return txt + suffix(tier);
+    }
     if (!isFinite(n)) return '∞';
     const neg = n < 0; n = Math.abs(n);
     if (n < 1000) return (neg ? '-' : '') + Math.floor(n);
@@ -1861,7 +1969,7 @@
 
 
   const Core = {
-    CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
+    B, Big, CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult,
