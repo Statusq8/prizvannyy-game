@@ -618,12 +618,29 @@
   body.clean #hud, body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
   body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #toast, body.clean #ultBanner, body.clean #version,
   body.clean #modal, body.clean .askWrap, body.clean .allyTag, body.clean .ultBar { display: none !important; }
+
+  /* 0.38: верхняя полоса — золото, общий DPS отряда, урон тапа (видна всегда, нажатие ничего не делает) */
+  body:not(.clean) #topBar { display: none; }
+  #topBar { position: absolute; z-index: 5; left: 0; right: 0; top: 0; display: flex; gap: 6px; padding: calc(env(safe-area-inset-top) + 8px) 10px 0; pointer-events: none; }
+  #topBar .tb { flex: 1; min-width: 0; height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 4px;
+    background: linear-gradient(#1a1222e6, #0d0a12e6); border: 1px solid #4a3560; border-radius: 15px; box-shadow: 0 2px 6px #0008, inset 0 1px 0 #ffffff14; }
+  #topBar .tb i { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px;
+    background: radial-gradient(circle at 50% 35%, #3a2a4a, #1a1022); border: 1px solid #5a4470; }
+  #topBar .tb.g i { color: var(--gold); border-color: #8a6a2a; }
+  #topBar .tb b { flex: 1; min-width: 0; text-align: right; font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+  #topBar .tb.g b { color: var(--gold); }
+  #topBar .tb small { flex: none; font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: .3px; }
 </style>
 </head>
 <body>
 <script>if (!/(^|#|&)ui\b/.test(location.hash)) document.body.classList.add('clean');</script>
 <div id="game">
   <div id="bgHall"><div class="img"></div></div>
+  <div id="topBar">
+    <div class="tb g"><i>◆</i><b id="tbGold">0</b></div>
+    <div class="tb"><i>⚔</i><small>DPS</small><b id="tbDps">0</b></div>
+    <div class="tb"><i>👆</i><small>ТАП</small><b id="tbTap">0</b></div>
+  </div>
   <div id="hud">
     <div id="resBar">
       <div class="res"><i>◆</i><b id="resGold">0</b></div>
@@ -777,7 +794,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.37</div>
+  <div id="version">v0.38</div>
 </div>
 
 <script>
@@ -1167,6 +1184,7 @@
     const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
     return (h ? h + ' ч ' : '') + m + ' мин';
   }
+  const tbGold = $('tbGold'), tbDps = $('tbDps'), tbTap = $('tbTap');
   function applyOffline(seconds) { showReport(C.offlineProgress(s, seconds), 'Пока вас не было'); }
   function showReport(r, title) {
     if (!r) return;
@@ -2367,6 +2385,7 @@
     for (const d of dmgLog) { allSum = B.add(allSum, d[1]); if (d[2] === 'tap') tapSum = B.add(tapSum, d[1]); }
     const tapDps = B.div(tapSum, DPS_WINDOW), auto = C.autoDps(s);
     el.dps.textContent = fmt(B.add(tapDps, auto));                       // общий DPS
+    tbGold.textContent = fmt(s.gold); tbDps.textContent = el.dps.textContent; tbTap.textContent = fmt(C.tapHit(s));
     liveTapDps = tapDps; liveAllDps = B.div(allSum, DPS_WINDOW);
     goldSample(now);
     if (el.statsMore.classList.contains('show'))
