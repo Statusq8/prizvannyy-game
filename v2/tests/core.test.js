@@ -689,3 +689,145 @@ test('сохранение Алтаря и миграция с 0.7', () => {
   assert.ok(m);
   assert.strictEqual(m.essence, 0);
 });
+
+// ---------- души, артефакты, ритуал (этап 4, шаг 3) ----------
+function reach(s, floor) { s.floor = floor; s.maxFloor = Math.max(s.maxFloor, floor); s.bestFloor = Math.max(s.bestFloor, s.maxFloor); s.enemyIndex = 1; }
+
+test('бонус DPS линеен по неизрасходованным душам', () => {
+  const s = C.newState(NOCRIT); tough(s);
+  const base = C.tap(s).find(e => e.type === 'hit').dmg;
+  s.souls = 10;
+  assert.strictEqual(C.soulMult(s), 1 + 10 * CFG.souls.dpsPerSoul);
+  assert.ok(Math.abs(C.tap(s).find(e => e.type === 'hit').dmg - base * C.soulMult(s)) < 1e-9);
+  s.souls = 20;
+  assert.ok(Math.abs((C.soulMult(s) - 1) - 2 * (1 + 10 * CFG.souls.dpsPerSoul - 1)) < 1e-9);
+});
+
+test('ритуал доступен только с этажа 400', () => {
+  const s = C.newState(NOCRIT);
+  reach(s, 399);
+  assert.strictEqual(C.canRitual(s), false);
+  assert.strictEqual(C.ritual(s), null);
+  reach(s, 400);
+  assert.strictEqual(C.canRitual(s), true);
+});
+
+test('ритуал: сбрасывает забег, сохраняет постоянное, даёт души и старт ниже 400', () => {
+  const s = C.newState(NOCRIT);
+  reach(s, 420);
+  s.gold = 1e9; s.tapLevel = 300; s.allies.irene.level = 200; s.highestCleared = 419;
+  s.heroes.irene.stars = 3; s.heroes.irene.copies = 5; s.tickets = 7; s.essence = 11; s.artifacts.grail = 2;
+  const squad = s.squad.slice(), ticketFloor = s.ticketFloor = 419;
+  const expSouls = C.ritualSouls(s);
+  assert.ok(expSouls > 0);
+  const r = C.ritual(s);
+  assert.strictEqual(r.souls, expSouls);
+  assert.strictEqual(s.souls, expSouls);
+  assert.strictEqual(s.rituals, 1);
+  // сброс
+  assert.strictEqual(s.gold, 0); assert.strictEqual(s.tapLevel, 1); assert.strictEqual(s.allies.irene.level, 0);
+  assert.strictEqual(s.floor, C.ritualStartFloor(1)); assert.strictEqual(s.maxFloor, s.floor);
+  assert.ok(s.floor > 1 && s.floor < CFG.ritual.floor);
+  // сохранение
+  assert.strictEqual(s.heroes.irene.stars, 3); assert.strictEqual(s.heroes.irene.copies, 5);
+  assert.strictEqual(s.tickets, 7); assert.strictEqual(s.essence, 11); assert.strictEqual(s.artifacts.grail, 2);
+  assert.deepStrictEqual(s.squad, squad); assert.strictEqual(s.ticketFloor, ticketFloor);
+  assert.strictEqual(s.bestFloor, 420);
+  // следующий ритуал — снова нужен этаж 400
+  assert.strictEqual(C.canRitual(s), false);
+});
+
+test('старт после N ритуалов растёт, но всегда строго ниже 400', () => {
+  let prev = 0;
+  for (let n = 1; n < 100; n++) {
+    const f = C.ritualStartFloor(n);
+    assert.ok(f >= prev && f < CFG.ritual.floor);
+    prev = f;
+  }
+});
+
+test('души за ритуал растут с этажом и дают бонус за новый рекорд', () => {
+  const a = C.newState(NOCRIT); reach(a, 400);
+  const b = C.newState(NOCRIT); reach(b, 450);
+  assert.ok(C.ritualSouls(b) > C.ritualSouls(a));
+  const c = C.newState(NOCRIT); reach(c, 450); c.bestRecordAtRunStart = 450;   // рекорд не побит
+  assert.ok(C.ritualSouls(b) > C.ritualSouls(c));
+});
+
+test('артефакты находятся и улучшаются только за души, все действуют одновременно', () => {
+  const s = C.newState({ rng: () => 0 });
+  assert.strictEqual(C.findArtifact(s), null);
+  s.souls = 1e6;
+  const ids = [];
+  for (let i = 0; i < CFG.artifacts.length; i++) ids.push(C.findArtifact(s));
+  assert.strictEqual(new Set(ids).size, CFG.artifacts.length);
+  assert.strictEqual(C.findCost(s), null);                 // всё найдено
+  assert.strictEqual(C.findArtifact(s), null);
+  const before = s.souls, cost = C.upgradeArtCost(s, 'grail');
+  assert.ok(C.upgradeArtifact(s, 'grail'));
+  assert.strictEqual(s.artifacts.grail, 2);
+  assert.strictEqual(s.souls, before - cost);
+  s.gold = 1e30;
+  assert.strictEqual(C.buyTap(s, 1), true);                // золото на артефакты не тратится — у них свои функции
+});
+
+test('артефакты — единственный рост критов; шанс не выше 50%', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.critChance(s), CFG.crit.baseChance);
+  s.artifacts.eye = 10; s.artifacts.fang = 5;
+  assert.ok(Math.abs(C.critChance(s) - (CFG.crit.baseChance + 0.1)) < 1e-9);
+  assert.ok(Math.abs(C.critMult(s) - (CFG.crit.baseMult + 1)) < 1e-9);
+  s.artifacts.eye = 45; s.maxFloor = 100; C.useAbility(s, 'hunt');
+  assert.strictEqual(C.critChance(s), CFG.crit.maxChance);
+  const eye = CFG.artifacts.find(a => a.id === 'eye');
+  assert.strictEqual(C.upgradeArtCost(s, 'eye'), eye.max && s.artifacts.eye >= eye.max ? null : C.upgradeArtCost(s, 'eye'));
+});
+
+test('артефакты действуют на героя и союзников; золото и таймер босса', () => {
+  const s = C.newState(NOCRIT); tough(s);
+  const tap0 = C.tap(s).find(e => e.type === 'hit').dmg;
+  s.artifacts.gaunt = 1;
+  assert.ok(Math.abs(C.tap(s).find(e => e.type === 'hit').dmg - tap0 * 1.4) < 1e-9);
+  s.allies.irene.level = 1;
+  const ally0 = C.allyDps(s, 'irene');
+  s.artifacts.banner = 1;
+  assert.ok(Math.abs(C.autoDps(s) - ally0 * 1.4) < 1e-9);
+  s.artifacts.sand = 3;
+  assert.strictEqual(C.bossTime(s), CFG.bossTimeSec + 3);
+  s.artifacts.feather = 1;
+  assert.strictEqual(C.goldMult(s), 1.2);
+});
+
+test('Клинок первого призыва: герой атакует сам с фиксированной частотой, тапы остаются', () => {
+  const s = C.newState(NOCRIT); tough(s);
+  let ev = runFor(s, 5);
+  assert.ok(!ev.some(e => e.source === 'heroAuto'));
+  s.artifacts.blade = 1;
+  ev = runFor(s, 10);
+  const n = ev.filter(e => e.type === 'hit' && e.source === 'heroAuto').length;
+  assert.ok(Math.abs(n - 10 / CFG.heroAutoInterval) <= 1, 'атак ' + n);
+  assert.ok(C.tap(s).some(e => e.type === 'hit' && e.source === 'tap'));
+});
+
+test('трата душ уменьшает бонус — предпросмотр показывает DPS до и после', () => {
+  const s = C.newState(NOCRIT);
+  s.souls = 3; s.artifacts.feather = 1;                     // золото не даёт DPS → после траты DPS ниже
+  s.allies.irene.level = 10;
+  const p = C.previewSpend(s, 'upgrade', 'feather', 5);
+  assert.ok(p.after < p.before);
+  assert.strictEqual(s.souls, 3);                           // предпросмотр ничего не меняет
+});
+
+test('сохранение душ, артефактов, ритуалов и миграция с 0.8', () => {
+  const s = C.newState(NOCRIT);
+  s.souls = 12; s.artifacts = { grail: 3, blade: 1 }; s.rituals = 2; s.bestFloor = 512; s.bestRecordAtRunStart = 480;
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.souls, 12); assert.deepStrictEqual(t.artifacts, { grail: 3, blade: 1 });
+  assert.strictEqual(t.rituals, 2); assert.strictEqual(t.bestFloor, 512);
+  const old = JSON.parse(C.serialize(s)); old.v = 5;
+  for (const k of ['souls', 'artifacts', 'rituals', 'bestFloor', 'bestRecordAtRunStart']) delete old[k];
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m); assert.strictEqual(m.souls, 0); assert.strictEqual(m.rituals, 0);
+  const bad = JSON.parse(C.serialize(s)); bad.artifacts.eye = 999;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});

@@ -5,7 +5,7 @@ const TPS = +(process.argv[2] || 6), MIN = +(process.argv[3] || 30);
 const s = Core.newState();
 for (const ab of Core.CONFIG.abilities) Core.setAbilityAuto(s, ab.id, true); const dt = 1 / 30;
 let t = 0, nextTap = 0, farmUntil = 0, fails = 0;
-const marks = new Set([1, 2, 5, 10, 15, 20, 30, 60].map(m => m * 60));
+const marks = new Set([10, 30, 60, 90, 120, 180, 240].map(m => m * 60));
 
 function buyBest() {
   for (;;) {
@@ -32,15 +32,30 @@ function manageHeroes() {
   for (const id of [...s.squad]) if (!best.includes(id)) Core.squadRemove(s, id);
   for (const id of best) Core.squadAdd(s, id);
 }
-let nextManage = 0;
+let nextManage = 0, ritualLog = [];
+// Ритуал сразу на 400-м; души — сначала на поиск артефактов, потом на самые дешёвые улучшения урона
+function manageSouls() {
+  if (Core.canRitual(s)) { const r = Core.ritual(s); ritualLog.push(`${Math.round(t / 60)} мин: ритуал №${s.rituals}, +${r.souls} душ, старт с ${r.start}`); }
+  for (;;) {
+    const fc = Core.findCost(s);
+    if (fc != null && s.souls >= fc) { Core.findArtifact(s); continue; }
+    const opts = ['grail', 'gaunt', 'banner', 'eye', 'fang', 'blade'].map(id => ({ id, c: Core.upgradeArtCost(s, id) })).filter(o => o.c != null && o.c <= s.souls);
+    if (!opts.length) return;
+    opts.sort((x, y) => x.c - y.c);
+    Core.upgradeArtifact(s, opts[0].id);
+  }
+}
 while (t < MIN * 60) {
   t += dt;
   for (const e of Core.tick(s, dt)) if (e.type === 'bossFail') { fails++; farmUntil = t + 60; }
   if (t >= nextTap) { Core.tap(s); nextTap += 1 / TPS; buyBest(); }
-  if (t >= nextManage) { manageHeroes(); nextManage += 10; }
+  if (t >= nextManage) { manageHeroes(); manageSouls(); nextManage += 10; }
   if (s.farming && t > farmUntil) Core.challengeBoss(s);
   if ([...marks].some(m => t >= m && t - dt < m)) {
     const al = 'отряд: ' + s.squad.map(id => { const a = Core.CONFIG.allies.find(x => x.id === id); return `${a.name}(${a.rarity}${s.heroes[id].stars ? '★' + s.heroes[id].stars : ''}) ур.${s.allies[id].level}`; }).join(', ') + `, открыто ${Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked).length}`;
     console.log(`${Math.round(t / 60)} мин: этаж ${s.floor}, удар ур.${s.tapLevel}, ${al}, крит ${Math.round(Core.critChance(s) * 100)}%×${Core.critMult(s).toFixed(1)}, провалов ${fails}`);
   }
 }
+
+console.log(ritualLog.join('\n'));
+console.log(`итог: ритуалов ${s.rituals}, душ ${s.souls}, рекорд ${s.bestFloor}, артефактов ${Core.foundCount(s)}`);
