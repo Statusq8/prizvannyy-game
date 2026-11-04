@@ -1400,7 +1400,7 @@
       u.lock.style.order = 100 + CFG.allies.indexOf(a);
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
       u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) + '/' + fmt(acap) : a.role) +
-        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>') + (s.booster.owner === a.id ? '<span class="badge sq" style="color:var(--gold)">✦×' + CFG.booster.power + '</span>' : '');
+        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>');
       // фигура на арене — только у героя в отряде и нанятого
       const slot = SLOTS[sq];
       u.sprite.classList.toggle('on', sq >= 0 && lv > 0);
@@ -1530,8 +1530,7 @@
       return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
     });
     const M = CFG.materials, ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
-    let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>' +
-      M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span></div>' +
+    let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span></div>' +
       heroDetailHtml() + heroTopHtml() +
       '<div class="secTitle">СОЮЗНИКИ</div><div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
       'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>';
@@ -1689,19 +1688,6 @@
           '<button class="hBtn' + (can ? ' go' : '') + '" data-cnode="' + n.id + '"' + (can ? '' : ' disabled') + '>+1 · 1 очко</button></div>';
       }
     }
-    html += '<div class="secTitle">' + Bo.name.toUpperCase() + ' · ×' + Bo.power + ' урона одному герою</div>';
-    if (!C.boosterUnlocked(s)) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">' + Bo.name + '</div><div class="hSub">Откроется на этаже ' + Bo.unlockFloor + '</div></div></div>';
-    else {
-      const own = s.booster.owner, wait = C.boosterWait(s, Date.now());
-      const name = own === 'hero' ? 'Призванный' : own ? CFG.allies.find(a => a.id === own).name : 'никто';
-      html += '<div class="hint2">Сейчас у: <b>' + name + '</b>. ' + (wait > 0 ? 'Передать снова можно через ' + dur(wait / 1000) + '.' : 'Можно передать — перенос не чаще раза в ' + Bo.cooldownH + ' ч.') + '</div><div class="spare">';
-      const who = ['hero', ...s.squad, ...CFG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id)];
-      for (const id of who) {
-        const nm = id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, cur = own === id;
-        html += '<button class="hBtn' + (cur ? ' go' : '') + '" data-boost="' + id + '"' + (cur || wait > 0 ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + nm + '</button>';
-      }
-      html += '</div>';
-    }
     // коллекция
     const sets = C.collectionSets(s), cm = C.collectionMult(s), am = C.collectionAllyMult(s);
     html += '<div class="secTitle">КОЛЛЕКЦИЯ · +' + Math.round((cm - 1) * 100) + '% всего урона' + (am > 1 ? ' · +' + Math.round((am - 1) * 100) + '% союзникам' : '') + '</div>' +
@@ -1757,9 +1743,6 @@
       html += '<div class="recipe" style="border-style:solid"><div><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + '</div>' +
         '<button class="hBtn' + (s.essence >= c ? ' go' : '') + '" data-trace="' + a.id + '"' + (s.essence >= c ? '' : ' disabled') + '>+1 копия ✦' + fmt(c) + '</button></div>';
     }
-    { const M = CFG.materials, r = M.heartRecipe, can = s.materials.shard >= r;
-      html += '<div class="recipe"><div>' + M.heart.icon + ' Сердце стража<small>' + r + ' ' + M.shard.icon + ' осколков → 1 сердце (есть ' + fmt(s.materials.shard) + ')</small></div>' +
-        '<button class="hBtn' + (can ? ' go' : '') + '" data-act="heart"' + (can ? '' : ' disabled') + '>Создать</button></div>'; }
     for (const h of CFG.allies.filter(a => a.hidden)) {
       html += s.discovered[h.id]
         ? '<div class="recipe" style="border-color:var(--gold)"><div>' + ALLY_VIS[h.id].icon + ' ' + h.name + ' — скрытый рецепт<small>Пожертвовать за раз по копии: ' +
@@ -1887,7 +1870,7 @@
     const who = ['hero', ...s.squad, ...CFG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id)];
     if (!who.includes(boneWho)) boneWho = 'hero';
     const nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name;
-    let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
+    let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
       '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после ритуала.</div>';
     html += '<div class="spare" style="margin-bottom:6px">' + who.map(id => '<button class="hBtn' + (id === boneWho ? ' go' : '') + '" data-bwho="' + id + '">' + nm(id) + ' · ' + C.equippedOn(s, id).length + '/6</button>').join('') + '</div>';
     html += '<div class="secTitle">СЛОТЫ · ' + nm(boneWho).toUpperCase() + '</div>';
@@ -1900,11 +1883,11 @@
         continue;
       }
       const up = C.boneUpCost(b), gc = C.gradeCost(b);
-      const canUp = up && s.materials.dust >= up, canG = gc && s.materials.dust >= gc.dust && s.materials.heart >= gc.hearts;
+      const canUp = up && s.materials.dust >= up, canG = gc && s.materials.dust >= gc.dust && s.materials.shard >= gc.shards;
       const better = spare.find(o => C.boneValue(o) > C.boneValue(b));
       html += '<div class="hRow r-' + CFG.rarities[b.tier] + '"><div class="artIcon">' + x.icon + '</div><div class="hInfo"><div class="hName">' + boneLine(b) + '</div><div class="hSub">' + bonePct(b) + '</div></div><div class="hBtns">' +
         (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-bup="' + b.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🦴' + fmt(up) + '</button>'
-            : '<button class="hBtn' + (canG ? ' evo' : '') + '" data-bgr="' + b.id + '"' + (canG ? '' : ' disabled') + '>G' + (b.grade + 1) + ' 🦴' + fmt(gc.dust) + ' ' + M.heart.icon + gc.hearts + '</button>') +
+            : '<button class="hBtn' + (canG ? ' evo' : '') + '" data-bgr="' + b.id + '"' + (canG ? '' : ' disabled') + '>G' + (b.grade + 1) + ' 🦴' + fmt(gc.dust) + ' ' + M.shard.icon + fmt(gc.shards) + '</button>') +
         (better ? '<button class="hBtn go" data-bput="' + better.id + '">Лучше: ' + CFG.rarities[better.tier] + '</button>' : '<button class="hBtn" data-boff="' + b.id + '">Снять</button>') + '</div></div>';
     }
     // хранилище
@@ -2197,7 +2180,7 @@
   function renderRunes() {
     const R = CFG.runes, T = CFG.totems, M = CFG.materials;
     const pct = x => '+' + fmt(Math.round(x * 100)) + '%';
-    let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>' + M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span></div>' +
+    let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span></div>' +
       '<div class="recipe"><div>Создать руну<small>Случайный вид, редкость E. В каждом виде действует лучшая руна; 3 одинаковые сливаются в следующую редкость</small></div>' +
       '<button class="hBtn' + (s.materials.shard >= R.createCost ? ' go' : '') + '" data-act="rune"' + (s.materials.shard >= R.createCost ? '' : ' disabled') + '>' + M.shard.icon + ' ' + R.createCost + '</button></div>';
     for (const k of R.kinds) {

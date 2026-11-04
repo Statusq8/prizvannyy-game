@@ -93,7 +93,7 @@
     // ---------- разделы с вкладками ----------
     function renderSec() {
       setHtml('sTabs', SECS.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
-      const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur(M.heart.icon, fmt(s.materials.heart)) + cur('◆', fmt(s.gold), true)
+      const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
         : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
       setHtml('sTop', top);
       $('sTitle').textContent = sec === 'up' ? 'Герои' : sec === 'art' ? (artSel ? 'Улучшение' : 'Артефакты') : sec === 'bag' ? 'Сумка' : 'Питомцы';
@@ -173,7 +173,6 @@
       const it = [];
       const add = (o) => { if (o.n > 0 || o.always) it.push(o); };
       add({ id: 'shard', cat: 'shard', icon: M.shard.icon, name: M.shard.name, n: s.materials.shard, r: 2, desc: 'Падают с боссов. Ранги героев и улучшение питомцев.' });
-      add({ id: 'heart', cat: 'mat', icon: M.heart.icon, name: M.heart.name, n: s.materials.heart, r: 4, desc: 'За первое прохождение особых боссов. Эволюция и ранги героев.' });
       add({ id: 'dust', cat: 'mat', icon: '⚱', name: 'Костяная пыль', n: s.materials.dust | 0, r: 1, desc: 'Получается при переработке костей.' });
       add({ id: 'tickets', cat: 'tick', icon: '🎟', name: 'Билет призыва', n: s.tickets, r: 3, desc: 'Призыв героев в портале.', go: 'portal' });
       add({ id: 'lanterns', cat: 'tick', icon: '🏮', name: 'Фонарь события', n: (s.event && s.event.lanterns) | 0, r: 4, desc: 'Валюта события недели: событийный призыв и лавка.', go: 'events' });
@@ -303,7 +302,7 @@
     // ---------- Карта Башни: ровно 5 этажей на экране, прокрутка, открывается на текущем ----------
     let mapLo = 0, mapHi = 0;
     function renderMap2() {
-      const TOP = 100000, curF = s.floor;
+      const TOP = Infinity, curF = s.floor;
       if (!mapHi || curF > mapHi - 5 || curF < mapLo + 5) { mapLo = Math.max(1, curF - 40); mapHi = Math.min(TOP, Math.max(curF, s.maxFloor) + 15); }
       $('mapInfo').textContent = 'Этаж ' + curF + ' / Рекорд ' + s.maxFloor;
       let h = mapHi < TOP ? '<div style="text-align:center;padding:8px"><button class="chip" data-mm="up">▲ Выше</button></div>' : '';
@@ -321,7 +320,7 @@
     }
     $('mapList').addEventListener('click', e => {
       const b = e.target.closest('[data-mm]');
-      if (b) { click(); if (b.dataset.mm === 'up') mapHi = Math.min(100000, mapHi + 40); else mapLo = Math.max(1, mapLo - 40); lastHtml.mapList = null; renderMap2(); return; }
+      if (b) { click(); if (b.dataset.mm === 'up') mapHi = mapHi + 40; else mapLo = Math.max(1, mapLo - 40); lastHtml.mapList = null; renderMap2(); return; }
       const r = e.target.closest('.fRoom'); if (!r) return;
       const f = +r.dataset.f;
       if (f > s.maxFloor) { toast('Этаж ещё закрыт<small>сначала пройдите этаж ' + s.maxFloor + '</small>'); return; }

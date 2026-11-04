@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
+const TAP_CAP = CFG.maxTapsPerSec; CFG.maxTapsPerSec = Infinity;   // тесты бьют много раз за кадр; предел проверяется отдельно
 const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 
 function killCurrent(s) {
@@ -852,11 +853,11 @@ test('материалы: осколки за каждого босса (и по
   const m = ev.find(e => e.type === 'materials');
   assert.deepStrictEqual(m, { type: 'materials', shard: C.shardsForBoss(49), heart: 0 });
   assert.strictEqual(s.materials.shard, C.shardsForBoss(49));
-  respawn(s); killBoss(s);                                   // босс 50-го
-  assert.strictEqual(s.materials.heart, 1);
-  C.goToFloor(s, 50); killBoss(s);                           // повтор: осколки есть, сердца нет
-  assert.strictEqual(s.materials.heart, 1);
-  assert.strictEqual(s.materials.shard, C.shardsForBoss(49) + 2 * C.shardsForBoss(50));
+  respawn(s); killBoss(s);                                   // босс 50-го: «сердце» начисляется осколками (0.51)
+  assert.strictEqual(s.materials.heart, 0);
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(49) + C.shardsForBoss(50) + CFG.materials.heartRecipe);
+  C.goToFloor(s, 50); killBoss(s);                           // повтор: осколки есть, бонуса сердца нет
+  assert.strictEqual(s.materials.shard, C.shardsForBoss(49) + 2 * C.shardsForBoss(50) + CFG.materials.heartRecipe);
 });
 
 test('материалы и эволюция переживают ритуал; сердца после ритуала не повторяются', () => {
@@ -865,8 +866,8 @@ test('материалы и эволюция переживают ритуал; 
   reach(s, 400); C.ritual(s);
   assert.deepStrictEqual(s.materials, { shard: 77, heart: 4, dust: 0 });
   assert.strictEqual(s.heroes.irene.evo, 2);
-  assert.strictEqual(C.bossMaterials(s, 50).heart, 0);
-  assert.strictEqual(C.bossMaterials(s, 450).heart, 1);
+  assert.strictEqual(C.bossMaterials(s, 50).firstHeart, false);
+  assert.strictEqual(C.bossMaterials(s, 450).firstHeart, true);
 });
 
 test('эволюция: нужны звёзды и материалы, цена растёт с редкостью, даёт только индивидуальный DPS', () => {
@@ -885,11 +886,12 @@ test('эволюция: нужны звёзды и материалы, цена 
   assert.strictEqual(C.allyDps(s, 'irene'), dps * st.mult);
   assert.strictEqual(C.critChance(s), crit); assert.strictEqual(C.critMult(s), mult);   // без критов
   assert.ok(C.evoCost(s, 'kael').shards > C.evoCost(C.newState(), 'irene').shards);   // B дороже E
-  // вторая ступень требует сердца
-  s.heroes.irene.stars = CFG.evolution.stages[1].stars; s.materials.shard = 1e6;
-  assert.strictEqual(C.evolve(s, 'irene'), false);
-  s.materials.heart = CFG.evolution.stages[1].hearts;
-  assert.strictEqual(C.evolve(s, 'irene'), true);
+  // вторая ступень: прежние сердца входят в цену осколками (0.51)
+  s.heroes.irene.stars = CFG.evolution.stages[1].stars;
+  const c2 = C.evoCost(s, 'irene'); assert.strictEqual(c2.hearts, 0);
+  assert.strictEqual(c2.shards, Math.ceil(CFG.evolution.stages[1].shards * CFG.evolution.rarityCost.E) + CFG.evolution.stages[1].hearts * CFG.materials.heartRecipe);
+  s.materials.shard = c2.shards - 1; assert.strictEqual(C.evolve(s, 'irene'), false);
+  s.materials.shard = c2.shards; assert.strictEqual(C.evolve(s, 'irene'), true);
   // после последней ступени — дальше некуда
   s.heroes.irene.evo = CFG.evolution.stages.length;
   assert.strictEqual(C.evoCost(s, 'irene'), null);
@@ -899,26 +901,25 @@ test('эволюция: нужны звёзды и материалы, цена 
   assert.strictEqual(C.evolve(s, 'azrael'), false);
 });
 
-test('Алтарь: осколки в сердце — гарантированная альтернатива', () => {
-  const s = C.newState(NOCRIT);
-  const r = CFG.materials.heartRecipe;
-  s.materials.shard = r * 2 - 1;
-  assert.strictEqual(C.forgeHeart(s, 2), false);
-  assert.strictEqual(C.forgeHeart(s, 1), true);
-  assert.deepStrictEqual(s.materials, { shard: r - 1, heart: 1, dust: 0 });
+test('сердца слиты в осколки (0.51): ковать нельзя, старые сердца при загрузке становятся осколками', () => {
+  const s = C.newState(NOCRIT); s.materials.shard = 1000;
+  assert.strictEqual(C.forgeHeart(s, 1), false);
+  s.materials = { shard: 15, heart: 2, dust: 0 };
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.materials, { shard: 15 + 2 * CFG.materials.heartRecipe, heart: 0, dust: 0 });
 });
 
 test('сохранение эволюции и материалов, миграция с 0.9 начисляет материалы за пройденных боссов', () => {
   const s = C.newState(NOCRIT);
   s.materials = { shard: 15, heart: 2 }; s.heartFloor = 100; s.heroes.irene.evo = 1;
   const t = C.deserialize(C.serialize(s));
-  assert.deepStrictEqual(t.materials, { shard: 15, heart: 2, dust: 0 });
+  assert.deepStrictEqual(t.materials, { shard: 15 + 2 * CFG.materials.heartRecipe, heart: 0, dust: 0 });
   assert.strictEqual(t.heartFloor, 100); assert.strictEqual(t.heroes.irene.evo, 1);
   const old = JSON.parse(C.serialize(s)); old.v = 6; delete old.materials; delete old.heartFloor; old.ticketFloor = 100;
   for (const id in old.heroes) delete old.heroes[id].evo;
   const m = C.deserialize(JSON.stringify(old));
   let sh = 0; for (let f = 1; f <= 100; f++) sh += C.shardsForBoss(f);
-  assert.deepStrictEqual(m.materials, { shard: sh, heart: 2, dust: 0 });
+  assert.deepStrictEqual(m.materials, { shard: sh + 2 * CFG.materials.heartRecipe, heart: 0, dust: 0 });
   assert.strictEqual(m.heartFloor, 100); assert.strictEqual(m.heroes.irene.evo, 0);
   const bad = JSON.parse(C.serialize(s)); bad.heroes.irene.evo = 9;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
@@ -1105,7 +1106,7 @@ test('эффекты дерева: урон героя, союзников, бо
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.6) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.3) < 1e-9);
   assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 2) < 1e-9);
-  assert.strictEqual(C.bossMaterials(s, 100).shard, Math.ceil(C.shardsForBoss(100) * 2));
+  assert.strictEqual(C.bossMaterials(s, 101).shard, Math.ceil(C.shardsForBoss(101) * 2));
   // урон по боссу +100%
   for (const x of [s, t]) { x.floor = x.maxFloor = 12; C.challengeBoss(x); x.enemy.hp = x.enemy.maxHp = 1e15; }
   const ds = C.tap(s).find(e => e.type === 'hit').dmg, dt = C.tap(t).find(e => e.type === 'hit').dmg;
@@ -1205,9 +1206,11 @@ test('тотемы: улучшение за осколки, каждый 5-й у
   assert.strictEqual(C.upgradeTotem(s, 'ash'), false);        // нет тотема
   for (let i = 0; i < 3; i++) assert.ok(C.upgradeTotem(s, 'crypt'));
   assert.strictEqual(s.totems.crypt, 4);
-  assert.strictEqual(C.totemUpCost(s, 'crypt').hearts, 1);
-  assert.strictEqual(C.upgradeTotem(s, 'crypt'), false);
-  s.materials.heart = 1; assert.ok(C.upgradeTotem(s, 'crypt'));
+  const tc = C.totemUpCost(s, 'crypt');                           // 5-й уровень: прежнее сердце — осколками (0.51)
+  assert.strictEqual(tc.hearts, 0);
+  assert.strictEqual(tc.shards, Math.ceil(CFG.totems.upShards * Math.pow(CFG.totems.upGrowth, 3)) + CFG.materials.heartRecipe);
+  s.materials.shard = tc.shards - 1; assert.strictEqual(C.upgradeTotem(s, 'crypt'), false);
+  s.materials.shard = tc.shards; assert.ok(C.upgradeTotem(s, 'crypt'));
   s.totems.crypt = CFG.totems.maxLevel; assert.strictEqual(C.totemUpCost(s, 'crypt'), null);
 });
 
@@ -1345,7 +1348,7 @@ test('задание «все задания дня» и «Забрать всё
   assert.strictEqual(C.questDone(s, 'd_all'), true);
   const r = C.claimAll(s);
   assert.ok(r.count >= CFG.quests.daily.length);
-  assert.strictEqual(r.reward.heart >= 1, true);
+  assert.strictEqual(r.reward.heart, undefined); assert.ok(r.reward.shard >= CFG.materials.heartRecipe);   // сердца — осколками (0.51)
   assert.strictEqual(C.claimAll(s), null);
 });
 
@@ -1408,9 +1411,10 @@ test('ранг героя: подранг за осколки, новый ран
   for (let i = 0; i < 9; i++) assert.ok(C.rankUp(s, 'hero'));
   assert.strictEqual(C.tapCap(s), C.capAt(9));
   const c = C.rankCost(s, 'hero');
-  assert.strictEqual(c.newRank, 2); assert.strictEqual(c.hearts, 2);
-  assert.strictEqual(C.rankUp(s, 'hero'), false);                 // нужны сердца
-  s.materials.heart = 2; assert.ok(C.rankUp(s, 'hero'));
+  assert.strictEqual(c.newRank, 2); assert.strictEqual(c.hearts, 0);
+  assert.strictEqual(c.shards, Math.ceil(CFG.ranks.shards * Math.pow(CFG.ranks.growth, 9)) + 2 * CFG.materials.heartRecipe);   // новый ранг: +2 «сердца» осколками
+  s.materials.shard = c.shards - 1; assert.strictEqual(C.rankUp(s, 'hero'), false);
+  s.materials.shard = c.shards; assert.ok(C.rankUp(s, 'hero'));
   assert.deepStrictEqual(C.rankLabel(s.heroRank), { rank: 2, sub: 0, max: false });
   s.heroRank = 100; assert.strictEqual(C.rankCost(s, 'hero'), null);
 });
@@ -1532,13 +1536,15 @@ test('сохранение сезона и миграция с 0.20', () => {
   assert.strictEqual(C.deserialize(JSON.stringify(old)).season.n, 0);
 });
 
-test('вершина Башни — этаж 100000: выше не подняться', () => {
+test('Башня бесконечна: после этажа 100000 идёт 100001, HP растёт', () => {
   const s = C.newState(NOCRIT);
-  s.floor = s.maxFloor = s.bestFloor = CFG.maxFloor; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  assert.strictEqual(CFG.maxFloor, Infinity);
+  s.floor = s.maxFloor = s.bestFloor = 100000; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
   s.enemy.hp = 1;
   const ev = C.tap(s);
-  assert.ok(ev.some(e => e.type === 'top'));
-  assert.strictEqual(s.floor, CFG.maxFloor); assert.strictEqual(s.maxFloor, CFG.maxFloor);
+  assert.ok(!ev.some(e => e.type === 'top'));
+  assert.strictEqual(s.floor, 100001); assert.strictEqual(s.maxFloor, 100001);
+  assert.ok(C.B.gt(C.enemyMaxHp(1e6, false), C.enemyMaxHp(100001, false)));
 });
 
 // ---------- события и центр наград (0.23) ----------
@@ -1675,12 +1681,15 @@ test('покупки с огромным золотом: MAX упирается 
   assert.ok(B.isBig(cost) && B.gt(cost, s.gold) === B.gt(cost, s.gold));
 });
 
-test('ритуал на высоком этаже даёт огромное число душ, бонус урона растёт', () => {
+test('ритуал на высоком этаже даёт огромное число душ, бонус урона растёт; выше 1000 — степенной рост', () => {
   const s = C.newState(NOCRIT); s.floor = s.maxFloor = s.bestFloor = 20000;
   const souls = C.ritualSouls(s);
-  assert.ok(B.isBig(souls));
-  C.ritual(s);
-  assert.ok(B.isBig(C.soulMult(s)) && B.isBig(C.permMult(s, 'tap')));
+  assert.ok(B.log10(souls) > 60);
+  const t = C.newState(NOCRIT); t.floor = t.maxFloor = t.bestFloor = 40000; t.bestRecordAtRunStart = 1e9; s.bestRecordAtRunStart = 1e9;
+  const r = B.log10(C.ritualSouls(t)) - B.log10(C.ritualSouls(s));
+  assert.ok(Math.abs(r - CFG.ritual.soulsKnee * Math.log(CFG.ritual.soulsGrowth) * Math.log10(2)) < 1e-6);   // ×2 этажа → ×2^k душ
+  const p0 = C.permMult(s, 'tap'); C.ritual(s);
+  assert.ok(B.gt(C.permMult(s, 'tap'), p0));
 });
 
 test('офлайн на огромных этажах не ломается', () => {
@@ -1727,25 +1736,28 @@ test('смена класса раз в день, очки возвращают�
   assert.ok(C.chooseClass(s, 'alch', 'd2'));
 });
 
-test('«Печать силы»: открывается на 150-м, ×3 владельцу, перенос раз в 8 часов', () => {
-  const s = C.newState(NOCRIT); const now = 1e12;
-  assert.strictEqual(C.moveBooster(s, 'irene', now), false);
-  s.bestFloor = 150; s.allies.irene.level = 10;
+test('«Печать силы» убрана (0.51): не открывается и не даёт урона', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 5000; s.allies.irene.level = 10;
   const before = C.allyDps(s, 'irene');
-  assert.ok(C.moveBooster(s, 'irene', now));
-  assert.strictEqual(C.allyDps(s, 'irene'), before * 3);
-  assert.strictEqual(C.moveBooster(s, 'hero', now + 3600e3), false);
-  assert.ok(C.boosterWait(s, now + 3600e3) > 0);
-  const tap = C.tapHit(s);
-  assert.ok(C.moveBooster(s, 'hero', now + 8 * 3600e3));
+  assert.strictEqual(C.moveBooster(s, 'irene', 1e12), false);
+  s.booster.owner = 'irene';                                   // старое сохранение с печатью
   assert.strictEqual(C.allyDps(s, 'irene'), before);
-  assert.ok(Math.abs(C.tapHit(s) / tap - 3) < 1e-9);
-  assert.strictEqual(C.moveBooster(s, 'azrael', now + 20 * 3600e3), false);   // не открыт
+});
+
+test('предел 15 тапов в секунду', () => {
+  assert.strictEqual(TAP_CAP, 15); CFG.maxTapsPerSec = TAP_CAP;
+  const s = C.newState(NOCRIT); C.challengeBoss(s);
+  s.enemy.hp = 1e12; s.enemy.maxHp = 1e12;
+  for (let i = 0; i < 40; i++) C.tap(s);
+  assert.strictEqual(s.stats.taps, 15);
+  C.tick(s, 1); C.tap(s);
+  assert.strictEqual(s.stats.taps, 16);
+  CFG.maxTapsPerSec = Infinity;
 });
 
 test('сохранение класса и печати, миграция с 0.24', () => {
   const s = C.newState(NOCRIT); s.bestFloor = 300; C.chooseClass(s, 'alch', 'd'); C.buyClassNode(s, 'a1');
-  C.moveBooster(s, 'hero', 5);
+  s.booster = { owner: 'hero', movedAt: 5 };
   const t = C.deserialize(C.serialize(s));
   assert.strictEqual(t.cls.id, 'alch'); assert.deepStrictEqual(t.cls.spent, { a1: 1 });
   assert.deepStrictEqual(t.booster, { owner: 'hero', movedAt: 5 });
@@ -1796,8 +1808,8 @@ test('череп — по боссам, когти — по обычным; та
   assert.ok(C.damageMult(s, 'tap') >= 1 + C.boneValue(sk) - 1e-9);
 });
 
-test('уровень за пыль до 10, грейд без предела (пыль и сердца), сила растёт', () => {
-  const s = C.newState(NOCRIT); s.materials = { shard: 0, heart: 1000, dust: 1e9 };
+test('уровень за пыль до 10, грейд без предела (пыль и осколки), сила растёт', () => {
+  const s = C.newState(NOCRIT); s.materials = { shard: 1e6, heart: 0, dust: 1e9 };
   const b = mkBone(s, 'armR', 3);
   assert.strictEqual(C.gradeUpBone(s, b.id), false);              // уровень ещё не полный
   const v0 = C.boneValue(b);
@@ -2049,13 +2061,13 @@ test('коллекция: каждый открытый герой и звезд
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
   assert.strictEqual(C.collectionMult(s), 1);                    // стартовый отряд — без бонуса
   s.heroes.garret.unlocked = true;                               // второй E — сет E собран
-  assert.ok(Math.abs(C.collectionMult(s) - 1.03) < 1e-9);
+  assert.ok(Math.abs(C.collectionMult(s) - 1.01) < 1e-9);
   assert.deepStrictEqual(C.collectionSets(s), ['E']);
   assert.ok(Math.abs(C.collectionAllyMult(s) - 1.1) < 1e-9);
   s.heroes.irene.stars = 5;
-  assert.ok(Math.abs(C.collectionMult(s) - 1.08) < 1e-9);
-  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.08) < 1e-9);
-  assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.08 * 1.1) < 1e-9);
+  assert.ok(Math.abs(C.collectionMult(s) - 1.06) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.06) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.06 * 1.1) < 1e-9);
   assert.strictEqual(C.critChance(s), C.critChance(t));
 });
 
@@ -2224,15 +2236,15 @@ test('испытательная башня: 15 с на стража, HP рас�
 });
 
 // ---------- 0.47: временные криты от ультимейтов, защита от неконтролируемого роста ----------
-test('ульта «критов» даёт временный шанс и урон крита; общий предел 50% сохраняется', () => {
+test('ульта «критов» даёт временный шанс и урон крита; общий предел 75% сохраняется', () => {
   const s = C.newState(NOCRIT);
   const a = CFG.allies.find(x => x.id === 'kassian');
   assert.strictEqual(a.ult.kind, 'critBuff'); assert.ok(/крита/.test(C.ultDesc(a)));
   const ch0 = C.critChance(s), m0 = C.critMult(s);
   s.critBuff = { t: 5, ch: a.ult.chance, dmg: a.ult.dmg };
-  assert.ok(Math.abs(C.critChance(s) - Math.min(0.5, ch0 + a.ult.chance)) < 1e-9);
+  assert.ok(Math.abs(C.critChance(s) - Math.min(0.75, ch0 + a.ult.chance)) < 1e-9);
   assert.ok(Math.abs(C.critMult(s) - (m0 + a.ult.dmg)) < 1e-9);
-  s.critBuff.ch = 5; assert.strictEqual(C.critChance(s), 0.5);          // предел
+  s.critBuff.ch = 5; assert.strictEqual(C.critChance(s), 0.75);          // предел
   C.tick(s, 6); assert.strictEqual(C.critChance(s), ch0);               // кончилось
 });
 
@@ -2269,10 +2281,10 @@ test('обычные мобы иногда роняют осколки (≈8%, 3
   assert.ok(got >= n);
 });
 
-test('кривая дальних этажей: до 1000 — как раньше (×1.18), выше — медленнее; полностью прокачанный отряд проходит 100 000', () => {
+test('кривая дальних этажей: до 1000 — как раньше (×1.18), выше — медленнее, но растёт всегда', () => {
   const l = f => B.log10(C.enemyMaxHp(f, false));
   assert.ok(Math.abs(l(500) - l(499) - Math.log10(1.18)) < 1e-9);
   assert.ok(l(2000) - l(1999) < Math.log10(1.18));
-  assert.ok(l(100000) > l(50000));                                   // рост остаётся до вершины
-  assert.ok(B.log10(C.enemyMaxHp(100000, true)) < 345);              // вершина по силам максимальному отряду (tools/godsim.js)
+  assert.ok(l(100000) - l(99999) < l(2000) - l(1999));
+  assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000));
 });
