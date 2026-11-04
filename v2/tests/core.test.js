@@ -1064,3 +1064,80 @@ test('фазы босса: обычный — 2 фазы, финальный —
   s.enemy.hp = s.enemy.maxHp * 0.2; C.tap(s);
   assert.strictEqual(s.enemy.phase, 3);
 });
+
+// ---------- дерево душ (0.14) ----------
+test('дерево душ: ветви открываются числом ритуалов, узлы — по порядку', () => {
+  const s = C.newState(NOCRIT); s.souls = 1e6;
+  assert.strictEqual(C.buyTreeNode(s, 'fury'), false);            // 0 ритуалов
+  s.rituals = 1;
+  assert.strictEqual(C.treeNodeOpen(s, 'spirit'), false);         // сначала предыдущий узел
+  assert.strictEqual(C.buyTreeNode(s, 'fury'), true);
+  assert.strictEqual(C.buyTreeNode(s, 'spirit'), true);
+  assert.strictEqual(C.buyTreeNode(s, 'greed'), false);           // экономика — со 2-го ритуала
+  s.rituals = 2; assert.strictEqual(C.buyTreeNode(s, 'greed'), true);
+  assert.strictEqual(C.buyTreeNode(s, 'echo'), false);
+  s.rituals = 3; assert.strictEqual(C.buyTreeNode(s, 'echo'), true);
+});
+
+test('дерево душ: цена растёт, есть предел уровня, трата уменьшает души', () => {
+  const s = C.newState(NOCRIT); s.rituals = 1; s.souls = 1e9;
+  const c1 = C.treeCost(s, 'fury'); C.buyTreeNode(s, 'fury');
+  assert.ok(C.treeCost(s, 'fury') > c1);
+  assert.strictEqual(s.souls, 1e9 - c1);
+  const max = C.treeDef('fury').max;
+  while (C.buyTreeNode(s, 'fury'));
+  assert.strictEqual(C.treeLevel(s, 'fury'), max);
+  assert.strictEqual(C.treeCost(s, 'fury'), null);
+  s.souls = 0; assert.strictEqual(C.buyTreeNode(s, 'spirit'), false);
+});
+
+test('дерево душ без критов', () => {
+  for (const b of CFG.soulTree) for (const n of b.nodes) assert.ok(!/crit/i.test(n.kind));
+  const s = C.newState(NOCRIT); s.rituals = 3;
+  for (const b of CFG.soulTree) for (const n of b.nodes) s.tree[n.id] = n.max;
+  const t = C.newState(NOCRIT);
+  assert.strictEqual(C.critChance(s), C.critChance(t)); assert.strictEqual(C.critMult(s), C.critMult(t));
+});
+
+test('эффекты дерева: урон героя, союзников, боссы, золото, осколки, уязвимость, перезарядка', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  s.tree = { fury: 2, spirit: 1, heads: 2, greed: 4, shards: 5, crack: 2, haste: 4 };
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.6) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.3) < 1e-9);
+  assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 2) < 1e-9);
+  assert.strictEqual(C.bossMaterials(s, 100).shard, Math.ceil(C.shardsForBoss(100) * 2));
+  // урон по боссу +100%
+  for (const x of [s, t]) { x.floor = x.maxFloor = 12; C.challengeBoss(x); x.enemy.hp = x.enemy.maxHp = 1e15; }
+  const ds = C.tap(s).find(e => e.type === 'hit').dmg, dt = C.tap(t).find(e => e.type === 'hit').dmg;
+  assert.ok(Math.abs(ds / dt - 1.6 * 2) < 1e-9);
+  // уязвимость дольше
+  s.enemy.hp = s.enemy.maxHp * 0.4; C.tap(s);
+  assert.strictEqual(s.enemy.vuln, CFG.bossPhases.vulnSec + 2);
+  // перезарядка способности короче
+  s.maxFloor = 20; C.useAbility(s, 'flurry');
+  assert.ok(Math.abs(s.abilities.flurry.cd - CFG.abilities[0].cooldown * 0.8) < 1e-9);
+});
+
+test('эффекты дерева: души за ритуал, наследие золота, офлайн, редкие враги', () => {
+  const a = C.newState(NOCRIT), b = C.newState(NOCRIT);
+  for (const x of [a, b]) { x.floor = x.maxFloor = 450; x.bestFloor = 450; }
+  b.tree = { echo: 5, legacy: 2, dream: 3, luck: 5 };
+  assert.strictEqual(C.ritualSouls(b), Math.floor(C.ritualSouls(a) * 1.5));
+  b.allies.irene.level = 10; a.allies.irene.level = 10;
+  assert.ok(Math.abs(C.offlineDps(b) / C.offlineDps(a) - 1.6) < 1e-9);
+  const r = C.ritual(b);
+  assert.strictEqual(b.gold, Math.ceil(100 * C.killGold(r.start, true)));
+  let na = 0, nb = 0;
+  for (let k = 0; k < 4000; k++) { a.stats.kills = b.stats.kills = k; if (C.rollRare(a, 20, 3)) na++; if (C.rollRare(b, 20, 3)) nb++; }
+  assert.ok(nb > na * 1.6);
+});
+
+test('сохранение дерева душ и миграция с 0.13', () => {
+  const s = C.newState(NOCRIT); s.tree = { fury: 3, greed: 1 };
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.tree, { fury: 3, greed: 1 });
+  const old = JSON.parse(C.serialize(s)); old.v = 7; delete old.tree;
+  assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).tree, {});
+  const bad = JSON.parse(C.serialize(s)); bad.tree.fury = 999;
+  assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
+});
