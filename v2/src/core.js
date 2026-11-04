@@ -460,6 +460,9 @@
       ],
       perLevel: 0.04, maxLevel: 50, upShards: 30, upGrowth: 1.22,
     },
+    // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
+    // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
+    collection: { perHero: 0.03, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -818,9 +821,9 @@
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s);
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), m);
   }
 
@@ -1595,6 +1598,20 @@
   function achTier(s, id) { return s.ach[id] | 0; }                  // сколько ступеней уже забрано
   function achClaimable(s, id) { const a = achDef(id), t = achTier(s, id); return t < a.goals.length && achValue(s, a) >= a.goals[t]; }
   function achPoints(s) { let n = 0; for (const id in s.ach) n += s.ach[id]; return n; }
+  // ---------- коллекция героев ----------
+  function collectionSets(s) {
+    return CONFIG.rarities.filter(r => {
+      const pool = CONFIG.allies.filter(a => a.rarity === r && !a.seasonal);
+      return pool.length && pool.every(a => s.heroes[a.id].unlocked);
+    });
+  }
+  function collectionMult(s) {
+    const K = CONFIG.collection;
+    let n = 0, stars = 0;
+    for (const a of CONFIG.allies) if (s.heroes[a.id].unlocked) { if (!a.starter) n++; stars += s.heroes[a.id].stars; }   // стартовый отряд дан даром
+    return 1 + K.perHero * n + K.perStar * stars;
+  }
+  function collectionAllyMult(s) { return 1 + collectionSets(s).reduce((t, r) => t + CONFIG.collection.setAlly * (CONFIG.rarities.indexOf(r) + 1), 0); }
   function achMult(s) { return 1 + CONFIG.achievements.dmgPerPoint * achPoints(s); }
   function claimAch(s, id) {
     const a = achDef(id);
@@ -2366,6 +2383,7 @@
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
+    collectionSets, collectionMult, collectionAllyMult,
     achDef, achValue, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,

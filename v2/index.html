@@ -205,6 +205,17 @@
   #modal.show { display: flex; }
   #modalBox { width: 100%; max-width: 320px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
   #modalBox h3 { margin-bottom: 10px; }
+  #modalBox { max-height: 92%; overflow-y: auto; }
+  .setRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .setRow .opts { display: flex; gap: 4px; }
+  .setRow .opts button { padding: 5px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); }
+  .setRow .opts button.on { color: var(--text); border-color: var(--accent); }
+  body.lowq #bgHall .img { filter: none !important; transition: none; }
+  body.lowq .ally .fig, body.lowq #hero .fig, body.lowq #pet .pfig { animation: none !important; }
+  body.lowq .sideBtn .ico, body.lowq .abilUse { box-shadow: none !important; }
+  #arena.shake { animation: shake .18s ease-out; }
+  @keyframes shake { 25% { transform: translate(3px, -2px); } 50% { transform: translate(-3px, 2px); } 75% { transform: translate(2px, 1px); } }
+  .res { cursor: pointer; }
   #modalBox p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
   .mBtn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; margin-top: 8px; background: var(--panel2); border: 1px solid var(--line); }
   .mBtn.danger { background: #4a1820; border-color: #8a2a3a; }
@@ -597,6 +608,7 @@
   <div id="modal">
     <div id="modalBox">
       <h3>Настройки</h3>
+      <div id="setList"></div>
       <p id="saveInfo"></p>
       <button class="mBtn" id="closeModal">Закрыть</button>
       <button class="mBtn danger" id="resetBtn">Сбросить прогресс</button>
@@ -616,7 +628,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.29</div>
+  <div id="version">v0.30</div>
 </div>
 
 <script>
@@ -1082,6 +1094,9 @@
       ],
       perLevel: 0.04, maxLevel: 50, upShards: 30, upGrowth: 1.22,
     },
+    // Коллекция героев (GDD §4): низкие ранги сохраняют пользу — каждый открытый герой и каждая его звезда
+    // (сверх стартового отряда) дают постоянный бонус всего урона; полная редкость — бонус урона союзников. Без критов. Числа TBD.
+    collection: { perHero: 0.03, perStar: 0.01, setAlly: 0.1 },   // сет редкости: +10%·(номер редкости+1) союзникам
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -1440,9 +1455,9 @@
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s);
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), m);
   }
 
@@ -2217,6 +2232,20 @@
   function achTier(s, id) { return s.ach[id] | 0; }                  // сколько ступеней уже забрано
   function achClaimable(s, id) { const a = achDef(id), t = achTier(s, id); return t < a.goals.length && achValue(s, a) >= a.goals[t]; }
   function achPoints(s) { let n = 0; for (const id in s.ach) n += s.ach[id]; return n; }
+  // ---------- коллекция героев ----------
+  function collectionSets(s) {
+    return CONFIG.rarities.filter(r => {
+      const pool = CONFIG.allies.filter(a => a.rarity === r && !a.seasonal);
+      return pool.length && pool.every(a => s.heroes[a.id].unlocked);
+    });
+  }
+  function collectionMult(s) {
+    const K = CONFIG.collection;
+    let n = 0, stars = 0;
+    for (const a of CONFIG.allies) if (s.heroes[a.id].unlocked) { if (!a.starter) n++; stars += s.heroes[a.id].stars; }   // стартовый отряд дан даром
+    return 1 + K.perHero * n + K.perStar * stars;
+  }
+  function collectionAllyMult(s) { return 1 + collectionSets(s).reduce((t, r) => t + CONFIG.collection.setAlly * (CONFIG.rarities.indexOf(r) + 1), 0); }
   function achMult(s) { return 1 + CONFIG.achievements.dmgPerPoint * achPoints(s); }
   function claimAch(s, id) {
     const a = achDef(id);
@@ -2988,6 +3017,7 @@
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
+    collectionSets, collectionMult, collectionAllyMult,
     achDef, achValue, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
@@ -3122,7 +3152,39 @@
   }
 
   // ---------- эффекты ----------
+  // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
+  const SET_KEY = 'prizvannyy_v2_settings';
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on' };
+  let setg = { ...SET_DEF };
+  try { setg = { ...SET_DEF, ...JSON.parse(localStorage.getItem(SET_KEY) || '{}') }; } catch (e) {}
+  const SET_ROWS = [
+    { k: 'quality', name: 'Качество графики', opts: [['high', 'Высокое'], ['low', 'Низкое']] },
+    { k: 'fps', name: 'Частота кадров', opts: [[60, '60'], [30, '30']] },
+    { k: 'fx', name: 'Эффекты и числа урона', opts: [['full', 'Все'], ['less', 'Меньше'], ['off', 'Выкл']] },
+    { k: 'flash', name: 'Вспышки критов', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
+    { k: 'shake', name: 'Тряска камеры при крите', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
+    { k: 'vibro', name: 'Вибрация', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
+  ];
+  function applySettings() {
+    document.body.classList.toggle('lowq', setg.quality === 'low');
+    try { localStorage.setItem(SET_KEY, JSON.stringify(setg)); } catch (e) {}
+  }
+  function renderSettings() {
+    $('setList').innerHTML = SET_ROWS.map(r => '<div class="setRow"><span>' + r.name + '</span><div class="opts">' +
+      r.opts.map(([v, t]) => '<button data-sk="' + r.k + '" data-sv="' + v + '" class="' + (String(setg[r.k]) === String(v) ? 'on' : '') + '">' + t + '</button>').join('') + '</div></div>').join('');
+  }
+  applySettings();
+  let fxCount = 0;
   function fx(cls, x, y, text, life) {
+    // экономия эффектов: «Меньше» — только тапы, криты, ульты и золото; «Выкл» — без чисел и искр
+    if (setg.fx !== 'full' && !/gold|nuke/.test(cls)) {
+      if (setg.fx === 'off') return document.createElement('div');
+      if (/auto/.test(cls) && !/crit/.test(cls) && (fxCount++ % 3)) return document.createElement('div');
+    }
+    if (cls === 'critFlash') {
+      if (setg.shake === 'on') { el.arena.classList.remove('shake'); void el.arena.offsetWidth; el.arena.classList.add('shake'); }
+      if (setg.flash === 'off') return document.createElement('div');
+    }
     const n = document.createElement('div');
     n.className = cls; n.style.left = x + 'px'; n.style.top = y + 'px';
     if (text != null) n.textContent = text;
@@ -3243,7 +3305,7 @@
     const ev = C.tap(s);
     if (!ev.length) return;
     if (!tapped) { tapped = true; }
-    if (navigator.vibrate) navigator.vibrate(8);
+    if (navigator.vibrate && setg.vibro === 'on') navigator.vibrate(8);
     handle(ev, e.clientX - r.left, e.clientY - r.top);
     render();
   });
@@ -3265,7 +3327,13 @@
   $('settingsBtn').addEventListener('click', () => {
     el.saveInfo.textContent = 'Прогресс сохраняется автоматически на этом устройстве. Лучший этаж: ' +
       (s.maxFloor) + '. Тапов: ' + fmt(s.stats.taps) + ', побеждено врагов: ' + fmt(s.stats.kills) + '.';
+    renderSettings();
     el.modal.classList.add('show');
+  });
+  $('setList').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const v = b.dataset.sv; setg[b.dataset.sk] = b.dataset.sk === 'fps' ? +v : v;
+    applySettings(); renderSettings();
   });
   $('closeModal').addEventListener('click', () => el.modal.classList.remove('show'));
   // ---------- окно подтверждения ----------
@@ -3295,7 +3363,7 @@
     const r = C.offlineProgress(s, seconds);
     if (!r) return;
     dmgLog.length = 0;
-    $('awayTitle').textContent = 'Пока вас не было';
+    $('awayTitle').textContent = 'Пока вас не было'; $('awayOk').textContent = 'Забрать';
     $('awayTime').textContent = dur(r.seconds) + (r.capped ? ' (больше 12 ч не считается)' : '');
     const M = CFG.materials, lines = [];
     if (C.offlineDps(s) <= 0) lines.push('Отряд не нанят — без союзников и автоатаки офлайн-дохода нет.');
@@ -3604,6 +3672,16 @@
       }
       html += '</div>';
     }
+    // коллекция
+    const sets = C.collectionSets(s), cm = C.collectionMult(s), am = C.collectionAllyMult(s);
+    html += '<div class="secTitle">КОЛЛЕКЦИЯ · +' + Math.round((cm - 1) * 100) + '% всего урона' + (am > 1 ? ' · +' + Math.round((am - 1) * 100) + '% союзникам' : '') + '</div>' +
+      '<div class="hint2">+' + Math.round(CFG.collection.perHero * 100) + '% за каждого открытого героя (сверх стартового отряда) и +' + Math.round(CFG.collection.perStar * 100) + '% за каждую звезду. Вся редкость собрана — бонус союзникам.</div><div class="spare">';
+    for (const r of RANKS) {
+      const pool = CFG.allies.filter(a => a.rarity === r && !a.seasonal), got = pool.filter(a => s.heroes[a.id].unlocked).length;
+      if (!pool.length) continue;
+      html += '<span class="badge ' + (sets.includes(r) ? 'sq' : 'rs') + '"><span class="rar r-' + r + '">' + r + '</span> ' + got + '/' + pool.length + (sets.includes(r) ? ' ✓' : '') + '</span>';
+    }
+    html += '</div>';
     // призванное существо
     const P = CFG.pets;
     html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · в бою одно · бьёт долей DPS отряда</div>';
@@ -3844,6 +3922,27 @@
     save(); render();
   });
 
+  // ---------- «Где взять?» — объяснение нехватки и переход к источникам (GDD §12) ----------
+  const SOURCES = {
+    gold:    { title: '◆ Золото', list: [['Побеждать врагов и боссов Башни', 'arena'], ['Сокровищница — ежедневное подземелье', 'pve'], ['Перо феникса, руна богатства, Алхимик', 'souls']] },
+    tickets: { title: '🎟 Билеты', list: [['Первое прохождение боссов 5-го и 10-го этажей', 'arena'], ['Задания и достижения', 'quests'], ['Слеза портала в Алтаре', 'altar'], ['Боевой пропуск', 'season'], ['Обмен фонарей события', 'events']] },
+    shards:  { title: '🔹 Осколки', list: [['Каждый босс Башни (больше на высоких этажах)', 'arena'], ['Шахта осколков — ежедневное подземелье', 'pve'], ['Личные боссы', 'pve'], ['Задания и пропуск', 'quests']] },
+    souls:   { title: '👻 Души', list: [['Ритуал на 400-м этаже', 'souls'], ['Ритуальные задания', 'quests'], ['Достижение «Жрец ритуала»', 'quests']] },
+  };
+  function showSources(key) {
+    const S = SOURCES[key];
+    $('awayTitle').textContent = 'Где взять: ' + S.title; $('awayTime').textContent = ''; $('awayOk').textContent = 'Закрыть';
+    $('awayList').innerHTML = S.list.map(([t, go]) => '<button class="hBtn go" data-src="' + go + '" style="width:100%;margin:3px 0;text-align:left">' + t + ' →</button>').join('');
+    $('away').classList.add('show');
+  }
+  $('awayList').addEventListener('click', e => {
+    const b = e.target.closest('[data-src]'); if (!b) return;
+    $('away').classList.remove('show');
+    if (b.dataset.src === 'arena') setCollapsed(true); else { tab = b.dataset.src; setCollapsed(false); }
+    render();
+  });
+  document.querySelectorAll('#resBar .res').forEach((r, i) => r.addEventListener('click', () => showSources(['gold', 'tickets', 'shards', 'souls'][i])));
+
   // ---------- события недели ----------
   let eventsHtml = '', eventTier = 0;
   function renderEvents() {
@@ -4040,7 +4139,7 @@
   });
   function showModeEnd(e) {
     const r = e.reward;
-    $('awayTitle').textContent = e.kind === 'endless' ? 'Забег окончен' : e.win ? 'Победа!' : 'Время вышло';
+    $('awayTitle').textContent = e.kind === 'endless' ? 'Забег окончен' : e.win ? 'Победа!' : 'Время вышло'; $('awayOk').textContent = 'Забрать';
     $('awayTime').textContent = e.name;
     let lines;
     if (e.kind === 'endless') lines = ['<b>Волн пройдено:</b> ' + r.waves + ' (рекорд ' + r.best + ')', '<b>Эссенция:</b> +' + r.essence + ' ✦' + (r.tickets ? ' · <b>билеты:</b> +' + r.tickets + ' 🎟' : '')];
@@ -4322,6 +4421,7 @@
 
   // ---------- игровой цикл ----------
   let acc = 0, last = performance.now();
+  let frameN = 0, pendingRender = false;
   function loop(now) {
     acc += Math.min(0.25, (now - last) / 1000); last = now;
     let changed = false;
@@ -4329,8 +4429,10 @@
       const ev = C.tick(s, STEP); acc -= STEP;
       if (ev.length) { handle(ev); changed = true; }
     }
-    if (changed) render();
-    renderLive();
+    // FPS 30: логика идёт с прежним шагом, перерисовка — через кадр
+    const skip = setg.fps === 30 && (frameN++ & 1);
+    if (changed && !skip) render(); else if (changed) pendingRender = true;
+    if (!skip) { if (pendingRender) { render(); pendingRender = false; } renderLive(); }
     if (Date.now() - lastSave > 5000) save();
     requestAnimationFrame(loop);
   }
