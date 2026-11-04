@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 10,
+    saveVersion: 11,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -263,6 +263,38 @@
         ],
       },
     },
+    // Задания (GDD §11): ежедневные, еженедельные, вводные. Прогресс — по счётчикам действий (key) или по значению (value).
+    // go — куда ведёт кнопка «Перейти». Награды: tickets 🎟, essence ✦, shard 🔹, heart 🔥. Числа TBD.
+    quests: {
+      daily: [
+        { id: 'd_kill',   key: 'kill',    goal: 500,  name: 'Победить врагов',        reward: { tickets: 1 },  go: 'arena' },
+        { id: 'd_boss',   key: 'boss',    goal: 15,   name: 'Победить боссов Башни',  reward: { shard: 20 },   go: 'arena' },
+        { id: 'd_tap',    key: 'tap',     goal: 1500, name: 'Нанести удары тапом',    reward: { essence: 10 }, go: 'arena' },
+        { id: 'd_dun',    key: 'dungeon', goal: 2,    name: 'Пройти подземелья',      reward: { tickets: 1 },  go: 'pve' },
+        { id: 'd_summon', key: 'summon',  goal: 3,    name: 'Призвать героев',        reward: { essence: 15 }, go: 'portal' },
+        { id: 'd_all',    key: 'allDaily', goal: 5,   name: 'Выполнить все задания дня', reward: { heart: 1 } },
+      ],
+      weekly: [
+        { id: 'w_kill',   key: 'kill',     goal: 5000, name: 'Победить врагов',        reward: { tickets: 5 },   go: 'arena' },
+        { id: 'w_boss',   key: 'boss',     goal: 150,  name: 'Победить боссов Башни',  reward: { shard: 200 },   go: 'arena' },
+        { id: 'w_dun',    key: 'dungeon',  goal: 10,   name: 'Пройти подземелья',      reward: { tickets: 3 },   go: 'pve' },
+        { id: 'w_pers',   key: 'personal', goal: 5,    name: 'Победить личных боссов', reward: { heart: 2 },     go: 'pve' },
+        { id: 'w_wave',   key: 'wave',     goal: 100,  name: 'Волны бесконечного подземелья', reward: { essence: 80 }, go: 'pve' },
+        { id: 'w_evo',    key: 'evolve',   goal: 1,    name: 'Эволюционировать героя', reward: { shard: 150 },   go: 'heroes' },
+      ],
+      intro: [
+        { id: 'i_f10',    value: 'floor', goal: 10,  name: 'Дойти до 10-го этажа',      reward: { tickets: 2 },  go: 'arena' },
+        { id: 'i_hire',   value: 'hired', goal: 4,   name: 'Нанять весь отряд',         reward: { tickets: 1 },  go: 'up' },
+        { id: 'i_summon', key: 'summon',  goal: 1,   name: 'Призвать героя в портале',   reward: { essence: 10 }, go: 'portal' },
+        { id: 'i_f50',    value: 'floor', goal: 50,  name: 'Победить первого финального босса', reward: { shard: 50 }, go: 'arena' },
+        { id: 'i_star',   key: 'star',    goal: 1,   name: 'Поднять звезду героя',       reward: { tickets: 2 },  go: 'heroes' },
+        { id: 'i_dun',    key: 'dungeon', goal: 1,   name: 'Пройти ежедневное подземелье', reward: { tickets: 1 }, go: 'pve' },
+        { id: 'i_rune',   key: 'rune',    goal: 1,   name: 'Создать руну',               reward: { shard: 30 },   go: 'runes' },
+        { id: 'i_evo',    key: 'evolve',  goal: 1,   name: 'Эволюционировать героя',     reward: { shard: 100 },  go: 'heroes' },
+        { id: 'i_f400',   value: 'floor', goal: 400, name: 'Дойти до 400-го этажа',      reward: { tickets: 10 }, go: 'arena' },
+        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первый ритуал',     reward: { heart: 3 },    go: 'souls' },
+      ],
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -318,6 +350,9 @@
   function hallOf(floor) { const H = CONFIG.halls; return H[Math.floor(((floor - 1) % CONFIG.biomeFloors) / CONFIG.hallFloors) % H.length]; }
   function isFinalBoss(floor) { return floor % CONFIG.biomeFloors === 0; }
   function isBiomeStart(floor) { return (floor - 1) % CONFIG.biomeFloors === 0; }
+
+  // Счётчики действий для заданий
+  function cnt(s, key, n) { s.counters[key] = (s.counters[key] || 0) + (n === undefined ? 1 : n); }
 
   // ---------- формулы ----------
   function enemyMaxHp(floor, isBoss) {
@@ -534,6 +569,8 @@
       totems: {},                                // id биома → уровень тотема
       pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
       mode: null,                                // текущий PvE-режим (не сохраняется)
+      counters: {},                              // счётчики действий за всю игру (для заданий)
+      quests: { day: '', week: '', dayBase: {}, weekBase: {}, claimed: {} },
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -613,7 +650,7 @@
   function tap(s) {
     const events = [];
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
-    s.stats.taps++;
+    s.stats.taps++; cnt(s, 'tap');
     dealDamage(s, tapDamage(s), 'tap', events);
     return events;
   }
@@ -630,7 +667,7 @@
     const rare = rareId ? rareDef(rareId) : null;
     const gold = Math.ceil(killGold(s.floor, isBoss) * goldMult(s) * (rare ? rare.gold : 1));
     s.gold += gold;
-    s.stats.kills++;
+    s.stats.kills++; cnt(s, 'kill');
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare && rare.shards) {
       const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
@@ -639,7 +676,7 @@
     }
 
     if (isBoss) {
-      s.stats.bossKills++;
+      s.stats.bossKills++; cnt(s, 'boss');
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
         const bonus = Math.ceil(firstClearGold(s.floor) * goldMult(s));
@@ -815,7 +852,8 @@
   }
   function modeKill(s, events) {
     const m = s.mode, P = CONFIG.pve;
-    s.stats.kills++;
+    s.stats.kills++; cnt(s, 'kill');
+    if (m.kind === 'endless') cnt(s, 'wave');
     events.push({ type: 'kill', gold: 0, boss: s.enemy.isBoss, mode: true });
     if (m.kind === 'endless') {
       if (s.enemy.isBoss) {
@@ -839,6 +877,8 @@
   // Итог режима: награда при победе (в бесконечном — уже начислена по ходу), возврат в Башню
   function finishMode(s, win, events) {
     const m = s.mode, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
+    if (win && m.kind === 'dungeon') cnt(s, 'dungeon');
+    if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
       const r = dungeonReward(s, m.id, m.tier);
       if (r.gold) s.gold += r.gold;
@@ -872,6 +912,56 @@
     s.enemyIndex = Math.min(s.enemyIndex, CONFIG.enemiesPerFloor);
     spawn(s);
   }
+
+  // ---------- задания ----------
+  function allQuests() { const Q = CONFIG.quests; return [...Q.daily.map(q => ({ ...q, period: 'daily' })), ...Q.weekly.map(q => ({ ...q, period: 'weekly' })), ...Q.intro.map(q => ({ ...q, period: 'intro' }))]; }
+  const QUESTS = allQuests();
+  function questDef(id) { return QUESTS.find(q => q.id === id); }
+  // Новый день / неделя: запоминаем счётчики на начало периода, отметки «забрано» сбрасываются
+  function questsReset(s, day, week) {
+    const Q = s.quests;
+    if (day && Q.day !== day) { Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id]; }
+    if (week && Q.week !== week) { Q.week = week; Q.weekBase = { ...s.counters }; for (const q of CONFIG.quests.weekly) delete Q.claimed[q.id]; }
+  }
+  function questProgress(s, id) {
+    const q = questDef(id), Q = s.quests;
+    let v;
+    if (q.key === 'allDaily') v = CONFIG.quests.daily.filter(x => x.id !== q.id && questDone(s, x.id)).length;
+    else if (q.value === 'floor') v = s.bestFloor;
+    else if (q.value === 'hired') v = s.squad.filter(id => s.allies[id].level > 0).length;
+    else {
+      const total = s.counters[q.key] || 0;
+      v = q.period === 'daily' ? total - (Q.dayBase[q.key] || 0) : q.period === 'weekly' ? total - (Q.weekBase[q.key] || 0) : total;
+    }
+    return Math.min(q.goal, Math.max(0, v));
+  }
+  function questDone(s, id) { return questProgress(s, id) >= questDef(id).goal; }
+  function questClaimable(s, id) { return questDone(s, id) && !s.quests.claimed[id]; }
+  function grant(s, r) {
+    if (r.tickets) s.tickets += r.tickets;
+    if (r.essence) s.essence += r.essence;
+    if (r.shard) s.materials.shard += r.shard;
+    if (r.heart) s.materials.heart += r.heart;
+  }
+  function claimQuest(s, id) {
+    if (!questDef(id) || !questClaimable(s, id)) return null;
+    s.quests.claimed[id] = true;
+    const r = questDef(id).reward;
+    grant(s, r);
+    return r;
+  }
+  // «Забрать всё»: суммарная награда; «все задания дня» проверяется последним
+  function claimAll(s) {
+    const sum = {};
+    let n = 0;
+    for (const pass of [0, 1]) for (const q of QUESTS) {
+      if ((q.key === 'allDaily') !== !!pass) continue;
+      const r = claimQuest(s, q.id);
+      if (r) { n++; for (const k in r) sum[k] = (sum[k] || 0) + r[k]; }
+    }
+    return n ? { count: n, reward: sum } : null;
+  }
+  function claimableCount(s) { return QUESTS.filter(q => questClaimable(s, q.id)).length; }
 
   // ---------- офлайн ----------
   // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
@@ -917,7 +1007,7 @@
         const n = Math.floor((secs - t) / kt);
         const per = CONFIG.enemiesPerFloor - 1;
         s.gold += n * Math.ceil(killGold(s.floor, false) * goldMult(s));
-        s.stats.kills += n;
+        s.stats.kills += n; cnt(s, 'kill', n);
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
     }
@@ -1021,7 +1111,7 @@
   function summon(s, n) {
     const p = CONFIG.portal;
     if (!Number.isInteger(n) || n <= 0 || s.tickets < n) return null;
-    s.tickets -= n;
+    s.tickets -= n; cnt(s, 'summon', n);
     const out = [];
     for (let i = 0; i < n; i++) {
       s.pity.a++; s.pity.s++;
@@ -1045,7 +1135,7 @@
   function starUp(s, id) {
     const h = s.heroes[id], need = h && starCost(s, id);
     if (!h || !h.unlocked || need == null || h.copies < need) return false;
-    h.copies -= need; h.stars++;
+    h.copies -= need; h.stars++; cnt(s, 'star');
     return true;
   }
   function squadAdd(s, id) {
@@ -1083,7 +1173,7 @@
     if (!canEvolve(s, id)) return false;
     const c = evoCost(s, id);
     s.materials.shard -= c.shards; s.materials.heart -= c.hearts;
-    s.heroes[id].evo++;
+    s.heroes[id].evo++; cnt(s, 'evolve');
     return true;
   }
   // Алтарь: гарантированная альтернатива — осколки в сердце
@@ -1101,7 +1191,7 @@
     s.materials.shard -= R.createCost;
     const k = R.kinds[Math.min(R.kinds.length - 1, Math.floor(s.rng() * R.kinds.length))];
     const r = { id: s.runeSeq++, type: k.id, tier: 0, lvl: 0 };
-    s.runes.push(r);
+    s.runes.push(r); cnt(s, 'rune');
     return r;
   }
   function runeById(s, id) { return s.runes.find(r => r.id === id); }
@@ -1197,7 +1287,7 @@
     if (s.mode) exitMode(s);
     const souls = ritualSouls(s);
     s.souls += souls;
-    s.rituals++;
+    s.rituals++; cnt(s, 'ritual');
     s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
     s.bestRecordAtRunStart = s.bestFloor;
     const start = ritualStartFloor(s);
@@ -1294,7 +1384,9 @@
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree },
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
-      pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
+      pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest },
+      counters: { ...s.counters },
+      quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, claimed: Object.keys(s.quests.claimed) }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -1327,6 +1419,12 @@
       for (let f = CONFIG.biomeFloors; f <= (d.heartFloor | 0); f += CONFIG.biomeFloors) d.totems[biomeOf(f).id] = 1;
     }
     if (d.v === 9) { d.v = 10; d.pve = { day: '', used: {}, endlessBest: 0 }; }   // 0.15 → 0.16: доп. PvE
+    if (d.v === 10) {                                      // 0.16 → 0.17: задания; счётчики из статистики
+      d.v = 11;
+      const st = d.stats || {};
+      d.counters = { kill: st.kills | 0, boss: st.bossKills | 0, tap: st.taps | 0, ritual: d.rituals | 0 };
+      d.quests = { day: '', week: '', dayBase: {}, weekBase: {}, claimed: [] };
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1403,6 +1501,13 @@
       if (!int(lv, 1) || lv > CONFIG.totems.maxLevel) return null;
       s.totems[b.id] = lv;
     }
+    const nums = o => { const r = {}; if (o && typeof o === 'object') for (const k in o) if (typeof o[k] === 'number' && isFinite(o[k]) && o[k] >= 0) r[k] = o[k]; return r; };
+    const qd = d.quests;
+    if (!d.counters || typeof d.counters !== 'object' || !qd || typeof qd !== 'object' || !Array.isArray(qd.claimed) ||
+        typeof qd.day !== 'string' || typeof qd.week !== 'string') return null;
+    s.counters = nums(d.counters);
+    s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), claimed: {} };
+    for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
     const pv = d.pve;
     if (!pv || typeof pv !== 'object' || typeof pv.day !== 'string' || !pv.used || typeof pv.used !== 'object' || !int(pv.endlessBest, 0)) return null;
     s.pve = { day: pv.day, used: {}, endlessBest: pv.endlessBest };
@@ -1463,6 +1568,7 @@
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     serialize, deserialize, fmt,

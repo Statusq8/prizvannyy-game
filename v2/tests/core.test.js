@@ -1318,3 +1318,66 @@ test('сохранение PvE и миграция с 0.15', () => {
   const old = JSON.parse(C.serialize(s)); old.v = 9; delete old.pve;
   assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).pve, { day: '', used: {}, endlessBest: 0 });
 });
+
+// ---------- задания (0.17) ----------
+test('ежедневные задания: прогресс с начала дня, награда один раз, сброс в новый день', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e9;
+  for (let i = 0; i < 5; i++) { killCurrent(s); respawn(s); }       // до начала дня — не считается
+  C.questsReset(s, '2026-11-04', '2026-W45');
+  assert.strictEqual(C.questProgress(s, 'd_kill'), 0);
+  s.counters.kill += 499; assert.strictEqual(C.questClaimable(s, 'd_kill'), false);
+  killCurrent(s);
+  assert.strictEqual(C.questClaimable(s, 'd_kill'), true);
+  const t0 = s.tickets;
+  assert.deepStrictEqual(C.claimQuest(s, 'd_kill'), { tickets: 1 });
+  assert.strictEqual(s.tickets, t0 + 1);
+  assert.strictEqual(C.claimQuest(s, 'd_kill'), null);              // второй раз нельзя
+  C.questsReset(s, '2026-11-04', '2026-W45');                        // тот же день — ничего
+  assert.strictEqual(C.claimQuest(s, 'd_kill'), null);
+  C.questsReset(s, '2026-11-05', '2026-W45');
+  assert.strictEqual(C.questProgress(s, 'd_kill'), 0);
+  assert.strictEqual(C.questProgress(s, 'w_kill') > 0, true);       // неделя продолжается
+});
+
+test('задание «все задания дня» и «Забрать всё»', () => {
+  const s = C.newState(NOCRIT); C.questsReset(s, 'd1', 'w1');
+  for (const q of CFG.quests.daily) if (q.key !== 'allDaily') s.counters[q.key] = (s.counters[q.key] || 0) + q.goal;
+  assert.strictEqual(C.questDone(s, 'd_all'), true);
+  const r = C.claimAll(s);
+  assert.ok(r.count >= CFG.quests.daily.length);
+  assert.strictEqual(r.reward.heart >= 1, true);
+  assert.strictEqual(C.claimAll(s), null);
+});
+
+test('счётчики: призыв, звезда, руна, подземелье, ритуал', () => {
+  const s = C.newState({ rng: () => 0 }); s.tickets = 3; s.materials.shard = 100;
+  C.summon(s, 3); assert.strictEqual(s.counters.summon, 3);
+  s.heroes.irene.copies = 5; C.starUp(s, 'irene'); assert.strictEqual(s.counters.star, 1);
+  C.createRune(s); assert.strictEqual(s.counters.rune, 1);
+  s.bestFloor = 20; s.tapLevel = 1e15; C.enterMode(s, 'dungeon', { id: 'vault', tier: 1 }, 'd');
+  for (let i = 0; i < 100 && s.mode; i++) { if (s.enemy.alive) C.tap(s); else respawn(s); }
+  assert.strictEqual(s.counters.dungeon, 1);
+  s.floor = s.maxFloor = 400; C.ritual(s); assert.strictEqual(s.counters.ritual, 1);
+});
+
+test('вводные задания: по значению (этаж, отряд) и по счётчикам за всю игру', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.questDone(s, 'i_f10'), false);
+  s.bestFloor = 12; assert.strictEqual(C.questDone(s, 'i_f10'), true);
+  for (const id of s.squad) s.allies[id].level = 1;
+  assert.strictEqual(C.questDone(s, 'i_hire'), true);
+  C.claimQuest(s, 'i_f10');
+  C.questsReset(s, 'другой день', 'другая неделя');
+  assert.strictEqual(C.questClaimable(s, 'i_f10'), false);           // вводные не сбрасываются
+});
+
+test('сохранение заданий и миграция с 0.16', () => {
+  const s = C.newState(NOCRIT); s.counters = { kill: 10, summon: 2 };
+  C.questsReset(s, 'd', 'w'); s.counters.kill = 600; C.claimQuest(s, 'd_kill');
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.counters, s.counters);
+  assert.strictEqual(t.quests.claimed.d_kill, true); assert.strictEqual(C.questProgress(t, 'd_kill'), C.questProgress(s, 'd_kill'));
+  const old = JSON.parse(C.serialize(s)); old.v = 10; delete old.counters; delete old.quests; old.stats.kills = 77;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.strictEqual(m.counters.kill, 77); assert.deepStrictEqual(m.quests.claimed, {});
+});
