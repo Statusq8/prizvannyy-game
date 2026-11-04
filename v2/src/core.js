@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 7,
+    saveVersion: 8,
     enemiesPerFloor: 10,          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
     enemyHpGrowth: 1.18,          // экспоненциальный рост HP по этажам
@@ -197,6 +197,27 @@
     // Фазы боссов: при падении HP ниже порога — новая фаза и короткая уязвимость (урон по боссу ×vulnMult).
     // Урона по героям нет (GDD §2).
     bossPhases: { normal: [0.5], final: [0.66, 0.33], vulnSec: 3, vulnMult: 1.5 },
+    // Дерево душ (GDD §8): боевая, экономическая и особая ветви, открываются числом ритуалов. Без критов.
+    // Узел ветви открывается, когда у предыдущего есть хотя бы 1 уровень. Покупка за души уменьшает бонус душ. Числа TBD.
+    soulTree: [
+      { id: 'war', name: 'Боевая ветвь', rituals: 1, nodes: [
+        { id: 'fury',   name: 'Ярость призванного', icon: '⚔', kind: 'heroDmg',  per: 0.3, cost: 2, growth: 1.3, max: 20, desc: '+30% урона главного героя' },
+        { id: 'spirit', name: 'Боевой дух',         icon: '🛡', kind: 'allyDmg',  per: 0.3, cost: 3, growth: 1.3, max: 20, desc: '+30% урона союзников' },
+        { id: 'heads',  name: 'Палач',              icon: '🪓', kind: 'bossDmg',  per: 0.5, cost: 5, growth: 1.4, max: 10, desc: '+50% урона по боссам' },
+        { id: 'crack',  name: 'Разлом фаз',         icon: '💥', kind: 'vulnSec',  per: 1,   cost: 8, growth: 1.6, max: 5,  desc: '+1 с уязвимости босса на смене фазы' },
+      ] },
+      { id: 'eco', name: 'Ветвь достатка', rituals: 2, nodes: [
+        { id: 'greed',  name: 'Жадность',           icon: '◆', kind: 'gold',     per: 0.25, cost: 3, growth: 1.3, max: 20, desc: '+25% золота' },
+        { id: 'shards', name: 'Сборщик осколков',   icon: '🔹', kind: 'shards',   per: 0.2,  cost: 4, growth: 1.35, max: 10, desc: '+20% осколков' },
+        { id: 'luck',   name: 'Чутьё охотника',     icon: '✦', kind: 'rareChance', per: 0.2, cost: 5, growth: 1.4, max: 10, desc: '+20% к шансу редких врагов' },
+        { id: 'legacy', name: 'Наследие',           icon: '💰', kind: 'startGold', per: 50,  cost: 6, growth: 1.4, max: 10, desc: 'Новый забег начинается с запасом золота' },
+      ] },
+      { id: 'mystic', name: 'Тайная ветвь', rituals: 3, nodes: [
+        { id: 'echo',   name: 'Отголосок ритуала',  icon: '👻', kind: 'ritualSouls', per: 0.1, cost: 6, growth: 1.4, max: 20, desc: '+10% душ за ритуал' },
+        { id: 'dream',  name: 'Сон наяву',          icon: '🌙', kind: 'offlineDmg',  per: 0.2, cost: 5, growth: 1.35, max: 10, desc: '+20% урона отряда офлайн' },
+        { id: 'haste',  name: 'Порыв',              icon: '⏱', kind: 'abilityCd',   per: 0.05, cost: 6, growth: 1.4, max: 10, desc: '−5% перезарядки способностей героя' },
+      ] },
+    ],
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -268,14 +289,37 @@
     return x;
   }
   function soulMult(s) { return 1 + CONFIG.souls.dpsPerSoul * s.souls; }
-  function goldMult(s) { return 1 + artPower(s, 'gold'); }
+  // ---------- дерево душ ----------
+  function treeNodes() { const o = []; for (const b of CONFIG.soulTree) b.nodes.forEach((n, i) => o.push({ ...n, branch: b, index: i })); return o; }
+  const TREE = treeNodes();
+  function treeDef(id) { return TREE.find(n => n.id === id); }
+  function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
+  function treePower(s, kind) { let x = 0; for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
+  function branchOpen(s, b) { return s.rituals >= b.rituals; }
+  function treeNodeOpen(s, id) {
+    const n = treeDef(id);
+    return !!n && branchOpen(s, n.branch) && (n.index === 0 || treeLevel(s, n.branch.nodes[n.index - 1].id) > 0);
+  }
+  function treeCost(s, id) {
+    const n = treeDef(id), lv = treeLevel(s, id);
+    if (!n || lv >= n.max) return null;
+    return Math.ceil(n.cost * Math.pow(n.growth, lv));
+  }
+  function buyTreeNode(s, id) {
+    const cost = treeCost(s, id);
+    if (cost == null || !treeNodeOpen(s, id) || s.souls < cost) return false;
+    s.souls -= cost;
+    s.tree[id] = treeLevel(s, id) + 1;
+    return true;
+  }
+  function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
     let m = soulMult(s) * (1 + artPower(s, 'allDmg'));
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto'));
-    else m *= 1 + artPower(s, 'allyDmg');
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg'));
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg'));
     return m;
   }
 
@@ -327,9 +371,10 @@
     const R = CONFIG.rare;
     if (floor < R.minFloor || index === CONFIG.enemiesPerFloor) return null;
     const x = hash01(floor, index, s.stats.kills);
-    if (x >= biomeOf(floor).rare) return null;
+    const chance = biomeOf(floor).rare * (1 + treePower(s, 'rareChance'));
+    if (x >= chance) return null;
     const total = R.kinds.reduce((t, k) => t + k.weight, 0);
-    let y = x / biomeOf(floor).rare * total;
+    let y = x / chance * total;
     for (const k of R.kinds) { y -= k.weight; if (y < 0) return k; }
     return R.kinds[R.kinds.length - 1];
   }
@@ -419,6 +464,7 @@
       discovered: {},                            // id скрытого героя → рецепт найден
       souls: 0,
       artifacts: {},                             // id → уровень (≥1 — найден)
+      tree: {},                                  // дерево душ: id узла → уровень
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -471,6 +517,7 @@
     if (source === 'tap' && s.buffs.tap > 0) m *= s.buffs.tapPower;
     if (s.enemy.mark > 0) m *= s.enemy.markPower;
     if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
+    if (s.enemy.isBoss) m *= 1 + treePower(s, 'bossDmg');
     return m;
   }
 
@@ -488,7 +535,7 @@
   function checkPhase(s, events) {
     const e = s.enemy, th = phaseThresholds(e);
     while (e.phase <= th.length && e.hp / e.maxHp <= th[e.phase - 1]) {
-      e.phase++; e.vuln = CONFIG.bossPhases.vulnSec;
+      e.phase++; e.vuln = CONFIG.bossPhases.vulnSec + treePower(s, 'vulnSec');
       events.push({ type: 'phase', phase: e.phase, of: th.length + 1, name: e.name });
     }
   }
@@ -515,7 +562,7 @@
     s.stats.kills++;
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare && rare.shards) {
-      const n = rare.shards * shardsForBoss(s.floor);
+      const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * (1 + treePower(s, 'shards')));
       s.materials.shard += n;
       events.push({ type: 'materials', shard: n, heart: 0, rare: true });
     }
@@ -615,7 +662,7 @@
 
   // ---------- офлайн ----------
   // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
-  function offlineDps(s) { return autoDps(s) * (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)); }
+  function offlineDps(s) { return autoDps(s) * (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)) * (1 + treePower(s, 'offlineDmg')); }
   function killTime(hp, dps) { return Math.max(hp / dps, CONFIG.offline.minKillSec) + CONFIG.respawnDelaySec; }
   // Проиграть отсутствие: продвижение до стены (босс не успевает умереть за таймер), потом фарм этажа ниже.
   // Возвращает сводку или null, если отсутствие короче minSec.
@@ -636,7 +683,7 @@
       while (!s.farming) {
         const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
         const hp = enemyMaxHp(s.floor, isBoss);
-        if (isBoss && hp / dps > bossTime(s)) {             // стена: босс не умирает за таймер
+        if (isBoss && hp / (dps * (1 + treePower(s, 'bossDmg'))) > bossTime(s)) {             // стена: босс не умирает за таймер
           r.wallFloor = s.floor;
           s.floor = Math.max(1, s.floor - 1); s.enemyIndex = 1; s.farming = true;
           break;
@@ -710,7 +757,7 @@
     const def = abilityDef(id);
     if (!def || !abilityReady(s, id)) return [];
     const st = s.abilities[id];
-    st.cd = def.cooldown; st.active = def.duration; st.acc = 0;
+    st.cd = def.cooldown * Math.max(0.2, 1 - treePower(s, 'abilityCd')); st.active = def.duration; st.acc = 0;
     return [{ type: 'ability', id, name: def.name }];
   }
   function setAbilityAuto(s, id, on) { if (abilityDef(id)) s.abilities[id].auto = !!on; }
@@ -804,7 +851,7 @@
   function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
   // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
   function bossMaterials(s, f) {
-    return { shard: shardsForBoss(f), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
+    return { shard: Math.ceil(shardsForBoss(f) * (1 + treePower(s, 'shards'))), heart: f > s.heartFloor ? heartsForFloor(f) : 0 };
   }
   // Требования следующей ступени или null, если эволюция завершена
   function evoCost(s, id) {
@@ -863,8 +910,9 @@
   // Предпросмотр: ожидаемый DPS до и после траты душ (бонус неизрасходованных душ уменьшится)
   function previewSpend(s, action, id, tps) {
     const before = expectedDps(s, tps);
-    const t = { ...s, souls: s.souls, artifacts: { ...s.artifacts } };
+    const t = { ...s, souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree } };
     if (action === 'upgrade') { const c = upgradeArtCost(s, id); if (c == null) return null; t.souls -= c; t.artifacts[id]++; }
+    if (action === 'tree') { const c = treeCost(s, id); if (c == null) return null; t.souls -= c; t.tree[id] = treeLevel(s, id) + 1; }
     return { before, after: expectedDps(t, tps) };
   }
 
@@ -878,8 +926,10 @@
     const base = Math.floor(R.soulsBase * Math.pow(R.soulsGrowth, s.maxFloor - R.floor));
     // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
     const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
-    return base + record;
+    return Math.floor((base + record) * (1 + treePower(s, 'ritualSouls')));
   }
+  // «Наследие»: стартовый запас золота = per·уровень × золото за босса стартового этажа
+  function ritualStartGold(s) { return Math.ceil(treePower(s, 'startGold') * killGold(ritualStartFloor(s), true)); }
   function ritual(s) {
     if (!canRitual(s)) return null;
     const souls = ritualSouls(s);
@@ -889,13 +939,13 @@
     s.bestRecordAtRunStart = s.bestFloor;
     const start = ritualStartFloor(s);
     // сбрасывается: золото, временные уровни, найм, прогресс забега
-    s.gold = 0; s.tapLevel = 1;
+    s.gold = ritualStartGold(s); s.tapLevel = 1;
     for (const a of CONFIG.allies) { const st = s.allies[a.id]; st.level = 0; st.ult = 0; st.cd = a.attackInterval; }
     s.buffs = { team: 0, tap: 0, teamPower: 1, tapPower: 1 };
     s.floor = start; s.maxFloor = start; s.highestCleared = start - 1;
     s.enemyIndex = 1; s.farming = false; s.reserveAcc = 0; s.heroAutoAcc = 0;
     spawn(s);
-    // сохраняется: герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
+    // сохраняется: дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
     return { souls, start };
   }
 
@@ -979,7 +1029,7 @@
       materials: { shard: s.materials.shard, heart: s.materials.heart }, heartFloor: s.heartFloor,
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
-      souls: s.souls, artifacts: { ...s.artifacts }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
+      souls: s.souls, artifacts: { ...s.artifacts }, tree: { ...s.tree }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -1006,6 +1056,7 @@
       d.materials = { shard: sh, heart: he }; d.heartFloor = d.ticketFloor | 0;
       for (const id in (d.heroes || {})) if (d.heroes[id]) d.heroes[id].evo = 0;
     }
+    if (d.v === 7) { d.v = 8; d.tree = {}; }               // 0.13 → 0.14: дерево душ
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1069,6 +1120,13 @@
       if (!int(lv, 1) || (a.max && lv > a.max)) return null;
       s.artifacts[a.id] = lv;
     }
+    if (!d.tree || typeof d.tree !== 'object') return null;
+    for (const n of TREE) {
+      const lv = d.tree[n.id];
+      if (lv === undefined) continue;
+      if (!int(lv, 1) || lv > n.max) return null;
+      s.tree[n.id] = lv;
+    }
     for (const id of d.locks) if (allyDef(id)) s.locks[id] = true;
     for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
@@ -1110,7 +1168,8 @@
     useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
     findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
-    canRitual, ritualStartFloor, ritualSouls, ritual,
+    canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
+    treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
