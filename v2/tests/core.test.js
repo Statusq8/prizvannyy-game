@@ -1688,3 +1688,67 @@ test('офлайн на огромных этажах не ломается', ()
   const r = C.offlineProgress(s, 3600);
   assert.ok(r && B.gte(r.gold, 0));
 });
+
+// ---------- классы героя и «Печать силы» (0.25) ----------
+test('класс открывается на этаже 100; очки за рекорд и ритуалы', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.chooseClass(s, 'blade', 'd1'), false);
+  s.bestFloor = 120; s.rituals = 2;
+  assert.strictEqual(C.classPoints(s), Math.floor(120 / 25) + 2 * 3);
+  assert.ok(C.chooseClass(s, 'blade', 'd1'));
+  assert.strictEqual(C.classFree(s), C.classPoints(s));
+});
+
+test('узлы класса: эффект, предел, очки кончаются; без критов', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT); s.bestFloor = 1000; s.rituals = 10;
+  C.chooseClass(s, 'blade', 'd');
+  for (let i = 0; i < 4; i++) assert.ok(C.buyClassNode(s, 'b1'));
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 2) < 1e-9);
+  assert.strictEqual(C.critChance(s), C.critChance(t)); assert.strictEqual(C.critMult(s), C.critMult(t));
+  while (C.buyClassNode(s, 'b1'));
+  assert.strictEqual(s.cls.spent.b1, 10);
+  for (const k of CFG.classes.list) for (const n of k.nodes) assert.ok(!/crit/i.test(n.kind));
+  assert.strictEqual(C.buyClassNode(s, 'c1'), false);        // узел другого класса
+});
+
+test('смена класса раз в день, очки возвращаются; эффекты охотника и призывателя', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 500;
+  C.chooseClass(s, 'hunter', 'd1'); C.buyClassNode(s, 'h2'); C.buyClassNode(s, 'h2');
+  assert.strictEqual(C.bossTime(s), CFG.bossTimeSec + 2);
+  assert.ok(C.chooseClass(s, 'caller', 'd1'));               // первая смена в этот день
+  assert.strictEqual(C.chooseClass(s, 'alch', 'd1'), false);  // вторая — нельзя
+  assert.strictEqual(C.bossTime(s), CFG.bossTimeSec);
+  assert.strictEqual(C.classFree(s), C.classPoints(s));
+  C.buyClassNode(s, 'c2');
+  s.allies.irene.level = 1; s.allies.irene.ult = 0;
+  C.tick(s, 1);
+  assert.ok(Math.abs(s.allies.irene.ult - 1.04) < 1e-9);
+  assert.ok(C.chooseClass(s, 'alch', 'd2'));
+});
+
+test('«Печать силы»: открывается на 150-м, ×3 владельцу, перенос раз в 8 часов', () => {
+  const s = C.newState(NOCRIT); const now = 1e12;
+  assert.strictEqual(C.moveBooster(s, 'irene', now), false);
+  s.bestFloor = 150; s.allies.irene.level = 10;
+  const before = C.allyDps(s, 'irene');
+  assert.ok(C.moveBooster(s, 'irene', now));
+  assert.strictEqual(C.allyDps(s, 'irene'), before * 3);
+  assert.strictEqual(C.moveBooster(s, 'hero', now + 3600e3), false);
+  assert.ok(C.boosterWait(s, now + 3600e3) > 0);
+  const tap = C.tapHit(s);
+  assert.ok(C.moveBooster(s, 'hero', now + 8 * 3600e3));
+  assert.strictEqual(C.allyDps(s, 'irene'), before);
+  assert.ok(Math.abs(C.tapHit(s) / tap - 3) < 1e-9);
+  assert.strictEqual(C.moveBooster(s, 'azrael', now + 20 * 3600e3), false);   // не открыт
+});
+
+test('сохранение класса и печати, миграция с 0.24', () => {
+  const s = C.newState(NOCRIT); s.bestFloor = 300; C.chooseClass(s, 'alch', 'd'); C.buyClassNode(s, 'a1');
+  C.moveBooster(s, 'hero', 5);
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.cls.id, 'alch'); assert.deepStrictEqual(t.cls.spent, { a1: 1 });
+  assert.deepStrictEqual(t.booster, { owner: 'hero', movedAt: 5 });
+  const old = JSON.parse(C.serialize(s)); old.v = 14; delete old.cls; delete old.booster;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.strictEqual(m.cls.id, null); assert.strictEqual(m.booster.owner, null);
+});
