@@ -1,0 +1,50 @@
+[
+  {
+    "file": "references/upgrade_approved.png",
+    "source": "1000076909.png",
+    "purpose": "Прокачка: выбранный референс",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/artifacts.png",
+    "source": "a_detailed_game_ui_mockup_in_the_same_dark_purple.png",
+    "purpose": "Артефакты",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/inventory.png",
+    "source": "a_detailed_game_ui_screenshot_in_the_same_dark_pur.png",
+    "purpose": "Сумка",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/pets.png",
+    "source": "a_detailed_ui_screenshot_in_the_same_purple_gothic.png",
+    "purpose": "Питомцы",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/summon_portal.png",
+    "source": "a_detailed_high_contrast_fantasy_game_ui_screen_i.png",
+    "purpose": "Портал",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/tower_map_variant_A.png",
+    "source": "a_dramatic_dark_fantasy_game_ui_screen_in_portrait.png",
+    "purpose": "Старый вариант карты, НЕ использовать как финальный",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/tower_map_variant_B.png",
+    "source": "a_dramatic_dark_fantasy_mobile_game_ui_screenshot.png",
+    "purpose": "Старый вариант карты, НЕ использовать как финальный",
+    "status": "reference_only"
+  },
+  {
+    "file": "references/battle_APPROVED_latest.png",
+    "source": "a_highly_detailed_fantasy_rpg_battle_ui_screenshot.png",
+    "purpose": "Последний утверждённый экран боя: средние кнопки, вид сзади",
+    "status": "reference_only"
+  }
+]
