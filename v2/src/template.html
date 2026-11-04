@@ -123,6 +123,14 @@
     padding: 8px 10px 8px 14px; border-radius: 12px; background: #1a2030e6; border: 1px solid #3a4a6a; font-size: 13px; z-index: 3; }
   #modeBar.show { display: flex; }
   #leaveBtn { padding: 8px 12px; border-radius: 9px; font-weight: 700; background: var(--panel2); border: 1px solid var(--line); }
+  #questDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); vertical-align: middle; }
+  #questDot.on { display: inline-block; }
+  .qBar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 4px; }
+  .qBar i { display: block; height: 100%; background: var(--accent); }
+  .qBar.done i { background: var(--ok); }
+  .hRow.claimed { opacity: .45; }
+  .claimAll { width: 100%; margin-bottom: 6px; padding: 10px; border-radius: 10px; font-weight: 800; background: linear-gradient(180deg, #3a8a5a, #1f5a36); border: 1px solid var(--ok); }
+  .claimAll:disabled { background: #2a2234; border-color: var(--line); color: var(--muted); }
   #pveDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); vertical-align: middle; }
   #pveDot.on { display: inline-block; }
   .tierPick { display: flex; align-items: center; gap: 3px; }
@@ -250,10 +258,10 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
-  .tab { font-size: 11px; padding: 7px 2px; }
+  .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
   /* души и артефакты */
   .soulHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .soulCnt { font-size: 15px; font-weight: 700; } .soulCnt b { color: #8fe6ff; }
@@ -428,6 +436,7 @@
     </div>
     <div id="tabs">
       <button class="tab on" data-tab="up">Прокачка</button>
+      <button class="tab" data-tab="quests">Задания <span id="questDot"></span></button>
       <button class="tab" data-tab="heroes">Герои</button>
       <button class="tab" data-tab="portal">Портал <span id="ticketDot"></span></button>
       <button class="tab" data-tab="altar">Алтарь</button>
@@ -451,6 +460,7 @@
     <div id="soulsTab" class="tabBody"></div>
     <div id="runesTab" class="tabBody"></div>
     <div id="pveTab" class="tabBody"></div>
+    <div id="questsTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
@@ -483,7 +493,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.16</div>
+  <div id="version">v0.17</div>
 </div>
 
 <script>
@@ -920,6 +930,9 @@
   const RANKS = CFG.rarities;
   function renderTabs() {
     C.dailyReset(s, dayKey());
+    C.questsReset(s, dayKey(), weekKey());
+    $('questDot').classList.toggle('on', C.claimableCount(s) > 0);
+    if (tab === 'quests') renderQuests();
     $('panel').dataset.tab = tab;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('ticketDot').classList.toggle('on', s.tickets > 0);
@@ -1061,6 +1074,50 @@
         else doSacrifice();
       });
     }
+    render();
+  });
+
+  // ---------- задания ----------
+  // Неделя начинается с понедельника; ключ — дата этого понедельника
+  function weekKey() {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+    return 'w' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  let questsHtml = '';
+  function rewardLine(r) {
+    const M = CFG.materials, p = [];
+    if (r.tickets) p.push('🎟 ' + r.tickets); if (r.essence) p.push('✦ ' + r.essence);
+    if (r.shard) p.push(M.shard.icon + ' ' + r.shard); if (r.heart) p.push(M.heart.icon + ' ' + r.heart);
+    return p.join(' · ');
+  }
+  function questRows(list) {
+    let html = '';
+    for (const q of list) {
+      const pr = C.questProgress(s, q.id), done = pr >= q.goal, claimed = !!s.quests.claimed[q.id];
+      const btn = claimed ? '<button class="hBtn" disabled>✓</button>'
+        : done ? '<button class="hBtn go" data-claim="' + q.id + '">Забрать</button>'
+        : q.go ? '<button class="hBtn" data-go="' + q.go + '">Перейти</button>' : '';
+      html += '<div class="hRow' + (claimed ? ' claimed' : '') + '" style="--r:' + (done && !claimed ? 'var(--ok)' : 'var(--line)') + '"><div class="hInfo">' +
+        '<div class="hName">' + q.name + '</div><div class="hSub">' + fmt(pr) + ' / ' + fmt(q.goal) + ' · награда ' + rewardLine(q.reward) + '</div>' +
+        '<div class="qBar' + (done ? ' done' : '') + '"><i style="width:' + (pr / q.goal * 100) + '%"></i></div></div>' + btn + '</div>';
+    }
+    return html;
+  }
+  function renderQuests() {
+    const Q = CFG.quests, n = C.claimableCount(s);
+    let html = '<button class="claimAll" data-act="all"' + (n ? '' : ' disabled') + '>' + (n ? 'Забрать всё (' + n + ')' : 'Нечего забирать') + '</button>';
+    html += '<div class="secTitle">ЕЖЕДНЕВНЫЕ · обновятся в полночь</div>' + questRows(Q.daily);
+    html += '<div class="secTitle">ЕЖЕНЕДЕЛЬНЫЕ · обновятся в понедельник</div>' + questRows(Q.weekly);
+    const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), doneN = Q.intro.length - intro.length;
+    html += '<div class="secTitle">ВВОДНЫЕ · выполнено ' + doneN + '/' + Q.intro.length + '</div>' + (intro.length ? questRows(intro) : '<div class="hint2">Все вводные задания выполнены.</div>');
+    if (html !== questsHtml) { $('questsTab').innerHTML = html; questsHtml = html; }
+  }
+  $('questsTab').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.claim) { const r = C.claimQuest(s, d.claim); if (r) { toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); } }
+    else if (d.act === 'all') { const r = C.claimAll(s); if (r) { toast('Забрано наград: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); } }
+    else if (d.go) { if (d.go === 'arena') setCollapsed(true); else tab = d.go; }
     render();
   });
 
