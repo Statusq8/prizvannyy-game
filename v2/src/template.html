@@ -594,7 +594,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.21</div>
+  <div id="version">v0.22</div>
 </div>
 
 <script>
@@ -1021,7 +1021,7 @@
   function setRank(btn, who) {
     const c = C.rankCost(s, who), M = CFG.materials;
     btn.dataset.rank = '1';
-    if (!c) { btn.disabled = true; btn.innerHTML = 'Предел<span>ур. 15000</span>'; return; }
+    if (!c) { btn.disabled = true; btn.innerHTML = 'Предел<span>ур. ' + fmt(C.capAt(C.maxSteps())) + '</span>'; return; }
     const evoOk = who === 'hero' || s.heroes[who].evo >= c.needEvo;
     const can = C.canRankUp(s, who);
     btn.disabled = !can;

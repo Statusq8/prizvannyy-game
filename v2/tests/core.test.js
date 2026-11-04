@@ -1383,8 +1383,8 @@ test('сохранение заданий и миграция с 0.16', () => {
 });
 
 // ---------- ранги и потолки (0.19) ----------
-test('потолок: 600 на старте, 15000 на пределе, растёт с каждой ступенью', () => {
-  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 15000);
+test('потолок: 600 на старте, 100000 на пределе, растёт с каждой ступенью', () => {
+  assert.strictEqual(C.capAt(0), 600); assert.strictEqual(C.capAt(C.maxSteps()), 100000);
   assert.strictEqual(C.maxSteps(), 100);
   for (let k = 1; k <= 100; k++) assert.ok(C.capAt(k) > C.capAt(k - 1));
   assert.deepStrictEqual(C.rankLabel(0), { rank: 1, sub: 0, max: false });

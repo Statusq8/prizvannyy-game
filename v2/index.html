@@ -594,7 +594,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.21</div>
+  <div id="version">v0.22</div>
 </div>
 
 <script>
@@ -896,10 +896,10 @@
       ],
     },
     // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
-    // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
+    // Каждая ступень поднимает потолок уровня: от 600 до 100 000 (плавно, кратно 10; решение пользователя — «пока»). Подранг — за осколки,
     // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
-    ranks: { count: 10, subs: 10, capMin: 600, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
+    ranks: { count: 10, subs: 10, capMin: 600, capMax: 100000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
     // Сезоны и боевой пропуск (GDD §11). Сезон — 28 дней, считается по дате устройства от epoch (понедельник).
     // Сезонный герой чередуется по номеру сезона. Тропа сезона — линейные задания. Числа TBD.
     season: {
@@ -2785,7 +2785,7 @@
   function setRank(btn, who) {
     const c = C.rankCost(s, who), M = CFG.materials;
     btn.dataset.rank = '1';
-    if (!c) { btn.disabled = true; btn.innerHTML = 'Предел<span>ур. 15000</span>'; return; }
+    if (!c) { btn.disabled = true; btn.innerHTML = 'Предел<span>ур. ' + fmt(C.capAt(C.maxSteps())) + '</span>'; return; }
     const evoOk = who === 'hero' || s.heroes[who].evo >= c.needEvo;
     const can = C.canRankUp(s, who);
     btn.disabled = !can;
