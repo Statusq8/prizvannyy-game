@@ -1950,3 +1950,57 @@ test('сохранение достижений и базы забега; миг
   const m = C.deserialize(JSON.stringify(old));
   assert.deepStrictEqual(m.ach, {}); assert.strictEqual(m.quests.runBase.kill, 200);
 });
+
+// ---------- баннеры портала (0.29) ----------
+function seqRng(vals) { let i = 0; return () => vals[i++ % vals.length]; }
+test('баннеры: цена, редкий — только C+, событийный — за фонари', () => {
+  const s = C.newState({ rng: () => 0 });                  // всегда самая частая редкость
+  s.tickets = 5;
+  assert.strictEqual(C.summon(s, 2, 'rare'), null);         // 6 билетов нужно
+  const r = C.summon(s, 1, 'rare');
+  assert.strictEqual(r[0].rarity, 'C'); assert.strictEqual(s.tickets, 2);
+  assert.strictEqual(C.summon(s, 1, 'event'), null);       // нет события
+  C.eventReset(s, 'w2026-11-02'); s.event.lanterns = 50;
+  const e = C.summon(s, 2, 'event');
+  assert.ok(e.every(x => ['B', 'A', 'S', 'GOD'].includes(x.rarity)));
+  assert.strictEqual(s.event.lanterns, 0); assert.strictEqual(s.tickets, 2);
+});
+
+test('гарантии баннеров раздельные', () => {
+  const s = C.newState({ rng: () => 0 }); s.tickets = 1000;
+  C.summon(s, 10, 'normal');
+  assert.strictEqual(s.pity.a, 10);
+  C.summon(s, 5, 'rare');
+  assert.strictEqual(s.pity.a, 10); assert.strictEqual(C.bannerPity(s, 'rare').a, 5);
+  const r = C.summon(s, 10, 'rare');                         // 15-й на редком — A+
+  assert.ok(['A', 'S', 'GOD'].includes(r[9].rarity));
+  assert.strictEqual(C.bannerPity(s, 'rare').a, 0);
+});
+
+test('возрастающие шансы: после 70 призывов без S шанс S растёт', () => {
+  const lowS = C.newState({ rng: () => 0.98 }), hi = C.newState({ rng: () => 0.98 });
+  lowS.tickets = hi.tickets = 1; hi.pity.s = 85;
+  const a = C.summon(lowS, 1)[0], b = C.summon(hi, 1)[0];
+  assert.strictEqual(a.rarity, 'A');                         // при обычных шансах 0.98 — A
+  assert.strictEqual(b.rarity, 'S');                         // при pity 86 шанс S заметно выше
+});
+
+test('тематический баннер: два героя недели, их выпадение чаще', () => {
+  const s = C.newState(NOCRIT); C.eventReset(s, 'w2026-11-02');
+  const f = C.featuredHeroes(s);
+  assert.strictEqual(f.length, 2); assert.notStrictEqual(f[0], f[1]);
+  C.eventReset(s, 'w2026-11-09'); assert.notDeepStrictEqual(C.featuredHeroes(s), f);
+  const fa = CFG.allies.find(a => a.id === C.featuredHeroes(s)[0]);
+  // редкость героя недели; второй бросок < 0.5 → герой недели
+  const odds = CFG.portal.odds, R = CFG.rarities, tot = R.reduce((x, r) => x + odds[r], 0);
+  let acc = 0; for (const r of R) { if (r === fa.rarity) break; acc += odds[r]; }
+  const t = C.newState({ rng: seqRng([(acc + 0.01) / tot, 0.1, 0]) }); t.event = s.event; t.tickets = 2;
+  assert.strictEqual(C.summon(t, 1, 'theme')[0].id, fa.id);
+});
+
+test('сохранение гарантий баннеров; миграция с 0.28', () => {
+  const s = C.newState(NOCRIT); s.bpity = { rare: { a: 3, s: 7 } };
+  assert.deepStrictEqual(C.deserialize(C.serialize(s)).bpity, { rare: { a: 3, s: 7 } });
+  const old = JSON.parse(C.serialize(s)); old.v = 18; delete old.bpity;
+  assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).bpity, {});
+});
