@@ -461,6 +461,17 @@
   /* «Бей босса» не наезжает на боковые колонки */
   #farmBar, #modeBar { top: 4px; }
   #version { bottom: auto; top: 2px; left: auto; right: 6px; }
+  /* ===== нижняя навигация (0.34) ===== */
+  #bottomNav { position: relative; z-index: 8; display: flex; justify-content: space-around; gap: 4px; padding: 6px 8px 6px;
+    background: linear-gradient(180deg, #1a0f14, #0a0608); border-top: 2px solid var(--frameEdge); box-shadow: 0 -2px 0 var(--frameDark); }
+  #bottomNav .sideBtn { width: clamp(52px, 7.2dvh, 64px); }
+  #bottomNav .sideBtn .ico { aspect-ratio: auto; height: clamp(38px, 5.4dvh, 48px); }
+  #panel { bottom: var(--navH, 72px); height: calc(58% - var(--navH, 72px) * .3); }
+  #panel.full { top: 0; height: auto; border-radius: 0; border-top: none; z-index: 9; bottom: var(--navH, 72px); }
+  #tabs { display: none !important; }
+  #panel[data-tab="more"] #moreTab { display: block; }
+  #moreGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px; padding: 6px 2px; justify-items: center; }
+  #moreGrid .sideBtn { width: 100%; max-width: 70px; }
 
   /* ===== карточки «Прокачки» по образцу (0.31): пергамент, портрет в рамке ===== */
   #multCycle { min-width: 76px; padding: 7px 14px; border-radius: 9px; font-size: 15px; font-weight: 900; color: #3a2a00;
@@ -580,22 +591,6 @@
     <div id="ultBanner"></div>
     <div id="modeBar"><span id="modeInfo"></span><button id="leaveBtn">Выйти</button></div>
     <div id="farmBar"><span class="plate">Фарм этажа</span><button id="bossBtn">Бей босса</button></div>
-    <!-- боковое меню: кнопки в рамках, «!» — есть что сделать -->
-    <div class="side L">
-      <button class="sideBtn" data-open="season"><span class="ico">🎭</span><span class="lbl">Сезон</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="heroes"><span class="ico">🪖</span><span class="lbl">Герои</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="portal"><span class="ico">🌀</span><span class="lbl">Портал</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="altar"><span class="ico">🕯</span><span class="lbl">Алтарь</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="quests"><span class="ico">📜</span><span class="lbl">Задания</span><i class="bang">!</i></button>
-    </div>
-    <div class="side R">
-      <button class="sideBtn" data-open="up"><span class="ico">⚔</span><span class="lbl">Прокачка</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="souls"><span class="ico">👻</span><span class="lbl">Души</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
-      <button class="sideBtn" data-open="bones"><span class="ico">🦴</span><span class="lbl">Кости</span><i class="bang">!</i></button>
-    </div>
     <!-- Временная заглушка врага (не финальный ассет) -->
     <div id="enemy">
       <svg viewBox="0 0 200 230">
@@ -636,6 +631,14 @@
   </div>
 
   <div id="abilityBar"></div>
+  <!-- нижняя панель навигации (0.34): основное — шторкой над боем, «Ещё» — окна на весь экран -->
+  <nav id="bottomNav">
+    <button class="sideBtn" data-open="up"><span class="ico">⚔</span><span class="lbl">Прокачка</span><i class="bang">!</i></button>
+    <button class="sideBtn" data-open="heroes"><span class="ico">🪖</span><span class="lbl">Герои</span><i class="bang">!</i></button>
+    <button class="sideBtn" data-open="portal"><span class="ico">🌀</span><span class="lbl">Портал</span><i class="bang">!</i></button>
+    <button class="sideBtn" data-open="souls"><span class="ico">👻</span><span class="lbl">Души</span><i class="bang">!</i></button>
+    <button class="sideBtn" data-open="more"><span class="ico">☰</span><span class="lbl">Ещё</span><i class="bang">!</i></button>
+  </nav>
   <div id="panel" class="collapsed">
     <button id="panelToggle" aria-label="Закрыть меню"><span id="toggleLabel">Прокачка</span><span class="x">✕</span><span id="canBuy"></span></button>
     <div id="goldRow">
@@ -652,6 +655,20 @@
       <button class="tab" data-tab="souls">Души <span id="soulDot"></span></button>
       <button class="tab" data-tab="runes">Руны</button>
       <button class="tab" data-tab="pve">PvE <span id="pveDot"></span></button>
+    </div>
+    <div id="moreTab" class="tabBody">
+      <div id="moreGrid">
+        <button class="sideBtn" data-open="quests"><span class="ico">📜</span><span class="lbl">Задания</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="pve"><span class="ico">🧭</span><span class="lbl">PvE</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="events"><span class="ico">🏮</span><span class="lbl">События</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="season"><span class="ico">🎭</span><span class="lbl">Сезон</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="altar"><span class="ico">🕯</span><span class="lbl">Алтарь</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="runes"><span class="ico">ᚦ</span><span class="lbl">Руны</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="bones"><span class="ico">🦴</span><span class="lbl">Кости</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="map"><span class="ico">🗺</span><span class="lbl">Карта</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="stats"><span class="ico">📊</span><span class="lbl">Статистика</span><i class="bang">!</i></button>
+        <button class="sideBtn" data-open="inbox"><span class="ico">📬</span><span class="lbl">Награды</span><i class="bang">!</i></button>
+      </div>
     </div>
     <div id="cards">
     <div class="card">
@@ -712,7 +729,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.33</div>
+  <div id="version">v0.34</div>
 </div>
 
 <script>
@@ -3375,13 +3392,22 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { more: 'Ещё', stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  // основное открывается шторкой над боем (бой виден сверху), второстепенное из «Ещё» — на весь экран
+  const SHEET_TABS = new Set(['up', 'heroes', 'portal', 'souls', 'more']);
+  function syncNavH() { const n = $('bottomNav'); if (n) $('game').style.setProperty('--navH', n.offsetHeight + 'px'); }
+  window.addEventListener('resize', syncNavH); setTimeout(syncNavH, 0);
   function setCollapsed(on) {
     $('panel').classList.toggle('collapsed', on);
+    $('panel').classList.toggle('full', !on && !SHEET_TABS.has(tab));
     try { localStorage.setItem(UI_KEY, JSON.stringify({ collapsed: on })); } catch (e) {}
   }
   setCollapsed(true);                    // на старте меню закрыто — весь экран под бой
-  $('panelToggle').addEventListener('click', () => setCollapsed(true));
+  // ✕ закрывает шторку; в окне из «Ещё» — возвращает в сетку «Ещё»
+  $('panelToggle').addEventListener('click', () => {
+    if (!$('panel').classList.contains('collapsed') && !SHEET_TABS.has(tab)) { tab = 'more'; setCollapsed(false); render(); }
+    else setCollapsed(true);
+  });
   // боковые кнопки открывают нужный раздел; повторное нажатие закрывает
   document.querySelectorAll('.sideBtn').forEach(b => b.addEventListener('click', () => {
     const open = !$('panel').classList.contains('collapsed');
@@ -3545,7 +3571,7 @@
 
   // ---------- ввод ----------
   el.arena.addEventListener('pointerdown', e => {
-    if (e.target.closest('#farmBar') || e.target.closest('#modeBar') || e.target.closest('.side')) return;
+    if (e.target.closest('#farmBar') || e.target.closest('#modeBar') || e.target.closest('#bottomNav')) return;
     e.preventDefault();
     const r = el.arena.getBoundingClientRect();
     const ev = C.tap(s);
@@ -3834,11 +3860,13 @@
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
       season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
     };
+    bang.more = ['quests', 'pve', 'events', 'season', 'altar', 'runes', 'bones'].some(k => bang[k]);
     const opened = !$('panel').classList.contains('collapsed');
-    document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', !!bang[b.dataset.open]); b.classList.toggle('cur', opened && tab === b.dataset.open); });
+    document.querySelectorAll('.sideBtn').forEach(b => { b.classList.toggle('on', !!bang[b.dataset.open]); b.classList.toggle('cur', opened && (tab === b.dataset.open || (b.dataset.open === 'more' && !SHEET_TABS.has(tab)))); });
     $('resGold').textContent = fmt(s.gold); $('resTickets').textContent = fmt(s.tickets);
     $('resShards').textContent = fmt(s.materials.shard); $('resSouls').textContent = fmt(s.souls);
     $('panel').dataset.tab = tab;
+    $('panel').classList.toggle('full', opened && !SHEET_TABS.has(tab));
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('ticketDot').classList.toggle('on', s.tickets > 0);
     const fc = C.findCost(s);
