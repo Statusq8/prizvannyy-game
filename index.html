@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d0a12">
 <title>Призванный: Башня Гачи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ruslan+Display&family=Rubik+Dirt&family=Russo+One&display=swap&subset=cyrillic" rel="stylesheet">
 <style>
   :root {
     --bg1: #0d0a12; --bg2: #1e1329; --panel: #170f20; --panel2: #23172f;
@@ -615,7 +617,7 @@
   .mapNode i { position: absolute; bottom: -9px; font-style: normal; font-size: 10px; color: var(--text); text-shadow: 0 0 3px #000; }
 
   /* 0.37: чистый экран — интерфейс скрыт, логика работает; меню и кнопки возвращаем по одному. Старый интерфейс: адрес с #ui */
-  body.clean #hud, body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
+  body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
   body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #toast, body.clean #ultBanner, body.clean #version,
   body.clean #modal, body.clean .askWrap, body.clean .allyTag, body.clean .ultBar { display: none !important; }
 
@@ -630,9 +632,48 @@
   #topBar .tb i { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px;
     background: radial-gradient(circle at 40% 30%, #e6e1ec, #8a8294 45%, #3d3844 100%); border: 1px solid #1a161e; box-shadow: inset 0 0 0 2px #00000030; color: #241f2a; }
   #topBar .tb.g i { background: radial-gradient(circle at 40% 30%, #fff1b8, #d4a23a 45%, #6a4a12 100%); color: #3a2606; }
-  #topBar .tb b { flex: 1 1 auto; min-width: 0; text-align: right; padding-left: 2px; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #efeaf3; text-shadow: 0 1px 0 #000, 0 0 4px #000a; }
+  #topBar .tb b { font-family: 'Russo One', system-ui, sans-serif; flex: 1 1 auto; min-width: 0; text-align: right; padding-left: 2px; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #efeaf3; text-shadow: 0 1px 0 #000, 0 0 4px #000a; }
   #topBar .tb.g b { color: var(--gold); }
   #topBar .tb small { flex: none; font-size: 9px; font-weight: 800; color: #b9b1c3; letter-spacing: .4px; text-shadow: 0 1px 0 #000; }
+
+  /* 0.39: шапка боя (чистый экран). Плашка этажа между золотом и DPS, под ней биом, имя врага, HP + секунды босса, прогресс 1–10.
+     Шрифты: Ruslan Display (готика), Rubik Dirt (манхва/комикс), Russo One (числа) — Google Fonts, без интернета системные. */
+  #hpRow { position: relative; }
+  #timerSec { display: none; }
+  body.clean #hud { position: absolute; z-index: 4; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 8px) 0 0; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  body.clean #resBar, body.clean #stats, body.clean #buffs, body.clean #timerBar { display: none !important; }
+  body.clean #floorRow { order: 1; gap: 0; height: 30px; padding: 0 2px; border-radius: 7px;
+    background: radial-gradient(ellipse at 50% 10%, #5a5462 0%, transparent 70%), linear-gradient(#45404c, #2b2731 55%, #1f1c24);
+    border: 2px solid; border-color: #b4adbd #6e6678 #4e4757 #8d8597; box-shadow: 0 0 0 1px #0d0b10, 0 3px 6px #000a, inset 0 1px 0 #ffffff2a, inset 0 -2px 0 #0007; }
+  body.clean .navBtn { pointer-events: auto; width: 26px; height: 26px; border: none; background: none; font-size: 22px; line-height: 1; color: #d8d0e2; text-shadow: 0 1px 0 #000; }
+  body.clean .navBtn:disabled { opacity: .2; }
+  body.clean #floorLabel::after { content: none; }
+  body.clean #floorLabel { min-width: 84px; font-family: 'Ruslan Display', Georgia, serif; font-size: 16px; font-weight: 400; letter-spacing: .5px; color: #f4e6c2;
+    text-shadow: 0 1px 0 #000, 0 0 6px #b98cff80; pointer-events: none; white-space: nowrap; }
+  body.clean #biomeLabel { order: 2; margin-top: 5px; font-family: 'Ruslan Display', Georgia, serif; font-size: 10px; font-weight: 400; letter-spacing: 1px; color: #c9b8dc;
+    text-shadow: 0 1px 2px #000, 0 0 4px #000; max-width: 92%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.clean #enemyName { order: 3; margin-top: 8px; font-family: 'Rubik Dirt', 'Impact', system-ui, sans-serif; font-size: 20px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; color: #fff;
+    -webkit-text-stroke: 1px #000; paint-order: stroke fill; text-shadow: 2px 2px 0 #000, 0 0 10px #b98cff70; max-width: 94%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.clean #enemyName.boss { color: #ff7a52; text-shadow: 2px 2px 0 #000, 0 0 12px #ff3a1a90; }
+  body.clean #enemyName.rare { color: var(--gold); text-shadow: 2px 2px 0 #000, 0 0 12px #ffd36b90; }
+  body.clean #enemyName.rare.crystal { color: #8fe6ff; }
+  body.clean #hpRow { order: 4; width: 74%; margin-top: 4px; }
+  body.clean #hpBar { margin: 0; height: 16px; border-radius: 3px; background: linear-gradient(#1a0a0e, #2e0f16); border: 2px solid #120a10;
+    box-shadow: 0 0 0 1px #6e6678, 0 3px 8px #000c, inset 0 2px 4px #000; overflow: hidden; }
+  body.clean #hpBar::before, body.clean #hpBar::after { content: ""; position: absolute; top: 50%; width: 8px; height: 8px; margin-top: -4px; background: #8d8597; transform: rotate(45deg); border: 1px solid #000; z-index: 2; }
+  body.clean #hpBar::before { left: -5px; } body.clean #hpBar::after { right: -5px; }
+  body.clean #hpFill { background: linear-gradient(180deg, #ff7686 0%, #d42a42 45%, #8a1022 100%); box-shadow: inset 0 1px 0 #ffffff60, 0 0 8px #ff2a4a80; }
+  body.clean #hpText { font-family: 'Russo One', system-ui, sans-serif; font-size: 11px; line-height: 12px; font-weight: 400; color: #fff; text-shadow: 0 1px 0 #000, 0 0 3px #000; z-index: 3; }
+  body.clean #timerSec.show { display: block; position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 10px; white-space: nowrap;
+    font-family: 'Russo One', system-ui, sans-serif; font-size: 15px; color: #ffd36b; text-shadow: 0 1px 0 #000, 0 0 6px #000; }
+  body.clean #timerSec.low { color: #ff4a3a; animation: secPulse .5s ease-in-out infinite alternate; }
+  @keyframes secPulse { to { transform: translateY(-50%) scale(1.15); } }
+  body.clean #dots { order: 5; margin-top: 7px; gap: 6px; align-items: center; }
+  body.clean .dot { width: 8px; height: 8px; border-radius: 1px; transform: rotate(45deg); background: #1a1420; border: 1px solid #6e6678; box-shadow: 0 0 3px #000; }
+  body.clean .dot.done { background: #b98cff; border-color: #e0ccff; box-shadow: 0 0 5px #b98cff; }
+  body.clean .dot.cur { background: #fff; border-color: #fff; box-shadow: 0 0 6px #fff; }
+  body.clean .dot.boss { width: 12px; height: 12px; background: #3a1410; border-color: #c24a2a; }
+  body.clean .dot.boss.cur { background: #ff6b4a; box-shadow: 0 0 8px #ff6b4a; }
 </style>
 </head>
 <body>
@@ -660,7 +701,7 @@
     <div id="biomeLabel"></div>
     <div id="dots"></div>
     <div id="enemyName"></div>
-    <div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div>
+    <div id="hpRow"><div id="hpBar"><div id="hpFill"></div><div id="hpText"></div></div><div id="timerSec"></div></div>
     <div id="timerBar"><div id="timerFill"></div></div>
     <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b> ⓘ<div id="statsMore"></div></div>
     <div id="buffs"></div>
@@ -796,7 +837,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.38</div>
+  <div id="version">v0.39</div>
 </div>
 
 <script>
@@ -3736,6 +3777,7 @@
     const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
     return (h ? h + ' ч ' : '') + m + ' мин';
   }
+  const timerSec = $('timerSec');
   const tbGold = $('tbGold'), tbDps = $('tbDps');
   function applyOffline(seconds) { showReport(C.offlineProgress(s, seconds), 'Пока вас не было'); }
   function showReport(r, title) {
@@ -3824,6 +3866,7 @@
     }
     el.hpFill.style.width = (B.toNum(B.div(en.hp, en.maxHp)) * 100) + '%';
     el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp);
+    timerSec.classList.toggle('show', s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss);
     el.timerBar.classList.toggle('show', s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss);
     el.farmBar.classList.toggle('show', s.farming && !s.mode);
     el.hint.style.display = tapped ? 'none' : '';
@@ -4930,6 +4973,7 @@
       const p = Math.max(0, s.bossTimeLeft / (s.mode ? s.mode.timeMax : C.bossTime(s)));
       el.timerFill.style.width = (p * 100) + '%';
       el.timerFill.classList.toggle('low', s.bossTimeLeft < 5);
+      timerSec.textContent = '⏱ ' + Math.ceil(Math.max(0, s.bossTimeLeft)); timerSec.classList.toggle('low', s.bossTimeLeft < 5);
     }
     const now = performance.now();
     while (dmgLog.length && now - dmgLog[0][0] > DPS_WINDOW * 1000) dmgLog.shift();
