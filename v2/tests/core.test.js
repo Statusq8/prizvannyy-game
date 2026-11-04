@@ -2004,3 +2004,18 @@ test('сохранение гарантий баннеров; миграция �
   const old = JSON.parse(C.serialize(s)); old.v = 18; delete old.bpity;
   assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).bpity, {});
 });
+
+// ---------- коллекция героев (0.30) ----------
+test('коллекция: каждый открытый герой и звезда дают урон, полная редкость — урон союзников', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  assert.strictEqual(C.collectionMult(s), 1);                    // стартовый отряд — без бонуса
+  s.heroes.garret.unlocked = true;                               // второй E — сет E собран
+  assert.ok(Math.abs(C.collectionMult(s) - 1.03) < 1e-9);
+  assert.deepStrictEqual(C.collectionSets(s), ['E']);
+  assert.ok(Math.abs(C.collectionAllyMult(s) - 1.1) < 1e-9);
+  s.heroes.irene.stars = 5;
+  assert.ok(Math.abs(C.collectionMult(s) - 1.08) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.08) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.08 * 1.1) < 1e-9);
+  assert.strictEqual(C.critChance(s), C.critChance(t));
+});
