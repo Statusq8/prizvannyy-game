@@ -614,7 +614,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.27</div>
+  <div id="version">v0.28</div>
 </div>
 
 <script>
@@ -624,7 +624,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 17,
+    saveVersion: 18,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -915,6 +915,33 @@
         { id: 'i_f400',   value: 'floor', goal: 400, name: 'Дойти до 400-го этажа',      reward: { tickets: 10 }, go: 'arena' },
         { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первый ритуал',     reward: { heart: 3 },    go: 'souls' },
       ],
+      // Ритуальные (GDD §11): считаются с начала текущего забега, обновляются после каждого ритуала
+      ritual: [
+        { id: 'r_f100',  value: 'runFloor', goal: 100, name: 'Забег: дойти до 100-го этажа',  reward: { shard: 60 },   go: 'arena' },
+        { id: 'r_f250',  value: 'runFloor', goal: 250, name: 'Забег: дойти до 250-го этажа',  reward: { tickets: 3 },  go: 'arena' },
+        { id: 'r_f400',  value: 'runFloor', goal: 400, name: 'Забег: дойти до 400-го этажа',  reward: { souls: 5 },    go: 'arena' },
+        { id: 'r_boss',  key: 'boss',       goal: 150, name: 'Забег: победить боссов',         reward: { heart: 1 },    go: 'arena' },
+        { id: 'r_rare',  key: 'rare',       goal: 15,  name: 'Забег: победить редких врагов',  reward: { essence: 25 }, go: 'arena' },
+        { id: 'r_hire',  value: 'runHire',  goal: 8,   name: 'Забег: нанять 8 героев',         reward: { souls: 3 },    go: 'up' },
+      ],
+    },
+    // Достижения (GDD §7, §12): ступени по счётчикам и рекордам. Каждая ступень — награда и очко достижений;
+    // очки — постоянный бонус всего урона (отдельная категория, без критов). Числа TBD.
+    achievements: {
+      dmgPerPoint: 0.01,
+      list: [
+        { id: 'a_kill',   name: 'Истребитель',      icon: '⚔', metric: 'kill',    goals: [100, 1000, 10000, 100000, 1e6],  reward: { tickets: 2 } },
+        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { heart: 1 } },
+        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 } },
+        { id: 'a_ritual', name: 'Жрец ритуала',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 } },
+        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 } },
+        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 5 } },
+        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { shard: 200 } },
+        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { shard: 150 } },
+        { id: 'a_dun',    name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: [10, 100, 1000],                 reward: { tickets: 2 } },
+        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { essence: 50 } },
+        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { heart: 2 } },
+      ],
     },
     // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
     // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
@@ -941,7 +968,7 @@
       ],
       trailTokens: 60, trailXp: 250, heroCost: 400, copyCost: 150,   // жетоны 🎭; финал тропы открывает сезонного героя
       passLevels: 30, xpPerLevel: 1000,
-      questXp: { daily: 100, weekly: 300, intro: 150 },
+      questXp: { daily: 100, weekly: 300, intro: 150, ritual: 200 },
       catchupXp: 500,                     // догон: раз в день, если уровень пропуска ниже ожидаемого по дню сезона
       // награды уровня: free — бесплатная дорожка, paid — премиум (больше билетов и ресурсов, без эксклюзивных героев)
       free: { tickets: 1, shard: 40, tokens: 15 }, paid: { tickets: 2, shard: 100, essence: 20, tokens: 30 },
@@ -1274,7 +1301,7 @@
     for (let i = 0; i < w.length; i++) { y -= w[i]; if (y < 0) { tier = i; break; } }
     const slot = X.slots[Math.floor(hash01(k, salt, 41) * X.slots.length) % X.slots.length].id;
     const b = { id: s.boneSeq++, slot, tier, lvl: 0, grade: 1, on: null, lock: tier >= 4 };   // A+ сразу под защитой
-    s.bones.push(b);
+    s.bones.push(b); cnt(s, 'bone');
     return b;
   }
   function boneById(s, id) { return s.bones.find(b => b.id === id); }
@@ -1399,7 +1426,7 @@
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s);
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
     return B.mul(soulMult(s), m);
@@ -1569,7 +1596,8 @@
       pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
       mode: null,                                // текущий PvE-режим (не сохраняется)
       counters: {},                              // счётчики действий за всю игру (для заданий)
-      quests: { day: '', week: '', dayBase: {}, weekBase: {}, claimed: {} },
+      quests: { day: '', week: '', dayBase: {}, weekBase: {}, runBase: {}, claimed: {} },
+      ach: {},                                   // достижения: id → забранных ступеней
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
@@ -1678,6 +1706,7 @@
     s.stats.kills++; cnt(s, 'kill');
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
+    if (rare) cnt(s, 'rare');
     if (rare && rare.shards) {
       const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
       s.materials.shard += n;
@@ -2006,7 +2035,7 @@
   }
 
   // ---------- задания ----------
-  function allQuests() { const Q = CONFIG.quests; return [...Q.daily.map(q => ({ ...q, period: 'daily' })), ...Q.weekly.map(q => ({ ...q, period: 'weekly' })), ...Q.intro.map(q => ({ ...q, period: 'intro' }))]; }
+  function allQuests() { const Q = CONFIG.quests; return [...Q.daily.map(q => ({ ...q, period: 'daily' })), ...Q.weekly.map(q => ({ ...q, period: 'weekly' })), ...Q.intro.map(q => ({ ...q, period: 'intro' })), ...Q.ritual.map(q => ({ ...q, period: 'ritual' }))]; }
   const QUESTS = allQuests();
   function questDef(id) { return QUESTS.find(q => q.id === id); }
   // Новый день / неделя: запоминаем счётчики на начало периода, отметки «забрано» сбрасываются
@@ -2024,15 +2053,19 @@
     if (q.key === 'allDaily') v = CONFIG.quests.daily.filter(x => x.id !== q.id && questDone(s, x.id)).length;
     else if (q.value === 'floor') v = s.bestFloor;
     else if (q.value === 'hired') v = s.squad.filter(id => s.allies[id].level > 0).length;
+    else if (q.value === 'runFloor') v = s.maxFloor;
+    else if (q.value === 'runHire') v = CONFIG.allies.filter(a => s.allies[a.id].level > 0).length;
     else {
       const total = s.counters[q.key] || 0;
-      v = q.period === 'daily' ? total - (Q.dayBase[q.key] || 0) : q.period === 'weekly' ? total - (Q.weekBase[q.key] || 0) : total;
+      v = q.period === 'daily' ? total - (Q.dayBase[q.key] || 0) : q.period === 'weekly' ? total - (Q.weekBase[q.key] || 0)
+        : q.period === 'ritual' ? total - (Q.runBase[q.key] || 0) : total;
     }
     return Math.min(q.goal, Math.max(0, v));
   }
   function questDone(s, id) { return questProgress(s, id) >= questDef(id).goal; }
   function questClaimable(s, id) { return questDone(s, id) && !s.quests.claimed[id]; }
   function grant(s, r) {
+    if (r.souls) s.souls = B.add(s.souls, r.souls);
     if (r.tickets) s.tickets += r.tickets;
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
@@ -2153,6 +2186,36 @@
     if (h.unlocked) h.copies++; else h.unlocked = true;
     return id;
   }
+
+  // ---------- достижения ----------
+  function achDef(id) { return CONFIG.achievements.list.find(a => a.id === id); }
+  function achValue(s, a) {
+    switch (a.metric) {
+      case 'floor': return s.bestFloor;
+      case 'heroes': return CONFIG.allies.filter(x => s.heroes[x.id].unlocked).length;
+      case 'endless': return s.pve.endlessBest;
+      case 'totems': return totemCount(s);
+      case 'ritual': return s.rituals;
+      default: return s.counters[a.metric] || 0;
+    }
+  }
+  function achTier(s, id) { return s.ach[id] | 0; }                  // сколько ступеней уже забрано
+  function achClaimable(s, id) { const a = achDef(id), t = achTier(s, id); return t < a.goals.length && achValue(s, a) >= a.goals[t]; }
+  function achPoints(s) { let n = 0; for (const id in s.ach) n += s.ach[id]; return n; }
+  function achMult(s) { return 1 + CONFIG.achievements.dmgPerPoint * achPoints(s); }
+  function claimAch(s, id) {
+    const a = achDef(id);
+    if (!a || !achClaimable(s, id)) return null;
+    s.ach[id] = achTier(s, id) + 1;
+    grant(s, a.reward);
+    return a.reward;
+  }
+  function claimAllAch(s) {
+    const sum = {}; let n = 0;
+    for (const a of CONFIG.achievements.list) for (;;) { const r = claimAch(s, a.id); if (!r) break; n++; for (const k in r) sum[k] = B.add(sum[k] || 0, r[k]); }
+    return n ? { count: n, reward: sum } : null;
+  }
+  function achClaimableCount(s) { return CONFIG.achievements.list.filter(a => achClaimable(s, a.id)).length; }
 
   function claimableCount(s) { return QUESTS.filter(q => questClaimable(s, q.id)).length; }
 
@@ -2524,6 +2587,9 @@
     const souls = ritualSouls(s);
     s.souls = B.add(s.souls, souls);
     s.rituals++; cnt(s, 'ritual');
+    // ритуальные задания начинаются заново
+    s.quests.runBase = { ...s.counters };
+    for (const q of CONFIG.quests.ritual) delete s.quests.claimed[q.id];
     s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
     s.bestRecordAtRunStart = s.bestFloor;
     const start = ritualStartFloor(s);
@@ -2629,7 +2695,8 @@
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
-      quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, claimed: Object.keys(s.quests.claimed) }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
+      quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, runBase: { ...s.quests.runBase }, claimed: Object.keys(s.quests.claimed) },
+      ach: { ...s.ach }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
   }
@@ -2677,6 +2744,7 @@
     if (d.v === 14) { d.v = 15; d.cls = { id: null, spent: {}, changeDay: '' }; d.booster = { owner: null, movedAt: 0 }; }   // 0.24 → 0.25
     if (d.v === 15) { d.v = 16; d.bones = []; d.boneSeq = 1; if (d.materials) d.materials.dust = 0; }   // 0.25 → 0.26: кости монстров
     if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // 0.26 → 0.27: питомцы
+    if (d.v === 17) { d.v = 18; d.ach = {}; if (d.quests) d.quests.runBase = { ...(d.counters || {}) }; }   // 0.27 → 0.28
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2774,7 +2842,8 @@
     if (!d.counters || typeof d.counters !== 'object' || !qd || typeof qd !== 'object' || !Array.isArray(qd.claimed) ||
         typeof qd.day !== 'string' || typeof qd.week !== 'string') return null;
     s.counters = nums(d.counters);
-    s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), claimed: {} };
+    s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), runBase: nums(qd.runBase), claimed: {} };
+    for (const a of CONFIG.achievements.list) { const t = d.ach && d.ach[a.id]; if (int(t, 1) && t <= a.goals.length) s.ach[a.id] = t; }
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
     const cl = d.cls, bo = d.booster;
     if (!cl || typeof cl !== 'object' || !bo || typeof bo !== 'object' || typeof bo.movedAt !== 'number') return null;
@@ -2878,6 +2947,7 @@
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
+    achDef, achValue, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
@@ -3378,7 +3448,7 @@
     C.seasonReset(s, dayKey());
     C.eventReset(s, weekKey());
     C.questsReset(s, dayKey(), weekKey());
-    $('questDot').classList.toggle('on', C.claimableCount(s) > 0);
+    $('questDot').classList.toggle('on', C.claimableCount(s) + C.achClaimableCount(s) > 0);
     if (tab === 'quests') renderQuests();
     if (tab === 'season') renderSeason();
     if (tab === 'events') renderEvents();
@@ -3389,7 +3459,7 @@
     // «!» на боковых кнопках
     const fcost = C.findCost(s);
     const bang = {
-      up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
+      up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) > 0, portal: s.tickets > 0,
       heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
@@ -3614,6 +3684,7 @@
   let questsHtml = '';
   function rewardLine(r) {
     const M = CFG.materials, p = [];
+    if (r.souls) p.push('👻 ' + fmt(r.souls));
     if (r.tickets) p.push('🎟 ' + r.tickets); if (r.essence) p.push('✦ ' + r.essence);
     if (r.shard) p.push(M.shard.icon + ' ' + r.shard); if (r.heart) p.push(M.heart.icon + ' ' + r.heart);
     return p.join(' · ');
@@ -3632,19 +3703,36 @@
     return html;
   }
   function renderQuests() {
-    const Q = CFG.quests, n = C.claimableCount(s);
+    const Q = CFG.quests, n = C.claimableCount(s) + C.achClaimableCount(s);
     let html = '<button class="claimAll" data-act="all"' + (n ? '' : ' disabled') + '>' + (n ? 'Забрать всё (' + n + ')' : 'Нечего забирать') + '</button>';
     html += '<div class="secTitle">ЕЖЕДНЕВНЫЕ · обновятся в полночь</div>' + questRows(Q.daily);
     html += '<div class="secTitle">ЕЖЕНЕДЕЛЬНЫЕ · обновятся в понедельник</div>' + questRows(Q.weekly);
     const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), doneN = Q.intro.length - intro.length;
     html += '<div class="secTitle">ВВОДНЫЕ · выполнено ' + doneN + '/' + Q.intro.length + '</div>' + (intro.length ? questRows(intro) : '<div class="hint2">Все вводные задания выполнены.</div>');
+    html += '<div class="secTitle">РИТУАЛЬНЫЕ · текущий забег, обновятся после ритуала</div>' + questRows(Q.ritual);
+    const A = CFG.achievements, pts = C.achPoints(s);
+    html += '<div class="secTitle">ДОСТИЖЕНИЯ · очков ' + pts + ' · +' + Math.round(pts * A.dmgPerPoint * 100) + '% всего урона навсегда</div>';
+    for (const a of A.list) {
+      const t = C.achTier(s, a.id), maxed = t >= a.goals.length, goal = maxed ? a.goals[a.goals.length - 1] : a.goals[t];
+      const v = C.achValue(s, a), can = C.achClaimable(s, a.id), pr = Math.min(1, v / goal);
+      html += '<div class="hRow' + (maxed ? ' claimed' : '') + '" style="--r:' + (can ? 'var(--ok)' : maxed ? 'var(--gold)' : 'var(--line)') + '"><div class="artIcon">' + a.icon + '</div><div class="hInfo">' +
+        '<div class="hName">' + a.name + ' · ступень ' + t + '/' + a.goals.length + '</div>' +
+        '<div class="hSub">' + (maxed ? 'все ступени получены' : fmt(Math.min(v, goal)) + ' / ' + fmt(goal) + ' · награда ' + rewardLine(a.reward) + ' и +1 очко') + '</div>' +
+        (maxed ? '' : '<div class="qBar' + (can ? ' done' : '') + '"><i style="width:' + pr * 100 + '%"></i></div>') + '</div>' +
+        (can ? '<button class="hBtn go" data-ach="' + a.id + '">Забрать</button>' : maxed ? '<button class="hBtn" disabled>✓</button>' : '') + '</div>';
+    }
     if (html !== questsHtml) { $('questsTab').innerHTML = html; questsHtml = html; }
   }
   $('questsTab').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
     if (d.claim) { const r = C.claimQuest(s, d.claim); if (r) { toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); } }
-    else if (d.act === 'all') { const r = C.claimAll(s); if (r) { toast('Забрано наград: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); } }
+    else if (d.act === 'all') {
+      const r = C.claimAll(s), a = C.claimAllAch(s), sum = {}; let n = 0;
+      for (const x of [r, a]) if (x) { n += x.count; for (const k in x.reward) sum[k] = B.add(sum[k] || 0, x.reward[k]); }
+      if (n) { toast('Забрано наград: ' + n + '<small>' + rewardLine(sum) + '</small>'); save(); }
+    }
+    else if (d.ach) { const r = C.claimAch(s, d.ach); if (r) { toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); save(); } }
     else if (d.go) { if (d.go === 'arena') setCollapsed(true); else tab = d.go; }
     render();
   });

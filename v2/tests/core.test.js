@@ -1902,3 +1902,51 @@ test('питомец переживает ритуал, сохраняется; 
   const old = JSON.parse(C.serialize(s)); old.v = 16; delete old.pets;
   assert.deepStrictEqual(C.deserialize(JSON.stringify(old)).pets, { active: null, levels: {} });
 });
+
+// ---------- ритуальные задания и достижения (0.28) ----------
+test('ритуальные задания: прогресс с начала забега, обновляются после ритуала', () => {
+  const s = C.newState(NOCRIT);
+  s.counters.boss = 200; s.maxFloor = s.floor = s.bestFloor = 400;
+  assert.ok(C.questClaimable(s, 'r_boss')); assert.ok(C.questClaimable(s, 'r_f400'));
+  const souls0 = s.souls; C.claimQuest(s, 'r_f400');
+  assert.strictEqual(s.souls, souls0 + 5);
+  assert.strictEqual(s.season.xp, CFG.season.questXp.ritual);
+  C.ritual(s);
+  assert.strictEqual(C.questProgress(s, 'r_boss'), 0);
+  assert.strictEqual(C.questClaimable(s, 'r_f400'), false);
+  assert.strictEqual(s.quests.claimed.r_f400, undefined);
+  s.counters.boss += 150; assert.ok(C.questClaimable(s, 'r_boss'));
+});
+
+test('счётчик редких врагов для ритуального задания', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  Object.assign(s, { floor: 30, maxFloor: 30, enemyIndex: 4 });
+  let k = 0; do { s.stats.kills = k++; } while (!C.rollRare(s, 30, 4));
+  s.enemy.alive = false; s.respawn = 0; C.tick(s, 0.001);
+  killCurrent(s);
+  assert.strictEqual(s.counters.rare, 1);
+});
+
+test('достижения: ступени, награды, очки дают постоянный урон, без критов', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  assert.strictEqual(C.claimAch(s, 'a_kill'), null);
+  s.counters.kill = 1500;
+  assert.ok(C.claimAch(s, 'a_kill')); assert.ok(C.claimAch(s, 'a_kill'));
+  assert.strictEqual(C.claimAch(s, 'a_kill'), null);              // 10 000 ещё нет
+  assert.strictEqual(C.achPoints(s), 2);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.02) < 1e-9);
+  assert.strictEqual(C.critChance(s), C.critChance(t));
+  s.bestFloor = 1000; s.rituals = 5;
+  const r = C.claimAllAch(s);
+  assert.strictEqual(r.count, 4 + 2);                              // этажи 50/100/400/1000, ритуалы 1/5
+  assert.strictEqual(C.achClaimableCount(s), 0);
+});
+
+test('сохранение достижений и базы забега; миграция с 0.27', () => {
+  const s = C.newState(NOCRIT); s.counters.kill = 200; C.claimAch(s, 'a_kill'); s.quests.runBase = { kill: 50 };
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.ach, { a_kill: 1 }); assert.deepStrictEqual(t.quests.runBase, { kill: 50 });
+  const old = JSON.parse(C.serialize(s)); old.v = 17; delete old.ach; delete old.quests.runBase;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.deepStrictEqual(m.ach, {}); assert.strictEqual(m.quests.runBase.kill, 200);
+});
