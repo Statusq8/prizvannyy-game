@@ -2242,3 +2242,28 @@ test('мягкий предел произведения бонусов: до п
   assert.ok(Math.abs(C.softcap(P.start * 100, P.start) - P.start * 10) < 1e-6);
   assert.ok(C.softcap(P.start * 4, P.start) > C.softcap(P.start * 2, P.start));   // рост остаётся
 });
+
+// ---------- 0.48: стена по осколкам (по итогам долгой симуляции) ----------
+test('провал босса: отряд спускается на этаж ниже и фармит его босса (не просто мобов)', () => {
+  const s = C.newState(NOCRIT); s.floor = s.maxFloor = 20; s.highestCleared = 19;
+  C.challengeBoss(s); s.enemy.hp = s.enemy.maxHp = 1e30;
+  let ev = []; for (let i = 0; i < 40 && !ev.some(e => e.type === 'bossFail'); i++) ev = ev.concat(C.tick(s, 1));
+  assert.ok(ev.some(e => e.type === 'bossFail'));
+  assert.strictEqual(s.floor, 19); assert.strictEqual(s.farming, false);   // этаж ниже, с боссом в конце
+  const t = C.newState(NOCRIT); t.autoAdvance = false; t.floor = t.maxFloor = 20; C.challengeBoss(t); t.enemy.hp = t.enemy.maxHp = 1e30;
+  for (let i = 0; i < 40; i++) C.tick(t, 1);
+  assert.strictEqual(t.floor, 20); assert.strictEqual(t.farming, true);   // автопереход выключен — прежний фарм
+});
+
+test('обычные мобы иногда роняют осколки (≈8%, 30% от осколков босса этажа)', () => {
+  let n = 0, got = 0;
+  // настоящий бой: слабый враг, тап убивает
+  const t = C.newState(NOCRIT); t.floor = t.maxFloor = 100; t.highestCleared = 100;
+  for (let i = 0; i < 1500; i++) {
+    if (t.enemy.isBoss) { t.enemyIndex = 1; t.floor = 100; C.goToFloor(t, 99); C.goToFloor(t, 100); }
+    t.enemy.hp = 1; const e = C.tap(t); C.tick(t, 1);
+    for (const x of e) if (x.type === 'mobShard') { n++; got += x.n; }
+  }
+  assert.ok(n > 40 && n < 220, 'дропов: ' + n);
+  assert.ok(got >= n);
+});

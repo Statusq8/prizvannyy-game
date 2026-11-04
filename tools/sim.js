@@ -5,7 +5,7 @@ const TPS = +(process.argv[2] || 6), MIN = +(process.argv[3] || 30);
 const s = Core.newState();
 for (const ab of Core.CONFIG.abilities) Core.setAbilityAuto(s, ab.id, true); const dt = 1 / 30;
 let t = 0, nextTap = 0, farmUntil = 0, fails = 0;
-const marks = new Set([10, 30, 60, 90, 120, 180, 240].map(m => m * 60));
+const marks = new Set([10, 30, 60, 90, 120, 180, 240, 360, 480, 600, 720].map(m => m * 60));
 
 function buyBest() {
   for (;;) {
@@ -30,6 +30,10 @@ function manageHeroes() {
   for (const a of Core.CONFIG.allies) while (Core.starUp(s, a.id));
   for (const a of Core.CONFIG.allies) while (Core.evolve(s, a.id));
   for (const who of ['hero', ...s.squad]) while (Core.rankUp(s, who));
+  // питомцы 2.0: эволюция за фрагменты, в бой — с бонусом «урон отряда» или сильнейший
+  for (const p of Core.CONFIG.pets.list) while (Core.evolvePet(s, p.id));
+  const own = Core.CONFIG.pets.list.filter(p => Core.petForm(s, p.id));
+  if (own.length) { own.sort((x, y) => Core.petPower(y, Core.petForm(s, y.id)).bonus * (y.type === 'squad' ? 2 : 1) - Core.petPower(x, Core.petForm(s, x.id)).bonus * (x.type === 'squad' ? 2 : 1)); Core.setPet(s, own[0].id); }
   const best = Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked)
     .sort((x, y) => (Core.allyDps(s, y.id) || y.baseDps * 1e-9) - (Core.allyDps(s, x.id) || x.baseDps * 1e-9))
     .slice(0, Core.CONFIG.squadSize).map(a => a.id);
@@ -57,7 +61,7 @@ while (t < MIN * 60) {
   if (s.farming && t > farmUntil) Core.challengeBoss(s);
   if ([...marks].some(m => t >= m && t - dt < m)) {
     const al = 'отряд: ' + s.squad.map(id => { const a = Core.CONFIG.allies.find(x => x.id === id); return `${a.name}(${a.rarity}${s.heroes[id].stars ? '★' + s.heroes[id].stars : ''}) ур.${s.allies[id].level}`; }).join(', ') + `, открыто ${Core.CONFIG.allies.filter(a => s.heroes[a.id].unlocked).length}`;
-    console.log(`${Math.round(t / 60)} мин: этаж ${s.floor}, удар ур.${s.tapLevel}, ${al}, крит ${Math.round(Core.critChance(s) * 100)}%×${Core.critMult(s).toFixed(1)}, провалов ${fails}`);
+    console.log(`${Math.round(t / 60)} мин: этаж ${s.floor}, удар ур.${s.tapLevel}, ${al}, рекорд ${s.bestFloor}, питомцы ${Core.CONFIG.pets.list.filter(p => Core.petForm(s, p.id)).length}, крит ${Math.round(Core.critChance(s) * 100)}%×${Core.critMult(s).toFixed(1)}, провалов ${fails}`);
   }
 }
 

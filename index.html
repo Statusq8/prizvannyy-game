@@ -1222,7 +1222,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.47</div>
+  <div id="version">v0.48</div>
 </div>
 
 <script>
@@ -1338,6 +1338,7 @@
       shard: { name: 'Осколок Башни', icon: '🔹' },   // за каждого побеждённого босса, в т. ч. повторно (фарм)
       heart: { name: 'Сердце стража', icon: '🔥' },   // за первое в игре прохождение босса каждого heartEvery-го этажа
       shardsPerBoss: 1, shardsFloorStep: 25,          // осколков за босса: 1 + floor(этаж / 25)
+      mobShardChance: 0.08, mobShardShare: 0.3,       // решение пользователя (0.48): обычный моб с шансом 8% роняет 30% осколков босса этажа (TBD)
       heartEvery: 50,
       heartRecipe: 40,                                // Алтарь: 40 осколков → 1 сердце
     },
@@ -2523,6 +2524,13 @@
     events.push({ type: 'kill', gold, boss: isBoss, rare: rareId || null });
     if (rare) cnt(s, 'rare');
     if (!offline && !isBoss) keeperRoll(s, events);
+    if (!offline && !isBoss && !rare) {
+      const M = CONFIG.materials;
+      if (hash01(s.stats.kills, s.floor, 83) < M.mobShardChance) {
+        const n = Math.max(1, Math.ceil(shardsForBoss(s.floor) * M.mobShardShare * shardMult(s)));
+        s.materials.shard += n; events.push({ type: 'mobShard', n });
+      }
+    }
     if (rare && rare.shards) {
       const n = Math.ceil(rare.shards * shardsForBoss(s.floor) * shardMult(s));
       s.materials.shard += n;
@@ -2649,10 +2657,13 @@
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
       if (s.bossTimeLeft <= 0) {
-        s.farming = true;
+        // Решение пользователя (0.48): после провала отряд сам спускается на этаж ниже и фармит его босса — за осколки;
+        // победа над ним снова ведёт к стене. На этаже 1 и при выключенном автопереходе — прежний фарм без босса.
+        if (s.floor > 1 && s.autoAdvance) { s.floor -= 1; s.farming = false; }
+        else s.farming = true;
         s.enemyIndex = 1;
         spawn(s);
-        events.push({ type: 'bossFail' }, { type: 'spawn' });
+        events.push({ type: 'bossFail', floor: s.floor }, { type: 'spawn' });
       }
     }
     return events;
