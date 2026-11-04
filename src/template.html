@@ -618,7 +618,7 @@
 
   /* 0.37: чистый экран — интерфейс скрыт, логика работает; меню и кнопки возвращаем по одному. Старый интерфейс: адрес с #ui */
   body.clean #abilityBar, body.clean #panel, body.clean #arena .sideBtn, body.clean .leftCol, body.clean #flyout,
-  body.clean #modeBar, body.clean #farmBar, body.clean #hint, body.clean #ultBanner, body.clean #version,
+  body.clean #farmBar, body.clean #hint, body.clean #ultBanner, body.clean #version,
   body.clean #modal, body.clean .allyTag, body.clean .ultBar { display: none !important; }
 
   /* 0.38: верхняя полоса — золото, общий DPS отряда, без урона тапа (видна всегда, нажатие ничего не делает) */
@@ -840,7 +840,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.43</div>
+  <div id="version">v0.44</div>
 </div>
 
 <script>
@@ -1321,7 +1321,7 @@
     const m = s.mode;
     if (m) {
       el.floorLabel.textContent = m.kind === 'endless' ? 'Волна ' + m.step : m.name;
-      $('biomeLabel').textContent = m.kind === 'event' ? 'Событие · ' + C.currentEvent(s).dungeon.ruleText + ' · ' + m.step + '/' + m.total
+      $('biomeLabel').textContent = m.kind === 'trial' ? 'Испытательная башня · страж ' + m.step : m.kind === 'event' ? 'Событие · ' + C.currentEvent(s).dungeon.ruleText + ' · ' + m.step + '/' + m.total
         : m.kind === 'dungeon' ? 'Подземелье · уровень ' + m.tier + ' · враг ' + m.step + '/' + m.total
         : m.kind === 'endless' ? 'Бесконечное подземелье · рекорд ' + s.pve.endlessBest : 'Личный босс · ' + m.diffName;
       $('modeInfo').textContent = m.kind === 'endless' ? '✦ +' + m.essence + (m.tickets ? ' · 🎟 +' + m.tickets : '') : m.name;
@@ -1339,7 +1339,7 @@
       d.classList.toggle('done', idx < s.enemyIndex);
       d.classList.toggle('cur', idx === s.enemyIndex);
     });
-    el.enemyName.textContent = en.isBoss ? (en.final ? 'ФИНАЛЬНЫЙ БОСС · ' : 'БОСС · ') + en.name : en.rare ? (en.rare === 'chest' ? '🧰 ' + en.name + ' 🧰' : '✦ ' + en.name + ' ✦') : en.name;
+    el.enemyName.textContent = m && m.kind === 'trial' ? en.name : en.isBoss ? (en.final ? 'ФИНАЛЬНЫЙ БОСС · ' : 'БОСС · ') + en.name : en.rare ? (en.rare === 'chest' ? '🧰 ' + en.name + ' 🧰' : '✦ ' + en.name + ' ✦') : en.name;
     el.enemyName.classList.toggle('boss', en.isBoss);
     el.enemyName.classList.toggle('rare', !!en.rare);
     el.enemyName.classList.toggle('crystal', en.rare === 'crystal');
@@ -2142,6 +2142,12 @@
       '<div class="hRow" style="--r:#b98cff"><div class="artIcon">∞</div><div class="hInfo"><div class="hName">Рекорд: ' + s.pve.endlessBest + ' волн · попыток ' + el2 + '/' + P.endless.attempts + '</div>' +
       '<div class="hSub">Волны без таймера, каждые ' + P.endless.bossEvery + ' — контрольный босс на ' + P.endless.bossTime + ' с. За босса ✦ эссенция, за новый рекордный рубеж — 🎟 билет.</div></div>' +
       '<button class="hBtn' + (canE ? ' go' : '') + '" data-act="endless"' + (canE ? '' : ' disabled') + '>Войти</button></div>';
+    C.trialSync(s);
+    const tl = C.attemptsLeft(s, 'trial'), canT = !busy && tl > 0, T = P.trial;
+    html += '<div class="secTitle">ИСПЫТАТЕЛЬНАЯ БАШНЯ · равные условия для всех</div>' +
+      '<div class="hRow" style="--r:#ffd36b"><div class="artIcon">🗼</div><div class="hInfo"><div class="hName">Рекорд недели: ' + s.trial.weekBest + ' · за всё время: ' + s.trial.best + ' · попыток ' + tl + '/' + T.attempts + '</div>' +
+      '<div class="hSub">Только тапы одинаковой силы — без прокачки, критов, союзников и питомца. ' + T.time + ' с на каждого стража, с каждым HP больше. За стража ✦ ' + T.essencePer + '. Рейтинг — позже, с сервером.</div></div>' +
+      '<button class="hBtn' + (canT ? ' go' : '') + '" data-act="trial"' + (canT ? '' : ' disabled') + '>Войти</button></div>';
     const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
     html += '<div class="secTitle">ЛИЧНЫЕ БОССЫ · попыток ' + pl + '/' + P.personal.attempts + ' в день · ' + P.personal.time + ' с</div>';
     if (!bosses.length) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">Пока нет</div><div class="hSub">Победите финального босса биома (этаж 50) — он станет личным боссом</div></div></div>';
@@ -2166,6 +2172,7 @@
     if (d.tier) { const [id, dlt] = d.tier.split(':'); tierSel[id] = (tierSel[id] || 1) + +dlt; }
     else if (d.dun) startMode('dungeon', { id: d.dun, tier: tierSel[d.dun] });
     else if (d.act === 'endless') startMode('endless', {});
+    else if (d.act === 'trial') startMode('trial', {});
     else if (d.pb) { const [id, diff] = d.pb.split(':'); startMode('personal', { id, diff }); }
     render();
   });
@@ -2175,10 +2182,11 @@
   });
   function showModeEnd(e) {
     const r = e.reward;
-    $('awayTitle').textContent = e.kind === 'endless' ? 'Забег окончен' : e.win ? 'Победа!' : 'Время вышло'; $('awayOk').textContent = 'Забрать';
+    $('awayTitle').textContent = e.kind === 'endless' ? 'Забег окончен' : e.kind === 'trial' ? 'Испытание окончено' : e.win ? 'Победа!' : 'Время вышло'; $('awayOk').textContent = 'Забрать';
     $('awayTime').textContent = e.name;
     let lines;
     if (e.kind === 'endless') lines = ['<b>Волн пройдено:</b> ' + r.waves + ' (рекорд ' + r.best + ')', '<b>Эссенция:</b> +' + r.essence + ' ✦' + (r.tickets ? ' · <b>билеты:</b> +' + r.tickets + ' 🎟' : '')];
+    else if (e.kind === 'trial') lines = ['<b>Стражей повержено:</b> ' + r.guards, '<b>Рекорд недели:</b> ' + r.week + ' · <b>за всё время:</b> ' + r.best, '<b>Эссенция:</b> +' + r.essence + ' ✦'];
     else lines = e.win ? ['<b>Награда:</b> ' + rewardText(r)] : ['Награды нет — усильтесь или выберите уровень пониже.'];
     $('awayList').innerHTML = lines.join('<br>');
     $('away').classList.add('show');
