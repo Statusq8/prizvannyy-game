@@ -621,15 +621,18 @@
 
   /* 0.38: верхняя полоса — золото, общий DPS отряда, без урона тапа (видна всегда, нажатие ничего не делает) */
   body:not(.clean) #topBar { display: none; }
-  #topBar { position: absolute; z-index: 5; left: 0; right: 0; top: 0; display: flex; gap: 6px; padding: calc(env(safe-area-inset-top) + 8px) 8px 0; pointer-events: none; }
-  #topBar .tb { flex: 1; min-width: 0; height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 12px 0 5px;
-    background: linear-gradient(#1a1222e6, #0d0a12e6); border: 1px solid #4a3560; border-radius: 20px; box-shadow: 0 2px 6px #0008, inset 0 1px 0 #ffffff14; }
-  #topBar .tb i { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 16px;
-    background: radial-gradient(circle at 50% 35%, #3a2a4a, #1a1022); border: 1px solid #5a4470; }
-  #topBar .tb.g i { color: var(--gold); border-color: #8a6a2a; }
-  #topBar .tb b { flex: 1; min-width: 0; text-align: right; font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+  #topBar { position: absolute; z-index: 5; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; gap: 8px; padding: calc(env(safe-area-inset-top) + 8px) 8px 0; pointer-events: none; }
+  /* камень / металл: каменная табличка в металлической оправе */
+  #topBar .tb { width: min(44%, 170px); height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 4px; border-radius: 7px;
+    background: radial-gradient(ellipse at 30% 20%, #5a5462 0%, transparent 60%), linear-gradient(#45404c, #2b2731 55%, #1f1c24);
+    border: 2px solid #8d8597; border-color: #b4adbd #6e6678 #4e4757 #8d8597;
+    box-shadow: 0 0 0 1px #0d0b10, 0 3px 6px #000a, inset 0 1px 0 #ffffff2a, inset 0 -2px 0 #0007; }
+  #topBar .tb i { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 14px;
+    background: radial-gradient(circle at 40% 30%, #e6e1ec, #8a8294 45%, #3d3844 100%); border: 1px solid #1a161e; box-shadow: inset 0 0 0 2px #00000030; color: #241f2a; }
+  #topBar .tb.g i { background: radial-gradient(circle at 40% 30%, #fff1b8, #d4a23a 45%, #6a4a12 100%); color: #3a2606; }
+  #topBar .tb b { flex: 1; min-width: 0; text-align: right; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #efeaf3; text-shadow: 0 1px 0 #000, 0 0 4px #000a; }
   #topBar .tb.g b { color: var(--gold); }
-  #topBar .tb small { flex: none; font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: .3px; }
+  #topBar .tb small { flex: none; font-size: 10px; font-weight: 800; color: #b9b1c3; letter-spacing: .4px; text-shadow: 0 1px 0 #000; }
 </style>
 </head>
 <body>
