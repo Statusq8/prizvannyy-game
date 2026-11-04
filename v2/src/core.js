@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 14,
+    saveVersion: 15,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -354,6 +354,37 @@
     },
     // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)
     dailyGift: { tickets: 1, shard: 20 },
+    // Классы главного героя (GDD §4): только у него. Открываются на этаже unlockFloor (рекорд).
+    // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за ритуал. Узел — 1 очко за уровень.
+    // Сменить класс можно раз в день, очки возвращаются. Без критов. Числа TBD.
+    classes: {
+      unlockFloor: 100, pointsPerFloors: 25, pointsPerRitual: 3,
+      list: [
+        { id: 'blade', name: 'Мастер клинка', icon: '⚔', desc: 'Сила тапов и способностей героя', nodes: [
+          { id: 'b1', name: 'Острая сталь',   kind: 'heroDmg',   per: 0.25, max: 10, desc: '+25% урона героя' },
+          { id: 'b2', name: 'Казнь',           kind: 'bossDmg',   per: 0.10, max: 10, desc: '+10% урона по боссам' },
+          { id: 'b3', name: 'Неутомимость',    kind: 'abilityCd', per: 0.03, max: 10, desc: '−3% перезарядки способностей' },
+        ] },
+        { id: 'caller', name: 'Призыватель', icon: '🔮', desc: 'Сила отряда и ультимейтов', nodes: [
+          { id: 'c1', name: 'Узы призыва',     kind: 'allyDmg',   per: 0.25, max: 10, desc: '+25% урона союзников' },
+          { id: 'c2', name: 'Поток силы',      kind: 'ultCharge', per: 0.04, max: 10, desc: '+4% скорости заряда ультимейтов' },
+          { id: 'c3', name: 'Стража сна',      kind: 'offlineDmg', per: 0.10, max: 10, desc: '+10% урона отряда офлайн' },
+        ] },
+        { id: 'hunter', name: 'Охотник', icon: '🏹', desc: 'Боссы, таймер и редкие враги', nodes: [
+          { id: 'h1', name: 'Метка добычи',    kind: 'bossDmg',   per: 0.20, max: 10, desc: '+20% урона по боссам' },
+          { id: 'h2', name: 'Выдержка',        kind: 'bossTime',  per: 1,    max: 10, desc: '+1 с к таймеру босса' },
+          { id: 'h3', name: 'Нюх',             kind: 'rareChance', per: 0.10, max: 10, desc: '+10% к шансу редких врагов' },
+        ] },
+        { id: 'alch', name: 'Алхимик', icon: '⚗', desc: 'Золото, осколки и души', nodes: [
+          { id: 'a1', name: 'Философский камень', kind: 'gold',    per: 0.20, max: 10, desc: '+20% золота' },
+          { id: 'a2', name: 'Дробление',       kind: 'shards',    per: 0.10, max: 10, desc: '+10% осколков' },
+          { id: 'a3', name: 'Эфир',            kind: 'ritualSouls', per: 0.05, max: 10, desc: '+5% душ за ритуал' },
+        ] },
+      ],
+    },
+    // Переносимый усилитель героя (GDD §8): один на всю игру, ×power к урону владельца (главный герой или союзник).
+    // Перенос не чаще раза в cooldownH часов (TBD). Не связан с артефактом автоатаки.
+    booster: { name: 'Печать силы', power: 3, unlockFloor: 150, cooldownH: 8 },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -521,7 +552,46 @@
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
   function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')); }
   function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')); }
-  function treePower(s, kind) { let x = 0; for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
+  // Бонусы дерева душ и класса героя одного вида складываются
+  function treePower(s, kind) { let x = classPower(s, kind); for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
+  // ---------- классы главного героя ----------
+  function classDef(id) { return CONFIG.classes.list.find(c => c.id === id); }
+  function classPower(s, kind) {
+    const k = s.cls && classDef(s.cls.id);
+    if (!k) return 0;
+    let x = 0; for (const n of k.nodes) if (n.kind === kind) x += n.per * (s.cls.spent[n.id] | 0);
+    return x;
+  }
+  function classUnlocked(s) { return s.bestFloor >= CONFIG.classes.unlockFloor; }
+  function classPoints(s) { const K = CONFIG.classes; return classUnlocked(s) ? Math.floor(s.bestFloor / K.pointsPerFloors) + K.pointsPerRitual * s.rituals : 0; }
+  function classSpent(s) { let n = 0; for (const id in s.cls.spent) n += s.cls.spent[id]; return n; }
+  function classFree(s) { return classPoints(s) - classSpent(s); }
+  // Выбор/смена класса: раз в день (dayKey); вложенные очки возвращаются
+  function canChangeClass(s, dayKey) { return classUnlocked(s) && (!s.cls.id || s.cls.changeDay !== dayKey); }
+  function chooseClass(s, id, dayKey) {
+    if (!classDef(id) || s.cls.id === id || !canChangeClass(s, dayKey)) return false;
+    if (s.cls.id) s.cls.changeDay = dayKey;      // первый выбор бесплатный и не тратит смену дня
+    s.cls.id = id; s.cls.spent = {};
+    return true;
+  }
+  function classNode(s, nid) { const k = classDef(s.cls.id); return k && k.nodes.find(n => n.id === nid); }
+  function buyClassNode(s, nid) {
+    const n = classNode(s, nid);
+    if (!n || classFree(s) < 1 || (s.cls.spent[nid] | 0) >= n.max) return false;
+    s.cls.spent[nid] = (s.cls.spent[nid] | 0) + 1;
+    return true;
+  }
+  // ---------- переносимый усилитель ----------
+  function boosterUnlocked(s) { return s.bestFloor >= CONFIG.booster.unlockFloor; }
+  function boosterMult(s, who) { return s.booster.owner === who ? CONFIG.booster.power : 1; }
+  // Сколько мс ждать до следующего переноса (0 — можно)
+  function boosterWait(s, now) { return s.booster.owner == null ? 0 : Math.max(0, s.booster.movedAt + CONFIG.booster.cooldownH * 3600e3 - now); }
+  function moveBooster(s, who, now) {
+    if (!boosterUnlocked(s) || s.booster.owner === who || boosterWait(s, now) > 0) return false;
+    if (who !== 'hero' && (!allyDef(who) || !s.heroes[who].unlocked)) return false;
+    s.booster.owner = who; s.booster.movedAt = now;
+    return true;
+  }
   function branchOpen(s, b) { return s.rituals >= b.rituals; }
   function treeNodeOpen(s, id) {
     const n = treeDef(id);
@@ -558,12 +628,12 @@
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
   function goldMult(s) { return (1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')); }
-  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
     let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s);
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg'));
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg'));
     return B.mul(soulMult(s), m);
   }
@@ -672,7 +742,7 @@
     return m;
   }
   // Постоянная сила самого героя: звёзды × эволюция
-  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id); }
+  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   function inSquad(s, id) { return s.squad.includes(id); }
@@ -735,6 +805,8 @@
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
+      cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
+      booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
       rituals: 0,
       bestFloor: 1,                              // рекорд за всю игру
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
@@ -889,7 +961,7 @@
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')));   // готовность копится и сохраняется между врагами
     }
     tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
@@ -1763,6 +1835,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
+      cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
       quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, claimed: Object.keys(s.quests.claimed) }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
@@ -1810,6 +1883,7 @@
     }
     if (d.v === 12) { d.v = 13; d.season = { n: 0, xp: 0, tokens: 0, premium: false, free: [], paid: [], trail: 0, trailBase: null, catchupDay: '' }; }   // 0.20 → 0.21
     if (d.v === 13) { d.v = 14; d.event = { week: '', id: null, points: 0, lanterns: 0, ms: [], bought: {} }; d.inbox = []; d.inboxSeq = 1; }   // 0.22 → 0.23
+    if (d.v === 14) { d.v = 15; d.cls = { id: null, spent: {}, changeDay: '' }; d.booster = { owner: null, movedAt: 0 }; }   // 0.24 → 0.25
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -1896,6 +1970,11 @@
     s.counters = nums(d.counters);
     s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), claimed: {} };
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
+    const cl = d.cls, bo = d.booster;
+    if (!cl || typeof cl !== 'object' || !bo || typeof bo !== 'object' || typeof bo.movedAt !== 'number') return null;
+    s.cls = { id: classDef(cl.id) ? cl.id : null, spent: {}, changeDay: typeof cl.changeDay === 'string' ? cl.changeDay : '' };
+    if (s.cls.id) for (const n of classDef(s.cls.id).nodes) { const v = cl.spent && cl.spent[n.id]; if (int(v, 1) && v <= n.max) s.cls.spent[n.id] = v; }
+    s.booster = { owner: bo.owner === 'hero' || allyDef(bo.owner) ? bo.owner : null, movedAt: bo.movedAt };
     const ev = d.event;
     if (!ev || typeof ev !== 'object' || typeof ev.week !== 'string' || !int(ev.points, 0) || !int(ev.lanterns, 0) || !Array.isArray(ev.ms) ||
         !Array.isArray(d.inbox) || !int(d.inboxSeq, 1)) return null;
@@ -1985,6 +2064,8 @@
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    classDef, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
+    boosterUnlocked, boosterMult, boosterWait, moveBooster,
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,

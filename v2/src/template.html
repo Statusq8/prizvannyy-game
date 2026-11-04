@@ -602,7 +602,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.24</div>
+  <div id="version">v0.25</div>
 </div>
 
 <script>
@@ -1008,7 +1008,7 @@
       u.card.style.display = unlocked ? '' : 'none';
       u.card.style.order = sq >= 0 ? sq : 10 + CFG.allies.indexOf(a);
       u.title.innerHTML = '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + (lv ? 'ур. ' + fmt(lv) + '/' + fmt(acap) : a.role) +
-        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>');
+        (sq >= 0 ? '<span class="badge sq">отряд</span>' : '<span class="badge rs">резерв</span>') + (s.booster.owner === a.id ? '<span class="badge sq" style="color:var(--gold)">✦×' + CFG.booster.power + '</span>' : '');
       // фигура на арене — только у героя в отряде и нанятого
       const slot = SLOTS[sq];
       u.sprite.classList.toggle('on', sq >= 0 && lv > 0);
@@ -1097,7 +1097,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
-      heroes: CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       season: seasonBang(), events: !s.mode && C.attemptsLeft(s, 'event') > 0, altar: false, runes: s.materials.shard >= CFG.runes.createCost && !s.runes.length,
@@ -1128,7 +1128,8 @@
     const M = CFG.materials, ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
     let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>' +
       M.heart.icon + ' <b>' + fmt(s.materials.heart) + '</b> сердец</span></div>' +
-      '<div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
+      heroTopHtml() +
+      '<div class="secTitle">СОЮЗНИКИ</div><div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
       'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>';
     for (const a of list) {
       const h = s.heroes[a.id], v = ALLY_VIS[a.id];
@@ -1160,6 +1161,47 @@
     }
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
+  // ---------- класс главного героя и «Печать силы» ----------
+  let classPick = false;
+  function heroTopHtml() {
+    const K = CFG.classes, Bo = CFG.booster, dk = dayKey();
+    let html = '<div class="secTitle">ГЛАВНЫЙ ГЕРОЙ · КЛАСС</div>';
+    if (!C.classUnlocked(s)) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">Классы</div><div class="hSub">Откроются на этаже ' + K.unlockFloor + ' (рекорд ' + s.bestFloor + ')</div></div></div>';
+    else if (!s.cls.id || classPick) {
+      html += '<div class="hint2">' + (s.cls.id ? 'Смена класса возвращает все очки. Доступна раз в день.' : 'Выберите класс — его можно сменить раз в день. Очки класса: за каждые ' + K.pointsPerFloors + ' этажей рекорда и ' + K.pointsPerRitual + ' за ритуал.') + '</div>';
+      for (const k of K.list) {
+        const cur = s.cls.id === k.id, can = !cur && C.canChangeClass(s, dk);
+        html += '<div class="hRow" style="--r:' + (cur ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + k.icon + '</div><div class="hInfo"><div class="hName">' + k.name + (cur ? ' <span class="badge sq">сейчас</span>' : '') + '</div>' +
+          '<div class="hSub">' + k.desc + ': ' + k.nodes.map(n => n.desc).join(', ') + '</div></div>' +
+          (cur ? '' : '<button class="hBtn' + (can ? ' go' : '') + '" data-cls="' + k.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Выбрать' : 'Завтра') + '</button>') + '</div>';
+      }
+      if (s.cls.id) html += '<button class="hBtn" data-act="clsBack" style="width:100%;margin-top:6px">Отмена</button>';
+    } else {
+      const k = C.classDef(s.cls.id), free = C.classFree(s);
+      html += '<div class="hRow" style="--r:var(--gold)"><div class="artIcon">' + k.icon + '</div><div class="hInfo"><div class="hName">' + k.name + ' · очков ' + free + '/' + C.classPoints(s) + '</div>' +
+        '<div class="hSub">' + k.desc + '</div></div><button class="hBtn" data-act="clsPick">Сменить</button></div>';
+      for (const n of k.nodes) {
+        const lv = s.cls.spent[n.id] | 0, can = free > 0 && lv < n.max;
+        html += '<div class="hRow" style="--r:#ffd36b80;margin-left:14px"><div class="hInfo"><div class="hName">' + n.name + ' · ' + lv + '/' + n.max + '</div><div class="hSub">' + n.desc + ' за уровень</div></div>' +
+          '<button class="hBtn' + (can ? ' go' : '') + '" data-cnode="' + n.id + '"' + (can ? '' : ' disabled') + '>+1 · 1 очко</button></div>';
+      }
+    }
+    html += '<div class="secTitle">' + Bo.name.toUpperCase() + ' · ×' + Bo.power + ' урона одному герою</div>';
+    if (!C.boosterUnlocked(s)) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">' + Bo.name + '</div><div class="hSub">Откроется на этаже ' + Bo.unlockFloor + '</div></div></div>';
+    else {
+      const own = s.booster.owner, wait = C.boosterWait(s, Date.now());
+      const name = own === 'hero' ? 'Призванный' : own ? CFG.allies.find(a => a.id === own).name : 'никто';
+      html += '<div class="hint2">Сейчас у: <b>' + name + '</b>. ' + (wait > 0 ? 'Передать снова можно через ' + dur(wait / 1000) + '.' : 'Можно передать — перенос не чаще раза в ' + Bo.cooldownH + ' ч.') + '</div><div class="spare">';
+      const who = ['hero', ...s.squad, ...CFG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id)];
+      for (const id of who) {
+        const nm = id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, cur = own === id;
+        html += '<button class="hBtn' + (cur ? ' go' : '') + '" data-boost="' + id + '"' + (cur || wait > 0 ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + nm + '</button>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
   // ---------- Алтарь ----------
   let altarSel = {}, altarHtml = '';
   function cleanSel() {
@@ -1678,6 +1720,12 @@
     if (b.dataset.star) ok = C.starUp(s, b.dataset.star);
     if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
+    const dd = b.dataset;
+    if (dd.cls) { ok = C.chooseClass(s, dd.cls, dayKey()); if (ok) { classPick = false; toast('Класс героя<small>' + C.classDef(dd.cls).name + '</small>'); } }
+    if (dd.act === 'clsPick') { classPick = true; ok = true; }
+    if (dd.act === 'clsBack') { classPick = false; ok = true; }
+    if (dd.cnode) ok = C.buyClassNode(s, dd.cnode);
+    if (dd.boost) { ok = C.moveBooster(s, dd.boost, Date.now()); if (ok) toast(CFG.booster.name + '<small>теперь у: ' + (dd.boost === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === dd.boost).name) + '</small>'); }
     if (b.dataset.evo) {
       const ec = C.evoCost(s, b.dataset.evo);
       ok = C.evolve(s, b.dataset.evo);
