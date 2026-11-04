@@ -221,6 +221,15 @@
   #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
   /* главный герой — впереди по центру, вид со спины (временная заглушка) */
+  /* питомец — впереди слева от героя (временная заглушка) */
+  #pet { position: absolute; left: 27%; bottom: 10px; width: min(15%, 64px); aspect-ratio: 1; z-index: 2; pointer-events: none; display: none; }
+  #pet.on { display: block; }
+  #pet .pfig { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(26px, 5dvh, 44px);
+    filter: drop-shadow(0 4px 3px #000a) drop-shadow(0 0 8px #b98cff80); animation: petIdle 1.6s ease-in-out infinite; }
+  #pet.attack .pfig { animation: petAtk .22s ease-out; }
+  #pet .allyTag { color: #d8b8ff; bottom: -12px; }
+  @keyframes petIdle { 50% { transform: translateY(-4px); } }
+  @keyframes petAtk { 40% { transform: translate(18px, -14px) scale(1.15); } 100% { transform: none; } }
   #hero { position: absolute; left: 50%; bottom: 14px; height: min(34%, 150px); aspect-ratio: 1 / 1.15; transform: translateX(-50%); z-index: 2; pointer-events: none; }
   #hero .fig { width: 100%; height: 100%; animation: allyIdle 3s ease-in-out infinite; transform-origin: 50% 100%; }
   #hero.attack .fig { animation: heroAtk .18s ease-out; }
@@ -506,6 +515,7 @@
       </svg>
     </div>
     <div id="allyLayer"></div>
+    <div id="pet"><div class="pfig"></div><div class="allyTag"></div></div>
     <div id="hero">
       <div class="fig">
         <svg viewBox="0 0 120 138">
@@ -604,7 +614,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.26.1</div>
+  <div id="version">v0.27</div>
 </div>
 
 <script>
@@ -764,6 +774,12 @@
           fx('spark', x, y, null, 300);
           if (e.crit) fx('critFlash', x, y, null, 160);
           fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
+        } else if (e.source === 'pet') {
+          dmgLog.push([performance.now(), e.dmg, 'auto']);
+          const pe = $('pet'); pe.classList.remove('attack'); void pe.offsetWidth; pe.classList.add('attack');
+          const dx = r.width * (0.42 + Math.random() * 0.16), dy = r.height * (0.46 + Math.random() * 0.1);
+          if (e.crit) fx('critFlash', dx, dy, null, 160);
+          const d = fx('dmg auto' + (e.crit ? ' crit' : ''), dx, dy, fmt(e.dmg), 700); if (!e.crit) d.style.color = '#d8b8ff';
         } else if (e.source === 'heroAuto') {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
@@ -950,6 +966,9 @@
       lastBiome = '';
     }
     $('modeBar').classList.toggle('show', !!m);
+    const pd = s.pets.active && C.petDef(s.pets.active), pel = $('pet');
+    pel.classList.toggle('on', !!pd);
+    if (pd && pel.dataset.id !== pd.id) { pel.dataset.id = pd.id; pel.querySelector('.pfig').textContent = pd.icon; pel.querySelector('.allyTag').textContent = pd.name.split(' ').pop(); }
     el.dots.style.visibility = m ? 'hidden' : '';
     el.prev.disabled = !!m || s.floor <= 1;
     el.next.disabled = !!m || s.floor >= s.maxFloor;
@@ -1103,7 +1122,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -1205,6 +1224,25 @@
         html += '<button class="hBtn' + (cur ? ' go' : '') + '" data-boost="' + id + '"' + (cur || wait > 0 ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + nm + '</button>';
       }
       html += '</div>';
+    }
+    // призванное существо
+    const P = CFG.pets;
+    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · в бою одно · бьёт долей DPS отряда</div>';
+    for (const p of P.list) {
+      const lv = C.petLevel(s, p.id), act = s.pets.active === p.id;
+      if (!lv) {
+        const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
+        const can = C.petCanUnlock(s, p.id);
+        html += '<div class="hRow' + (can ? '' : ' locked') + '" style="--r:#b98cff"><div class="artIcon">' + (can ? p.icon : '?') + '</div><div class="hInfo"><div class="hName">' + p.name + '</div>' +
+          '<div class="hSub">' + p.desc + ' · откроется: ' + cond + '</div></div>' + (can ? '<button class="hBtn go" data-pet="' + p.id + '">Призвать</button>' : '') + '</div>';
+        continue;
+      }
+      const up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up;
+      html += '<div class="hRow" style="--r:' + (act ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + p.icon + '</div><div class="hInfo">' +
+        '<div class="hName">' + p.name + ' · ур. ' + lv + '/' + P.maxLevel + (act ? ' <span class="badge sq">в бою</span>' : '') + '</div>' +
+        '<div class="hSub">' + Math.round(C.petShare(s, p.id) * 100) + '% DPS отряда · удар раз в ' + p.interval + ' с · ' + p.desc + '</div></div><div class="hBtns">' +
+        (act ? '' : '<button class="hBtn go" data-pset="' + p.id + '">В бой</button>') +
+        (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-pup="' + p.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🔹' + fmt(up) + '</button>' : '<button class="hBtn" disabled>max</button>') + '</div></div>';
     }
     return html;
   }
@@ -1799,6 +1837,9 @@
     if (dd.act === 'clsPick') { classPick = true; ok = true; }
     if (dd.act === 'clsBack') { classPick = false; ok = true; }
     if (dd.cnode) ok = C.buyClassNode(s, dd.cnode);
+    if (dd.pet) { ok = C.unlockPet(s, dd.pet); if (ok) toast('Призванное существо!<small>' + C.petDef(dd.pet).icon + ' ' + C.petDef(dd.pet).name + '</small>'); }
+    if (dd.pset) ok = C.setPet(s, dd.pset);
+    if (dd.pup) ok = C.upgradePet(s, dd.pup);
     if (dd.boost) { ok = C.moveBooster(s, dd.boost, Date.now()); if (ok) toast(CFG.booster.name + '<small>теперь у: ' + (dd.boost === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === dd.boost).name) + '</small>'); }
     if (b.dataset.evo) {
       const ec = C.evoCost(s, b.dataset.evo);

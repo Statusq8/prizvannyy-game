@@ -221,6 +221,15 @@
   #cards { max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
   /* союзники на арене (временные заглушки): двое по бокам впереди, двое позади */
   /* главный герой — впереди по центру, вид со спины (временная заглушка) */
+  /* питомец — впереди слева от героя (временная заглушка) */
+  #pet { position: absolute; left: 27%; bottom: 10px; width: min(15%, 64px); aspect-ratio: 1; z-index: 2; pointer-events: none; display: none; }
+  #pet.on { display: block; }
+  #pet .pfig { width: 100%; height: 100%; display: grid; place-items: center; font-size: clamp(26px, 5dvh, 44px);
+    filter: drop-shadow(0 4px 3px #000a) drop-shadow(0 0 8px #b98cff80); animation: petIdle 1.6s ease-in-out infinite; }
+  #pet.attack .pfig { animation: petAtk .22s ease-out; }
+  #pet .allyTag { color: #d8b8ff; bottom: -12px; }
+  @keyframes petIdle { 50% { transform: translateY(-4px); } }
+  @keyframes petAtk { 40% { transform: translate(18px, -14px) scale(1.15); } 100% { transform: none; } }
   #hero { position: absolute; left: 50%; bottom: 14px; height: min(34%, 150px); aspect-ratio: 1 / 1.15; transform: translateX(-50%); z-index: 2; pointer-events: none; }
   #hero .fig { width: 100%; height: 100%; animation: allyIdle 3s ease-in-out infinite; transform-origin: 50% 100%; }
   #hero.attack .fig { animation: heroAtk .18s ease-out; }
@@ -506,6 +515,7 @@
       </svg>
     </div>
     <div id="allyLayer"></div>
+    <div id="pet"><div class="pfig"></div><div class="allyTag"></div></div>
     <div id="hero">
       <div class="fig">
         <svg viewBox="0 0 120 138">
@@ -604,7 +614,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.26.1</div>
+  <div id="version">v0.27</div>
 </div>
 
 <script>
@@ -614,7 +624,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 16,
+    saveVersion: 17,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -1019,6 +1029,18 @@
       rarityWeights: [50, 26, 13, 6, 3, 1.5, 0.5],      // E … GOD; сдвигаются выше с этажом
       rarityFloorStep: 500,         // каждые 500 этажей рекорда — +1 к минимальной редкости броска (до A)
     },
+    // Призванное существо — питомец (GDD §3): 1 в бою, автоатака с собственной частотой, тот же потолок критов,
+    // бонусы артефактов действуют. Удар = доля (share) от DPS отряда × интервал, поэтому питомец не устаревает.
+    // Уровень (за осколки) увеличивает долю; уровни постоянные, переживают ритуал. Числа TBD.
+    pets: {
+      list: [
+        { id: 'wolf',    name: 'Теневой волк',      icon: '🐺', interval: 0.5, share: 0.12, desc: 'быстрые укусы',            unlock: { floor: 25 } },
+        { id: 'golem',   name: 'Каменный голем',    icon: '🪨', interval: 2.0, share: 0.30, boss: 0.5, desc: 'тяжёлый удар, +50% по боссам', unlock: { floor: 150 } },
+        { id: 'phoenix', name: 'Пепельный феникс',  icon: '🦅', interval: 1.0, share: 0.25, vuln: 0.15, desc: 'урон +15% по уязвимому боссу', unlock: { rituals: 1 } },
+        { id: 'drake',   name: 'Костяной дракончик', icon: '🐉', interval: 1.5, share: 0.35, desc: 'сильнейший, но редкий', unlock: { totems: 5 } },
+      ],
+      perLevel: 0.04, maxLevel: 50, upShards: 30, upGrowth: 1.22,
+    },
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, GOD: 100 },
@@ -1298,6 +1320,34 @@
     return n ? { count: n, dust } : null;
   }
 
+  // ---------- питомцы ----------
+  function petDef(id) { return CONFIG.pets.list.find(p => p.id === id); }
+  function petLevel(s, id) { return s.pets.levels[id] | 0; }
+  function petCanUnlock(s, id) {
+    const u = petDef(id).unlock;
+    return (!u.floor || s.bestFloor >= u.floor) && (!u.rituals || s.rituals >= u.rituals) && (!u.totems || totemCount(s) >= u.totems);
+  }
+  function unlockPet(s, id) {
+    if (!petDef(id) || petLevel(s, id) > 0 || !petCanUnlock(s, id)) return false;
+    s.pets.levels[id] = 1;
+    if (!s.pets.active) s.pets.active = id;
+    return true;
+  }
+  function setPet(s, id) { if (!petLevel(s, id)) return false; s.pets.active = id; s.petAcc = 0; return true; }
+  function petShare(s, id) { const p = petDef(id); return p.share * (1 + CONFIG.pets.perLevel * (petLevel(s, id) - 1)); }
+  function petUpCost(s, id) { const lv = petLevel(s, id), P = CONFIG.pets; return !lv || lv >= P.maxLevel ? null : Math.ceil(P.upShards * Math.pow(P.upGrowth, lv - 1)); }
+  function upgradePet(s, id) {
+    const c = petUpCost(s, id);
+    if (!c || s.materials.shard < c) return false;
+    s.materials.shard -= c; s.pets.levels[id]++;
+    return true;
+  }
+  // Сырой DPS отряда (без постоянных множителей — их питомец получает сам через permMult)
+  function squadRawDps(s) { return CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0); }
+  function petHit(s) { const p = s.pets.active && petDef(s.pets.active); return p ? B.mul(squadRawDps(s), petShare(s, p.id) * p.interval) : 0; }
+  // Средний DPS питомца с постоянными множителями (для показа и офлайна)
+  function petDps(s) { const p = s.pets.active && petDef(s.pets.active); return p ? B.mul(B.div(petHit(s), p.interval), permMult(s, 'pet')) : 0; }
+
   // ---------- переносимый усилитель ----------
   function boosterUnlocked(s) { return s.bestFloor >= CONFIG.booster.unlockFloor; }
   function boosterMult(s, who) { return s.booster.owner === who ? CONFIG.booster.power : 1; }
@@ -1469,7 +1519,7 @@
   function autoDps(s) {
     const allies = B.mul(CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0), permMult(s, 'ally'));
     const hero = hasHeroAuto(s) ? B.div(B.mul(tapDamage(s), permMult(s, 'heroAuto')), CONFIG.heroAutoInterval) : 0;
-    return B.add(allies, hero);
+    return B.add(B.add(allies, hero), petDps(s));
   }
   // Урон тапа с постоянными множителями (для показа)
   function tapHit(s) { return B.mul(tapDamage(s), permMult(s, 'tap')); }
@@ -1530,6 +1580,8 @@
       bestRecordAtRunStart: 1,                   // рекорд на момент начала забега (для бонуса за новый рекорд)
       heroAutoAcc: 0,                            // накопитель автоатаки героя (не сохраняется)
       reserveAcc: 0,                             // накопитель урона резерва (не сохраняется)
+      pets: { active: null, levels: {} },        // питомцы: активный и уровни (≥1 — призван)
+      petAcc: 0,                                 // накопитель атаки питомца (не сохраняется)
       rng: (opts && opts.rng) || Math.random,   // источник случайности (в тестах подменяется)
       // не сохраняется:
       enemy: null,
@@ -1722,9 +1774,21 @@
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
     const rd = rule === 'tapOnly' ? 0 : reserveDps(s);
-    if (rd > 0) {
+    if (B.gt(rd, 0)) {
       s.reserveAcc += dt;
       if (s.reserveAcc >= 1) { s.reserveAcc -= 1; dealDamage(s, rd, 'reserve', events); if (!s.enemy.alive) return events; }
+    }
+    // Питомец: своя частота атаки
+    const pet = s.pets.active && petDef(s.pets.active);
+    if (pet && rule !== 'tapOnly') {
+      s.petAcc += dt;
+      if (s.petAcc >= pet.interval) {
+        s.petAcc -= pet.interval;
+        let hit = petHit(s);
+        if (pet.boss && s.enemy.isBoss) hit = B.mul(hit, 1 + pet.boss);
+        if (pet.vuln && s.enemy.vuln > 0) hit = B.mul(hit, 1 + pet.vuln);
+        if (B.gt(hit, 0)) { dealDamage(s, hit, 'pet', events); if (!s.enemy.alive) return events; }
+      }
     }
     if (s.mode) { modeTimer(s, dt, events); return events; }
     if (s.enemy.isBoss) {
@@ -2553,6 +2617,7 @@
       heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
+      pets: { active: s.pets.active, levels: { ...s.pets.levels } },
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
@@ -2611,6 +2676,7 @@
     if (d.v === 13) { d.v = 14; d.event = { week: '', id: null, points: 0, lanterns: 0, ms: [], bought: {} }; d.inbox = []; d.inboxSeq = 1; }   // 0.22 → 0.23
     if (d.v === 14) { d.v = 15; d.cls = { id: null, spent: {}, changeDay: '' }; d.booster = { owner: null, movedAt: 0 }; }   // 0.24 → 0.25
     if (d.v === 15) { d.v = 16; d.bones = []; d.boneSeq = 1; if (d.materials) d.materials.dust = 0; }   // 0.25 → 0.26: кости монстров
+    if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // 0.26 → 0.27: питомцы
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2670,6 +2736,10 @@
                      on: b.on === 'hero' || allyDef(b.on) ? b.on : null });
     }
     s.boneSeq = Math.max(d.boneSeq, ...s.bones.map(b => b.id + 1));
+    const pt = d.pets;
+    if (!pt || typeof pt !== 'object' || !pt.levels || typeof pt.levels !== 'object') return null;
+    for (const p of CONFIG.pets.list) { const lv = pt.levels[p.id]; if (int(lv, 1) && lv <= CONFIG.pets.maxLevel) s.pets.levels[p.id] = lv; }
+    s.pets.active = s.pets.levels[pt.active] ? pt.active : null;
     if (!int(d.heroRank, 0) || d.heroRank > maxSteps()) return null;
     s.heroRank = d.heroRank;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
@@ -2800,6 +2870,7 @@
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
+    petDef, petLevel, petCanUnlock, unlockPet, setPet, petShare, petUpCost, upgradePet, petHit, petDps, squadRawDps,
     boneSlot, boneValue, equippedOn, bonePower, boneMult, rollBone, equipBone, unequipBone, boneUpCost, upgradeBone,
     gradeCost, gradeUpBone, setBoneLock, recycleValue, recycleBones,
     classDef, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
@@ -2971,6 +3042,12 @@
           fx('spark', x, y, null, 300);
           if (e.crit) fx('critFlash', x, y, null, 160);
           fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
+        } else if (e.source === 'pet') {
+          dmgLog.push([performance.now(), e.dmg, 'auto']);
+          const pe = $('pet'); pe.classList.remove('attack'); void pe.offsetWidth; pe.classList.add('attack');
+          const dx = r.width * (0.42 + Math.random() * 0.16), dy = r.height * (0.46 + Math.random() * 0.1);
+          if (e.crit) fx('critFlash', dx, dy, null, 160);
+          const d = fx('dmg auto' + (e.crit ? ' crit' : ''), dx, dy, fmt(e.dmg), 700); if (!e.crit) d.style.color = '#d8b8ff';
         } else if (e.source === 'heroAuto') {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           heroEl.classList.remove('attack'); void heroEl.offsetWidth; heroEl.classList.add('attack');
@@ -3157,6 +3234,9 @@
       lastBiome = '';
     }
     $('modeBar').classList.toggle('show', !!m);
+    const pd = s.pets.active && C.petDef(s.pets.active), pel = $('pet');
+    pel.classList.toggle('on', !!pd);
+    if (pd && pel.dataset.id !== pd.id) { pel.dataset.id = pd.id; pel.querySelector('.pfig').textContent = pd.icon; pel.querySelector('.allyTag').textContent = pd.name.split(' ').pop(); }
     el.dots.style.visibility = m ? 'hidden' : '';
     el.prev.disabled = !!m || s.floor <= 1;
     el.next.disabled = !!m || s.floor >= s.maxFloor;
@@ -3310,7 +3390,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => !C.petLevel(s, p.id) && C.petCanUnlock(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -3412,6 +3492,25 @@
         html += '<button class="hBtn' + (cur ? ' go' : '') + '" data-boost="' + id + '"' + (cur || wait > 0 ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + nm + '</button>';
       }
       html += '</div>';
+    }
+    // призванное существо
+    const P = CFG.pets;
+    html += '<div class="secTitle">ПРИЗВАННОЕ СУЩЕСТВО · в бою одно · бьёт долей DPS отряда</div>';
+    for (const p of P.list) {
+      const lv = C.petLevel(s, p.id), act = s.pets.active === p.id;
+      if (!lv) {
+        const u = p.unlock, cond = u.floor ? 'этаж ' + u.floor : u.rituals ? u.rituals + ' ритуал' : u.totems + ' тотемов';
+        const can = C.petCanUnlock(s, p.id);
+        html += '<div class="hRow' + (can ? '' : ' locked') + '" style="--r:#b98cff"><div class="artIcon">' + (can ? p.icon : '?') + '</div><div class="hInfo"><div class="hName">' + p.name + '</div>' +
+          '<div class="hSub">' + p.desc + ' · откроется: ' + cond + '</div></div>' + (can ? '<button class="hBtn go" data-pet="' + p.id + '">Призвать</button>' : '') + '</div>';
+        continue;
+      }
+      const up = C.petUpCost(s, p.id), canUp = up && s.materials.shard >= up;
+      html += '<div class="hRow" style="--r:' + (act ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + p.icon + '</div><div class="hInfo">' +
+        '<div class="hName">' + p.name + ' · ур. ' + lv + '/' + P.maxLevel + (act ? ' <span class="badge sq">в бою</span>' : '') + '</div>' +
+        '<div class="hSub">' + Math.round(C.petShare(s, p.id) * 100) + '% DPS отряда · удар раз в ' + p.interval + ' с · ' + p.desc + '</div></div><div class="hBtns">' +
+        (act ? '' : '<button class="hBtn go" data-pset="' + p.id + '">В бой</button>') +
+        (up ? '<button class="hBtn' + (canUp ? ' go' : '') + '" data-pup="' + p.id + '"' + (canUp ? '' : ' disabled') + '>⬆ 🔹' + fmt(up) + '</button>' : '<button class="hBtn" disabled>max</button>') + '</div></div>';
     }
     return html;
   }
@@ -4006,6 +4105,9 @@
     if (dd.act === 'clsPick') { classPick = true; ok = true; }
     if (dd.act === 'clsBack') { classPick = false; ok = true; }
     if (dd.cnode) ok = C.buyClassNode(s, dd.cnode);
+    if (dd.pet) { ok = C.unlockPet(s, dd.pet); if (ok) toast('Призванное существо!<small>' + C.petDef(dd.pet).icon + ' ' + C.petDef(dd.pet).name + '</small>'); }
+    if (dd.pset) ok = C.setPet(s, dd.pset);
+    if (dd.pup) ok = C.upgradePet(s, dd.pup);
     if (dd.boost) { ok = C.moveBooster(s, dd.boost, Date.now()); if (ok) toast(CFG.booster.name + '<small>теперь у: ' + (dd.boost === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === dd.boost).name) + '</small>'); }
     if (b.dataset.evo) {
       const ec = C.evoCost(s, b.dataset.evo);
