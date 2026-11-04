@@ -583,6 +583,8 @@
     <div id="inboxTab" class="tabBody"></div>
     <div id="bonesTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
+      <div class="spare" id="bannerPick" style="margin-bottom:6px"></div>
+      <div class="hint2" id="bannerInfo"></div>
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
         <div class="portalBtns"><button class="pBtn" id="pull1">×1</button><button class="pBtn" id="pull10">×10</button></div>
@@ -614,7 +616,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.28</div>
+  <div id="version">v0.29</div>
 </div>
 
 <script>
@@ -1826,14 +1828,25 @@
     render();
   });
 
+  let banner = 'normal', bannerHtml = '';
+  function costText(id, n) { const c = C.bannerCost(id, n); return c.lanterns ? '🏮' + c.lanterns : '🎟' + c.tickets; }
   function renderPortal() {
-    const P = CFG.portal;
+    const P = CFG.portal, b = C.bannerDef(banner), pity = C.bannerPity(s, banner);
+    const chips = P.banners.map(x => '<button class="hBtn' + (x.id === banner ? ' go' : '') + '" data-banner="' + x.id + '"' +
+      (x.id === 'event' && !C.currentEvent(s) ? ' disabled' : '') + '>' + x.icon + ' ' + x.name + '</button>').join('');
+    if (chips !== bannerHtml) { $('bannerPick').innerHTML = chips; bannerHtml = chips; }
+    const feat = b.featured ? C.featuredHeroes(s).map(id => CFG.allies.find(a => a.id === id)) : [];
+    $('bannerInfo').innerHTML = b.desc + (feat.length ? '. Герои недели: <b>' + feat.map(a => a.name + ' (' + a.rarity + ')').join(', ') + '</b>' : '') +
+      (b.id === 'event' ? '. Фонарей: 🏮 ' + fmt(s.event.lanterns) : '');
     $('ticketCount').textContent = fmt(s.tickets);
-    $('pityInfo').textContent = 'A+ гарантия через ' + (P.pityA - s.pity.a) + ' · S+ через ' + (P.pityS - s.pity.s);
-    $('pull1').disabled = s.tickets < 1;
-    $('pull10').disabled = s.tickets < 10;
-    const total = Object.values(P.odds).reduce((a, b) => a + b, 0);
-    $('oddsInfo').innerHTML = 'Шансы: ' + RANKS.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+    const pA = b.pityA || P.pityA, pS = b.pityS || P.pityS;
+    $('pityInfo').textContent = 'A+ гарантия через ' + (pA - pity.a) + ' · S+ через ' + (pS - pity.s) + (pity.s > P.softS ? ' · шанс S повышен!' : '');
+    $('pull1').disabled = !C.canSummon(s, banner, 1); $('pull1').textContent = '×1 · ' + costText(banner, 1);
+    $('pull10').disabled = !C.canSummon(s, banner, 10); $('pull10').textContent = '×10 · ' + costText(banner, 10);
+    const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0, pool = RANKS.filter((r, i) => i >= base);
+    const total = pool.reduce((a, r) => a + P.odds[r], 0);
+    $('oddsInfo').innerHTML = 'Шансы: ' + pool.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+      '<br>После ' + P.softS + ' призывов без S шанс S растёт с каждым призывом. Гарантии у баннеров раздельные.' +
       '<br>Билеты: за первое прохождение босса каждого 5-го этажа, на 10-м — больше.';
     if (pullShown === lastPull) return;
     pullShown = lastPull;
@@ -1866,8 +1879,9 @@
     }
     if (ok) { save(); render(); }
   });
+  $('bannerPick').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; banner = b.dataset.banner; render(); });
   function pull(n) {
-    const r = C.summon(s, n);
+    const r = C.summon(s, n, banner);
     if (!r) return;
     lastPull = r; save(); render();
     const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);

@@ -583,6 +583,8 @@
     <div id="inboxTab" class="tabBody"></div>
     <div id="bonesTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
+      <div class="spare" id="bannerPick" style="margin-bottom:6px"></div>
+      <div class="hint2" id="bannerInfo"></div>
       <div class="portalHead">
         <div><div class="tickets">🎟 <b id="ticketCount">0</b> билетов</div><div class="pity" id="pityInfo"></div></div>
         <div class="portalBtns"><button class="pBtn" id="pull1">×1</button><button class="pBtn" id="pull10">×10</button></div>
@@ -614,7 +616,7 @@
       <div class="askBtns"><button class="mBtn" id="askNo">Отмена</button><button class="mBtn danger" id="askYes">Да</button></div>
     </div>
   </div>
-  <div id="version">v0.28</div>
+  <div id="version">v0.29</div>
 </div>
 
 <script>
@@ -624,7 +626,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 18,
+    saveVersion: 19,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -671,6 +673,18 @@
       odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, GOD: 0.3 },
       pityA: 30, pityS: 90,
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
+      // «Возрастающие шансы»: после softS призывов без S+ шанс S растёт на softStep п.п. за призыв (до гарантии)
+      softS: 70, softStep: 3,
+      // Баннеры (GDD §5): обычный — базовая гарантия; у остальных — свои, раздельные. Перенос между баннерами TBD.
+      banners: [
+        { id: 'normal', name: 'Обычный призыв',  icon: '🌀', cost: { tickets: 1 }, desc: 'Все герои портала' },
+        { id: 'rare',   name: 'Редкий призыв',   icon: '💠', cost: { tickets: 3 }, minRarity: 'C', pityA: 15, pityS: 50,
+          desc: 'Только C и выше, своя гарантия A+ через 15 и S+ через 50' },
+        { id: 'theme',  name: 'Тематический',    icon: '✨', cost: { tickets: 2 }, featured: 2, featuredRate: 0.5, pityA: 30, pityS: 80,
+          desc: 'Два героя недели: при выпадении их редкости — 50% что это они' },
+        { id: 'event',  name: 'Событийный',      icon: '🏮', cost: { lanterns: 25 }, minRarity: 'B', pityA: 20, pityS: 100,
+          desc: 'За фонари события, B и выше, A+ через 20' },
+      ],
     },
     // Алтарь (GDD §5): пожертвованные копии исчезают навсегда и дают эссенцию по редкости (TBD)
     // Души (GDD §6–7): постоянный ресурс. Бонус DPS строго линеен по НЕИЗРАСХОДОВАННЫМ душам.
@@ -1585,6 +1599,7 @@
       heartFloor: 0,                             // до какого этажа уже выданы сердца за боссов
       ticketFloor: 0,                            // до какого этажа уже выданы билеты за боссов
       pity: { a: 0, s: 0 },
+      bpity: {},                                 // гарантии особых баннеров (раздельные с базовой)
       essence: 0,
       locks: {},                                 // id → true: копии защищены от пожертвования
       discovered: {},                            // id скрытого героя → рецепт найден
@@ -2397,28 +2412,50 @@
     return f % 10 === 0 ? p.ticketsPerTenth : f % 5 === 0 ? p.ticketsPerFifth : 0;
   }
   const RANK = r => CONFIG.rarities.indexOf(r);
-  function rollRarity(s, minRank) {
-    const odds = CONFIG.portal.odds;
+  function rollRarity(s, minRank, sPity) {
+    const P = CONFIG.portal, odds = { ...P.odds };
+    if (sPity != null && sPity > P.softS) odds.S += (sPity - P.softS) * P.softStep;   // возрастающие шансы
     const pool = CONFIG.rarities.filter(r => RANK(r) >= minRank);
     const total = pool.reduce((x, r) => x + odds[r], 0);
     let roll = s.rng() * total;
     for (const r of pool) { roll -= odds[r]; if (roll < 0) return r; }
     return pool[pool.length - 1];
   }
-  // n призывов за n билетов. Гарантии: S+ каждые pityS, A+ каждые pityA призывов без них.
-  function summon(s, n) {
-    const p = CONFIG.portal;
-    if (!Number.isInteger(n) || n <= 0 || s.tickets < n) return null;
-    s.tickets -= n; cnt(s, 'summon', n);
+  function bannerDef(id) { return CONFIG.portal.banners.find(b => b.id === id); }
+  // Герои недели тематического баннера (A и S из портала, по кругу по номеру недели)
+  function featuredHeroes(s) {
+    const pool = CONFIG.allies.filter(a => !a.hidden && !a.seasonal && RANK(a.rarity) >= RANK('A'));
+    const w = s.event && s.event.week ? weekNum(s.event.week) : 0, n = bannerDef('theme').featured, out = [];
+    for (let i = 0; i < n; i++) out.push(pool[(((w * n + i) % pool.length) + pool.length) % pool.length].id);
+    return out;
+  }
+  function bannerPity(s, id) { return id === 'normal' ? s.pity : (s.bpity[id] = s.bpity[id] || { a: 0, s: 0 }); }
+  function bannerCost(id, n) { const c = bannerDef(id).cost; return { tickets: (c.tickets || 0) * n, lanterns: (c.lanterns || 0) * n }; }
+  function canSummon(s, id, n) {
+    const b = bannerDef(id); if (!b || !Number.isInteger(n) || n <= 0) return false;
+    if (id === 'event' && !currentEvent(s)) return false;
+    const c = bannerCost(id, n);
+    return s.tickets >= c.tickets && s.event.lanterns >= c.lanterns;
+  }
+  // n призывов на баннере. Гарантии: S+ каждые pityS, A+ каждые pityA призывов без них; перед S — возрастающие шансы.
+  function summon(s, n, bannerId) {
+    const id = bannerId || 'normal', b = bannerDef(id), P = CONFIG.portal;
+    if (!canSummon(s, id, n)) return null;
+    const c = bannerCost(id, n);
+    s.tickets -= c.tickets; s.event.lanterns -= c.lanterns; cnt(s, 'summon', n);
+    const pity = bannerPity(s, id), pA = b.pityA || P.pityA, pS = b.pityS || P.pityS, base = b.minRarity ? RANK(b.minRarity) : 0;
+    const feat = b.featured ? featuredHeroes(s) : [];
     const out = [];
     for (let i = 0; i < n; i++) {
-      s.pity.a++; s.pity.s++;
-      const min = s.pity.s >= p.pityS ? RANK('S') : s.pity.a >= p.pityA ? RANK('A') : 0;
-      const rarity = rollRarity(s, min);
-      if (RANK(rarity) >= RANK('A')) s.pity.a = 0;
-      if (RANK(rarity) >= RANK('S')) s.pity.s = 0;
+      pity.a++; pity.s++;
+      const min = pity.s >= pS ? RANK('S') : pity.a >= pA ? Math.max(base, RANK('A')) : base;
+      const rarity = rollRarity(s, min, pity.s);
+      if (RANK(rarity) >= RANK('A')) pity.a = 0;
+      if (RANK(rarity) >= RANK('S')) pity.s = 0;
       const pool = CONFIG.allies.filter(a => a.rarity === rarity && !a.hidden && !a.seasonal);
-      const hero = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
+      const fp = pool.filter(a => feat.includes(a.id));
+      const hero = fp.length && s.rng() < b.featuredRate ? fp[Math.floor(s.rng() * fp.length) % fp.length]
+        : pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
       const h = s.heroes[hero.id];
       const isNew = !h.unlocked;
       if (isNew) h.unlocked = true; else h.copies++;
@@ -2685,6 +2722,7 @@
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       pets: { active: s.pets.active, levels: { ...s.pets.levels } },
       squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
+      bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
@@ -2745,6 +2783,7 @@
     if (d.v === 15) { d.v = 16; d.bones = []; d.boneSeq = 1; if (d.materials) d.materials.dust = 0; }   // 0.25 → 0.26: кости монстров
     if (d.v === 16) { d.v = 17; d.pets = { active: null, levels: {} }; }   // 0.26 → 0.27: питомцы
     if (d.v === 17) { d.v = 18; d.ach = {}; if (d.quests) d.quests.runBase = { ...(d.counters || {}) }; }   // 0.27 → 0.28
+    if (d.v === 18) { d.v = 19; d.bpity = {}; }               // 0.28 → 0.29: баннеры
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2811,6 +2850,8 @@
     if (!int(d.heroRank, 0) || d.heroRank > maxSteps()) return null;
     s.heroRank = d.heroRank;
     s.pity = { a: (d.pity && d.pity.a) | 0, s: (d.pity && d.pity.s) | 0 };
+    s.bpity = {};
+    for (const b of CONFIG.portal.banners) { const x = d.bpity && d.bpity[b.id]; if (x && b.id !== 'normal') s.bpity[b.id] = { a: x.a | 0, s: x.s | 0 }; }
     if (!int(d.essence, 0) || !Array.isArray(d.locks) || !Array.isArray(d.discovered)) return null;
     s.essence = d.essence;
     const souls = B.parse(d.souls);
@@ -2935,7 +2976,7 @@
     totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
-    summon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    summon, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
@@ -4164,14 +4205,25 @@
     render();
   });
 
+  let banner = 'normal', bannerHtml = '';
+  function costText(id, n) { const c = C.bannerCost(id, n); return c.lanterns ? '🏮' + c.lanterns : '🎟' + c.tickets; }
   function renderPortal() {
-    const P = CFG.portal;
+    const P = CFG.portal, b = C.bannerDef(banner), pity = C.bannerPity(s, banner);
+    const chips = P.banners.map(x => '<button class="hBtn' + (x.id === banner ? ' go' : '') + '" data-banner="' + x.id + '"' +
+      (x.id === 'event' && !C.currentEvent(s) ? ' disabled' : '') + '>' + x.icon + ' ' + x.name + '</button>').join('');
+    if (chips !== bannerHtml) { $('bannerPick').innerHTML = chips; bannerHtml = chips; }
+    const feat = b.featured ? C.featuredHeroes(s).map(id => CFG.allies.find(a => a.id === id)) : [];
+    $('bannerInfo').innerHTML = b.desc + (feat.length ? '. Герои недели: <b>' + feat.map(a => a.name + ' (' + a.rarity + ')').join(', ') + '</b>' : '') +
+      (b.id === 'event' ? '. Фонарей: 🏮 ' + fmt(s.event.lanterns) : '');
     $('ticketCount').textContent = fmt(s.tickets);
-    $('pityInfo').textContent = 'A+ гарантия через ' + (P.pityA - s.pity.a) + ' · S+ через ' + (P.pityS - s.pity.s);
-    $('pull1').disabled = s.tickets < 1;
-    $('pull10').disabled = s.tickets < 10;
-    const total = Object.values(P.odds).reduce((a, b) => a + b, 0);
-    $('oddsInfo').innerHTML = 'Шансы: ' + RANKS.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+    const pA = b.pityA || P.pityA, pS = b.pityS || P.pityS;
+    $('pityInfo').textContent = 'A+ гарантия через ' + (pA - pity.a) + ' · S+ через ' + (pS - pity.s) + (pity.s > P.softS ? ' · шанс S повышен!' : '');
+    $('pull1').disabled = !C.canSummon(s, banner, 1); $('pull1').textContent = '×1 · ' + costText(banner, 1);
+    $('pull10').disabled = !C.canSummon(s, banner, 10); $('pull10').textContent = '×10 · ' + costText(banner, 10);
+    const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0, pool = RANKS.filter((r, i) => i >= base);
+    const total = pool.reduce((a, r) => a + P.odds[r], 0);
+    $('oddsInfo').innerHTML = 'Шансы: ' + pool.map(r => '<span class="rar r-' + r + '">' + r + '</span> ' + (P.odds[r] / total * 100).toFixed(1) + '%').join(' ') +
+      '<br>После ' + P.softS + ' призывов без S шанс S растёт с каждым призывом. Гарантии у баннеров раздельные.' +
       '<br>Билеты: за первое прохождение босса каждого 5-го этажа, на 10-м — больше.';
     if (pullShown === lastPull) return;
     pullShown = lastPull;
@@ -4204,8 +4256,9 @@
     }
     if (ok) { save(); render(); }
   });
+  $('bannerPick').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; banner = b.dataset.banner; render(); });
   function pull(n) {
-    const r = C.summon(s, n);
+    const r = C.summon(s, n, banner);
     if (!r) return;
     lastPull = r; save(); render();
     const best = r.reduce((m, x) => RANKS.indexOf(x.rarity) > RANKS.indexOf(m.rarity) ? x : m, r[0]);
