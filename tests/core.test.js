@@ -2184,3 +2184,40 @@ test('миграция 21: руны и кости GOD (ступень 6) → с�
   const back = C.deserialize(JSON.stringify(d));
   assert.ok(back); assert.strictEqual(back.runes[0].tier, 8);
 });
+
+// ---------- испытательная башня (0.44) ----------
+test('испытательная башня: равные условия — урон тапа фиксирован, без критов, союзников, питомца и бонусов', () => {
+  const s = C.newState({ rng: () => 0 });                       // rng 0 — крит сработал бы всегда
+  s.tapLevel = 500; s.allies.irene.level = 300; s.pets.forms = { ash_rat: 3 }; s.pets.active = 'ash_rat'; s.artifacts = { blade: 10 };
+  assert.ok(C.enterMode(s, 'trial', {}, 'd1'));
+  assert.strictEqual(s.enemy.hp, CFG.pve.trial.hpBase);
+  const ev = C.tap(s);
+  assert.strictEqual(ev[0].dmg, CFG.pve.trial.tapDmg); assert.strictEqual(ev[0].crit, false);
+  const hp = s.enemy.hp;
+  const tk = C.tick(s, 3);
+  assert.ok(!tk.some(e => e.type === 'hit'), 'никто, кроме тапов, не бьёт');
+  assert.strictEqual(s.enemy.hp, hp);
+});
+
+test('испытательная башня: 15 с на стража, HP растёт, рекорды недели и за всё время, 3 попытки в день', () => {
+  const s = C.newState(NOCRIT); C.eventReset(s, 'w2026-11-02');
+  C.enterMode(s, 'trial', {}, 'd1');
+  for (let g = 0; g < 3; g++) {                                 // три стража
+    const need = CFG.pve.trial.hpBase + CFG.pve.trial.hpStep * g;
+    for (let i = 0; i < need; i++) C.tap(s);
+    C.tick(s, 1);                                               // появление следующего
+    assert.ok(Math.abs(s.bossTimeLeft - CFG.pve.trial.time) < 1.01);
+  }
+  assert.strictEqual(s.enemy.maxHp, CFG.pve.trial.hpBase + CFG.pve.trial.hpStep * 3);
+  let ev = []; for (let i = 0; i < 20 && s.mode; i++) ev = ev.concat(C.tick(s, 1));
+  const end = ev.find(e => e.type === 'modeEnd');
+  assert.ok(end && end.kind === 'trial'); assert.strictEqual(end.reward.guards, 3);
+  assert.strictEqual(s.trial.weekBest, 3); assert.strictEqual(s.trial.best, 3);
+  assert.strictEqual(s.essence, 3 * CFG.pve.trial.essencePer);
+  C.eventReset(s, 'w2026-11-09'); C.trialSync(s);
+  assert.strictEqual(s.trial.weekBest, 0); assert.strictEqual(s.trial.best, 3);
+  assert.ok(C.enterMode(s, 'trial', {}, 'd1')); C.leaveMode(s);
+  assert.ok(C.enterMode(s, 'trial', {}, 'd1')); C.leaveMode(s);
+  assert.strictEqual(C.enterMode(s, 'trial', {}, 'd1'), null);
+  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.trial, s.trial);
+});

@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 22,
+    saveVersion: 23,
     enemiesPerFloor: 10,
     maxFloor: 100000,             // вершина Башни (решение пользователя, «пока»): выше не подняться          // утверждено GDD: 1–9 обычные, 10-й босс
     enemyBaseHp: 10,
@@ -269,6 +269,9 @@
       vaultGold: 30, mineShards: 5, forgeTierEvery: 10,                        // кузня: редкость руны = уровень / 10
       // Бесконечное подземелье: волны по одному врагу, каждые 10 — контрольный босс с таймером; рекорд волн
       endless: { attempts: 3, bossEvery: 10, hpMult: 3, bossTime: 30, essenceBase: 1, essenceStep: 20 },
+      // Испытательная башня (GDD §10): равные условия для всех — только тапы фиксированной силы, без прокачки, критов,
+      // союзников, питомца, способностей и бонусов. 15 с на стража; рекорд недели и за всё время. Числа TBD.
+      trial: { attempts: 3, tapDmg: 1, hpBase: 20, hpStep: 6, time: 15, essencePer: 2 },
       // Личные боссы: финальные боссы пройденных биомов, выбор сложности, ручные попытки
       personal: {
         attempts: 3, time: 40,
@@ -1158,6 +1161,7 @@
       runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
       totems: {},                                // id биома → уровень тотема
       pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
+      trial: { week: '', weekBest: 0, best: 0 },  // испытательная башня: рекорды недели и за всё время
       mode: null,                                // текущий PvE-режим (не сохраняется)
       counters: {},                              // счётчики действий за всю игру (для заданий)
       quests: { day: '', week: '', dayBase: {}, weekBase: {}, runBase: {}, claimed: {}, chests: {} },
@@ -1255,6 +1259,13 @@
     if (!s.enemy.alive) return events;           // нельзя бить мёртвого
     s.stats.taps++; cnt(s, 'tap'); s.tpsWin.n++;
     if (modeRule(s) === 'alliesOnly') { events.push({ type: 'hit', dmg: 0, source: 'tap', crit: false, blocked: true }); return events; }
+    if (modeRule(s) === 'trial') {                         // равные условия: фиксированный урон, без критов и бонусов
+      const dmg = CONFIG.pve.trial.tapDmg;
+      s.enemy.hp = B.max(0, B.sub(s.enemy.hp, dmg));
+      events.push({ type: 'hit', dmg, source: 'tap', crit: false });
+      if (B.lte(s.enemy.hp, 0)) { s.enemy.hp = 0; kill(s, events); }
+      return events;
+    }
     dealDamage(s, tapDamage(s), 'tap', events);
     return events;
   }
@@ -1355,7 +1366,7 @@
     // Ультимейты срабатывают автоматически, как только заряжены и враг жив
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (rule === 'noUlts' || rule === 'tapOnly') break;
+      if (rule === 'noUlts' || rule === 'tapOnly' || rule === 'trial') break;
       if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
       st.ult = 0;
       fireUlt(s, a, events);
@@ -1364,7 +1375,7 @@
     // Автоатаки отряда: перезарядка идёт только пока враг жив
     for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level <= 0 || rule === 'tapOnly') continue;
+      if (st.level <= 0 || rule === 'tapOnly' || rule === 'trial') continue;
       st.cd -= dt;
       if (st.cd <= 0 && s.enemy.alive) {
         st.cd += a.attackInterval;
@@ -1373,7 +1384,7 @@
       if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
     }
     // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
-    if (hasHeroAuto(s) && rule !== 'alliesOnly') {
+    if (hasHeroAuto(s) && rule !== 'alliesOnly' && rule !== 'trial') {
       s.heroAutoAcc += dt;
       if (s.heroAutoAcc >= CONFIG.heroAutoInterval) {
         s.heroAutoAcc -= CONFIG.heroAutoInterval;
@@ -1382,14 +1393,14 @@
       }
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
-    const rd = rule === 'tapOnly' ? 0 : reserveDps(s);
+    const rd = rule === 'tapOnly' || rule === 'trial' ? 0 : reserveDps(s);
     if (B.gt(rd, 0)) {
       s.reserveAcc += dt;
       if (s.reserveAcc >= 1) { s.reserveAcc -= 1; dealDamage(s, rd, 'reserve', events); if (!s.enemy.alive) return events; }
     }
     // Питомец: своя частота атаки
     const pet = s.pets.active && petDef(s.pets.active);
-    if (pet && rule !== 'tapOnly') {
+    if (pet && rule !== 'tapOnly' && rule !== 'trial') {
       s.petAcc += dt;
       if (s.petAcc >= pet.interval) {
         s.petAcc -= pet.interval;
@@ -1416,7 +1427,7 @@
     if (s.pve.day !== dayKey) { s.pve.day = dayKey; s.pve.used = {}; }
   }
   function attemptsLeft(s, key) {
-    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'personal' ? P.personal.attempts : key === 'event' ? CONFIG.events.attempts : P.dailyAttempts;
+    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'trial' ? P.trial.attempts : key === 'personal' ? P.personal.attempts : key === 'event' ? CONFIG.events.attempts : P.dailyAttempts;
     return Math.max(0, max - (s.pve.used[key] | 0));
   }
   function maxDungeonTier(s) { return Math.max(1, Math.floor(s.bestFloor / CONFIG.pve.tierFloors)); }
@@ -1461,6 +1472,10 @@
       if (!attemptsLeft(s, 'endless')) return null;
       m = { kind, id: 'endless', name: 'Бесконечное подземелье', step: 1, timeLeft: 0, timeMax: P.endless.bossTime, essence: 0, tickets: 0 };
       s.pve.used.endless = (s.pve.used.endless | 0) + 1;
+    } else if (kind === 'trial') {
+      if (!attemptsLeft(s, 'trial')) return null;
+      m = { kind, id: 'trial', name: 'Испытательная башня', rule: 'trial', step: 1, timeLeft: P.trial.time, timeMax: P.trial.time };
+      s.pve.used.trial = (s.pve.used.trial | 0) + 1;
     } else if (kind === 'personal') {
       const b = personalBosses(s).find(x => x.id === opts.id), D = P.personal.diffs.find(x => x.id === opts.diff);
       if (!b || !D || !attemptsLeft(s, 'personal')) return null;
@@ -1485,6 +1500,11 @@
       hp = B.ceil(B.mul(enemyMaxHp(m.step, isBoss), P.endless.hpMult));
       name = (isBoss ? 'Контрольный босс · ' : '') + enemyName(m.step, m.step % 9 + 1, isBoss);
       if (isBoss) m.timeLeft = P.endless.bossTime;
+    } else if (m.kind === 'trial') {
+      isBoss = true;
+      hp = P.trial.hpBase + P.trial.hpStep * (m.step - 1);
+      name = 'Страж испытания ' + m.step;
+      m.timeLeft = P.trial.time;
     } else {
       isBoss = true;
       hp = B.ceil(B.mul(enemyMaxHp(m.floor, true), P.personal.diffs.find(x => x.id === m.diff).hp));
@@ -1500,6 +1520,11 @@
     s.stats.kills++; cnt(s, 'kill');
     if (m.kind === 'endless') cnt(s, 'wave');
     events.push({ type: 'kill', gold: 0, boss: s.enemy.isBoss, mode: true });
+    if (m.kind === 'trial') {                               // каждый страж — новые 15 с; рекорд считается по ходу
+      trialRecord(s, m.step);
+      m.step++;
+      return;
+    }
     if (m.kind === 'endless') {
       if (s.enemy.isBoss) {
         const e = P.endless.essenceBase + Math.floor(m.step / P.endless.essenceStep);
@@ -1515,15 +1540,18 @@
     if (m.step < m.total) { m.step++; return; }
     finishMode(s, true, events);
   }
+  // Рекорды испытательной башни: неделя (по ключу недели события) и всё время
+  function trialSync(s) { const wk = (s.event && s.event.week) || ''; if (s.trial.week !== wk) { s.trial.week = wk; s.trial.weekBest = 0; } }
+  function trialRecord(s, n) { trialSync(s); s.trial.weekBest = Math.max(s.trial.weekBest, n); s.trial.best = Math.max(s.trial.best, n); }
   function modeTimer(s, dt, events) {
     const m = s.mode;
     if (m.kind === 'endless' && !s.enemy.isBoss) return;     // таймер только у контрольного босса
     m.timeLeft -= dt; s.bossTimeLeft = m.timeLeft;
-    if (m.timeLeft <= 0) finishMode(s, m.kind === 'endless', events);
+    if (m.timeLeft <= 0) finishMode(s, m.kind === 'endless' || m.kind === 'trial', events);
   }
   // Итог режима: награда при победе (в бесконечном — уже начислена по ходу), возврат в Башню
   function finishMode(s, win, events) {
-    const m = s.mode, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
+    const m = s.mode, P = CONFIG.pve, res = { type: 'modeEnd', kind: m.kind, name: m.name, win, reward: {} };
     if (win && (m.kind === 'dungeon' || m.kind === 'event')) cnt(s, 'dungeon');
     if (win && m.kind === 'personal') cnt(s, 'personal');
     if (m.kind === 'dungeon' && win) {
@@ -1545,6 +1573,10 @@
       if (bone) r.bone = bone;
       s.materials.heart += r.heart; s.materials.shard += r.shard;
       res.reward = r;
+    } else if (m.kind === 'trial') {
+      const n = m.step - 1, e = n * P.trial.essencePer;
+      s.essence += e;
+      res.reward = { guards: n, essence: e, week: s.trial.weekBest, best: s.trial.best };
     } else if (m.kind === 'endless') {
       res.reward = { waves: m.step - 1, essence: m.essence, tickets: m.tickets, best: s.pve.endlessBest };
     }
@@ -1556,7 +1588,7 @@
   function leaveMode(s) {
     if (!s.mode) return [];
     const ev = [];
-    finishMode(s, s.mode.kind === 'endless', ev);
+    finishMode(s, s.mode.kind === 'endless' || s.mode.kind === 'trial', ev);
     return ev;
   }
   function exitMode(s) {
@@ -1991,7 +2023,7 @@
   function abilityReady(s, id) { return abilityUnlocked(s, id) && s.abilities[id].cd <= 0; }
   function useAbility(s, id) {
     const def = abilityDef(id);
-    if (!def || !abilityReady(s, id)) return [];
+    if (!def || !abilityReady(s, id) || modeRule(s) === 'trial') return [];
     const st = s.abilities[id];
     st.cd = def.cooldown * Math.max(0.2, 1 - treePower(s, 'abilityCd')); st.active = def.duration; st.acc = 0;
     return [{ type: 'ability', id, name: def.name }];
@@ -2349,7 +2381,7 @@
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
       runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
-      pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest },
+      pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest }, trial: { ...s.trial },
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
@@ -2424,6 +2456,7 @@
       if (d.materials) d.materials.shard = (d.materials.shard | 0) + refund;
       d.bestCleared = Math.max(d.highestCleared | 0, (d.bestFloor | 0) - 1, 0);
     }
+    if (d.v === 22) { d.v = 23; d.trial = { week: '', weekBest: 0, best: 0 }; }   // 0.43 → 0.44: испытательная башня
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2564,6 +2597,9 @@
     const pv = d.pve;
     if (!pv || typeof pv !== 'object' || typeof pv.day !== 'string' || !pv.used || typeof pv.used !== 'object' || !int(pv.endlessBest, 0)) return null;
     s.pve = { day: pv.day, used: {}, endlessBest: pv.endlessBest };
+    const tri = d.trial;
+    if (!tri || typeof tri.week !== 'string' || !int(tri.weekBest, 0) || !int(tri.best, 0)) return null;
+    s.trial = { week: tri.week, weekBest: tri.weekBest, best: tri.best };
     for (const k in pv.used) if (int(pv.used[k], 0)) s.pve.used[k] = pv.used[k];
     if (!d.tree || typeof d.tree !== 'object') return null;
     for (const n of TREE) {
@@ -2621,7 +2657,7 @@
     buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult,
-    useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
+    trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
     findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
