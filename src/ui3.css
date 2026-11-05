@@ -378,3 +378,13 @@
 @keyframes proIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 @keyframes proGlOld { 0% { opacity: 0; transform: skewX(18deg); } 20% { opacity: 1; transform: skewX(-10deg) translateX(4px); text-shadow: 3px 0 0 #ff2a6a, -3px 0 0 #2ad0ff; } 32% { opacity: .2; } 45% { opacity: 1; transform: none; } 55% { opacity: .6; transform: translateX(-3px); text-shadow: -2px 0 0 #ff2a6a, 2px 0 0 #2ad0ff; } 70%, 100% { opacity: 1; transform: none; text-shadow: 0 2px 0 #1a0030, 0 0 12px #b14dff; } }
 .proSkip { position: absolute; right: 12px; top: 12px; z-index: 2; padding: 6px 14px; border-radius: 4px; border: 1px solid #b14dff99; background: #0b0814b0; color: #d8c8f0; font: 600 13px system-ui; }
+
+/* 0.79: враги-спрайты */
+#enemy .eSpr { position: absolute; left: 50%; bottom: -24%; width: 150%; transform: translateX(-50%); background-repeat: no-repeat; pointer-events: none; }
+#enemy.spr { filter: none !important; animation: none; }
+#enemy.spr > svg { display: none; }
+#enemy.spr.dead { animation: none !important; }
+#enemy.spr.hit { animation: hit .14s ease-out; }
+#enemy.spr.flash .eSpr, #game.hs #enemy.spr .eSpr { filter: brightness(2.2) saturate(.6); }
+#enemy.spr.boss .eSpr { filter: drop-shadow(0 0 14px #b14dffaa); }
+#enemy.spr.boss .eSpr { width: 138%; bottom: -18%; }
