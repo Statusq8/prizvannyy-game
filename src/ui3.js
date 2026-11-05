@@ -356,7 +356,7 @@
       const skip = mk('button', '', 'proSkip', 'Пропустить ›', ov);
       const T = [
         '<div class="proCap">Финальный босс.<br>Ещё один удар…</div>',
-        '<div class="proWin"><b>ПОБЕДА</b><small>Вы первый в мире</small></div>',
+        '<div class="proWin"><b>ПОБЕДА</b></div><div class="proWin2">Вы первый в мире</div>',
         '<div class="proSys"><b>Ты достоин.</b><b class="g">Поднимись.</b></div>',
         '<div class="proCap">Статус: <b>1★</b>.<br>Имя?</div>'];
       let i = -1, busy = false;
