@@ -2,7 +2,7 @@
   // Экран боя, профиль, настройки, окна Системы, меню, прокачка, портал, сумка. Работает поверх ui2 (window.U2).
   (function () {
     const U = window.U2;
-    const RC3 = { E: '#8d8d96', D: '#4cbf5a', C: '#3a8fe0', B: '#a050e0', A: '#e04848', S: '#ffb030', SS: '#ff7a20', SSS: '#ff40c0', GOD: '#fff2a0' };
+    const RC3 = { E: '#9a96a6', D: '#c8783a', C: '#2fd07a', B: '#3a8cff', A: '#b04dff', S: '#ffb52e', SS: '#ff3a4a', SSS: '#9fe6ff', GOD: '#fff2a0' };
     const RANK3 = CFG.rarities;
     const mk = (tag, id, cls, html, parent) => { const n = document.createElement(tag); if (id) n.id = id; if (cls) n.className = cls; if (html != null) n.innerHTML = html; if (parent) parent.appendChild(n); return n; };
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -448,7 +448,7 @@
     // веха уровня — всплывающая плашка «×3 УРОНА!» (ответ 71)
     const msSeen = {};
     function msCheck() {
-      const chk = (k, lv) => { const n = C.milestonesReached(lv); if (msSeen[k] != null && n > msSeen[k]) { const d = mk('div', '', 'msPop', '×' + CFG.milestoneMult + ' УРОНА!', game); setTimeout(() => d.remove(), 1200); vib(30); } msSeen[k] = n; };
+      const chk = (k, lv) => { const n = C.milestonesReached(lv); if (msSeen[k] != null && n > msSeen[k] && !document.body.classList.contains('pageOpen')) { const d = mk('div', '', 'msPop', '×' + CFG.milestoneMult + ' УРОНА!', game); setTimeout(() => d.remove(), 1200); vib(30); } msSeen[k] = n; };
       chk('hero', s.tapLevel); for (const a of CFG.allies) chk(a.id, s.allies[a.id].level);
     }
     msCheck(); setInterval(msCheck, 300);

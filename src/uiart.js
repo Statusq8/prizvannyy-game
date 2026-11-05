@@ -44,6 +44,12 @@
     const css = document.createElement('style');
     const u = n => UI[n] ? 'url("' + UI[n] + '")' : 'none';
     css.textContent = `
+      /* 0.73: фон всех страниц — Башня (референс пользователя) */
+      body.clean .pg.show { background: #0b0710 ${u('_bg_menu')} center top / cover no-repeat !important; }
+      .pg .tower { display: none !important; }
+      .pg .pgBody { background: linear-gradient(180deg, #0b071000 0, #0b0710a8 120px, #0b0710c8 100%); }
+      /* GOD — радужная рамка */
+      [style*="fff2a0"].hCard, .hCard[style*="#fff2a0"] { border-image: linear-gradient(135deg, #ff4ad8, #ffe08a, #6af0ff, #b14dff) 1 !important; }
       img.uiA { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
       .hasUA { background: none !important; border: none !important; box-shadow: none !important; }
       .mCard .ic.hasUA { width: 64px; height: 64px; }
