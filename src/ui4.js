@@ -41,6 +41,7 @@
       const vis = (el, k) => { if (el) el.style.display = on(k) ? '' : 'none'; };
       vis($('cbPortal'), 'portal'); vis($('cbPve'), 'pve'); vis(rit, 'ritual'); vis(forge, 'forge');
       book.style.display = on('quests') ? '' : 'none';
+      vis($('tbMail'), 'mail'); vis($('cbMap'), 'map'); vis($('questPanel'), 'quests');
     }
     // ---------- квест справа: задача с наградой + следующая функция (ответы 35–38) ----------
     const QK = 'prizvannyy_story';
