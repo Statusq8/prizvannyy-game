@@ -2810,16 +2810,21 @@
   function loop(now) {
     acc += Math.min(0.25, (now - last) / 1000); last = now;
     let changed = false;
-    while (acc >= STEP) {
-      const ev = C.tick(s, STEP); acc -= STEP;
-      if (ev.length) { handle(ev); changed = true; }
-    }
+    // 0.75.1: ошибка интерфейса не должна останавливать бой — следующий кадр ставим первым
+    requestAnimationFrame(loop);
+    try {
+      while (acc >= STEP) {
+        const ev = C.tick(s, STEP); acc -= STEP;
+        if (ev.length) { handle(ev); changed = true; }
+      }
+    } catch (e) { acc = 0; console.error(e); }
     // FPS 30: логика идёт с прежним шагом, перерисовка — через кадр
     const skip = setg.fps === 30 && (frameN++ & 1);
-    if (changed && !skip) render(); else if (changed) pendingRender = true;
-    if (!skip) { if (pendingRender) { render(); pendingRender = false; } renderLive(); }
+    try {
+      if (changed && !skip) render(); else if (changed) pendingRender = true;
+      if (!skip) { if (pendingRender) { render(); pendingRender = false; } renderLive(); }
+    } catch (e) { console.error(e); }
     if (Date.now() - lastSave > 5000) save();
-    requestAnimationFrame(loop);
   }
   buildAllies();
   buildAbilities();
