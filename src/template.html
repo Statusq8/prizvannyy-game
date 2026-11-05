@@ -1470,7 +1470,7 @@
   }
 
   // Ранг: «Р III·4» — ранг и подранг
-  const RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  const RN = new Proxy(['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'], { get: (t, k) => k in t ? t[k] : (/^\d+$/.test(k) ? k : undefined) });   // ранги из обновлений (11+) — числом
   function rankTag(k) { const r = C.rankLabel(k); return '<span class="ms">Ранг ' + RN[r.rank] + (r.max ? ' · макс' : '·' + r.sub) + '</span> · '; }
   // Кнопка повышения ранга на месте покупки, когда уровень упёрся в потолок
   function setRank(btn, who) {
@@ -1839,7 +1839,23 @@
       '<button data-hrank="' + id + '"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Ранг' + (rc ? ' 🔹' + fmt(rc.shards) : '') + '</button>' +
       '<button data-hbones="' + id + '">Кости</button>' +
       (sq ? '<button data-out="' + id + '">Из отряда</button>' : '<button data-in="' + id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
-      '<button data-hclose="1">Закрыть</button></div></div>';
+      '<button data-hclose="1">Закрыть</button></div>' + transferHtml(id) + '</div>';
+  }
+  // 0.65: перенос прокачки — звёзды и ранг этого героя частично передаются другому (той же редкости или выше)
+  function transferHtml(id) {
+    const h = s.heroes[id], X = CFG.transfer;
+    if (!h.stars && !h.rank) return '';
+    const opts = CFG.allies.map(a => ({ a, p: C.transferPreview(s, id, a.id) })).filter(x => x.p);
+    let out = '<div class="secTitle">ПЕРЕНОС ПРОКАЧКИ · ' + Math.round(X.keep * 100) + '% звёзд и ранга</div>' +
+      '<div class="hint2">Получатель — той же редкости или выше. Его звёзды и ранг станут не ниже ' + Math.round(X.keep * 100) + '% от этого героя (ранг — не выше, чем позволяет эволюция). У этого героя звёзды и ранг обнулятся; копии, эволюция и уровни остаются.</div>';
+    if (!opts.length) return out + '<div class="hint2">Пока некому передать.</div>';
+    for (const { a, p } of opts) {
+      const ht = s.heroes[a.id], rl = C.rankLabel(p.rank);
+      out += '<div class="hRow r-' + a.rarity + '"><div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + '</div>' +
+        '<div class="hSub">★ ' + ht.stars + ' → ' + p.stars + ' · ранг ' + RN[C.rankLabel(ht.rank).rank] + '·' + C.rankLabel(ht.rank).sub + ' → ' + RN[rl.rank] + (rl.max ? ' макс' : '·' + rl.sub) + '</div></div>' +
+        '<button class="hBtn' + (s.essence >= p.cost ? ' go' : '') + '" data-tr="' + id + ':' + a.id + '"' + (s.essence >= p.cost ? '' : ' disabled') + '>✦ ' + p.cost + '</button></div>';
+    }
+    return out;
   }
   function heroTopHtml() {
     const K = CFG.classes, Bo = CFG.booster, dk = dayKey();
@@ -2595,6 +2611,12 @@
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
     const dd = b.dataset;
     if (dd.fav) ok = C.toggleFav(s, dd.fav);
+    if (dd.tr) {
+      const [from, to] = dd.tr.split(':'), nm = x => CFG.allies.find(a => a.id === x).name, p = C.transferPreview(s, from, to);
+      if (p) ask('<b>Перенос прокачки</b><span class="askList">' + nm(from) + ' → ' + nm(to) + ': ★' + p.stars + ', ранг до ' + RN[C.rankLabel(p.rank).rank] + '.<br>У ' + nm(from) + ' звёзды и ранг обнулятся. Цена ✦ ' + p.cost + '.</span>', 'Перенести', () => {
+        if (C.transferProgress(s, from, to)) { toast('Прокачка перенесена<small>' + nm(from) + ' → ' + nm(to) + '</small>'); save(); render(); }
+      });
+    }
     if (dd.bond) {
       const b = CFG.bonds.find(x => x.id === dd.bond), keep = s.squad.filter(id => !b.heroes.includes(id));
       while (s.squad.length + b.heroes.filter(id => !s.squad.includes(id)).length > CFG.squadSize && keep.length) {
