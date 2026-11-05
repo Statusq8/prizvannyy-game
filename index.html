@@ -1238,7 +1238,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 32,
+    saveVersion: 33,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -1671,6 +1671,12 @@
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
     secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
+    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, ритуал не сбрасывает).
+    // Опыт: xp — очки за единицу. Уровень L нужен base·L^power опыта всего. За каждый уровень — reward; каждые frameEvery — рамка.
+    prestige: { base: 500, power: 1.5,
+      xp: { floor: 1, ritual: 200, hero: 100, star: 20, ach: 50, trophy: 30, page: 150, title: 300, secret: 500 },
+      reward: { tickets: 2, essence: 10 }, frameEvery: 10,
+      frames: ['Бронзовая', 'Серебряная', 'Золотая', 'Платиновая', 'Изумрудная', 'Алмазная', 'Кровавая', 'Теневая', 'Звёздная', 'Божественная'] },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -2576,6 +2582,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
+      prestigeClaimed: 0, frame: null,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -2852,6 +2859,24 @@
     return events;
   }
 
+  // ---------- престиж аккаунта (0.64) ----------
+  function prestigeXp(s) {
+    const X = CONFIG.prestige.xp, heroes = CONFIG.allies.filter(a => s.heroes[a.id].unlocked);
+    return s.bestFloor * X.floor + s.rituals * X.ritual + heroes.length * X.hero + heroes.reduce((t, a) => t + s.heroes[a.id].stars, 0) * X.star +
+      achPoints(s) * X.ach + s.trophies.length * X.trophy + s.diaryPages.length * X.page + s.titles.length * X.title + s.secrets.filter(x => x.done).length * X.secret;
+  }
+  function prestigeNeed(L) { const P = CONFIG.prestige; return Math.ceil(P.base * Math.pow(L, P.power)); }
+  function prestigeLevel(s) { const xp = prestigeXp(s); let L = Math.floor(Math.pow(xp / CONFIG.prestige.base, 1 / CONFIG.prestige.power)); while (prestigeNeed(L + 1) <= xp) L++; while (L > 0 && prestigeNeed(L) > xp) L--; return L; }
+  function prestigeFrames(s) { const P = CONFIG.prestige, n = Math.min(P.frames.length, Math.floor(prestigeLevel(s) / P.frameEvery)); return P.frames.slice(0, n); }
+  function claimPrestige(s) {
+    const L = prestigeLevel(s), n = L - s.prestigeClaimed;
+    if (n <= 0) return null;
+    const R = CONFIG.prestige.reward, r = {}; for (const k in R) r[k] = R[k] * n;
+    grant(s, r); s.prestigeClaimed = L;
+    const fr = prestigeFrames(s); if (!s.frame && fr.length) s.frame = fr[fr.length - 1];
+    return { levels: n, reward: r };
+  }
+  function setFrame(s, f) { if (f !== null && !prestigeFrames(s).includes(f)) return false; s.frame = f; return true; }
   // ---------- скрытые комнаты (0.63) ----------
   function secretFloor(block) { const E = CONFIG.secret.every; return block * E + 1 + Math.floor(hash01(block + 1, 4219, 77) * (E - 1)); }
   function isSecretFloor(f) { return secretFloor(Math.floor((f - 1) / CONFIG.secret.every)) === f; }
@@ -3956,6 +3981,7 @@
     add(claimAllAch(s));
     add(claimPassAll(s));
     add(claimInboxAll(s));
+    { const P = claimPrestige(s); if (P) add({ count: P.levels, reward: P.reward }); }
     return n ? { count: n, reward: sum } : null;
   }
   // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
@@ -4056,7 +4082,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })),
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -4150,6 +4176,7 @@
       d.v = 32; d.secrets = [];
       for (let k = 0; secretFloor(k) <= (d.bestFloor | 0) - 1; k++) d.secrets.push({ floor: secretFloor(k), done: false });
     }
+    if (d.v === 32) { d.v = 33; d.prestigeClaimed = 0; d.frame = null; }       // 0.63 → 0.64: престиж аккаунта
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -4297,6 +4324,8 @@
     s.diaryPages = d.diaryPages.filter(id => CONFIG.biomes.some(b => b.id === id));
     if (!Array.isArray(d.secrets)) return null;
     s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
+    if (!int(d.prestigeClaimed, 0)) return null;
+    s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
@@ -4389,7 +4418,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
@@ -5246,11 +5275,25 @@
       ['Боссов побеждено', fmt(st.bossKills)], ['Рекорд этажа', fmt(s.bestFloor)],
       ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
     ];
-    $('statsTab').innerHTML = '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
+    $('statsTab').innerHTML = prestigeHtml() + '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
       cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml() + trophiesHtml() + towerMsHtml();
   }
   // Титулы за 1-й/10-й/100-й ритуал: каждый полученный даёт небольшой постоянный бонус (0.53), выбранный — для профиля
   function titleBonusTxt(m) { return '+' + Math.round(m.bonus.per * 100) + '% ' + (m.bonus.kind === 'gold' ? 'золота' : 'урона'); }
+  // 0.64: профиль и престиж аккаунта
+  const FRAME_COL = { 'Бронзовая': '#c9864a', 'Серебряная': '#cfd6e0', 'Золотая': '#ffd36b', 'Платиновая': '#9fe8ff', 'Изумрудная': '#5fe39a', 'Алмазная': '#b8f4ff', 'Кровавая': '#ff4a5a', 'Теневая': '#b98cff', 'Звёздная': '#fff6a0', 'Божественная': '#ffffff' };
+  function prestigeHtml() {
+    const P = CFG.prestige, L = C.prestigeLevel(s), xp = C.prestigeXp(s), a = C.prestigeNeed(L), b = C.prestigeNeed(L + 1), un = L - s.prestigeClaimed;
+    const col = s.frame ? FRAME_COL[s.frame] : '#6e6678', fr = C.prestigeFrames(s);
+    let h = '<div class="hRow" style="--r:' + col + ';border:2px solid ' + col + ';box-shadow:0 0 12px ' + col + '55"><div class="artIcon" style="font-size:20px">' + L + '</div><div class="hInfo">' +
+      '<div class="hName">Призванный · уровень ' + L + (s.title ? ' · «' + s.title + '»' : '') + '</div>' +
+      '<div class="hSub">' + (s.frame ? 'Рамка: ' + s.frame + ' · ' : '') + 'опыт ' + fmt(xp) + ' / ' + fmt(b) + ' · рекорд ' + s.bestFloor.toLocaleString('ru-RU') + '</div>' +
+      '<div class="qBar"><i style="width:' + Math.min(100, (xp - a) / Math.max(1, b - a) * 100) + '%"></i></div></div>' +
+      (un > 0 ? '<button class="hBtn go" data-prest="1">Забрать ×' + un + '</button>' : '') + '</div>' +
+      '<div class="hint2">Престиж — за всё сделанное: рекорд, ритуалы, героев и звёзды, достижения, трофеи, дневник, титулы, тайники. Каждый уровень — 🎟 ' + P.reward.tickets + ', ✦ ' + P.reward.essence + '; каждые ' + P.frameEvery + ' — новая рамка профиля.</div>';
+    if (fr.length) h += '<div class="spare" style="gap:6px;flex-wrap:wrap;height:auto;margin-bottom:8px">' + fr.map(f => '<button class="hBtn' + (s.frame === f ? ' go' : '') + '" data-frame="' + f + '" style="border-color:' + FRAME_COL[f] + '"' + (s.frame === f ? ' disabled' : '') + '>' + f + '</button>').join('') + '</div>';
+    return h;
+  }
   // 0.61: вехи Башни
   function towerMsHtml() {
     const T = CFG.towerMs, nx = C.nextTowerMs(s), nm = id => CFG.allies.find(a => a.id === id).name, fl = n => n.toLocaleString('ru-RU');
@@ -5317,6 +5360,8 @@
   }
   $('diaryTab').addEventListener('click', e => { const b = e.target.closest('[data-dp]'); if (b) { diaryPage = b.dataset.dp; render(); } });
   $('statsTab').addEventListener('click', e => {
+    const pb = e.target.closest('[data-prest]'); if (pb) { const r = C.claimPrestige(s); if (r) { toast('Престиж: +' + r.levels + ' ур.<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } return; }
+    const fb = e.target.closest('[data-frame]'); if (fb) { if (C.setFrame(s, fb.dataset.frame)) { save(); render(); } return; }
     const b = e.target.closest('[data-title]'); if (!b) return;
     if (C.setTitle(s, b.dataset.title)) { toast('Титул<small>' + b.dataset.title + '</small>'); save(); render(); }
   });

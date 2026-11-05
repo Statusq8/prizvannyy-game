@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 32,
+    saveVersion: 33,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -437,6 +437,12 @@
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
     secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
+    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, ритуал не сбрасывает).
+    // Опыт: xp — очки за единицу. Уровень L нужен base·L^power опыта всего. За каждый уровень — reward; каждые frameEvery — рамка.
+    prestige: { base: 500, power: 1.5,
+      xp: { floor: 1, ritual: 200, hero: 100, star: 20, ach: 50, trophy: 30, page: 150, title: 300, secret: 500 },
+      reward: { tickets: 2, essence: 10 }, frameEvery: 10,
+      frames: ['Бронзовая', 'Серебряная', 'Золотая', 'Платиновая', 'Изумрудная', 'Алмазная', 'Кровавая', 'Теневая', 'Звёздная', 'Божественная'] },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1342,6 +1348,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
+      prestigeClaimed: 0, frame: null,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1618,6 +1625,24 @@
     return events;
   }
 
+  // ---------- престиж аккаунта (0.64) ----------
+  function prestigeXp(s) {
+    const X = CONFIG.prestige.xp, heroes = CONFIG.allies.filter(a => s.heroes[a.id].unlocked);
+    return s.bestFloor * X.floor + s.rituals * X.ritual + heroes.length * X.hero + heroes.reduce((t, a) => t + s.heroes[a.id].stars, 0) * X.star +
+      achPoints(s) * X.ach + s.trophies.length * X.trophy + s.diaryPages.length * X.page + s.titles.length * X.title + s.secrets.filter(x => x.done).length * X.secret;
+  }
+  function prestigeNeed(L) { const P = CONFIG.prestige; return Math.ceil(P.base * Math.pow(L, P.power)); }
+  function prestigeLevel(s) { const xp = prestigeXp(s); let L = Math.floor(Math.pow(xp / CONFIG.prestige.base, 1 / CONFIG.prestige.power)); while (prestigeNeed(L + 1) <= xp) L++; while (L > 0 && prestigeNeed(L) > xp) L--; return L; }
+  function prestigeFrames(s) { const P = CONFIG.prestige, n = Math.min(P.frames.length, Math.floor(prestigeLevel(s) / P.frameEvery)); return P.frames.slice(0, n); }
+  function claimPrestige(s) {
+    const L = prestigeLevel(s), n = L - s.prestigeClaimed;
+    if (n <= 0) return null;
+    const R = CONFIG.prestige.reward, r = {}; for (const k in R) r[k] = R[k] * n;
+    grant(s, r); s.prestigeClaimed = L;
+    const fr = prestigeFrames(s); if (!s.frame && fr.length) s.frame = fr[fr.length - 1];
+    return { levels: n, reward: r };
+  }
+  function setFrame(s, f) { if (f !== null && !prestigeFrames(s).includes(f)) return false; s.frame = f; return true; }
   // ---------- скрытые комнаты (0.63) ----------
   function secretFloor(block) { const E = CONFIG.secret.every; return block * E + 1 + Math.floor(hash01(block + 1, 4219, 77) * (E - 1)); }
   function isSecretFloor(f) { return secretFloor(Math.floor((f - 1) / CONFIG.secret.every)) === f; }
@@ -2722,6 +2747,7 @@
     add(claimAllAch(s));
     add(claimPassAll(s));
     add(claimInboxAll(s));
+    { const P = claimPrestige(s); if (P) add({ count: P.levels, reward: P.reward }); }
     return n ? { count: n, reward: sum } : null;
   }
   // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
@@ -2822,7 +2848,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })),
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2916,6 +2942,7 @@
       d.v = 32; d.secrets = [];
       for (let k = 0; secretFloor(k) <= (d.bestFloor | 0) - 1; k++) d.secrets.push({ floor: secretFloor(k), done: false });
     }
+    if (d.v === 32) { d.v = 33; d.prestigeClaimed = 0; d.frame = null; }       // 0.63 → 0.64: престиж аккаунта
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -3063,6 +3090,8 @@
     s.diaryPages = d.diaryPages.filter(id => CONFIG.biomes.some(b => b.id === id));
     if (!Array.isArray(d.secrets)) return null;
     s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
+    if (!int(d.prestigeClaimed, 0)) return null;
+    s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
@@ -3155,7 +3184,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,

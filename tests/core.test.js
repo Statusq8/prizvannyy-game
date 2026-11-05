@@ -2565,3 +2565,22 @@ test('скрытые комнаты: одна на каждые 2500 этаже�
   const old = JSON.parse(C.serialize(s)); old.v = 31; delete old.secrets; old.bestFloor = 8000;
   assert.strictEqual(C.deserialize(JSON.stringify(old)).secrets.length, [0, 1, 2, 3].filter(k => C.secretFloor(k) <= 7999).length);
 });
+
+// ---------- 0.64: престиж аккаунта ----------
+test('престиж аккаунта: уровень из всего прогресса, награда за каждый уровень, рамки каждые 10 уровней; переносится', () => {
+  const s = C.newState(NOCRIT);
+  const x0 = C.prestigeXp(s);
+  s.bestFloor = 5000; s.rituals = 10; s.trophies = ['crypt:0', 'crypt:1'];
+  assert.strictEqual(C.prestigeXp(s), x0 + 5000 - 1 + 10 * 200 + 2 * 30 + 0);
+  const L = C.prestigeLevel(s);
+  assert.ok(C.prestigeNeed(L) <= C.prestigeXp(s) && C.prestigeNeed(L + 1) > C.prestigeXp(s));
+  const t0 = s.tickets, r = C.claimPrestige(s);
+  assert.strictEqual(r.levels, L); assert.strictEqual(s.tickets, t0 + L * CFG.prestige.reward.tickets);
+  assert.strictEqual(C.claimPrestige(s), null);
+  s.bestFloor = 200000; C.claimPrestige(s);
+  assert.ok(C.prestigeFrames(s).length >= 1 && s.frame);
+  assert.ok(C.setFrame(s, CFG.prestige.frames[0])); assert.strictEqual(C.setFrame(s, 'Нет такой'), false);
+  const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.prestigeClaimed, s.prestigeClaimed); assert.strictEqual(t.frame, CFG.prestige.frames[0]);
+  const old = JSON.parse(C.serialize(s)); old.v = 32; delete old.prestigeClaimed; delete old.frame;
+  assert.strictEqual(C.deserialize(JSON.stringify(old)).prestigeClaimed, 0);
+});
