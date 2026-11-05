@@ -527,16 +527,16 @@ minotaur warrior with rings on his horns, massive hooves, heavy bronze armor, hu
 minotaur warrior with rings on his horns, massive hooves, heavy bronze armor, huge two-handed hammer, green, earthy brown and orange palette, primal energy, full body from head to feet, seen from behind three-quarter view, facing away from the viewer toward an enemy, idle combat stance, standing on an invisible ground line at the bottom of the canvas, single character, nothing cropped, centered, transparent background, no floor, no shadow, no frame, no text, no watermark
 ```
 
-### Карна · S · Дикий лес · `karna`
-**H3-28. `hero_karna_avatar.png`** — аватар коллекции, 512×512
+### Карна · S · Дикий лес · `carna`
+**H3-28. `hero_carna_avatar.png`** — аватар коллекции, 512×512
 ```
 carnival fairy illusionist, colorful harlequin dress, butterfly wings, mask on a stick, playing cards floating around, green, earthy brown and orange palette, primal energy, bust portrait, head and shoulders, three-quarter front view, expressive face, plain dark background, single character, no text, no watermark
 ```
-**H3-29. `hero_karna_side.png`** — меню героя, полный рост сбоку, 1024×1024
+**H3-29. `hero_carna_side.png`** — меню героя, полный рост сбоку, 1024×1024
 ```
 carnival fairy illusionist, colorful harlequin dress, butterfly wings, mask on a stick, playing cards floating around, green, earthy brown and orange palette, primal energy, full body from head to feet, side view facing right, idle stance with weapon ready, standing on an invisible ground line at the bottom of the canvas, single character, nothing cropped, centered, transparent background, no floor, no shadow, no frame, no text, no watermark
 ```
-**H3-30. `hero_karna_back.png`** — бой, вид со спины, 1024×1024
+**H3-30. `hero_carna_back.png`** — бой, вид со спины, 1024×1024
 ```
 carnival fairy illusionist, colorful harlequin dress, butterfly wings, mask on a stick, playing cards floating around, green, earthy brown and orange palette, primal energy, full body from head to feet, seen from behind three-quarter view, facing away from the viewer toward an enemy, idle combat stance, standing on an invisible ground line at the bottom of the canvas, single character, nothing cropped, centered, transparent background, no floor, no shadow, no frame, no text, no watermark
 ```

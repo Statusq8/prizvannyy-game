@@ -360,7 +360,7 @@ test('Разрез бездны усиливает только тапы', () =>
   const s = C.newState(NOCRIT); tough(s);
   s.buffs.tap = a.ult.duration; s.buffs.tapPower = a.ult.power;
   assert.strictEqual(C.damageMult(s, 'tap'), a.ult.power);
-  assert.strictEqual(C.damageMult(s, 'irene'), 1);
+  assert.strictEqual(C.damageMult(s, 'shorokh'), 1);
 });
 
 test('готовность ультимейта сохраняется между врагами: не тратится на мёртвого', () => {
@@ -502,9 +502,9 @@ test('портал тратит билеты, открывает героя на
   const r = C.summon(s, 3);
   assert.strictEqual(r.length, 3);
   assert.strictEqual(s.tickets, 0);
-  assert.strictEqual(r[0].id, 'irene');               // стартовый → сразу дубликат
+  assert.strictEqual(r[0].id, 'shorokh');               // стартовый → сразу дубликат
   assert.strictEqual(r[0].isNew, false);
-  assert.strictEqual(s.heroes.irene.copies, 3);
+  assert.strictEqual(s.heroes.shorokh.copies, 3);
 });
 
 test('новый герой из портала открывается', () => {
@@ -513,9 +513,9 @@ test('новый герой из портала открывается', () => {
   const s = C.newState({ rng: () => seq[k++ % 2] });
   s.tickets = 1;
   const r = C.summon(s, 1);
-  assert.strictEqual(r[0].id, 'garret');
+  assert.strictEqual(r[0].id, 'irene');
   assert.strictEqual(r[0].isNew, true);
-  assert.strictEqual(s.heroes.garret.unlocked, true);
+  assert.strictEqual(s.heroes.irene.unlocked, true);
 });
 
 test('гарантии: A+ не позже pityA призывов, S+ не позже pityS', () => {
@@ -540,54 +540,54 @@ test('шансы портала примерно соответствуют та
 
 test('звёзды: за дубликаты, до 10, повышают только индивидуальный DPS', () => {
   const s = C.newState(NOCRIT);
-  s.allies.irene.level = 10;
-  const before = C.allyDps(s, 'irene');
-  assert.strictEqual(C.starUp(s, 'irene'), false);   // нет копий
-  s.heroes.irene.copies = 1000;
-  assert.ok(C.starUp(s, 'irene'));
-  assert.strictEqual(C.allyDps(s, 'irene'), before * (1 + CFG.starDpsBonus));
-  while (C.starUp(s, 'irene'));
-  assert.strictEqual(s.heroes.irene.stars, CFG.maxStars);
+  s.allies.shorokh.level = 10;
+  const before = C.allyDps(s, 'shorokh');
+  assert.strictEqual(C.starUp(s, 'shorokh'), false);   // нет копий
+  s.heroes.shorokh.copies = 1000;
+  assert.ok(C.starUp(s, 'shorokh'));
+  assert.strictEqual(C.allyDps(s, 'shorokh'), before * (1 + CFG.starDpsBonus));
+  while (C.starUp(s, 'shorokh'));
+  assert.strictEqual(s.heroes.shorokh.stars, CFG.maxStars);
   const spent = CFG.starCopies.reduce((a, b) => a + b, 0);
-  assert.strictEqual(s.heroes.irene.copies, 1000 - spent);
-  assert.strictEqual(C.starCost(s, 'irene'), null);
-  assert.strictEqual(H('irene').ult.power, 20);       // ульт не меняется от звёзд
+  assert.strictEqual(s.heroes.shorokh.copies, 1000 - spent);
+  assert.strictEqual(C.starCost(s, 'shorokh'), null);
+  assert.strictEqual(H('shorokh').ult.power, 20);       // ульт не меняется от звёзд
 });
 
 test('отряд: максимум четыре, резерв даёт долю DPS, ненанятые — ничего', () => {
   const s = C.newState(NOCRIT);
-  s.heroes.garret.unlocked = true;
-  assert.strictEqual(C.squadAdd(s, 'garret'), false);  // отряд полон
-  s.allies.garret.level = 10;
-  assert.strictEqual(C.contribDps(s, 'garret'), C.allyDps(s, 'garret') * CFG.reserveShare);
-  assert.ok(C.squadRemove(s, 'irene'));
-  assert.ok(C.squadAdd(s, 'garret'));
-  assert.strictEqual(C.contribDps(s, 'garret'), C.allyDps(s, 'garret'));
-  assert.strictEqual(C.contribDps(s, 'irene'), 0);     // Ирэн не нанята
-  s.allies.irene.level = 5;
-  assert.strictEqual(C.reserveDps(s), C.allyDps(s, 'irene') * CFG.reserveShare);
+  s.heroes.irene.unlocked = true;
+  assert.strictEqual(C.squadAdd(s, 'irene'), false);  // отряд полон
+  s.allies.irene.level = 10;
+  assert.strictEqual(C.contribDps(s, 'irene'), C.allyDps(s, 'irene') * CFG.reserveShare);
+  assert.ok(C.squadRemove(s, 'shorokh'));
+  assert.ok(C.squadAdd(s, 'irene'));
+  assert.strictEqual(C.contribDps(s, 'irene'), C.allyDps(s, 'irene'));
+  assert.strictEqual(C.contribDps(s, 'shorokh'), 0);     // Ирэн не нанята
+  s.allies.shorokh.level = 5;
+  assert.strictEqual(C.reserveDps(s), C.allyDps(s, 'shorokh') * CFG.reserveShare);
 });
 
 test('резерв наносит урон сам, ульты и атаки — только у отряда', () => {
   const s = C.newState(NOCRIT); tough(s);
-  s.heroes.garret.unlocked = true;
-  s.allies.garret.level = 10;                          // в резерве
+  s.heroes.irene.unlocked = true;
+  s.allies.irene.level = 10;                          // в резерве
   const ev = runFor(s, 20);
   const res = ev.filter(e => e.type === 'hit' && e.source === 'reserve');
   assert.ok(Math.abs(res.length - 20) <= 1);
-  assert.ok(!ev.some(e => e.source === 'garret' || (e.type === 'ult' && e.id === 'garret')));
+  assert.ok(!ev.some(e => e.source === 'irene' || (e.type === 'ult' && e.id === 'irene')));
 });
 
 test('сохранение коллекции и миграция с версии 0.6 (билеты за пройденных боссов)', () => {
   const s = C.newState(NOCRIT);
-  s.heroes.saya.unlocked = true; s.heroes.saya.copies = 3; s.heroes.irene.stars = 2;
-  C.squadRemove(s, 'kael'); C.squadAdd(s, 'saya');
+  s.heroes.saya.unlocked = true; s.heroes.saya.copies = 3; s.heroes.shorokh.stars = 2;
+  C.squadRemove(s, 'lumi'); C.squadAdd(s, 'saya');
   s.tickets = 7; s.ticketFloor = 12; s.pity = { a: 5, s: 40 };
   const t = C.deserialize(C.serialize(s));
   assert.ok(t);
   assert.strictEqual(t.heroes.saya.unlocked, true);
   assert.strictEqual(t.heroes.saya.copies, 3);
-  assert.strictEqual(t.heroes.irene.stars, 2);
+  assert.strictEqual(t.heroes.shorokh.stars, 2);
   assert.strictEqual(t.heroes.velma.unlocked, false);
   assert.deepStrictEqual(t.squad, s.squad);
   assert.strictEqual(t.tickets, 7);
@@ -595,49 +595,49 @@ test('сохранение коллекции и миграция с верси�
 
   const old = JSON.parse(C.serialize(s));
   old.v = 3; old.highestCleared = 20; delete old.heroes; delete old.squad; delete old.tickets; delete old.ticketFloor; delete old.pity;
-  old.allies = { irene: 50, borg: 20 };
+  old.allies = { shorokh: 50, kostik: 20 };
   const m = C.deserialize(JSON.stringify(old));
   assert.ok(m);
   let exp = 0; for (let f = 1; f <= 20; f++) exp += C.ticketsForFloor(f);
   assert.strictEqual(m.tickets, exp);
-  assert.strictEqual(m.allies.irene.level, 50);
-  assert.deepStrictEqual(m.squad, ['irene', 'borg', 'lia', 'kael']);
+  assert.strictEqual(m.allies.shorokh.level, 50);
+  assert.deepStrictEqual(m.squad, ['shorokh', 'kostik', 'shmyg', 'lumi']);
 });
 
 // ---------- Алтарь (этап 4, шаг 2) ----------
 test('пожертвование: копии исчезают навсегда, эссенция по редкости', () => {
   const s = C.newState(NOCRIT);
-  s.heroes.irene.copies = 5; s.heroes.kael.copies = 2;
-  const r = C.sacrifice(s, { irene: 3, kael: 1 });
+  s.heroes.veil.unlocked = true; s.heroes.shorokh.copies = 5; s.heroes.veil.copies = 2;
+  const r = C.sacrifice(s, { shorokh: 3, veil: 1 });
   assert.ok(r);
   assert.strictEqual(r.essence, 3 * CFG.altar.essence.E + 1 * CFG.altar.essence.B);
   assert.strictEqual(s.essence, r.essence);
-  assert.strictEqual(s.heroes.irene.copies, 2);
-  assert.strictEqual(s.heroes.kael.copies, 1);
-  assert.strictEqual(s.heroes.irene.unlocked, true);    // сам герой остаётся открытым
+  assert.strictEqual(s.heroes.shorokh.copies, 2);
+  assert.strictEqual(s.heroes.veil.copies, 1);
+  assert.strictEqual(s.heroes.shorokh.unlocked, true);    // сам герой остаётся открытым
 });
 
 test('нельзя пожертвовать больше копий, чем есть, и заблокированные', () => {
   const s = C.newState(NOCRIT);
-  s.heroes.irene.copies = 2;
-  assert.strictEqual(C.sacrifice(s, { irene: 3 }), null);
-  C.setLock(s, 'irene', true);
-  assert.strictEqual(C.sacrifice(s, { irene: 1 }), null);
-  assert.strictEqual(s.heroes.irene.copies, 2);
-  C.setLock(s, 'irene', false);
-  assert.ok(C.sacrifice(s, { irene: 1 }));
+  s.heroes.shorokh.copies = 2;
+  assert.strictEqual(C.sacrifice(s, { shorokh: 3 }), null);
+  C.setLock(s, 'shorokh', true);
+  assert.strictEqual(C.sacrifice(s, { shorokh: 1 }), null);
+  assert.strictEqual(s.heroes.shorokh.copies, 2);
+  C.setLock(s, 'shorokh', false);
+  assert.ok(C.sacrifice(s, { shorokh: 1 }));
   assert.strictEqual(C.sacrifice(s, {}), null);
 });
 
 test('массовый выбор берёт все незаблокированные копии', () => {
   const s = C.newState(NOCRIT);
-  s.heroes.irene.copies = 4; s.heroes.borg.copies = 2; s.heroes.lia.copies = 1;
-  C.setLock(s, 'borg', true);
-  assert.deepStrictEqual(C.selectAllUnlocked(s), { irene: 4, lia: 1 });
+  s.heroes.shorokh.copies = 4; s.heroes.kostik.copies = 2; s.heroes.shmyg.copies = 1;
+  C.setLock(s, 'kostik', true);
+  assert.deepStrictEqual(C.selectAllUnlocked(s), { shorokh: 4, shmyg: 1 });
 });
 
 test('редкие герои требуют дополнительного подтверждения', () => {
-  assert.strictEqual(C.needsRareConfirm({ irene: 3, kael: 1 }), false);
+  assert.strictEqual(C.needsRareConfirm({ shorokh: 3, lumi: 1 }), false);
   assert.strictEqual(C.needsRareConfirm({ velma: 1 }), true);
   assert.strictEqual(C.needsRareConfirm({ azrael: 1 }), true);
 });
@@ -650,9 +650,9 @@ test('рецепты: Слеза портала (эссенция → билет
   assert.strictEqual(s.tickets, 2);
   assert.strictEqual(s.essence, 0);
   s.essence = 1000;
-  assert.ok(C.heroTrace(s, 'lia'));
-  assert.strictEqual(s.heroes.lia.copies, 1);
-  assert.strictEqual(s.essence, 1000 - C.traceCost('lia'));
+  assert.ok(C.heroTrace(s, 'shmyg'));
+  assert.strictEqual(s.heroes.shmyg.copies, 1);
+  assert.strictEqual(s.essence, 1000 - C.traceCost('shmyg'));
   assert.strictEqual(C.heroTrace(s, 'velma'), false);   // закрытого героя нельзя
 });
 
@@ -674,15 +674,15 @@ test('скрытый герой не выпадает в портале и от�
   assert.strictEqual(t.heroes[morra.id].copies, 1);
   // неполный набор ничего скрытого не даёт
   for (const id of morra.recipe) t.heroes[id].copies = 1;
-  assert.deepStrictEqual(C.sacrifice(t, { irene: 1, borg: 1 }).found, []);
+  assert.deepStrictEqual(C.sacrifice(t, { shorokh: 1, kostik: 1 }).found, []);
 });
 
 test('сохранение Алтаря и миграция с 0.7', () => {
   const s = C.newState(NOCRIT);
-  s.essence = 42; C.setLock(s, 'kael', true); s.discovered.morra = true; s.heroes.morra.unlocked = true;
+  s.essence = 42; C.setLock(s, 'lumi', true); s.discovered.morra = true; s.heroes.morra.unlocked = true;
   const t = C.deserialize(C.serialize(s));
   assert.strictEqual(t.essence, 42);
-  assert.strictEqual(t.locks.kael, true);
+  assert.strictEqual(t.locks.lumi, true);
   assert.strictEqual(t.discovered.morra, true);
   assert.strictEqual(t.heroes.morra.unlocked, true);
   const old = JSON.parse(C.serialize(s)); old.v = 4; delete old.essence; delete old.locks; delete old.discovered;
@@ -716,8 +716,8 @@ test('ритуал доступен только с этажа 400', () => {
 test('ритуал: сбрасывает забег, сохраняет постоянное, даёт души и старт ниже 400', () => {
   const s = C.newState(NOCRIT);
   reach(s, 420);
-  s.gold = 1e9; s.tapLevel = 300; s.allies.irene.level = 200; s.highestCleared = 419;
-  s.heroes.irene.stars = 3; s.heroes.irene.copies = 5; s.tickets = 7; s.essence = 11; s.artifacts.grail = 2;
+  s.gold = 1e9; s.tapLevel = 300; s.allies.shorokh.level = 200; s.highestCleared = 419;
+  s.heroes.shorokh.stars = 3; s.heroes.shorokh.copies = 5; s.tickets = 7; s.essence = 11; s.artifacts.grail = 2;
   const squad = s.squad.slice(), ticketFloor = s.ticketFloor = 419;
   const expSouls = C.ritualSouls(s);
   assert.ok(expSouls > 0);
@@ -726,10 +726,10 @@ test('ритуал: сбрасывает забег, сохраняет пост
   assert.strictEqual(s.souls, expSouls);
   assert.strictEqual(s.rituals, 1);
   // сброс
-  assert.strictEqual(s.gold, 0); assert.strictEqual(s.tapLevel, 1); assert.strictEqual(s.allies.irene.level, 0);
+  assert.strictEqual(s.gold, 0); assert.strictEqual(s.tapLevel, 1); assert.strictEqual(s.allies.shorokh.level, 0);
   assert.strictEqual(s.floor, 1); assert.strictEqual(s.maxFloor, s.floor);   // без «Врат восхождения» — с 1-го
   // сохранение
-  assert.strictEqual(s.heroes.irene.stars, 3); assert.strictEqual(s.heroes.irene.copies, 5);
+  assert.strictEqual(s.heroes.shorokh.stars, 3); assert.strictEqual(s.heroes.shorokh.copies, 5);
   assert.strictEqual(s.tickets, 7); assert.strictEqual(s.essence, 11); assert.strictEqual(s.artifacts.grail, 2);
   assert.deepStrictEqual(s.squad, squad); assert.strictEqual(s.ticketFloor, ticketFloor);
   assert.strictEqual(s.bestFloor, 420);
@@ -798,8 +798,8 @@ test('артефакты действуют на героя и союзнико�
   const tap0 = C.tap(s).find(e => e.type === 'hit').dmg;
   s.artifacts.gaunt = 1;
   assert.ok(Math.abs(C.tap(s).find(e => e.type === 'hit').dmg - tap0 * 1.4) < 1e-9);
-  s.allies.irene.level = 1;
-  const ally0 = C.allyDps(s, 'irene');
+  s.allies.shorokh.level = 1;
+  const ally0 = C.allyDps(s, 'shorokh');
   s.artifacts.banner = 1;
   assert.ok(Math.abs(C.autoDps(s) - ally0 * 1.4) < 1e-9);
   s.artifacts.sand = 3;
@@ -822,7 +822,7 @@ test('Клинок первого призыва: герой атакует са
 test('трата душ уменьшает бонус — предпросмотр показывает DPS до и после', () => {
   const s = C.newState(NOCRIT);
   s.souls = 3; s.artifacts.feather = 1;                     // золото не даёт DPS → после траты DPS ниже
-  s.allies.irene.level = 10;
+  s.allies.shorokh.level = 10;
   const p = C.previewSpend(s, 'upgrade', 'feather', 5);
   assert.ok(p.after < p.before);
   assert.strictEqual(s.souls, 3);                           // предпросмотр ничего не меняет
@@ -862,40 +862,40 @@ test('материалы: осколки за каждого босса (и по
 
 test('материалы и эволюция переживают ритуал; сердца после ритуала не повторяются', () => {
   const s = C.newState(NOCRIT);
-  s.materials = { shard: 77, heart: 4, dust: 0 }; s.heartFloor = 400; s.heroes.irene.evo = 2;
+  s.materials = { shard: 77, heart: 4, dust: 0 }; s.heartFloor = 400; s.heroes.shorokh.evo = 2;
   reach(s, 400); C.ritual(s);
   assert.deepStrictEqual(s.materials, { shard: 77, heart: 4, dust: 0 });
-  assert.strictEqual(s.heroes.irene.evo, 2);
+  assert.strictEqual(s.heroes.shorokh.evo, 2);
   assert.strictEqual(C.bossMaterials(s, 50).firstHeart, false);
   assert.strictEqual(C.bossMaterials(s, 450).firstHeart, true);
 });
 
 test('эволюция: нужны звёзды и материалы, цена растёт с редкостью, даёт только индивидуальный DPS', () => {
   const s = C.newState(NOCRIT);
-  s.allies.irene.level = 10;
+  s.allies.shorokh.level = 10;
   const st = CFG.evolution.stages[0];
-  assert.strictEqual(C.evolve(s, 'irene'), false);           // нет звёзд и материалов
-  s.heroes.irene.stars = st.stars;
-  const c = C.evoCost(s, 'irene');
+  assert.strictEqual(C.evolve(s, 'shorokh'), false);           // нет звёзд и материалов
+  s.heroes.shorokh.stars = st.stars;
+  const c = C.evoCost(s, 'shorokh');
   s.materials.shard = c.shards - 1;
-  assert.strictEqual(C.evolve(s, 'irene'), false);           // не хватает осколков
+  assert.strictEqual(C.evolve(s, 'shorokh'), false);           // не хватает осколков
   s.materials.shard = c.shards;
-  const dps = C.allyDps(s, 'irene'), crit = C.critChance(s), mult = C.critMult(s);
-  assert.strictEqual(C.evolve(s, 'irene'), true);
-  assert.strictEqual(s.heroes.irene.evo, 1); assert.strictEqual(s.materials.shard, 0);
-  assert.strictEqual(C.allyDps(s, 'irene'), dps * st.mult);
+  const dps = C.allyDps(s, 'shorokh'), crit = C.critChance(s), mult = C.critMult(s);
+  assert.strictEqual(C.evolve(s, 'shorokh'), true);
+  assert.strictEqual(s.heroes.shorokh.evo, 1); assert.strictEqual(s.materials.shard, 0);
+  assert.strictEqual(C.allyDps(s, 'shorokh'), dps * st.mult);
   assert.strictEqual(C.critChance(s), crit); assert.strictEqual(C.critMult(s), mult);   // без критов
-  assert.ok(C.evoCost(s, 'kael').shards > C.evoCost(C.newState(), 'irene').shards);   // B дороже E
+  s.heroes.veil.unlocked = true; assert.ok(C.evoCost(s, 'veil').shards > C.evoCost(C.newState(), 'shorokh').shards);   // B дороже E
   // вторая ступень: прежние сердца входят в цену осколками (0.51)
-  s.heroes.irene.stars = CFG.evolution.stages[1].stars;
-  const c2 = C.evoCost(s, 'irene'); assert.strictEqual(c2.hearts, 0);
+  s.heroes.shorokh.stars = CFG.evolution.stages[1].stars;
+  const c2 = C.evoCost(s, 'shorokh'); assert.strictEqual(c2.hearts, 0);
   assert.strictEqual(c2.shards, Math.ceil(CFG.evolution.stages[1].shards * CFG.evolution.rarityCost.E) + CFG.evolution.stages[1].hearts * CFG.materials.heartRecipe);
-  s.materials.shard = c2.shards - 1; assert.strictEqual(C.evolve(s, 'irene'), false);
-  s.materials.shard = c2.shards; assert.strictEqual(C.evolve(s, 'irene'), true);
+  s.materials.shard = c2.shards - 1; assert.strictEqual(C.evolve(s, 'shorokh'), false);
+  s.materials.shard = c2.shards; assert.strictEqual(C.evolve(s, 'shorokh'), true);
   // после последней ступени — дальше некуда
-  s.heroes.irene.evo = CFG.evolution.stages.length;
-  assert.strictEqual(C.evoCost(s, 'irene'), null);
-  assert.strictEqual(C.evolve(s, 'irene'), false);
+  s.heroes.shorokh.evo = CFG.evolution.stages.length;
+  assert.strictEqual(C.evoCost(s, 'shorokh'), null);
+  assert.strictEqual(C.evolve(s, 'shorokh'), false);
   // закрытого героя эволюционировать нельзя
   s.heroes.azrael.stars = 10; s.materials.heart = 99;
   assert.strictEqual(C.evolve(s, 'azrael'), false);
@@ -911,17 +911,17 @@ test('сердца слиты в осколки (0.51): ковать нельз�
 
 test('сохранение эволюции и материалов, миграция с 0.9 начисляет материалы за пройденных боссов', () => {
   const s = C.newState(NOCRIT);
-  s.materials = { shard: 15, heart: 2 }; s.heartFloor = 100; s.heroes.irene.evo = 1;
+  s.materials = { shard: 15, heart: 2 }; s.heartFloor = 100; s.heroes.shorokh.evo = 1;
   const t = C.deserialize(C.serialize(s));
   assert.deepStrictEqual(t.materials, { shard: 15 + 2 * CFG.materials.heartRecipe, heart: 0, dust: 0 });
-  assert.strictEqual(t.heartFloor, 100); assert.strictEqual(t.heroes.irene.evo, 1);
+  assert.strictEqual(t.heartFloor, 100); assert.strictEqual(t.heroes.shorokh.evo, 1);
   const old = JSON.parse(C.serialize(s)); old.v = 6; delete old.materials; delete old.heartFloor; old.ticketFloor = 100;
   for (const id in old.heroes) delete old.heroes[id].evo;
   const m = C.deserialize(JSON.stringify(old));
   let sh = 0; for (let f = 1; f <= 100; f++) sh += C.shardsForBoss(f);
   assert.deepStrictEqual(m.materials, { shard: sh + 2 * CFG.materials.heartRecipe, heart: 0, dust: 0 });
-  assert.strictEqual(m.heartFloor, 100); assert.strictEqual(m.heroes.irene.evo, 0);
-  const bad = JSON.parse(C.serialize(s)); bad.heroes.irene.evo = 9;
+  assert.strictEqual(m.heartFloor, 100); assert.strictEqual(m.heroes.shorokh.evo, 0);
+  const bad = JSON.parse(C.serialize(s)); bad.heroes.shorokh.evo = 9;
   assert.strictEqual(C.deserialize(JSON.stringify(bad)), null);
 });
 
@@ -935,7 +935,7 @@ test('офлайн: короче минуты — ничего; без авто-
 
 test('офлайн: отряд проходит этажи до стены, затем фармит этаж ниже', () => {
   const s = C.newState(NOCRIT);
-  s.allies.irene.level = 50;
+  s.allies.shorokh.level = 50;
   const dps = C.offlineDps(s);
   const r = C.offlineProgress(s, 12 * 3600);
   assert.ok(r.floorsCleared > 0 && r.wallFloor > 1);
@@ -951,7 +951,7 @@ test('офлайн: отряд проходит этажи до стены, за
 
 test('офлайн: повторный уход не опускает ниже — снова пробует рубеж и фармит под ним', () => {
   const s = C.newState(NOCRIT);
-  s.allies.irene.level = 50;
+  s.allies.shorokh.level = 50;
   const a = C.offlineProgress(s, 12 * 3600);
   const b = C.offlineProgress(s, 12 * 3600);
   assert.strictEqual(b.wallFloor, a.wallFloor); assert.strictEqual(s.floor, a.wallFloor - 1);
@@ -959,19 +959,19 @@ test('офлайн: повторный уход не опускает ниже �
 });
 
 test('офлайн: не больше 12 часов, фарм приносит золото пропорционально времени', () => {
-  const s1 = C.newState(NOCRIT); s1.allies.irene.level = 50;
-  const s2 = C.newState(NOCRIT); s2.allies.irene.level = 50;
+  const s1 = C.newState(NOCRIT); s1.allies.shorokh.level = 50;
+  const s2 = C.newState(NOCRIT); s2.allies.shorokh.level = 50;
   const r1 = C.offlineProgress(s1, 12 * 3600), r2 = C.offlineProgress(s2, 48 * 3600);
   assert.ok(r2.capped); assert.strictEqual(r2.seconds, CFG.offline.maxSec);
   assert.strictEqual(r1.gold, r2.gold);
-  const s3 = C.newState(NOCRIT); s3.allies.irene.level = 50;
+  const s3 = C.newState(NOCRIT); s3.allies.shorokh.level = 50;
   const r3 = C.offlineProgress(s3, 6 * 3600);
   assert.ok(r3.gold < r1.gold);
 });
 
 test('офлайн: сильный отряд за короткое время просто продвигается без стены', () => {
   const s = C.newState(NOCRIT);
-  s.allies.kael.level = 100;
+  s.allies.lumi.level = 100;
   const r = C.offlineProgress(s, 120);
   assert.strictEqual(r.wallFloor, null);
   assert.ok(s.floor > 1 && !s.farming);
@@ -1124,7 +1124,7 @@ test('эффекты дерева: души за ритуал, наследие 
   for (const x of [a, b]) { x.floor = x.maxFloor = 450; x.bestFloor = 450; }
   b.tree = { echo: 5, legacy: 2, dream: 3, luck: 5 };
   assert.strictEqual(C.ritualSouls(b), Math.floor(C.ritualSouls(a) * 1.5));
-  b.allies.irene.level = 10; a.allies.irene.level = 10;
+  b.allies.shorokh.level = 10; a.allies.shorokh.level = 10;
   assert.ok(Math.abs(C.offlineDps(b) / C.offlineDps(a) - 1.6) < 1e-9);
   const r = C.ritual(b);
   assert.strictEqual(b.gold, Math.ceil(100 * C.killGold(r.start, true)));
@@ -1355,7 +1355,7 @@ test('задание «все задания дня» и «Забрать всё
 test('счётчики: призыв, звезда, руна, подземелье, ритуал', () => {
   const s = C.newState({ rng: () => 0 }); s.tickets = 3; s.materials.shard = 100;
   C.summon(s, 3); assert.strictEqual(s.counters.summon, 3);
-  s.heroes.irene.copies = 5; C.starUp(s, 'irene'); assert.strictEqual(s.counters.star, 1);
+  s.heroes.shorokh.copies = 5; C.starUp(s, 'shorokh'); assert.strictEqual(s.counters.star, 1);
   C.createRune(s); assert.strictEqual(s.counters.rune, 1);
   s.bestFloor = 20; s.tapLevel = 1e15; C.enterMode(s, 'dungeon', { id: 'vault', tier: 1 }, 'd');
   for (let i = 0; i < 100 && s.mode; i++) { if (s.enemy.alive) C.tap(s); else respawn(s); }
@@ -1400,8 +1400,8 @@ test('покупка уровней упирается в потолок, MAX и
   s.tapLevel = CFG.ranks.capMin - 10;
   assert.ok(C.buyTap(s, 100)); assert.strictEqual(s.tapLevel, CFG.ranks.capMin);
   assert.strictEqual(C.buyTap(s, 1), false); assert.strictEqual(C.buyTap(s, 'max'), false);
-  s.allies.irene.level = 0;
-  assert.ok(C.buyAlly(s, 'irene', 'max')); assert.strictEqual(s.allies.irene.level, CFG.ranks.capMin);
+  s.allies.shorokh.level = 0;
+  assert.ok(C.buyAlly(s, 'shorokh', 'max')); assert.strictEqual(s.allies.shorokh.level, CFG.ranks.capMin);
 });
 
 test('ранг героя: подранг за осколки, новый ранг — ещё сердца, потолок растёт', () => {
@@ -1421,28 +1421,28 @@ test('ранг героя: подранг за осколки, новый ран
 
 test('ранг союзника: цена по редкости, ранги IV, VII, X требуют эволюцию I, II, III', () => {
   const s = C.newState(NOCRIT); s.materials = { shard: 1e12, heart: 1e6 };
-  assert.ok(C.rankCost(s, 'kael').shards > C.rankCost(s, 'irene').shards);
-  s.heroes.irene.rank = 29;
-  assert.strictEqual(C.rankCost(s, 'irene').needEvo, 1);
-  assert.strictEqual(C.rankUp(s, 'irene'), false);
-  s.heroes.irene.evo = 1; assert.ok(C.rankUp(s, 'irene'));
-  assert.strictEqual(C.allyCap(s, 'irene'), C.capAt(30));
-  s.heroes.irene.rank = 59; assert.strictEqual(C.rankUp(s, 'irene'), false);
-  s.heroes.irene.evo = 2; assert.ok(C.rankUp(s, 'irene'));
-  s.heroes.irene.rank = 89; assert.strictEqual(C.rankUp(s, 'irene'), false);
-  s.heroes.irene.evo = 3; assert.ok(C.rankUp(s, 'irene'));
+  s.heroes.veil.unlocked = true; assert.ok(C.rankCost(s, 'veil').shards > C.rankCost(s, 'shorokh').shards);
+  s.heroes.shorokh.rank = 29;
+  assert.strictEqual(C.rankCost(s, 'shorokh').needEvo, 1);
+  assert.strictEqual(C.rankUp(s, 'shorokh'), false);
+  s.heroes.shorokh.evo = 1; assert.ok(C.rankUp(s, 'shorokh'));
+  assert.strictEqual(C.allyCap(s, 'shorokh'), C.capAt(30));
+  s.heroes.shorokh.rank = 59; assert.strictEqual(C.rankUp(s, 'shorokh'), false);
+  s.heroes.shorokh.evo = 2; assert.ok(C.rankUp(s, 'shorokh'));
+  s.heroes.shorokh.rank = 89; assert.strictEqual(C.rankUp(s, 'shorokh'), false);
+  s.heroes.shorokh.evo = 3; assert.ok(C.rankUp(s, 'shorokh'));
   assert.strictEqual(C.rankUp(s, 'azrael'), false);                // не открыт
 });
 
 test('ранги переживают ритуал и сохраняются; миграция с 0.18', () => {
-  const s = C.newState(NOCRIT); s.heroRank = 12; s.heroes.irene.rank = 7;
+  const s = C.newState(NOCRIT); s.heroRank = 12; s.heroes.shorokh.rank = 7;
   s.floor = s.maxFloor = 400; C.ritual(s);
-  assert.strictEqual(s.heroRank, 12); assert.strictEqual(s.heroes.irene.rank, 7);
+  assert.strictEqual(s.heroRank, 12); assert.strictEqual(s.heroes.shorokh.rank, 7);
   const t = C.deserialize(C.serialize(s));
-  assert.strictEqual(t.heroRank, 12); assert.strictEqual(t.heroes.irene.rank, 7);
+  assert.strictEqual(t.heroRank, 12); assert.strictEqual(t.heroes.shorokh.rank, 7);
   const old = JSON.parse(C.serialize(s)); old.v = 11; delete old.heroRank; for (const id in old.heroes) delete old.heroes[id].rank;
   const m = C.deserialize(JSON.stringify(old));
-  assert.strictEqual(m.heroRank, 0); assert.strictEqual(m.heroes.irene.rank, 0);
+  assert.strictEqual(m.heroRank, 0); assert.strictEqual(m.heroes.shorokh.rank, 0);
 });
 
 // ---------- сезон и боевой пропуск (0.21) ----------
@@ -1572,7 +1572,7 @@ test('очки события за врагов и боссов; вехи авт
 });
 
 test('тематическое подземелье: условие «только тапы» — союзники не бьют; награда — фонари', () => {
-  const s = C.newState(NOCRIT); s.bestFloor = 100; s.allies.irene.level = 500;
+  const s = C.newState(NOCRIT); s.bestFloor = 100; s.allies.shorokh.level = 500;
   C.eventReset(s, 'w2026-11-02');                       // Логово жадности: tapOnly
   assert.ok(C.enterMode(s, 'event', { tier: 5 }, 'd'));
   const hp = s.enemy.hp;
@@ -1694,7 +1694,7 @@ test('ритуал на высоком этаже даёт огромное чи
 
 test('офлайн на огромных этажах не ломается', () => {
   const s = C.newState(NOCRIT); s.floor = s.maxFloor = s.bestFloor = 30000;
-  s.allies.irene.level = 15000; s.heroes.irene.rank = 100; s.souls = B.fromLog10(5100);
+  s.allies.shorokh.level = 15000; s.heroes.shorokh.rank = 100; s.souls = B.fromLog10(5100);
   const r = C.offlineProgress(s, 3600);
   assert.ok(r && B.gte(r.gold, 0));
 });
@@ -1730,18 +1730,18 @@ test('смена класса раз в день, очки возвращают�
   assert.strictEqual(C.bossTime(s), CFG.bossTimeSec);
   assert.strictEqual(C.classFree(s), C.classPoints(s));
   C.buyClassNode(s, 'c2');
-  s.allies.irene.level = 1; s.allies.irene.ult = 0;
+  s.allies.shorokh.level = 1; s.allies.shorokh.ult = 0;
   C.tick(s, 1);
-  assert.ok(Math.abs(s.allies.irene.ult - 1.04) < 1e-9);
+  assert.ok(Math.abs(s.allies.shorokh.ult - 1.04) < 1e-9);
   assert.ok(C.chooseClass(s, 'alch', 'd2'));
 });
 
 test('«Печать силы» убрана (0.51): не открывается и не даёт урона', () => {
-  const s = C.newState(NOCRIT); s.bestFloor = 5000; s.allies.irene.level = 10;
-  const before = C.allyDps(s, 'irene');
-  assert.strictEqual(C.moveBooster(s, 'irene', 1e12), false);
-  s.booster.owner = 'irene';                                   // старое сохранение с печатью
-  assert.strictEqual(C.allyDps(s, 'irene'), before);
+  const s = C.newState(NOCRIT); s.bestFloor = 5000; s.allies.shorokh.level = 10;
+  const before = C.allyDps(s, 'shorokh');
+  assert.strictEqual(C.moveBooster(s, 'shorokh', 1e12), false);
+  s.booster.owner = 'shorokh';                                   // старое сохранение с печатью
+  assert.strictEqual(C.allyDps(s, 'shorokh'), before);
 });
 
 test('предел 15 тапов в секунду', () => {
@@ -1780,15 +1780,15 @@ test('кости: ровно 6 слотов — голова, 2 руки, 2 но
 });
 
 test('рёбра и позвоночник усиливают носителя; в слоте одна кость', () => {
-  const s = C.newState(NOCRIT); s.allies.irene.level = 10;
-  const base = C.allyDps(s, 'irene');
+  const s = C.newState(NOCRIT); s.allies.shorokh.level = 10;
+  const base = C.allyDps(s, 'shorokh');
   const r = mkBone(s, 'armR', 1);
-  assert.ok(C.equipBone(s, r.id, 'irene'));
-  assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r))) < 1e-9);
-  const r2 = mkBone(s, 'armR', 2); C.equipBone(s, r2.id, 'irene');
-  assert.strictEqual(r.on, null); assert.strictEqual(C.equippedOn(s, 'irene').length, 1);
-  const sp = mkBone(s, 'chest', 0); C.equipBone(s, sp.id, 'irene');
-  assert.ok(Math.abs(C.allyDps(s, 'irene') / base - (1 + C.boneValue(r2)) * (1 + C.boneValue(sp))) < 1e-9);
+  assert.ok(C.equipBone(s, r.id, 'shorokh'));
+  assert.ok(Math.abs(C.allyDps(s, 'shorokh') / base - (1 + C.boneValue(r))) < 1e-9);
+  const r2 = mkBone(s, 'armR', 2); C.equipBone(s, r2.id, 'shorokh');
+  assert.strictEqual(r.on, null); assert.strictEqual(C.equippedOn(s, 'shorokh').length, 1);
+  const sp = mkBone(s, 'chest', 0); C.equipBone(s, sp.id, 'shorokh');
+  assert.ok(Math.abs(C.allyDps(s, 'shorokh') / base - (1 + C.boneValue(r2)) * (1 + C.boneValue(sp))) < 1e-9);
   assert.strictEqual(C.equipBone(s, r.id, 'azrael'), false);     // не открыт
 });
 
@@ -1797,9 +1797,9 @@ test('череп — по боссам, когти — по обычным; та
   const cl = mkBone(s, 'armL', 0); C.equipBone(s, cl.id, 'hero');
   const d1 = C.tap(s).find(e => e.type === 'hit').dmg;
   assert.ok(Math.abs(d1 / C.tapHit(s) - (1 + C.boneValue(cl))) < 1e-9);
-  const pv = mkBone(s, 'legL', 2); C.equipBone(s, pv.id, 'irene');
+  const pv = mkBone(s, 'legL', 2); C.equipBone(s, pv.id, 'shorokh');
   assert.ok(Math.abs(C.goldMult(s) - (1 + C.boneValue(pv))) < 1e-9);
-  const lm = mkBone(s, 'legR', 0); C.equipBone(s, lm.id, 'borg');
+  const lm = mkBone(s, 'legR', 0); C.equipBone(s, lm.id, 'kostik');
   assert.ok(Math.abs(C.shardMult(s) - (1 + C.boneValue(lm))) < 1e-9);
   s.floor = s.maxFloor = 12; C.challengeBoss(s); s.enemy.hp = s.enemy.maxHp = 1e18;
   const sk = mkBone(s, 'head', 1); C.equipBone(s, sk.id, 'hero');
@@ -1892,7 +1892,7 @@ test('питомец выдаётся за первую победу над бо
   const t = C.newState(NOCRIT); t.bestCleared = 300; C.petsCatchUp(t);
   assert.ok(C.petForm(t, 'ash_rat') && C.petForm(t, 'bog_toad') && !C.petForm(t, 'cave_bat') && !C.petForm(t, 'shadow_wolf'));
   // удар: доля × интервал
-  t.allies.irene.level = 10; const p = C.petDef('ash_rat');
+  t.allies.shorokh.level = 10; const p = C.petDef('ash_rat');
   assert.ok(Math.abs(C.petHit(t) - C.squadRawDps(t) * CFG.pets.power.E[0] * p.interval) < 1e-9 * Math.max(1, C.petHit(t)));
   assert.ok(C.setPet(t, 'bog_toad')); assert.strictEqual(t.pets.active, 'bog_toad');
   assert.strictEqual(C.setPet(t, 'cave_bat'), false); C.recallPet(t); assert.strictEqual(t.pets.active, null);
@@ -1933,7 +1933,7 @@ test('Хранители роняют фрагменты в своём биом�
   const low = C.newState(NOCRIT); low.floor = 120; ev = [];
   for (let k = 0; k < 3000; k++) { low.stats.kills = k; C.keeperRoll(low, ev); }
   assert.ok(!ev.some(e => e.type === 'petFrag' && e.id === 'ash_rat'), 'ниже этажа питомца Хранителя нет');
-  const o = C.newState(NOCRIT); o.floor = o.maxFloor = 170; o.allies.irene.level = 300;
+  const o = C.newState(NOCRIT); o.floor = o.maxFloor = 170; o.allies.shorokh.level = 300;
   C.offlineProgress(o, 3600);
   assert.strictEqual(Object.keys(o.pets.frags).length, 0, 'офлайн фрагменты не падают');
   // Логово: ранг недели по кругу; Хранители этого ранга дают ×3, 10 штук — питомец события
@@ -2060,11 +2060,11 @@ test('сохранение гарантий баннеров; миграция �
 test('коллекция: каждый открытый герой и звезда дают урон, полная редкость — урон союзников', () => {
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
   assert.strictEqual(C.collectionMult(s), 1);                    // стартовый отряд — без бонуса
-  s.heroes.garret.unlocked = true;                               // второй E — сет E собран
+  s.heroes.irene.unlocked = true;                               // второй E — сет E собран
   assert.ok(Math.abs(C.collectionMult(s) - 1.01) < 1e-9);
   assert.deepStrictEqual(C.collectionSets(s), ['E']);
   assert.ok(Math.abs(C.collectionAllyMult(s) - 1.1) < 1e-9);
-  s.heroes.irene.stars = 5;
+  s.heroes.shorokh.stars = 5;
   assert.ok(Math.abs(C.collectionMult(s) - 1.06) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.06) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.06 * 1.1) < 1e-9);
@@ -2078,9 +2078,9 @@ test('навыки героя: +% на 10/25/50/75/200, ×10 каждый 1000-�
   assert.strictEqual(C.perkMult(75), 5.5); assert.strictEqual(C.perkMult(200), 7.5);
   assert.strictEqual(C.perkMult(1000), 75); assert.strictEqual(C.perkMult(2999), 750);
   const s = C.newState(NOCRIT), base = C.tapDamage(s);
-  s.allies.irene.level = 99; assert.strictEqual(C.tapDamage(s), base);
-  s.allies.irene.level = 100;
-  assert.ok(Math.abs(C.tapDamage(s) - (base + C.allyDpsAt('irene', 100) * 0.005)) < 1e-6);
+  s.allies.shorokh.level = 99; assert.strictEqual(C.tapDamage(s), base);
+  s.allies.shorokh.level = 100;
+  assert.ok(Math.abs(C.tapDamage(s) - (base + C.allyDpsAt('shorokh', 100) * 0.005)) < 1e-6);
 });
 
 test('автопереход выключен: босс открывает этаж, но игрок остаётся фармить', () => {
@@ -2107,7 +2107,7 @@ test('статистика: макс. тапов/с, заработанное з
 });
 
 test('экран героя: описание ульта, раса и навыки с замком', () => {
-  const a = CFG.allies.find(x => x.id === 'borg');
+  const a = CFG.allies.find(x => x.id === 'kostik');
   assert.ok(a.race && a.cls && a.quote);
   assert.ok(/×2/.test(C.ultDesc(a)));
   const p = C.perkList(30);
@@ -2129,7 +2129,7 @@ test('бонус за вход: раз в день, пропуск не сбра
 });
 
 test('путешествие во времени: 1 бесплатно, потом за билеты, лимит в день', () => {
-  const s = C.newState(NOCRIT); s.allies.irene.level = 50;
+  const s = C.newState(NOCRIT); s.allies.shorokh.level = 50;
   assert.strictEqual(C.travelCost(s, 'd1'), 0);
   const r = C.timeTravel(s, 'd1');
   assert.ok(r && r.seconds === CFG.timeTravel.hours * 3600 && C.B.gt(r.gold, 0));
@@ -2201,7 +2201,7 @@ test('миграция 21: руны и кости GOD (ступень 6) → с�
 // ---------- испытательная башня (0.44) ----------
 test('испытательная башня: равные условия — урон тапа фиксирован, без критов, союзников, питомца и бонусов', () => {
   const s = C.newState({ rng: () => 0 });                       // rng 0 — крит сработал бы всегда
-  s.tapLevel = 500; s.allies.irene.level = 300; s.pets.forms = { ash_rat: 3 }; s.pets.active = 'ash_rat'; s.artifacts = { blade: 10 };
+  s.tapLevel = 500; s.allies.shorokh.level = 300; s.pets.forms = { ash_rat: 3 }; s.pets.active = 'ash_rat'; s.artifacts = { blade: 10 };
   assert.ok(C.enterMode(s, 'trial', {}, 'd1'));
   assert.strictEqual(s.enemy.hp, CFG.pve.trial.hpBase);
   const ev = C.tap(s);
@@ -2343,18 +2343,21 @@ test('последняя ступень достижения даёт титул
 });
 
 // ---------- 0.54: удобство ----------
-test('у каждого героя фракция из 10 и роль по ульте; избранные и фильтры списка героев', () => {
+test('у каждого героя народ из 10 внутри одной из 4 сторон и роль по ульте; избранные и фильтры списка героев', () => {
   for (const a of CFG.allies) { assert.ok(CFG.factions.includes(a.faction), a.id); assert.ok(C.roleOf(a)); }
   const s = C.newState(NOCRIT);
+  s.heroes.veil.unlocked = true;
   const all = C.heroList(s, {});
-  assert.ok(all.indexOf('kael') < all.indexOf('irene'));                        // нанятые, редкость выше — выше
-  assert.ok(C.toggleFav(s, 'irene')); assert.strictEqual(C.heroList(s, {})[0], 'irene');  // избранный — первым
-  assert.deepStrictEqual(C.heroList(s, { fav: true }), ['irene']);
+  assert.ok(all.indexOf('veil') < all.indexOf('shorokh'));                        // нанятые, редкость выше — выше
+  assert.ok(all.indexOf('shorokh') < all.indexOf('kaeron'));                      // открытые выше закрытых
+  for (const a of CFG.allies) assert.ok(CFG.sides[a.side] && CFG.sides[a.side].includes(a.faction), a.id);   // народ внутри своей стороны
+  assert.ok(C.toggleFav(s, 'shorokh')); assert.strictEqual(C.heroList(s, {})[0], 'shorokh');  // избранный — первым
+  assert.deepStrictEqual(C.heroList(s, { fav: true }), ['shorokh']);
   assert.ok(C.heroList(s, { faction: 'Тени' }).every(id => CFG.allies.find(a => a.id === id).faction === 'Тени'));
   assert.ok(C.heroList(s, { rarity: 'E', owned: true }).every(id => s.heroes[id].unlocked));
-  assert.ok(C.heroList(s, { role: 'Удар' }).includes('irene'));
-  s.allies.irene.level = 500; C.toggleFav(s, 'irene');
-  assert.strictEqual(C.heroList(s, { sort: 'power', owned: true })[0], 'irene');
+  assert.ok(C.heroList(s, { role: 'Удар' }).includes('shorokh'));
+  s.allies.shorokh.level = 500; C.toggleFav(s, 'shorokh');
+  assert.strictEqual(C.heroList(s, { sort: 'power', owned: true })[0], 'shorokh');
 });
 
 test('пресеты отряда: сохранить и загрузить состав и питомца; сохраняется в файле', () => {
@@ -2367,7 +2370,7 @@ test('пресеты отряда: сохранить и загрузить со
   assert.strictEqual(C.loadPreset(s, 2), false); assert.strictEqual(C.savePreset(s, 3), false);
   const t = C.deserialize(C.serialize(s));
   assert.deepStrictEqual(t.presets[0].squad, first); assert.strictEqual(t.presets[1].squad.length, first.length - 2);
-  C.toggleFav(s, 'kael'); assert.deepStrictEqual(C.deserialize(C.serialize(s)).favs, ['kael']);
+  C.toggleFav(s, 'lumi'); assert.deepStrictEqual(C.deserialize(C.serialize(s)).favs, ['lumi']);
 });
 
 test('«Забрать всё»: вход, задания, достижения и почта одной кнопкой', () => {
@@ -2397,8 +2400,8 @@ test('«качать лучшего»: всё золото — в уровни �
   for (const id of s.squad) s.allies[id].level = 1;
   s.gold = 1e9;
   const r = C.levelBest(s);
-  assert.strictEqual(r.id, 'kael'); assert.ok(r.levels > 0);
-  assert.ok(s.gold < C.allyCost(s, 'kael', 1));
+  assert.strictEqual(r.id, 'lumi'); assert.ok(r.levels > 0);
+  assert.ok(s.gold < C.allyCost(s, 'lumi', 1));
 });
 
 test('умный офлайн-отчёт: что можно купить; запись чисел — короткая или научная', () => {
@@ -2415,12 +2418,12 @@ test('связи героев: все участники в отряде — б�
   for (const b of CFG.bonds) for (const id of b.heroes) assert.ok(CFG.allies.find(a => a.id === id), b.id + ':' + id);
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
   assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), []);
-  s.heroes.garret.unlocked = true; C.squadRemove(s, 'kael'); assert.ok(C.squadAdd(s, 'garret'));
-  t.heroes.garret.unlocked = true; C.squadRemove(t, 'kael'); C.squadRemove(t, 'borg'); C.squadAdd(t, 'garret');
-  assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), ['steel']);
+  for (const x of [s, t]) { x.heroes.velma.unlocked = true; x.heroes.rotgar.unlocked = true; C.squadRemove(x, 'lumi'); C.squadRemove(x, 'shmyg'); C.squadAdd(x, 'velma'); }
+  C.squadAdd(s, 'rotgar'); C.squadAdd(t, 'shmyg');
+  assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), ['legion']);
   assert.ok(Math.abs(C.bondPower(s, 'allDmg') - 0.10) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.10) < 1e-9);   // одинаковые наборы героев, кроме связи
-  assert.ok(C.bondsOf('lia').length >= 2);
+  assert.ok(C.bondsOf('kassian').length >= 2);
 });
 
 // ---------- 0.57: трофеи боссов ----------
@@ -2543,8 +2546,8 @@ test('дневник: победы по видам, страница биома 
   reach(s, 50); killBoss(s);
   assert.strictEqual(s.bestiary[b.final], CFG.diary.master);
   assert.strictEqual(s.essence, e0 + CFG.diary.masterReward.essence);
-  assert.strictEqual(C.loreLevel(s, 'irene'), 0); s.heroes.irene.stars = 3; assert.strictEqual(C.loreLevel(s, 'irene'), 1);
-  s.heroes.irene.stars = 8; assert.strictEqual(C.loreLevel(s, 'irene'), 2); assert.strictEqual(C.loreLevel(s, 'azrael'), -1);
+  assert.strictEqual(C.loreLevel(s, 'shorokh'), 0); s.heroes.shorokh.stars = 3; assert.strictEqual(C.loreLevel(s, 'shorokh'), 1);
+  s.heroes.shorokh.stars = 8; assert.strictEqual(C.loreLevel(s, 'shorokh'), 2); assert.strictEqual(C.loreLevel(s, 'azrael'), -1);
   assert.ok(CFG.allies.every(a => a.story && a.quote));
   const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.diaryPages, [b.id]); assert.strictEqual(t.bestiary[b.final], CFG.diary.master);
 });
@@ -2588,16 +2591,46 @@ test('престиж аккаунта: уровень из всего прогр
 // ---------- 0.65: перенос прокачки ----------
 test('перенос прокачки: 70% звёзд и ранга новому герою той же редкости или выше, источник теряет; ранг не выше эволюции цели', () => {
   const s = C.newState(NOCRIT); s.essence = 1000;
-  s.heroes.irene.stars = 10; s.heroes.irene.rank = 50; s.allies.irene.level = 3000;
-  assert.strictEqual(C.transferPreview(s, 'kael', 'irene'), null);   // B → E нельзя (редкость ниже)
-  const p = C.transferPreview(s, 'irene', 'borg');
+  s.heroes.shorokh.stars = 10; s.heroes.shorokh.rank = 50; s.allies.shorokh.level = 3000;
+  s.heroes.veil.unlocked = true; s.heroes.veil.stars = 5; s.heroes.borg.unlocked = true;
+  assert.strictEqual(C.transferPreview(s, 'veil', 'shorokh'), null);   // B → E нельзя (редкость ниже)
+  const p = C.transferPreview(s, 'shorokh', 'borg');
   assert.strictEqual(p.stars, 7);
   assert.strictEqual(p.rank, C.rankCapForEvo(0));                     // 35 упирается в потолок без эволюции (29)
-  assert.ok(C.transferProgress(s, 'irene', 'borg'));
-  assert.strictEqual(s.heroes.borg.stars, 7); assert.strictEqual(s.heroes.irene.stars, 0); assert.strictEqual(s.heroes.irene.rank, 0);
-  assert.strictEqual(s.allies.irene.level, C.allyCap(s, 'irene'));    // уровень обрезан до нового потолка
+  assert.ok(C.transferProgress(s, 'shorokh', 'borg'));
+  assert.strictEqual(s.heroes.borg.stars, 7); assert.strictEqual(s.heroes.shorokh.stars, 0); assert.strictEqual(s.heroes.shorokh.rank, 0);
+  assert.strictEqual(s.allies.shorokh.level, C.allyCap(s, 'shorokh'));    // уровень обрезан до нового потолка
   assert.strictEqual(s.essence, 1000 - CFG.transfer.essence * 2);      // D — номер 1
-  assert.strictEqual(C.transferPreview(s, 'irene', 'borg'), null);    // переносить больше нечего
-  s.heroes.lia.evo = 1; s.heroes.borg.rank = 40;
-  assert.strictEqual(C.transferPreview(s, 'borg', 'lia').rank, 28);   // 40·0,7, эволюция I позволяет до 59
+  assert.strictEqual(C.transferPreview(s, 'shorokh', 'borg'), null);    // переносить больше нечего
+  s.heroes.saya.unlocked = true; s.heroes.saya.evo = 1; s.heroes.borg.rank = 40;
+  assert.strictEqual(C.transferPreview(s, 'borg', 'saya').rank, 28);   // 40·0,7, эволюция I позволяет до 59
+});
+
+// ---------- 0.67: новый ростер ----------
+test('ростер 52 героя: 13 на сторону, стартовые 4 героя E, у всех лор; миграция v33 переносит прогресс по слотам', () => {
+  assert.strictEqual(CFG.allies.length, 52);
+  for (const sd in CFG.sides) assert.strictEqual(CFG.allies.filter(a => a.side === sd).length, 13, sd);
+  assert.deepStrictEqual(CFG.allies.filter(a => a.starter).map(a => a.id), ['shorokh', 'kostik', 'shmyg', 'lumi']);
+  assert.ok(CFG.allies.every(a => a.race && a.quote && a.story));
+  const s = C.newState(NOCRIT), old = JSON.parse(C.serialize(s));
+  old.v = 33;
+  old.heroes = { irene: { copies: 3, stars: 2, evo: 1, rank: 5 }, borg: { copies: 1, stars: 0, evo: 0, rank: 0 }, lia: { copies: 0, stars: 0, evo: 0, rank: 0 },
+                 kael: { copies: 9, stars: 4, evo: 0, rank: 12 }, garret: { copies: 2, stars: 1, evo: 0, rank: 0 }, noa: { copies: 0, stars: 3, evo: 0, rank: 0 } };
+  old.allies = { irene: 77, kael: 12 };
+  old.squad = ['irene', 'borg', 'lia', 'kael']; old.favs = ['kael', 'garret'];
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m);
+  assert.strictEqual(m.heroes.shorokh.stars, 2); assert.strictEqual(m.heroes.shorokh.rank, 5); assert.strictEqual(m.allies.shorokh.level, 77);
+  assert.strictEqual(m.heroes.lumi.copies, 9); assert.strictEqual(m.heroes.lumi.rank, 12);
+  assert.strictEqual(m.heroes.irene.unlocked, true); assert.strictEqual(m.heroes.irene.stars, 1);   // Гаррет → Ирэн
+  assert.strictEqual(m.heroes.veil.stars, 3);                                                        // Ноа → Вейл
+  assert.strictEqual(m.heroes.borg.unlocked, true);                                                  // Борг остаётся открытым
+  assert.deepStrictEqual(m.squad, ['shorokh', 'kostik', 'shmyg', 'lumi']);
+  assert.deepStrictEqual(m.favs, ['lumi', 'irene']);
+});
+
+test('фильтр списка героев по стороне', () => {
+  const s = C.newState(NOCRIT);
+  const t = C.heroList(s, { side: 'Тени' });
+  assert.strictEqual(t.length, 13); assert.ok(t.every(id => CFG.allies.find(a => a.id === id).side === 'Тени'));
 });

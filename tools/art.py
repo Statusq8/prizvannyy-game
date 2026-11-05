@@ -11,6 +11,8 @@ for dp, _, fs in os.walk(os.path.join(ROOT, 'assets', 'art')):
         name = os.path.splitext(f)[0]; kind = name.split('_')[0]
         im = Image.open(os.path.join(dp, f)); im.load()
         side = SIZE.get(kind, 512)
+        if kind == 'hero' and name.endswith('_avatar') and name.count('_') == 2: side = 192   # 0.67: аватар героя ростера
+        elif kind == 'hero' and name.count('_') == 2 and name.split('_')[2] in ('side', 'back'): side = 384
         if kind == 'bg': im = im.convert('RGB'); im.thumbnail((side, side * 2))
         else: im = im.convert('RGBA'); im = im.resize((side, side * im.height // im.width), Image.LANCZOS)
         im.save(os.path.join(out, name + '.webp'), 'WEBP', quality=86, method=6)

@@ -128,7 +128,7 @@
       });
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
-        const fig = '<div style="width:100%;height:100%">' + allySvg(ALLY_VIS[a.id], hh.evo) + '</div>';
+        const fig = '<div style="width:100%;height:100%">' + (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo)) + '</div>';
         if (!hh.unlocked) {
           h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0) + '</div>' +
             '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +

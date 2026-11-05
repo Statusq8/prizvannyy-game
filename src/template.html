@@ -565,6 +565,13 @@
   .lockCard button { margin-top: 6px; padding: 7px 14px; border-radius: 8px; font-weight: 800; color: #fff; background: linear-gradient(180deg, #4aa8e8, #1a6aa8); border: 2px solid #0a2a48; }
   .heroDetail { padding: 10px; border-radius: 12px; margin-bottom: 8px; background: linear-gradient(180deg, #d8b886, #b8925e); border: 2px solid #4a3018; color: #3a2410; }
   .heroDetail .hdTop { display: flex; gap: 10px; }
+  /* 0.67: картинки героев */
+  .avi { width: 1.4em; height: 1.4em; object-fit: cover; border-radius: 4px; vertical-align: middle; }
+  .cardIcon .avi, .hIcon .avi, .artIcon .avi, .lockCard .avi, .hdPort .avi { width: 100%; height: 100%; font-size: 0; border-radius: inherit; }
+  .aviBig { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
+  .ally .fig .artFig { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; display: block; transform: scale(1.35); transform-origin: 50% 100%; filter: drop-shadow(0 4px 6px #000a); }
+  .heroDetail .hdPort.art { width: 96px; height: 120px; padding: 0; overflow: hidden; }
+  .heroDetail .hdPort.art img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
   .heroDetail .hdPort { width: 76px; height: 76px; border-radius: 8px; display: grid; place-items: center; font-size: 40px; border: 3px solid #8a8a92; flex: none; }
   .heroDetail .hdName { font-size: 16px; font-weight: 900; }
   .heroDetail .hdStat { font-size: 12px; font-weight: 700; color: #5a3a1c; margin-top: 2px; }
@@ -876,24 +883,68 @@
     blades: '<path d="M70 70 L98 44" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/><path d="M68 84 L100 72" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>',
   };
   const ALLY_VIS = {
-    irene:  { body: '#1f3c4a', hood: '#163039', eye: '#8fe6ff', icon: '🏹', iconBg: '#1e3a46', weapon: 'bow' },
-    borg:   { body: '#4a2a1f', hood: '#3a1f16', eye: '#ffb36b', icon: '🪓', iconBg: '#46281e', weapon: 'axe' },
-    lia:    { body: '#4a1f2a', hood: '#3a1620', eye: '#ffd36b', icon: '🔥', iconBg: '#46201e', weapon: 'staff' },
-    kael:   { body: '#2a1f4a', hood: '#20163a', eye: '#c8b8ff', icon: '🗡', iconBg: '#2a1e46', weapon: 'blades' },
-    garret: { body: '#3a3a2a', hood: '#2c2c1e', eye: '#e6e6b0', icon: '🛡', iconBg: '#36361e', weapon: 'axe' },
-    saya:   { body: '#1f4a2c', hood: '#163a20', eye: '#9dffb8', icon: '🔪', iconBg: '#1e4628', weapon: 'blades' },
-    drake:  { body: '#1f2c4a', hood: '#16203a', eye: '#8fb8ff', icon: '🔱', iconBg: '#1e2a46', weapon: 'staff' },
-    noa:    { body: '#2a2a4a', hood: '#1f1f3a', eye: '#d8e6ff', icon: '⚡', iconBg: '#24244a', weapon: 'staff' },
-    velma:  { body: '#2a3a2a', hood: '#1e2c1e', eye: '#b8ff8f', icon: '💀', iconBg: '#223a22', weapon: 'staff' },
-    ragnar: { body: '#3a2a3a', hood: '#2c1e2c', eye: '#ff8fb8', icon: '⚔', iconBg: '#3a223a', weapon: 'axe' },
-    seiren: { body: '#1f3a4a', hood: '#16303a', eye: '#8fffff', icon: '🌪', iconBg: '#1e3a46', weapon: 'staff' },
-    carna:  { body: '#4a1f3a', hood: '#3a162c', eye: '#ffd36b', icon: '🎭', iconBg: '#46203a', weapon: 'blades' },
-    yuki:   { body: '#dfe8f2', hood: '#b8c8da', eye: '#6bd8ff', icon: '❄', iconBg: '#2a3a4a', weapon: 'staff' },
-    morra:  { body: '#3a1f2a', hood: '#2c1620', eye: '#ff6b9a', icon: '🕯', iconBg: '#3a1e2a', weapon: 'staff' },
-    kassian: { body: '#2a2a3a', hood: '#1a1a2a', eye: '#ff7a20', icon: '🛡', iconBg: '#2a1e1a', weapon: 'axe' },
-    nyx:    { body: '#1a1030', hood: '#100820', eye: '#ff40c0', icon: '🌙', iconBg: '#2a103a', weapon: 'blades' },
-    azrael: { body: '#4a3a1f', hood: '#3a2c16', eye: '#fff0a0', icon: '🪽', iconBg: '#46381e', weapon: 'blades' },
+    shorokh: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '👁', iconBg: '#261a40', weapon: 'staff' },
+    kostik: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '💀', iconBg: '#3a1e1e', weapon: 'staff' },
+    shmyg: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🗡', iconBg: '#2a3a1e', weapon: 'blades' },
+    lumi: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '✨', iconBg: '#46391e', weapon: 'staff' },
+    irene: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🏹', iconBg: '#261a40', weapon: 'bow' },
+    zlatokryl: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🦅', iconBg: '#46391e', weapon: 'staff' },
+    morgul: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🧟', iconBg: '#3a1e1e', weapon: 'staff' },
+    krag: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🏏', iconBg: '#2a3a1e', weapon: 'axe' },
+    borg: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🪓', iconBg: '#2a3a1e', weapon: 'axe' },
+    nokt: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🔪', iconBg: '#261a40', weapon: 'blades' },
+    saya: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🔪', iconBg: '#261a40', weapon: 'blades' },
+    auron: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🛡', iconBg: '#46391e', weapon: 'axe' },
+    grim: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '☠', iconBg: '#3a1e1e', weapon: 'staff' },
+    gnar: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🐺', iconBg: '#2a3a1e', weapon: 'staff' },
+    drake: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🔱', iconBg: '#2a3a1e', weapon: 'staff' },
+    morrak: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🐺', iconBg: '#261a40', weapon: 'staff' },
+    seraphim: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '👼', iconBg: '#46391e', weapon: 'staff' },
+    kristalis: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '💎', iconBg: '#46391e', weapon: 'staff' },
+    vorgat: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🪓', iconBg: '#3a1e1e', weapon: 'axe' },
+    nekris: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🕷', iconBg: '#3a1e1e', weapon: 'staff' },
+    brum: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🍄', iconBg: '#2a3a1e', weapon: 'staff' },
+    skrit: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🪶', iconBg: '#2a3a1e', weapon: 'staff' },
+    veil: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🏹', iconBg: '#261a40', weapon: 'bow' },
+    zerik: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🕸', iconBg: '#261a40', weapon: 'staff' },
+    eliria: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '📿', iconBg: '#46391e', weapon: 'staff' },
+    solarion: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🦁', iconBg: '#46391e', weapon: 'staff' },
+    malgora: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '😈', iconBg: '#3a1e1e', weapon: 'staff' },
+    rotgar: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '⚔', iconBg: '#3a1e1e', weapon: 'axe' },
+    velma: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🦴', iconBg: '#3a1e1e', weapon: 'staff' },
+    morra: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🕯', iconBg: '#3a1e1e', weapon: 'staff' },
+    urgash: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🪓', iconBg: '#2a3a1e', weapon: 'axe' },
+    taurok: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🐂', iconBg: '#2a3a1e', weapon: 'staff' },
+    kaeron: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '⚔', iconBg: '#261a40', weapon: 'axe' },
+    noktar: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🔮', iconBg: '#261a40', weapon: 'staff' },
+    yuki: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '❄', iconBg: '#46391e', weapon: 'staff' },
+    seiren: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🌪', iconBg: '#46391e', weapon: 'staff' },
+    valtar: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '⚖', iconBg: '#46391e', weapon: 'staff' },
+    beltraks: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🗡', iconBg: '#3a1e1e', weapon: 'blades' },
+    carna: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🎭', iconBg: '#2a3a1e', weapon: 'staff' },
+    fenra: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🌕', iconBg: '#2a3a1e', weapon: 'staff' },
+    vargos: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🪖', iconBg: '#261a40', weapon: 'axe' },
+    astrael: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '⭐', iconBg: '#46391e', weapon: 'staff' },
+    kassian: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '🛡', iconBg: '#3a1e1e', weapon: 'axe' },
+    azragor: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '👑', iconBg: '#3a1e1e', weapon: 'staff' },
+    gromtar: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🗿', iconBg: '#2a3a1e', weapon: 'staff' },
+    umbragor: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🐲', iconBg: '#261a40', weapon: 'staff' },
+    nyx: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🌙', iconBg: '#261a40', weapon: 'staff' },
+    eon: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🔥', iconBg: '#46391e', weapon: 'staff' },
+    azrael: { body: '#4a3f1f', hood: '#3a301a', eye: '#ffe08a', icon: '🪽', iconBg: '#46391e', weapon: 'staff' },
+    abadron: { body: '#3a1f1f', hood: '#2a1414', eye: '#9dff6b', icon: '👹', iconBg: '#3a1e1e', weapon: 'staff' },
+    ignisar: { body: '#2f3a1f', hood: '#22301a', eye: '#ffb36b', icon: '🐉', iconBg: '#2a3a1e', weapon: 'staff' },
+    erebor: { body: '#241a3a', hood: '#18102a', eye: '#c8a0ff', icon: '🌑', iconBg: '#261a40', weapon: 'staff' },
   };
+  // 0.67: картинки героев (assets/art/heroes → build.js). Есть аватар — он вместо значка во всех списках;
+  // есть вид со спины — он в бою вместо SVG-заглушки; вид сбоку — в карточке героя.
+  const HERO_ART = /*__HERO_ART__*/{};
+  for (const id in HERO_ART) {
+    const v = ALLY_VIS[id], A = HERO_ART[id]; if (!v) continue;
+    if (A.avatar) { v.icon = '<img class="avi" src="' + A.avatar + '" alt="" draggable="false">'; v.avatarImg = '<img class="aviBig" src="' + A.avatar + '" alt="" draggable="false">'; }
+    if (A.back) v.back = A.back;
+    if (A.side) v.side = A.side;
+  }
   // Слоты отряда: двое по бокам впереди, двое позади
   const SLOTS = [
     { pos: 'left:2%', side: 'L', back: false }, { pos: 'right:2%', side: 'R', back: false },
@@ -902,6 +953,7 @@
 
   // Облики эволюции (временные заглушки): I — сияние, II — наплечники и плащ, III — корона и ореол
   function allySvg(v, evo) {
+    if (v.back) return '<img class="artFig" src="' + v.back + '" alt="" draggable="false">';
     evo = evo || 0;
     const aura = evo >= 1 ? '<ellipse cx="50" cy="80" rx="44" ry="52" fill="' + v.eye + '" opacity="' + (0.10 + 0.05 * evo) + '"/>' : '';
     const cape = evo >= 2 ? '<path d="M30 60 Q16 96 20 126 L34 124 Z M70 60 Q84 96 80 126 L66 124 Z" fill="' + v.eye + '" opacity=".55" stroke="#0a0a10" stroke-width="2"/>' +
@@ -1599,14 +1651,14 @@
     $('pveDot').classList.toggle('on', !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0));
   }
   // 0.54: фильтры списка героев (фракция, редкость, роль, избранные, нанятые) и сортировка; переключаются касанием
-  const heroF = { faction: '', rarity: '', role: '', fav: false, owned: false, sort: 'rarity' };
+  const heroF = { side: '', faction: '', rarity: '', role: '', fav: false, owned: false, sort: 'rarity' };
   function heroFilterHtml() {
     const chip = (k, label, on) => '<button class="chip' + (on ? ' on' : '') + '" data-hf="' + k + '">' + label + '</button>';
     return '<div class="spare" style="gap:6px;flex-wrap:wrap">' +
-      chip('faction', 'Фракция: ' + (heroF.faction || 'все'), !!heroF.faction) + chip('rarity', 'Редкость: ' + (heroF.rarity || 'все'), !!heroF.rarity) +
+      chip('side', 'Сторона: ' + (heroF.side || 'все'), !!heroF.side) + chip('faction', 'Народ: ' + (heroF.faction || 'все'), !!heroF.faction) + chip('rarity', 'Редкость: ' + (heroF.rarity || 'все'), !!heroF.rarity) +
       chip('role', 'Роль: ' + (heroF.role || 'все'), !!heroF.role) + chip('fav', '★ избранные', heroF.fav) + chip('owned', 'только нанятые', heroF.owned) +
       chip('sort', heroF.sort === 'power' ? 'по силе' : 'по редкости', heroF.sort === 'power') +
-      (heroF.faction || heroF.rarity || heroF.role || heroF.fav || heroF.owned ? chip('reset', '✕ сброс', false) : '') + '</div>';
+      (heroF.side || heroF.faction || heroF.rarity || heroF.role || heroF.fav || heroF.owned ? chip('reset', '✕ сброс', false) : '') + '</div>';
   }
   function cycle(list, cur) { const i = list.indexOf(cur); return i + 1 >= list.length ? '' : list[i + 1]; }
   function presetHtml() {
@@ -1662,7 +1714,7 @@
         '<div class="hInfo"><div class="hName"><button class="favBtn" data-fav="' + a.id + '" style="background:none;border:0;padding:0 4px 0 0;font-size:16px;color:' + (C.isFav(s, a.id) ? 'var(--gold)' : '#6a6070') + '">' + (C.isFav(s, a.id) ? '★' : '☆') + '</button>' +
         '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
         (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
-        '<div class="hSub">' + a.faction + ' · ' + C.roleOf(a) + (C.bondsOf(a.id).length ? ' · связи: ' + C.bondsOf(a.id).map(b => (C.bondActive(s, b) ? '✦' : '') + b.name).join(', ') : '') + '</div>' +
+        '<div class="hSub">' + a.side + ' / ' + a.faction + ' · ' + C.roleOf(a) + (C.bondsOf(a.id).length ? ' · связи: ' + C.bondsOf(a.id).map(b => (C.bondActive(s, b) ? '✦' : '') + b.name).join(', ') : '') + '</div>' +
         '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
         ' · ранг ' + (() => { const r = C.rankLabel(h.rank); return RN[r.rank] + (r.max ? ' макс' : '·' + r.sub); })() + ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
@@ -1780,8 +1832,8 @@
       for (const a of CFG.allies) {
         const lv = C.loreLevel(s, a.id);
         if (lv < 0) { h += '<div class="hRow locked" style="--r:#3a2a4a"><div class="hInfo"><div class="hName">???</div><div class="hSub">Герой ещё не открыт</div></div></div>'; continue; }
-        h += '<div class="hRow r-' + a.rarity + '"><div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + a.race + ', ' + a.cls + '</div>' +
-          '<div class="hSub">' + a.faction + ' · ' + a.role + '</div>' +
+        h += '<div class="hRow r-' + a.rarity + '"><div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + a.race + '</div>' +
+          '<div class="hSub">' + a.side + ' / ' + a.faction + ' · ' + C.roleOf(a) + '</div>' +
           '<div class="hSub" style="font-style:italic">' + (lv >= 1 ? '«' + a.quote + '»' : '🔒 цитата — ★' + D.loreStars[1]) + '</div>' +
           '<div class="hSub">' + (lv >= 2 ? a.story : '🔒 история — ★' + D.loreStars[2]) + '</div></div></div>';
       }
@@ -1844,13 +1896,13 @@
     const slots = CFG.bones.slots.map(x => { const b = s.bones.find(o => o.on === id && o.slot === x.id);
       return '<div class="hdSlot' + (b ? '' : ' empty') + '" title="' + x.name + '">' + x.icon + '</div>'; }).join('');
     const sq = C.inSquad(s, id);
-    return '<div class="heroDetail"><div class="hdTop"><div class="hdPort" style="background:' + v.iconBg + '">' + v.icon + '</div><div>' +
+    return '<div class="heroDetail"><div class="hdTop"><div class="hdPort' + (v.side ? ' art' : '') + '" style="background:' + v.iconBg + '">' + (v.side ? '<img src="' + v.side + '" alt="">' : v.icon) + '</div><div>' +
       '<div class="hdName">' + a.name + ' <span class="rar r-' + a.rarity + '">' + a.rarity + '</span></div>' +
       '<div class="hdStat">' + a.role + ' · ур. ' + fmt(s.allies[id].level) + '/' + fmt(C.allyCap(s, id)) + '</div>' +
       '<div class="hdStat">★ ' + h.stars + '/' + CFG.maxStars + ' · облик ' + h.evo + '/' + CFG.evolution.stages.length + ' · ранг ' + RN[rl.rank] + (rl.max ? ' макс' : '·' + rl.sub) + '</div>' +
       '<div class="hdStat">DPS ' + fmt(B.mul(C.allyDps(s, id), C.permMult(s, 'ally'))) + ' · ульт: ' + a.ult.name + '</div></div>' +
       '<div class="hdSlots">' + slots + '</div></div>' +
-      '<div class="hdLore"><q>' + a.quote + '</q>' + a.race + ' · ' + a.cls + ' · ' + a.role + '</div>' +
+      '<div class="hdLore"><q>' + a.quote + '</q>' + a.race + ' · ' + a.side + ' / ' + a.faction + ' · роль: ' + C.roleOf(a) + '</div>' +
       '<div class="hdUlt"><b>Ульт «' + a.ult.name + '»</b> — ' + C.ultDesc(a) + '</div>' +
       '<div class="secTitle">НАВЫКИ</div><div class="hdPerks">' + C.perkList(s.allies[id].level).map(p =>
         '<div class="hdPerk' + (p.open ? '' : ' lock') + '"><span class="pl">' + (p.open ? 'ур. ' : '🔒 ') + p.lvl + '</span><span class="pd"><b>' + p.name + '</b>' + p.desc + '</span>' +
@@ -2651,12 +2703,13 @@
     if (dd.lbest) { const x = C.levelBest(s); ok = !!x; toast(x ? CFG.allies.find(a => a.id === x.id).name + '<small>+' + fmt(x.levels) + ' ур.</small>' : 'Не хватает золота<small>или отряд на потолке уровня</small>'); }
     if (dd.hf) {
       const k = dd.hf; ok = true;
-      if (k === 'faction') heroF.faction = cycle(['', ...CFG.factions], heroF.faction);
+      if (k === 'side') { heroF.side = cycle(['', ...Object.keys(CFG.sides)], heroF.side); heroF.faction = ''; }
+      else if (k === 'faction') heroF.faction = cycle(['', ...(heroF.side ? CFG.sides[heroF.side] : CFG.factions)], heroF.faction);
       else if (k === 'rarity') heroF.rarity = cycle(['', ...RANKS.slice().reverse()], heroF.rarity);
       else if (k === 'role') heroF.role = cycle(['', ...new Set(Object.values(CFG.roles))], heroF.role);
       else if (k === 'fav' || k === 'owned') heroF[k] = !heroF[k];
       else if (k === 'sort') heroF.sort = heroF.sort === 'power' ? 'rarity' : 'power';
-      else if (k === 'reset') Object.assign(heroF, { faction: '', rarity: '', role: '', fav: false, owned: false });
+      else if (k === 'reset') Object.assign(heroF, { side: '', faction: '', rarity: '', role: '', fav: false, owned: false });
     }
     if (dd.ps) { ok = C.savePreset(s, +dd.ps); if (ok) toast('Состав ' + (+dd.ps + 1) + ' сохранён<small>' + s.squad.length + ' героев' + (s.pets.active ? ' и питомец' : '') + '</small>'); }
     if (dd.pl) { ok = C.loadPreset(s, +dd.pl); if (ok) toast('Состав ' + (+dd.pl + 1) + '<small>отряд собран</small>'); }
