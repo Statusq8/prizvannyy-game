@@ -346,20 +346,32 @@
     },
     // Достижения (GDD §7, §12): ступени по счётчикам и рекордам. Каждая ступень — награда и очко достижений;
     // очки — постоянный бонус всего урона (отдельная категория, без критов). Числа TBD.
+    // 0.53 (ответ 103 + решение пользователя): последняя ступень каждого достижения даёт титул с небольшим постоянным бонусом
     achievements: {
       dmgPerPoint: 0.01,
       list: [
-        { id: 'a_kill',   name: 'Истребитель',      icon: '⚔', metric: 'kill',    goals: [100, 1000, 10000, 100000, 1e6],  reward: { tickets: 2 } },
-        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { heart: 1 } },
-        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 } },
-        { id: 'a_ritual', name: 'Жрец ритуала',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 } },
-        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 } },
-        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 5 } },
-        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { shard: 200 } },
-        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { shard: 150 } },
-        { id: 'a_dun',    name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: [10, 100, 1000],                 reward: { tickets: 2 } },
-        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { essence: 50 } },
-        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { heart: 2 } },
+        { id: 'a_kill',   name: 'Истребитель',      icon: '⚔', metric: 'kill',    goals: [100, 1000, 10000, 100000, 1e6],  reward: { tickets: 2 },
+          title: { name: 'Истребитель тысяч', bonus: { kind: 'allDmg', per: 0.03 } } },
+        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { heart: 1 },
+          title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
+        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 },
+          title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
+        { id: 'a_ritual', name: 'Жрец ритуала',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
+          title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
+        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 },
+          title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
+        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 5 },
+          title: { name: 'Собиратель героев', bonus: { kind: 'allDmg', per: 0.03 } } },
+        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { shard: 200 },
+          title: { name: 'Мастер эволюции', bonus: { kind: 'allDmg', per: 0.03 } } },
+        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { shard: 150 },
+          title: { name: 'Костяной мастер', bonus: { kind: 'gold', per: 0.03 } } },
+        { id: 'a_dun',    name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: [10, 100, 1000],                 reward: { tickets: 2 },
+          title: { name: 'Покоритель глубин', bonus: { kind: 'gold', per: 0.03 } } },
+        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { essence: 50 },
+          title: { name: 'Бесконечный', bonus: { kind: 'allDmg', per: 0.03 } } },
+        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { heart: 2 },
+          title: { name: 'Хранитель тотемов', bonus: { kind: 'gold', per: 0.03 } } },
       ],
     },
     // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
@@ -1931,6 +1943,7 @@
     if (!a || !achClaimable(s, id)) return null;
     s.ach[id] = achTier(s, id) + 1;
     grant(s, a.reward);
+    if (a.title && s.ach[id] === a.goals.length && !s.titles.includes(a.title.name)) { s.titles.push(a.title.name); if (!s.title) s.title = a.title.name; }
     return a.reward;
   }
   function claimAllAch(s) {
@@ -2379,8 +2392,13 @@
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
-  // Бонус полученных титулов вида kind: 'allDmg' (весь урон) или 'gold'
-  function titlePower(s, kind) { return CONFIG.ritual.milestones.reduce((t, m) => t + (m.bonus && m.bonus.kind === kind && s.titles.includes(m.title) ? m.bonus.per : 0), 0); }
+  // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
+  function allTitles() {
+    return [...CONFIG.ritual.milestones.map(m => ({ title: m.title, bonus: m.bonus, src: 'ritual', n: m.n })),
+            ...CONFIG.achievements.list.filter(a => a.title).map(a => ({ title: a.title.name, bonus: a.title.bonus, src: 'ach', ach: a }))];
+  }
+  // Бонус полученных титулов вида kind: 'allDmg' (весь урон) или 'gold'; бонусы всех полученных складываются
+  function titlePower(s, kind) { return allTitles().reduce((t, m) => t + (m.bonus && m.bonus.kind === kind && s.titles.includes(m.title) ? m.bonus.per : 0), 0); }
   function setTitle(s, t) { if (t !== null && !s.titles.includes(t)) return false; s.title = t; return true; }
 
   // ---------- Алтарь ----------
@@ -2678,10 +2696,12 @@
     for (const i of ev.ms) if (int(i, 0)) s.event.ms[i] = true;
     s.event.bought = nums(ev.bought);
     for (const it of d.inbox) if (it && int(it.id, 1) && typeof it.title === 'string') s.inbox.push({ id: it.id, title: it.title, reward: nums(it.reward) });
-    const TT = CONFIG.ritual.milestones;
+    const TT = CONFIG.ritual.milestones, AT = allTitles();
     if (!Array.isArray(d.titles) || !Array.isArray(d.skins)) return null;
-    s.titles = d.titles.filter(t => TT.some(m => m.title === t)); s.skins = d.skins.filter(k => TT.some(m => m.skin === k));
-    s.title = s.titles.includes(d.title) ? d.title : null;
+    s.titles = d.titles.filter(t => AT.some(m => m.title === t)); s.skins = d.skins.filter(k => TT.some(m => m.skin === k));
+    // титулы за уже закрытые достижения (сохранения до 0.53)
+    for (const a of CONFIG.achievements.list) if (a.title && s.ach[a.id] === a.goals.length && !s.titles.includes(a.title.name)) s.titles.push(a.title.name);
+    s.title = s.titles.includes(d.title) ? d.title : (s.titles[0] || null);
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
     const se = d.season;
     if (!se || typeof se !== 'object' || !Number.isInteger(se.n) || !int(se.xp, 0) || !int(se.tokens, 0) || !int(se.trail, 0) ||
@@ -2763,7 +2783,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
