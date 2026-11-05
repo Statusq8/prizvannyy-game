@@ -7,7 +7,7 @@
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
     const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
-      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@backup', '💾', 'Резервные копии']];
+      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
     const heroImg = (document.querySelector('#cards .cardIcon img') || {}).src || '';
@@ -67,7 +67,8 @@
     // ---------- 4 угловые кнопки ----------
     const press = b => { b.classList.add('press'); setTimeout(() => b.classList.remove('press'), 120); click(); if (navigator.vibrate && setg.vibro === 'on') try { navigator.vibrate(8); } catch (e) {} };
     $('cbMenu').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('menu'); });
-    $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); });          // этап 11 на паузе — экран не согласован
+    // 0.66: пока экран профиля (этап 11) не согласован — кнопка открывает прежние настройки (экономия, запись чисел, фоторежим…)
+    $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); $('settingsBtn').click(); });
     $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; openX('pve'); });
     $('cbMap').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('map'); });
 
@@ -86,6 +87,7 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.sec) { click(); sec = b.dataset.sec; artSel = null; open('sec'); }
       else if (b.dataset.old === '@backup') { click(); popBackups(); }
+      else if (b.dataset.old === '@photo') { click(); stack.length = 0; page = null; show(null); photoMode(true); }
       else if (b.dataset.old === '@portal' || b.dataset.old === '@souls') { click(); openX(b.dataset.old.slice(1)); }
       else if (b.dataset.old) openOld(b.dataset.old);
     });
