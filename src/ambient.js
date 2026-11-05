@@ -11,7 +11,7 @@
     const ctx = cv.getContext('2d'), fctx = fg.getContext('2d');
     // набор на биом: частицы [тип, количество], туман, лучи, молнии, свечение снизу, цвет
     const AMB = {
-      crypt:  { p: [['dust', 40], ['wisp', 7]], fog: '#3a5a4a', glow: '#3aff9a' },
+      crypt:  { p: [['dust', 40], ['sparkle', 10]], fog: '#3a2a5a', glow: '#b14dff' },   // 0.79.3: Зал призыва — без зелёных огоньков
       ash:    { p: [['ash', 60], ['ember', 25]], fog: '#4a4040', glow: '#ff6a2a' },
       shade:  { p: [['leaf', 26], ['firefly', 22], ['dust', 20]], fog: '#2a3a4a', rays: '#c8b0ff', front: 'leaf' },
       frost:  { p: [['snow', 90]], fog: '#8aa8c8', rays: '#cfe8ff', front: 'snow' },
