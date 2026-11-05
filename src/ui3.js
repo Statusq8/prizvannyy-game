@@ -348,7 +348,32 @@
           w.querySelectorAll('[data-av]').forEach(x => x.classList.toggle('on', x === b)); render(); if (pg.classList.contains('show')) renderProf(); }) });
     }
     // первый запуск — имя (ответ лора: имя даёт игрок)
-    if (!prof.name) setTimeout(() => askName(true), 1500); else setTimeout(() => window.U3.tutorial && window.U3.tutorial(false), 1200);
+    // 0.78: пролог «Последний босс» (docs/START.md) — 4 кадра, тап — дальше, «Пропустить»; после — имя и первый враг
+    const PRO = /*__PROLOGUE__*/[];
+    function prologue(done) {
+      if (!PRO.length) return done();
+      const ov = mk('div', 'proOv', '', '', document.body), box = mk('div', '', 'proBox', '', ov);
+      const skip = mk('button', '', 'proSkip', 'Пропустить ›', ov);
+      const T = [
+        '<div class="proCap">Финальный босс.<br>Ещё один удар…</div>',
+        '<div class="proWin"><b>ПОБЕДА</b><small>Вы первый в мире</small></div>',
+        '<div class="proSys"><b>Ты достоин.</b><b class="g">Поднимись.</b></div>',
+        '<div class="proCap">Статус: <b>1★</b>.<br>Имя?</div>'];
+      let i = -1, busy = false;
+      const end = () => { if (ov._end) return; ov._end = 1; ov.classList.add('out'); setTimeout(() => { ov.remove(); done(); }, 450); try { localStorage.setItem('prizvannyy_prologue', '1'); } catch (e) {} };
+      const next = () => {
+        if (busy) return; if (++i >= PRO.length) return end(); busy = true; setTimeout(() => busy = false, 450);
+        const cap = /proCap/.test(T[i]), f = mk('div', '', 'proF', '<img src="' + PRO[i] + '" alt="">' + (cap ? '' : T[i]), box);
+        [...ov.querySelectorAll('.proCap')].forEach(c => c.remove()); if (cap) ov.insertAdjacentHTML('beforeend', T[i]);   // подпись — по краям экрана, не картинки
+        requestAnimationFrame(() => requestAnimationFrame(() => f.classList.add('on')));
+        if (i === 2 && navigator.vibrate) try { navigator.vibrate([30, 40, 30]); } catch (e) {}
+        const old = box.children; if (old.length > 2) old[0].remove();
+      };
+      ov.addEventListener('click', e => { if (e.target === skip) return end(); next(); });
+      next();
+    }
+    window.U3 = Object.assign(window.U3 || {}, { prologue });
+    if (!prof.name) setTimeout(() => prologue(() => askName(true)), 300); else setTimeout(() => window.U3.tutorial && window.U3.tutorial(false), 1200);
     // повышение уровня аккаунта — окно Системы (ответы 39, 40)
     let lastL = C.prestigeLevel(s);
     setInterval(() => { const L = C.prestigeLevel(s); if (L > lastL && !C.unlockedAt(s, 'prestige')) lastL = L; if (L > lastL) { lastL = L; sys({ title: 'УРОВЕНЬ ПОВЫШЕН', text: 'Уровень аккаунта: ' + L + '. Награды престижа ждут в профиле.', btns: [{ t: 'Забрать', fn: () => { const r = C.claimPrestige(s); if (r) { toast('Престиж +' + r.levels + '<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } } }, { t: 'Позже' }] }); } }, 2000);
