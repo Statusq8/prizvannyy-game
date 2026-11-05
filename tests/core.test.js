@@ -2437,3 +2437,27 @@ test('трофеи: первый босс-убийца даёт трофей о�
   const m = C.deserialize(JSON.stringify(old));
   assert.strictEqual(m.trophies.length, 3 + 3 + 2);                                  // 2 полных биома (по 3) + 2 босса третьего
 });
+
+// ---------- 0.58: «Эхо Башни» ----------
+test('«Эхо Башни»: с этажа 50, биом из пройденных и модификатор недели, 3 попытки, первая победа недели — большая награда', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  assert.strictEqual(C.echoInfo(s), null);
+  s.bestFloor = s.maxFloor = 400; s.event.week = 'w2026-11-02';
+  const x = C.echoInfo(s);
+  assert.ok(x.biome && x.mod && x.left === CFG.pve.echo.attempts);
+  assert.ok(CFG.biomes.indexOf(x.biome) < 8);                      // только пройденные биомы (400 / 50)
+  assert.strictEqual(x.floor, Math.floor(400 * CFG.pve.echo.floorPct));
+  assert.ok(C.enterMode(s, 'echo', {}));
+  assert.strictEqual(s.mode.rule, x.mod.rule || null);
+  assert.strictEqual(C.echoInfo(s).left, CFG.pve.echo.attempts - 1);
+  s.mode.rule = null; s.mode.step = s.mode.total; s.enemy.hp = 1;   // последний враг — добить тапом
+  const before = s.tickets;
+  C.tap(s);
+  assert.strictEqual(s.mode, null); assert.strictEqual(s.echo.won, true);
+  assert.strictEqual(s.tickets, before + CFG.pve.echo.first.tickets);
+  assert.ok(C.enterMode(s, 'echo', {})); s.mode.rule = null; s.mode.step = s.mode.total; s.enemy.hp = 1;
+  const t1 = s.tickets; C.tap(s);
+  assert.strictEqual(s.tickets, t1);                              // повторная победа — только осколки
+  const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.echo.used, 2); assert.strictEqual(t.echo.won, true);
+  s.event.week = 'w2026-11-09'; assert.strictEqual(C.echoInfo(s).left, CFG.pve.echo.attempts);   // новая неделя
+});

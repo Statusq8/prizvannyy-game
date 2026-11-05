@@ -1344,7 +1344,8 @@
       el.floorLabel.textContent = m.kind === 'endless' ? 'Волна ' + m.step : m.name;
       $('biomeLabel').textContent = m.kind === 'trial' ? 'Испытательная башня · страж ' + m.step : m.kind === 'event' ? 'Событие · ' + C.currentEvent(s).dungeon.ruleText + ' · ' + m.step + '/' + m.total
         : m.kind === 'dungeon' ? 'Подземелье · уровень ' + m.tier + ' · враг ' + m.step + '/' + m.total
-        : m.kind === 'endless' ? 'Бесконечное подземелье · рекорд ' + s.pve.endlessBest : 'Личный босс · ' + m.diffName;
+        : m.kind === 'endless' ? 'Бесконечное подземелье · рекорд ' + s.pve.endlessBest
+        : m.kind === 'echo' ? 'Эхо Башни · враг ' + m.step + '/' + m.total : 'Личный босс · ' + m.diffName;
       $('modeInfo').textContent = m.kind === 'endless' ? '✦ +' + m.essence + (m.tickets ? ' · 🎟 +' + m.tickets : '') : m.name;
       lastBiome = '';
     }
@@ -2191,6 +2192,8 @@
   let pveHtml = '';
   function rewardText(r) {
     const M = CFG.materials, parts = [];
+    if (r.tickets) parts.push('🎟 ' + r.tickets);
+    if (r.essence) parts.push('✦ ' + fmt(r.essence));
     if (r.gold) parts.push('◆ ' + fmt(r.gold));
     if (r.shard) parts.push(M.shard.icon + ' ' + fmt(r.shard));
     if (r.heart) parts.push(M.heart.icon + ' ' + r.heart);
@@ -2216,6 +2219,17 @@
       '<div class="hRow" style="--r:#b98cff"><div class="artIcon">∞</div><div class="hInfo"><div class="hName">Рекорд: ' + s.pve.endlessBest + ' волн · попыток ' + el2 + '/' + P.endless.attempts + '</div>' +
       '<div class="hSub">Волны без таймера, каждые ' + P.endless.bossEvery + ' — контрольный босс на ' + P.endless.bossTime + ' с. За босса ✦ эссенция, за новый рекордный рубеж — 🎟 билет.</div></div>' +
       '<button class="hBtn' + (canE ? ' go' : '') + '" data-act="endless"' + (canE ? '' : ' disabled') + '>Войти</button></div>';
+    // 0.58: «Эхо Башни» — раз в неделю
+    const ex = C.echoInfo(s), EC = P.echo;
+    html += '<div class="secTitle">ЭХО БАШНИ · раз в неделю</div>';
+    if (!ex) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">🔔</div><div class="hInfo"><div class="hName">Откроется на этаже ' + EC.minFloor + '</div><div class="hSub">Пройденный биом с особым условием недели</div></div></div>';
+    else {
+      const canX = !busy && ex.left > 0, sh = Math.ceil(C.shardsForBoss(ex.floor) * (ex.won ? EC.repeat.shardMult : EC.first.shardMult) * C.shardMult(s));
+      html += '<div class="hRow" style="--r:#7fe3d0"><div class="artIcon">🔔</div><div class="hInfo"><div class="hName">' + ex.biome.name + ' · «' + ex.mod.name + '» · попыток ' + ex.left + '/' + EC.attempts + '</div>' +
+        '<div class="hSub">Условие недели: ' + ex.mod.text + '. ' + (EC.enemies - 1) + ' врагов + ' + ex.biome.final + ' за ' + ex.time + ' с, сила как на этаже ' + fmt(ex.floor) + '.</div>' +
+        '<div class="dpsPrev">Награда: <b>' + (ex.won ? CFG.materials.shard.icon + ' ' + fmt(sh) : '🎟 ' + EC.first.tickets + ' · ✦ ' + EC.first.essence + ' · ' + CFG.materials.shard.icon + ' ' + fmt(sh) + ' (первая победа недели)') + '</b></div></div>' +
+        '<button class="hBtn' + (canX ? ' go' : '') + '" data-act="echo"' + (canX ? '' : ' disabled') + '>Войти</button></div>';
+    }
     C.trialSync(s);
     const tl = C.attemptsLeft(s, 'trial'), canT = !busy && tl > 0, T = P.trial;
     html += '<div class="secTitle">ИСПЫТАТЕЛЬНАЯ БАШНЯ · равные условия для всех</div>' +
@@ -2247,6 +2261,7 @@
     else if (d.dun) startMode('dungeon', { id: d.dun, tier: tierSel[d.dun] });
     else if (d.act === 'endless') startMode('endless', {});
     else if (d.act === 'trial') startMode('trial', {});
+    else if (d.act === 'echo') startMode('echo', {});
     else if (d.pb) { const [id, diff] = d.pb.split(':'); startMode('personal', { id, diff }); }
     render();
   });
