@@ -1145,6 +1145,7 @@
   let fxCount = 0;
   function fx(cls, x, y, text, life) {
     // экономия эффектов: «Меньше» — только тапы, криты, ульты и золото; «Выкл» — без чисел и искр
+    if (setg.allyNum === 'off' && /dmg auto/.test(cls)) return document.createElement('div');   // 0.69 (ответ 142): числа отряда можно выключить
     if (setg.fx !== 'full' && !/gold|nuke/.test(cls)) {
       if (setg.fx === 'off') return document.createElement('div');
       if (/auto/.test(cls) && !/crit/.test(cls) && (fxCount++ % 3)) return document.createElement('div');
@@ -2827,7 +2828,6 @@
 /*__UI2_JS__*/
 /*__UI3_JS__*/
   if (restoredFrom) setTimeout(() => toast('Сохранение восстановлено<small>из резервной копии от ' + new Date(restoredFrom.t).toLocaleString('ru-RU') + '</small>'), 600);
-  if (C.loginAvailable(s, dayKey())) setTimeout(() => toast('📬 Бонус за вход ждёт<small>день ' + (C.loginDayIndex(s) + 1) + ' из ' + CFG.login.days.length + '</small>'), 1200);
   requestAnimationFrame(loop);
 })();
 </script>
