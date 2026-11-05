@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 28,
+    saveVersion: 29,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -407,6 +407,13 @@
         { id: 'noUlt', name: 'Тишина',        rule: 'noUlts',     text: 'ультимейты отряда не срабатывают' },
       ],
       reward: { tickets: 3, essence: 30, shardMult: 10 } },
+    // 0.60 (ответ 181): алхимия — временные зелья из лишних осколков и эссенции. Цена в осколках растёт с рекордом
+    // (shardsPer × осколки за босса рекордного этажа). Повторное зелье продлевает действие, не дольше maxSec. Время идёт и офлайн.
+    alchemy: { maxSec: 7200, potions: [
+      { id: 'gold',  name: 'Зелье алчности', icon: '🧪', kind: 'gold',   mult: 2, sec: 1800, shardsPer: 15, essence: 0,  desc: '×2 золота' },
+      { id: 'dmg',   name: 'Зелье ярости',   icon: '⚗', kind: 'allDmg', mult: 2, sec: 900,  shardsPer: 25, essence: 20, desc: '×2 всего урона' },
+      { id: 'shard', name: 'Зелье жатвы',    icon: '🫙', kind: 'shards', mult: 2, sec: 1800, shardsPer: 0,  essence: 40, desc: '×2 осколков' },
+    ] },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -830,7 +837,19 @@
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
   function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
-  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')) * potionMult(s, 'shards'); }
+  // ---------- алхимия (0.60) ----------
+  function potionDef(id) { return CONFIG.alchemy.potions.find(p => p.id === id); }
+  function potionMult(s, kind) { let m = 1; for (const p of CONFIG.alchemy.potions) if (p.kind === kind && (s.potions[p.id] || 0) > 0) m *= p.mult; return m; }
+  function potionCost(s, id) { const p = potionDef(id); return p ? { shard: Math.ceil(shardsForBoss(Math.max(1, s.bestFloor)) * p.shardsPer), essence: p.essence } : null; }
+  function brewPotion(s, id) {
+    const p = potionDef(id), c = potionCost(s, id), A = CONFIG.alchemy;
+    if (!p || s.materials.shard < c.shard || s.essence < c.essence || (s.potions[id] || 0) + p.sec > A.maxSec) return false;
+    s.materials.shard -= c.shard; s.essence -= c.essence;
+    s.potions[id] = (s.potions[id] || 0) + p.sec; cnt(s, 'potion');
+    return true;
+  }
+  function tickPotions(s, dt) { for (const id in s.potions) { s.potions[id] -= dt; if (s.potions[id] <= 0) delete s.potions[id]; } }
   // Бонусы дерева душ и класса героя одного вида складываются
   function treePower(s, kind) { let x = classPower(s, kind); for (const n of TREE) if (n.kind === kind) x += n.per * treeLevel(s, n.id); return x; }
   // ---------- классы главного героя ----------
@@ -1068,12 +1087,12 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold'); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
@@ -1279,6 +1298,7 @@
       favs: [],                                  // 0.54: избранные герои (ответ 199)
       trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
       curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа
+      potions: {},                               // 0.60: id зелья → осталось секунд
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1476,6 +1496,7 @@
     if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
     s.buffs.team = Math.max(0, s.buffs.team - dt);
     s.buffs.tap = Math.max(0, s.buffs.tap - dt);
+    tickPotions(s, dt);
     if (s.critBuff) s.critBuff.t = Math.max(0, s.critBuff.t - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     for (const a of squadDefs(s)) {
@@ -2094,7 +2115,7 @@
         }
         const kt = killTime(hp, dps);
         if (t + kt > secs) break;
-        t += kt;
+        t += kt; tickPotions(s, kt);                        // зелья тратятся и офлайн
         const f = s.floor;
         rewardKill(s, isBoss, events, null, true);
         if (isBoss) r.floorsCleared++;
@@ -2112,6 +2133,7 @@
         s.enemyIndex = 1 + (s.enemyIndex - 1 + n) % per;
       }
     }
+    tickPotions(s, Math.max(0, secs - t));
     r.toFloor = s.floor;
     r.gold = B.sub(s.gold, gold0); r.kills = s.stats.kills - kills0;
     r.shard = s.materials.shard - sh0; r.heart = s.materials.heart - he0; r.tickets = s.tickets - t0;
@@ -2694,7 +2716,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null,
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions },
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2781,6 +2803,7 @@
     }
     if (d.v === 26) { d.v = 27; d.echo = { week: '', used: 0, won: false }; }   // 0.57 → 0.58: «Эхо Башни»
     if (d.v === 27) { d.v = 28; d.curse = null; }                                // 0.58 → 0.59: проклятые этажи
+    if (d.v === 28) { d.v = 29; d.potions = {}; }                                // 0.59 → 0.60: алхимия
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2921,6 +2944,8 @@
     s.echo = { week: d.echo.week, used: d.echo.used, won: !!d.echo.won };
     const cu = d.curse;
     s.curse = cu && int(cu.floor, 1) && CONFIG.curse.mods.some(m => m.id === cu.mod) ? { floor: cu.floor, mod: cu.mod, on: !!cu.on } : null;
+    if (!d.potions || typeof d.potions !== 'object') return null;
+    s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
@@ -3012,7 +3037,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,

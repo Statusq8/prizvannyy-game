@@ -2487,3 +2487,22 @@ test('проклятые этажи: редкое предложение на н
   s.curse = { floor: f, mod: 'noTap', on: false };
   assert.deepStrictEqual(C.deserialize(C.serialize(s)).curse, { floor: f, mod: 'noTap', on: false });
 });
+
+// ---------- 0.60: алхимия ----------
+test('алхимия: зелья за осколки и эссенцию, ×2 на время, продление до предела, тратятся и офлайн, сохраняются', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT); s.bestFloor = 100;
+  const c = C.potionCost(s, 'gold');
+  assert.strictEqual(c.shard, C.shardsForBoss(100) * 15);
+  assert.strictEqual(C.brewPotion(s, 'gold'), false);                // не хватает
+  s.materials.shard = 1e6; s.essence = 1000;
+  assert.ok(C.brewPotion(s, 'gold'));
+  assert.strictEqual(C.goldMult(s), C.goldMult(t) * 2);
+  assert.ok(C.brewPotion(s, 'dmg')); assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 2) < 1e-9);
+  assert.ok(C.brewPotion(s, 'shard')); assert.strictEqual(C.shardMult(s), C.shardMult(t) * 2);
+  for (let i = 0; i < 3; i++) C.brewPotion(s, 'gold');
+  assert.strictEqual(C.brewPotion(s, 'gold'), false);                // 4×30 мин = 2 ч — предел
+  assert.strictEqual(s.potions.gold, 7200);
+  C.tick(s, 900); assert.strictEqual(s.potions.dmg, undefined);     // 15 минут прошло
+  assert.strictEqual(C.deserialize(C.serialize(s)).potions.gold, s.potions.gold);
+  C.offlineProgress(s, 8 * 3600); assert.strictEqual(s.potions.gold, undefined);
+});
