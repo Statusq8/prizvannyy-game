@@ -8,9 +8,12 @@ const DAYS = +(process.argv[2] || 365), TPS = +(process.argv[3] || 6), SEED = +(
 let seed = SEED; const rng = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
 if (process.env.SIM_CFG) { const mrg = (a, b) => { for (const k in b) (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) ? mrg(a[k], b[k]) : (a[k] = b[k]); }; mrg(Core.CONFIG, JSON.parse(process.env.SIM_CFG)); }
 const B = Core.B, num = x => B.toNum(x);
-const s = Core.newState({ rng });
+let s = Core.newState({ rng });
+// контрольная точка: CKPT=файл — состояние сохраняется каждые 7 дней и продолжается с места после обрыва
+const fs = require('fs'), CK = process.env.CKPT; let startDay = 1;
+if (CK && fs.existsSync(CK)) { const c = JSON.parse(fs.readFileSync(CK, 'utf8')); s = Core.deserialize(c.save); s.rng = rng; seed = c.seed; startDay = c.day + 1; }
 for (const ab of Core.CONFIG.abilities) Core.setAbilityAuto(s, ab.id, true);
-const dt = 1 / 15;
+const dt = 1 / +(process.env.FPS || 15);   // FPS=5 — в 3 раза быстрее, точность близкая
 
 // прирост за золото сравниваем в логарифмах: числа могут быть Big
 const ratio = (gain, cost) => B.log10(B.max(gain, 1e-300)) - B.log10(cost);
@@ -60,7 +63,7 @@ function spendSouls() {
 const log = [], hist = [];
 let rituals = [];
 const t0 = Date.now();
-for (let day = 1; day <= DAYS; day++) {
+for (let day = startDay; day <= DAYS; day++) {
   // начало дня: решение о ритуале
   hist.push(s.maxFloor);
   const back = hist.length >= 3 ? hist[hist.length - 3] : 0;
@@ -83,6 +86,7 @@ for (let day = 1; day <= DAYS; day++) {
   if (day % 7 === 0 || day === 1 || day === DAYS) {
     const line = `день ${day}: рекорд ${s.bestFloor}, забег ${s.maxFloor}, ритуалов ${s.rituals}, артефактов ${Core.foundCount(s)} (${((Date.now() - t0) / 1000).toFixed(0)} с счёта)`;
     log.push(line); console.log(line);
+    if (CK) fs.writeFileSync(CK, JSON.stringify({ day, seed, save: Core.serialize(s) }));
   }
 }
 console.log(`ИТОГ за ${DAYS} дн.: рекорд ${s.bestFloor}, ритуалов ${s.rituals}`);
