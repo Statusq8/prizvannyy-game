@@ -22,7 +22,10 @@
       const S = SPR[cur], i = ROW[anim][Math.min(f, ROW[anim].length - 1)];
       if (i !== shown) { shown = i; box.style.backgroundPosition = (i / (S.n - 1) * 100) + '% 0'; }
     }
+    // подсказка для нового игрока: пока не было ни одного тапа
+    const hint = document.createElement('div'); hint.className = 'tapHint'; hint.innerHTML = '<i>👆</i>Тапай по врагу'; el.arena.appendChild(hint);
     function loop(now) {
+      hint.classList.toggle('show', !(s.stats.taps > 0) && !document.getElementById('proOv') && !document.querySelector('#sysOv.show'));
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
       const en = s.enemy, id = BY_NAME[en.name] || '';
       if (en.alive && (!wasAlive || id !== cur)) use(id);   // новый враг

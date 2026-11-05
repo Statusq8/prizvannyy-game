@@ -542,6 +542,7 @@
       { at: () => profBtn, text: 'Профиль: имя, титулы, рамки, статистика и Хроника.' },
     ];
     function tutorial(force) {
+      if (!C.unlockedAt(s, 'tutorial')) return;   // 0.79.1: старое обучение выключено — новое по docs/START.md
       if (!force) { try { if (localStorage.getItem(TUT_KEY)) return; } catch (e) {} }
       tutStep = 0; tutShow();
     }
