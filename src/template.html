@@ -286,6 +286,10 @@
   #enemy.marked .body { filter: drop-shadow(0 0 10px #ff8a3d) drop-shadow(0 0 3px #ffd36b); }
   #hero.empowered svg { filter: drop-shadow(0 0 10px #b98cff); }
   #buffs { display: flex; justify-content: center; gap: 6px; margin-top: 5px; min-height: 20px; }
+  /* 0.60: активные зелья — видны и в новом интерфейсе */
+  #potBar { position: fixed; top: 134px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; pointer-events: none; z-index: 6; }
+  #potBar span { font: 700 11px system-ui; color: #c9f5c4; background: #0e1a10cc; border: 1px solid #5fae5a; border-radius: 10px; padding: 1px 7px; }
+  body.oldOpen #potBar { display: none; }
   .buff { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #00000060; border: 1px solid currentColor; }
   /* криты */
   .dmg.crit { font-size: 27px; color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 10px #ff6b4a; }
@@ -707,6 +711,7 @@
     <div id="timerBar"><div id="timerFill"></div></div>
     <div id="stats">Урон за тап <b id="tapDmg"></b> · DPS <b id="dps">0</b> ⓘ<div id="statsMore"></div></div>
     <div id="buffs"></div>
+    <div id="potBar"></div>
   </div>
 
   <div id="arena">
@@ -1485,7 +1490,7 @@
     { key: 'team', kind: 'teamBuff', color: '#ff8a6b' },
     { key: 'tap', kind: 'tapBuff', color: '#c8b8ff' },
   ];
-  let lastBuffHtml = '';
+  let lastPotHtml = '', lastBuffHtml = '';
   function renderUlts() {
     for (const a of CFG.allies) {
       const u = allyUi[a.id], st = s.allies[a.id];
@@ -1501,6 +1506,8 @@
     if (s.enemy.vuln > 0 && s.enemy.alive) parts.push('<span class="buff" style="color:#ff6b4a">Уязвим ' + Math.ceil(s.enemy.vuln) + 'с</span>');
     el.enemy.classList.toggle('vuln', s.enemy.vuln > 0 && s.enemy.alive);
     if (s.enemy.mark > 0) parts.push('<span class="buff" style="color:#ffb36b">Метка ' + Math.ceil(s.enemy.mark) + 'с</span>');
+    const pots = CFG.alchemy.potions.filter(p => s.potions[p.id] > 0).map(p => '<span>' + p.icon + ' ' + p.desc + ' · ' + Math.ceil(s.potions[p.id] / 60) + ' мин</span>').join('');
+    if (pots !== lastPotHtml) { $('potBar').innerHTML = pots; lastPotHtml = pots; }
     const html = parts.join('');
     if (html !== lastBuffHtml) { $('buffs').innerHTML = html; lastBuffHtml = html; }
     el.arena.classList.toggle('fury', s.buffs.team > 0);
@@ -1851,11 +1858,27 @@
           h.recipe.map(id => CFG.allies.find(a => a.id === id).name).join(', ') + '</small></div></div>'
         : '<div class="recipe"><div>??? — скрытый рецепт<small>Говорят, Алтарь откликается, если отдать ему весь первый отряд разом…</small></div></div>';
     }
+    html += alchemyHtml();
     if (html !== altarHtml) { $('altarTab').innerHTML = html; altarHtml = html; }
+  }
+  // 0.60: алхимия — зелья на время (идёт и офлайн), повтор продлевает до 2 ч
+  function alchemyHtml() {
+    const A = CFG.alchemy, M = CFG.materials;
+    let h = '<div class="secTitle">АЛХИМИЯ · зелья на время</div><div class="hint2">Лишние осколки и эссенция — во временные зелья. Повтор продлевает действие (не дольше ' + dur(A.maxSec) + '). Время идёт и офлайн.</div>';
+    for (const p of A.potions) {
+      const c = C.potionCost(s, p.id), left = s.potions[p.id] || 0;
+      const can = s.materials.shard >= c.shard && s.essence >= c.essence && left + p.sec <= A.maxSec;
+      h += '<div class="recipe"><div>' + p.icon + ' ' + p.name + ' — ' + p.desc + ' на ' + dur(p.sec) +
+        '<small>' + (c.shard ? M.shard.icon + ' ' + fmt(c.shard) : '') + (c.shard && c.essence ? ' · ' : '') + (c.essence ? '✦ ' + c.essence : '') +
+        (left > 0 ? ' · <b style="color:var(--ok)">действует ещё ' + dur(left) + '</b>' : '') + '</small></div>' +
+        '<button class="hBtn' + (can ? ' go' : '') + '" data-potion="' + p.id + '"' + (can ? '' : ' disabled') + '>Сварить</button></div>';
+    }
+    return h;
   }
   $('altarTab').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
+    if (d.potion) { const p = C.potionDef(d.potion); if (C.brewPotion(s, d.potion)) { toast(p.icon + ' ' + p.name + '<small>' + p.desc + ' · ещё ' + dur(s.potions[p.id]) + '</small>'); save(); } render(); return; }
     if (d.plus) altarSel[d.plus] = (altarSel[d.plus] || 0) + 1;
     else if (d.minus) altarSel[d.minus] = (altarSel[d.minus] || 0) - 1;
     else if (d.lock) { C.setLock(s, d.lock, !s.locks[d.lock]); save(); }
