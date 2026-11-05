@@ -1379,9 +1379,13 @@
   $('askNo').addEventListener('click', () => { $('ask').classList.remove('show'); askYesFn = null; });
   $('askYes').addEventListener('click', () => { $('ask').classList.remove('show'); const f = askYesFn; askYesFn = null; if (f) f(); });
 
+  // 0.79.2: сброс стирает ВСЁ игровое — сохранение, резервные копии (иначе игра восстанавливалась из копии), профиль, квесты, пролог; настройки остаются
+  function wipeAll() {
+    try { Object.keys(localStorage).filter(k => k.startsWith('prizvannyy') && k !== SET_KEY).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  }
   $('resetBtn').addEventListener('click', () => {
     ask('Сбросить весь прогресс? Это нельзя отменить.', 'Сбросить', () => {
-      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      wipeAll();
       s = C.newState(); tapped = false; dmgLog.length = 0;
       el.modal.classList.remove('show'); restartAnim('spawn'); render();
     });
