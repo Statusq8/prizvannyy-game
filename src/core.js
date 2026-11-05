@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 27,
+    saveVersion: 28,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -397,6 +397,16 @@
     // 0.57 (ответ 197): трофеи — с каждого уникального босса биома один раз навсегда; выставлены в Зале трофеев.
     // Босс биома: +0,5% всего урона; финальный босс биома: +1% золота (босс на каждом этаже — трофеи идут быстро;
     // при 1% / 2% этаж 400 ускорялся до 2–4 ч, симуляция). Числа временные.
+    // 0.59 (ответ 175): проклятые этажи — редко (chance) на впервые достигнутом этаже предлагается проклятие; по желанию.
+    // Принято — условие на весь этаж; победа над боссом этого этажа — награда; провал босса или уход — проклятие снято.
+    curse: { chance: 0.03, minFloor: 30,
+      mods: [
+        { id: 'noTap', name: 'Немота',        rule: 'alliesOnly', text: 'тапы не наносят урона' },
+        { id: 'hp2',   name: 'Двойная плоть', hp: 2,              text: 'у врагов ×2 HP' },
+        { id: 'hp3',   name: 'Каменная кожа', hp: 3,              text: 'у врагов ×3 HP' },
+        { id: 'noUlt', name: 'Тишина',        rule: 'noUlts',     text: 'ультимейты отряда не срабатывают' },
+      ],
+      reward: { tickets: 3, essence: 30, shardMult: 10 } },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1268,6 +1278,7 @@
       titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов и достижений)
       favs: [],                                  // 0.54: избранные герои (ответ 199)
       trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
+      curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1311,7 +1322,7 @@
     if (s.mode) return spawnMode(s);
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const rare = rollRare(s, s.floor, s.enemyIndex);
-    const hp = B.ceil(B.mul(enemyMaxHp(s.floor, isBoss), rare ? rare.hp : 1));
+    const cm = curseMod(s), hp = B.ceil(B.mul(enemyMaxHp(s.floor, isBoss), (rare ? rare.hp : 1) * (cm && cm.hp || 1)));
     const final = isBoss && isFinalBoss(s.floor);
     s.enemy = { hp, maxHp: hp, isBoss, final, alive: true, mark: 0, markPower: 1, rare: rare ? rare.id : null,
                 phase: 1, vuln: 0, name: rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss) };
@@ -1409,6 +1420,11 @@
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
       if (!s.mode) grantTrophy(s, s.floor, events);
+      if (!s.mode && !offline && curseMod(s)) {                      // проклятый этаж пройден (не офлайн)
+        const R = CONFIG.curse.reward, rw = { tickets: R.tickets, essence: R.essence, shard: Math.ceil(shardsForBoss(s.floor) * R.shardMult * shardMult(s)) };
+        grant(s, rw); cnt(s, 'curse'); events.push({ type: 'curseWin', floor: s.floor, reward: rw });
+        s.curse = null;
+      }
       if (s.floor > s.ticketFloor) {
         s.ticketFloor = s.floor;
         const n = ticketsForFloor(s.floor);
@@ -1442,6 +1458,8 @@
       s.floor += 1;
       s.enemyIndex = 1;
       events.push({ type: 'floor', floor: s.floor });
+      if (s.curse && s.curse.floor !== s.floor) s.curse = null;
+      curseOffer(s, events, offline);
       if (isBiomeStart(s.floor) && s.floor >= s.maxFloor) events.push({ type: 'biome', floor: s.floor, name: biomeName(s.floor) });
     } else if (s.farming && s.enemyIndex === CONFIG.enemiesPerFloor - 1) {
       s.enemyIndex = 1;                          // фарм: крутим обычных врагов без босса
@@ -1522,6 +1540,7 @@
       if (s.bossTimeLeft <= 0) {
         // Решение пользователя (0.48): после провала отряд сам спускается на этаж ниже и фармит его босса — за осколки;
         // победа над ним снова ведёт к стене. На этаже 1 и при выключенном автопереходе — прежний фарм без босса.
+        if (curseMod(s)) { s.curse = null; events.push({ type: 'curseLost' }); }   // проклятие снято
         if (s.floor > 1 && s.autoAdvance) { s.floor -= 1; s.farming = false; }
         else s.farming = true;
         s.enemyIndex = 1;
@@ -1532,6 +1551,23 @@
     return events;
   }
 
+  // ---------- проклятые этажи (0.59) ----------
+  function curseMod(s) { const c = s.curse; return c && c.on && c.floor === s.floor && !s.mode ? CONFIG.curse.mods.find(m => m.id === c.mod) : null; }
+  function curseOffer(s, events, offline) {
+    const K = CONFIG.curse, f = s.floor;
+    if (offline || s.mode || f < K.minFloor || f <= (s.bestCleared | 0) || hash01(f, 977, 31) >= K.chance) return null;
+    const mod = K.mods[Math.floor(hash01(f, 131, 7) * K.mods.length) % K.mods.length];
+    s.curse = { floor: f, mod: mod.id, on: false };
+    if (events) events.push({ type: 'curseOffer', floor: f, mod });
+    return s.curse;
+  }
+  function acceptCurse(s) {
+    const c = s.curse;
+    if (!c || c.on || c.floor !== s.floor || s.mode) return false;
+    c.on = true; s.enemyIndex = 1; spawn(s);                         // этаж начинается заново под проклятием
+    return true;
+  }
+  function declineCurse(s) { if (!s.curse || s.curse.on) return false; s.curse = null; return true; }
   // ---------- доп. PvE ----------
   // Сброс ежедневных попыток: dayKey — дата устройства 'ГГГГ-ММ-ДД' (передаёт интерфейс)
   function dailyReset(s, dayKey) {
@@ -1768,7 +1804,7 @@
     grant(s, it.reward);
     return it.reward;
   }
-  function modeRule(s) { return s.mode && s.mode.rule || null; }
+  function modeRule(s) { if (s.mode) return s.mode.rule || null; const cm = curseMod(s); return cm && cm.rule || null; }
 
   // ---------- центр наград ----------
   function inboxAdd(s, title, reward) { s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
@@ -2033,6 +2069,7 @@
   // Проиграть отсутствие: продвижение до стены (босс не успевает умереть за таймер), потом фарм этажа ниже.
   // Возвращает сводку или null, если отсутствие короче minSec.
   function offlineProgress(s, seconds) {
+    if (s.curse) s.curse = null;                     // 0.59: проклятие этажа не переживает уход из игры
     const O = CONFIG.offline;
     if (!(seconds >= O.minSec)) return null;
     if (s.mode) exitMode(s);                                // ушёл из подземелья — вернулся в Башню
@@ -2657,7 +2694,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo },
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2743,6 +2780,7 @@
       d.trophies = [...t];
     }
     if (d.v === 26) { d.v = 27; d.echo = { week: '', used: 0, won: false }; }   // 0.57 → 0.58: «Эхо Башни»
+    if (d.v === 27) { d.v = 28; d.curse = null; }                                // 0.58 → 0.59: проклятые этажи
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2881,6 +2919,8 @@
     { const all = allTrophies(); s.trophies = [...new Set(d.trophies.filter(k => all.includes(k)))]; }
     if (!d.echo || typeof d.echo.week !== 'string' || !int(d.echo.used, 0)) return null;
     s.echo = { week: d.echo.week, used: d.echo.used, won: !!d.echo.won };
+    const cu = d.curse;
+    s.curse = cu && int(cu.floor, 1) && CONFIG.curse.mods.some(m => m.id === cu.mod) ? { floor: cu.floor, mod: cu.mod, on: !!cu.on } : null;
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
@@ -2972,7 +3012,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,

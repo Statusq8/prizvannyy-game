@@ -1181,6 +1181,18 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'curseOffer') {                // 0.59: проклятый этаж — по желанию
+        const K = CFG.curse, mod = e.mod;
+        setTimeout(() => { if (!s.curse || s.curse.on || s.curse.floor !== s.floor) return;
+          ask('<b>☠ Проклятый этаж ' + e.floor + '</b><span class="askList">Проклятие «' + mod.name + '»: ' + mod.text + ' — на весь этаж.<br>' +
+            '<b>Награда за босса этажа:</b> 🎟 ' + K.reward.tickets + ' · ✦ ' + K.reward.essence + ' · ' + CFG.materials.shard.icon + ' осколки ×' + K.reward.shardMult + '<br>' +
+            'Провал босса или уход с этажа снимает проклятие без награды. Можно отказаться — этаж будет обычным.</span>', 'Принять', () => {
+              if (C.acceptCurse(s)) { toast('☠ Проклятие принято<small>' + mod.name + ' · этаж начат заново</small>'); save(); render(); }
+            }); }, 700);
+      } else if (e.type === 'curseWin') {
+        setTimeout(() => toast('☠ Проклятие снято с победой!<small>' + rewardText(e.reward) + '</small>'), 900);
+      } else if (e.type === 'curseLost') {
+        toast('☠ Проклятие потеряно<small>босс не побеждён вовремя</small>');
       } else if (e.type === 'trophy') {
         const tb = C.trophyBonus(e.key);
         setTimeout(() => toast('🏆 Трофей: ' + e.name + '<small>+' + Math.round(tb.per * 100) + '% ' + (tb.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · Зал трофеев в Статистике</small>'), 1200);
@@ -1331,9 +1343,10 @@
     el.floorLabel.textContent = 'Этаж ' + s.floor;
     const bio = C.biomeOf(s.floor);
     const hall = C.hallOf(s.floor), place = C.biomeName(s.floor) + ' · ' + hall.name;
-    if (lastBiome !== place && !s.mode) {
-      lastBiome = place;
-      $('biomeLabel').textContent = place;
+    const cm = C.curseMod(s), cPlace = cm ? '☠ Проклятие «' + cm.name + '» · ' + cm.text : place;
+    if (lastBiome !== cPlace && !s.mode) {
+      lastBiome = cPlace;
+      $('biomeLabel').textContent = cPlace;
       const g = $('game').style;
       g.setProperty('--bg2', bio.sky[0]); g.setProperty('--bg1', bio.sky[1]);
       g.setProperty('--bh', (bio.bg[0] + hall.hue) + 'deg'); g.setProperty('--bs', bio.bg[1]); g.setProperty('--bb', bio.bg[2] * hall.bri);
