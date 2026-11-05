@@ -1,6 +1,6 @@
 {
   "name": "prizvannyy",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "private": true,
   "scripts": {
     "build": "node build.js",
