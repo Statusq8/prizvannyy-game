@@ -88,7 +88,7 @@
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     disabled: ['quests', 'login', 'portal', 'shop', 'artifacts', 'pve', 'runes', 'forge', 'ritual', 'tree', 'events', 'season',
-               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag'],
+               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
     megaSouls: { base: 5, per50: 1.25 },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
     ritual: {
       floor: 200,
