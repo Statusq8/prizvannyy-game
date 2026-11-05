@@ -2548,3 +2548,20 @@ test('дневник: победы по видам, страница биома 
   assert.ok(CFG.allies.every(a => a.story && a.quote));
   const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.diaryPages, [b.id]); assert.strictEqual(t.bestiary[b.final], CFG.diary.master);
 });
+
+// ---------- 0.63: скрытые комнаты ----------
+test('скрытые комнаты: одна на каждые 2500 этажей, открывается первой победой над боссом, Страж тайника — награда один раз', () => {
+  for (let k = 0; k < 20; k++) { const f = C.secretFloor(k); assert.ok(f > k * 2500 && f <= (k + 1) * 2500); assert.ok(C.isSecretFloor(f)); }
+  const f = C.secretFloor(0), s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  reach(s, f); s.bestCleared = f - 1; const ev = killBoss(s);
+  assert.deepStrictEqual(s.secrets, [{ floor: f, done: false }]);
+  assert.ok(C.enterMode(s, 'secret', { floor: f }));
+  assert.ok(C.B.gt(s.enemy.maxHp, C.enemyMaxHp(f, true)));
+  const t0 = s.tickets; s.enemy.hp = 1; C.tap(s);
+  assert.strictEqual(s.mode, null); assert.strictEqual(s.secrets[0].done, true);
+  assert.strictEqual(s.tickets, t0 + CFG.secret.reward.tickets);
+  assert.strictEqual(C.enterMode(s, 'secret', { floor: f }), null);   // второй раз нельзя
+  assert.deepStrictEqual(C.deserialize(C.serialize(s)).secrets, [{ floor: f, done: true }]);
+  const old = JSON.parse(C.serialize(s)); old.v = 31; delete old.secrets; old.bestFloor = 8000;
+  assert.strictEqual(C.deserialize(JSON.stringify(old)).secrets.length, [0, 1, 2, 3].filter(k => C.secretFloor(k) <= 7999).length);
+});

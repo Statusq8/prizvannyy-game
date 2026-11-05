@@ -1187,6 +1187,8 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'secretFound') {
+        setTimeout(() => toast('🗝 Скрытая комната!<small>этаж ' + e.floor + ' · войти — в PvE</small>'), 1600);
       } else if (e.type === 'diaryPage') {
         setTimeout(() => toast('📖 Страница дневника заполнена<small>' + e.name + ' · награда в центре наград 📬</small>'), 1300);
       } else if (e.type === 'diaryMaster') {
@@ -1370,7 +1372,8 @@
       $('biomeLabel').textContent = m.kind === 'trial' ? 'Испытательная башня · страж ' + m.step : m.kind === 'event' ? 'Событие · ' + C.currentEvent(s).dungeon.ruleText + ' · ' + m.step + '/' + m.total
         : m.kind === 'dungeon' ? 'Подземелье · уровень ' + m.tier + ' · враг ' + m.step + '/' + m.total
         : m.kind === 'endless' ? 'Бесконечное подземелье · рекорд ' + s.pve.endlessBest
-        : m.kind === 'echo' ? 'Эхо Башни · враг ' + m.step + '/' + m.total : 'Личный босс · ' + m.diffName;
+        : m.kind === 'echo' ? 'Эхо Башни · враг ' + m.step + '/' + m.total
+        : m.kind === 'secret' ? 'Скрытая комната · Страж тайника' : 'Личный босс · ' + m.diffName;
       $('modeInfo').textContent = m.kind === 'endless' ? '✦ +' + m.essence + (m.tickets ? ' · 🎟 +' + m.tickets : '') : m.name;
       lastBiome = '';
     }
@@ -2303,6 +2306,16 @@
       '<div class="hRow" style="--r:#b98cff"><div class="artIcon">∞</div><div class="hInfo"><div class="hName">Рекорд: ' + s.pve.endlessBest + ' волн · попыток ' + el2 + '/' + P.endless.attempts + '</div>' +
       '<div class="hSub">Волны без таймера, каждые ' + P.endless.bossEvery + ' — контрольный босс на ' + P.endless.bossTime + ' с. За босса ✦ эссенция, за новый рекордный рубеж — 🎟 билет.</div></div>' +
       '<button class="hBtn' + (canE ? ' go' : '') + '" data-act="endless"' + (canE ? '' : ' disabled') + '>Войти</button></div>';
+    // 0.63: скрытые комнаты — найденные ждут здесь
+    const sec = s.secrets.filter(x => !x.done), SC = CFG.secret;
+    html += '<div class="secTitle">СКРЫТЫЕ КОМНАТЫ · найдено ' + s.secrets.length + ' · открыто ' + (s.secrets.length - sec.length) + '</div>';
+    if (!sec.length) html += '<div class="hint2">Где-то на каждые ' + SC.every.toLocaleString('ru-RU') + ' этажей спрятан тайный этаж. Победа над его боссом откроет комнату.</div>';
+    for (const x of sec) {
+      const rw = C.secretReward(s, x.floor);
+      html += '<div class="hRow" style="--r:#ffd36b"><div class="artIcon">🗝</div><div class="hInfo"><div class="hName">Тайник этажа ' + x.floor.toLocaleString('ru-RU') + '</div>' +
+        '<div class="hSub">Страж тайника: ×' + SC.hp + ' HP босса этажа, ' + SC.time + ' с, попыток сколько угодно.</div><div class="dpsPrev">Награда: <b>' + rewardText(rw) + ' · кость</b></div></div>' +
+        '<button class="hBtn' + (busy ? '' : ' go') + '" data-secret="' + x.floor + '"' + (busy ? ' disabled' : '') + '>Войти</button></div>';
+    }
     // 0.58: «Эхо Башни» — раз в неделю
     const ex = C.echoInfo(s), EC = P.echo;
     html += '<div class="secTitle">ЭХО БАШНИ · раз в неделю</div>';
@@ -2346,6 +2359,7 @@
     else if (d.act === 'endless') startMode('endless', {});
     else if (d.act === 'trial') startMode('trial', {});
     else if (d.act === 'echo') startMode('echo', {});
+    else if (d.secret) startMode('secret', { floor: +d.secret });
     else if (d.pb) { const [id, diff] = d.pb.split(':'); startMode('personal', { id, diff }); }
     render();
   });

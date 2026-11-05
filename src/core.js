@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 31,
+    saveVersion: 32,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -433,6 +433,10 @@
     // 0.62 (ответ 174): «Дневник призванного» — бестиарий (каждый вид врага: первая встреча, 100 и 1000 побед) и лор героев
     // (история открывается звёздами). Маленькие награды: за страницу биома (все враги и боссы встречены) и за знатока вида.
     diary: { page: { tickets: 2, essence: 20 }, master: 1000, masterReward: { essence: 5 }, loreStars: [0, 3, 8] },
+    // 0.63 (ответ 183): скрытые комнаты — в каждом отрезке every этажей один тайный этаж (по номеру отрезка).
+    // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
+    // победа — один раз: награда. Найденные комнаты ждут в PvE.
+    secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1337,6 +1341,7 @@
       potions: {},                               // 0.60: id зелья → осталось секунд
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
+      secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1479,6 +1484,7 @@
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
       if (!s.mode) grantTrophy(s, s.floor, events);
+      if (!s.mode) secretFind(s, s.floor, events);
       if (!s.mode && !offline && curseMod(s)) {                      // проклятый этаж пройден (не офлайн)
         const R = CONFIG.curse.reward, rw = { tickets: R.tickets, essence: R.essence, shard: Math.ceil(shardsForBoss(s.floor) * R.shardMult * shardMult(s)) };
         grant(s, rw); cnt(s, 'curse'); events.push({ type: 'curseWin', floor: s.floor, reward: rw });
@@ -1612,6 +1618,16 @@
     return events;
   }
 
+  // ---------- скрытые комнаты (0.63) ----------
+  function secretFloor(block) { const E = CONFIG.secret.every; return block * E + 1 + Math.floor(hash01(block + 1, 4219, 77) * (E - 1)); }
+  function isSecretFloor(f) { return secretFloor(Math.floor((f - 1) / CONFIG.secret.every)) === f; }
+  function secretFind(s, f, events) {
+    if (!isSecretFloor(f) || s.secrets.some(x => x.floor === f)) return null;
+    const x = { floor: f, done: false }; s.secrets.push(x);
+    if (events) events.push({ type: 'secretFound', floor: f });
+    return x;
+  }
+  function secretReward(s, f) { const R = CONFIG.secret.reward; return { tickets: R.tickets, essence: R.essence, shard: Math.ceil(shardsForBoss(f) * R.shardMult * shardMult(s)) }; }
   // ---------- дневник призванного (0.62) ----------
   function diaryNames(b) { return [...b.enemies, ...b.bosses, b.final]; }
   function diaryKill(s, name, floor, events) {
@@ -1726,6 +1742,11 @@
       m = { kind, id: 'echo', name: 'Эхо: ' + x.biome.name + ' · ' + x.mod.name, rule: x.mod.rule || null, hpMult: x.mod.hp || 1,
             floor: x.floor, biome: x.biome.id, step: 1, total: P.echo.enemies, timeLeft: x.time, timeMax: x.time };
       s.echo.used++;
+    } else if (kind === 'secret') {
+      const x = s.secrets.find(y => y.floor === opts.floor && !y.done);
+      if (!x) return null;
+      const T = CONFIG.secret.time;
+      m = { kind, id: 'secret', name: 'Скрытая комната · этаж ' + x.floor, floor: x.floor, step: 1, total: 1, timeLeft: T, timeMax: T };
     } else if (kind === 'personal') {
       const b = personalBosses(s).find(x => x.id === opts.id), D = P.personal.diffs.find(x => x.id === opts.diff);
       if (!b || !D || !attemptsLeft(s, 'personal')) return null;
@@ -1745,6 +1766,10 @@
       isBoss = m.step === m.total;
       hp = enemyMaxHp(f, isBoss);
       name = isBoss ? 'Страж: ' + m.name : enemyName(f, m.step, false);
+    } else if (m.kind === 'secret') {
+      isBoss = true;
+      hp = B.ceil(B.mul(enemyMaxHp(m.floor, true), CONFIG.secret.hp));
+      name = 'Страж тайника';
     } else if (m.kind === 'echo') {
       const b = CONFIG.biomes.find(x => x.id === m.biome);
       isBoss = m.step === m.total;
@@ -1828,6 +1853,11 @@
       const bone = rollBone(s, CONFIG.bones.dropPersonal, m.floor);
       if (bone) r.bone = bone;
       s.materials.shard += r.shard + heartShards(r.heart || 0);
+      res.reward = r;
+    } else if (m.kind === 'secret' && win) {
+      const x = s.secrets.find(y => y.floor === m.floor), r = secretReward(s, m.floor);
+      const bone = rollBone(s, 1, m.floor); if (bone) r.bone = bone;
+      grant(s, r); x.done = true; cnt(s, 'secret');
       res.reward = r;
     } else if (m.kind === 'echo' && win) {
       const E = P.echo, first = !s.echo.won, sh = Math.ceil(shardsForBoss(m.floor) * (first ? E.first.shardMult : E.repeat.shardMult) * shardMult(s));
@@ -2792,7 +2822,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages],
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })),
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2882,6 +2912,10 @@
     if (d.v === 28) { d.v = 29; d.potions = {}; }                                // 0.59 → 0.60: алхимия
     if (d.v === 29) { d.v = 30; d.towerMs = 0; }                                 // 0.60 → 0.61: вехи Башни (выдадутся на следующем этаже)
     if (d.v === 30) { d.v = 31; d.bestiary = {}; d.diaryPages = []; }            // 0.61 → 0.62: дневник (заполняется с новых побед)
+    if (d.v === 31) {                                      // 0.62 → 0.63: скрытые комнаты ниже рекорда — сразу найдены
+      d.v = 32; d.secrets = [];
+      for (let k = 0; secretFloor(k) <= (d.bestFloor | 0) - 1; k++) d.secrets.push({ floor: secretFloor(k), done: false });
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -3027,6 +3061,8 @@
     if (!d.bestiary || typeof d.bestiary !== 'object' || !Array.isArray(d.diaryPages)) return null;
     s.bestiary = {}; for (const k in d.bestiary) { const v = d.bestiary[k]; if (int(v, 1)) s.bestiary[k] = v; }
     s.diaryPages = d.diaryPages.filter(id => CONFIG.biomes.some(b => b.id === id));
+    if (!Array.isArray(d.secrets)) return null;
+    s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
@@ -3119,7 +3155,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
