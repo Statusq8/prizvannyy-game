@@ -2318,3 +2318,14 @@ test('награды 1-го, 10-го и 100-го ритуала: титул, о�
   const m = C.deserialize(JSON.stringify(old));
   assert.deepStrictEqual(m.titles, ['Пробуждённый', 'Жрец Башни']); assert.deepStrictEqual(m.skins, []);
 });
+
+test('титулы дают небольшие постоянные бонусы: +5% урона, +5% золота, +10% урона (складываются)', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  s.titles = ['Пробуждённый'];
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.05) < 1e-9);
+  assert.strictEqual(C.goldMult(s), C.goldMult(t));
+  s.titles.push('Жрец Башни');
+  assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 1.05) < 1e-9);
+  s.titles.push('Вечный призванный');
+  assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.15) < 1e-9);
+});

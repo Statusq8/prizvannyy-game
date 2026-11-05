@@ -89,12 +89,13 @@
       // Экспонента душ при бесконечной Башне обгоняла HP и давала бесконечный разгон.
       soulsKnee: 1000,
       recordBonus: 1,                    // + душа за каждый новый рекордный этаж
-      // 0.51 (ответы 8, 67): разовые награды за 1-й, 10-й и 100-й ритуал — титул (только для красоты, ответ 104),
-      // на 100-м ещё облик Призванного; плюс билеты и эссенция в центр наград. Числа временные.
+      // 0.51 (ответы 8, 67): разовые награды за 1-й, 10-й и 100-й ритуал — титул, на 100-м ещё облик Призванного;
+      // плюс билеты и эссенция в центр наград. 0.53 (решение пользователя, вместо ответа 104 «только для красоты»):
+      // каждый полученный титул навсегда даёт небольшой бонус; бонусы всех титулов складываются. Числа временные.
       milestones: [
-        { n: 1,   title: 'Пробуждённый',      reward: { tickets: 10, essence: 50 } },
-        { n: 10,  title: 'Жрец Башни',        reward: { tickets: 30, essence: 200 } },
-        { n: 100, title: 'Вечный призванный', skin: 'eternal', reward: { tickets: 100, essence: 1000 } },
+        { n: 1,   title: 'Пробуждённый',      bonus: { kind: 'allDmg', per: 0.05 }, reward: { tickets: 10, essence: 50 } },
+        { n: 10,  title: 'Жрец Башни',        bonus: { kind: 'gold',   per: 0.05 }, reward: { tickets: 30, essence: 200 } },
+        { n: 100, title: 'Вечный призванный', bonus: { kind: 'allDmg', per: 0.10 }, skin: 'eternal', reward: { tickets: 100, essence: 1000 } },
       ],
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
@@ -1008,12 +1009,12 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')), CONFIG.softcap.goldStart); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')), CONFIG.softcap.goldStart); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
@@ -2378,6 +2379,8 @@
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
+  // Бонус полученных титулов вида kind: 'allDmg' (весь урон) или 'gold'
+  function titlePower(s, kind) { return CONFIG.ritual.milestones.reduce((t, m) => t + (m.bonus && m.bonus.kind === kind && s.titles.includes(m.title) ? m.bonus.per : 0), 0); }
   function setTitle(s, t) { if (t !== null && !s.titles.includes(t)) return false; s.title = t; return true; }
 
   // ---------- Алтарь ----------
@@ -2760,7 +2763,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
