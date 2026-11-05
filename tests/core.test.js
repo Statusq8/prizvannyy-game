@@ -2409,3 +2409,16 @@ test('умный офлайн-отчёт: что можно купить; зап
   C.setNumMode('sci'); assert.strictEqual(C.fmt(1234567), '1.23e6'); assert.strictEqual(C.fmt(999), '999');
   C.setNumMode('short'); assert.strictEqual(C.fmt(1234567), '1.23M');
 });
+
+// ---------- 0.56: связи героев ----------
+test('связи героев: все участники в отряде — бонус урона или золота; герои в связях существуют', () => {
+  for (const b of CFG.bonds) for (const id of b.heroes) assert.ok(CFG.allies.find(a => a.id === id), b.id + ':' + id);
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), []);
+  s.heroes.garret.unlocked = true; C.squadRemove(s, 'kael'); assert.ok(C.squadAdd(s, 'garret'));
+  t.heroes.garret.unlocked = true; C.squadRemove(t, 'kael'); C.squadRemove(t, 'borg'); C.squadAdd(t, 'garret');
+  assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), ['steel']);
+  assert.ok(Math.abs(C.bondPower(s, 'allDmg') - 0.10) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.10) < 1e-9);   // одинаковые наборы героев, кроме связи
+  assert.ok(C.bondsOf('lia').length >= 2);
+});
