@@ -38,10 +38,23 @@
   /* ---------- 4 угловые кнопки (этап 10.1): квадрат с резными углами, чёрная сталь + фиолетовый кристалл ---------- */
   .cBtn { display: none; }
   body.clean .cBtn { display: grid; place-items: center; position: absolute; z-index: 8; width: 64px; height: 64px; padding: 0; cursor: pointer; }
-  body.clean #cbMenu { left: 8px; top: calc(env(safe-area-inset-top) + 48px); }
-  body.clean #cbSet { right: 8px; top: calc(env(safe-area-inset-top) + 48px); }
-  body.clean #cbPve { left: 8px; bottom: calc(env(safe-area-inset-bottom) + 12px); }
-  body.clean #cbMap { right: 8px; bottom: calc(env(safe-area-inset-bottom) + 12px); }
+  /* 0.68: слева вверху профиль, справа золото над уроном; кнопки ниже, кубок и башня — маленькие сбоку (нижнего меню нет) */
+  body.clean #cbMenu { left: 8px; top: calc(env(safe-area-inset-top) + 146px); }
+  body.clean #cbSet { right: 8px; top: calc(env(safe-area-inset-top) + 146px); }
+  body.clean #cbPve, body.clean #cbMap { width: 46px; height: 46px; top: calc(env(safe-area-inset-top) + 220px); }
+  body.clean #cbPve { left: 17px; } body.clean #cbMap { right: 17px; }
+  body.clean #cbPve svg, body.clean #cbMap svg { width: 32px; height: 32px; }
+  body.clean #cbPve .gem, body.clean #cbMap .gem { width: 5px; height: 5px; }
+  #topBar { align-items: flex-start; }
+  #topBar .tbR { flex: none; width: 104px; display: flex; flex-direction: column; gap: 4px; }
+  #topBar .tbR .tb { width: 100%; }
+  #tbProf { pointer-events: auto; flex: none; position: relative; width: 62px; height: 62px; padding: 0; border-radius: 50%; cursor: pointer;
+    background: radial-gradient(circle at 50% 40%, #3a1a5a, #0a070e); border: 3px solid; border-color: #c9c2d2 #6e6678 #4e4757 #8d8597;
+    box-shadow: 0 0 0 1px #000, 0 0 10px #b14dff99, inset 0 0 8px #b14dff80; }
+  #tbProf img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+  #tbProf i { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); min-width: 30px; height: 18px; padding: 0 5px; border-radius: 4px; font: 400 11px/16px 'Russo One', system-ui, sans-serif; font-style: normal;
+    color: #fff; text-shadow: 0 1px 0 #000; background: linear-gradient(#5a2a8a, #24103a); border: 1px solid #e3b6ff; box-shadow: 0 0 6px #b14dff; white-space: nowrap; }
+  #tbProf:active { filter: brightness(1.3); }
   .cBtn .fr { position: absolute; inset: 0; clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
     background: linear-gradient(135deg, var(--steelHi), #5a5364 30%, #2a2630 60%, var(--steelEdge)); }
   .cBtn .fr::before { content: ""; position: absolute; inset: 3px; clip-path: inherit; background: radial-gradient(circle at 50% 40%, #3a1a5a 0%, #160e20 60%, #0a070e 100%);

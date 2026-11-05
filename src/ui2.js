@@ -70,6 +70,8 @@
     // 0.66: пока экран профиля (этап 11) не согласован — кнопка открывает прежние настройки (экономия, запись чисел, фоторежим…)
     $('cbSet').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); $('settingsBtn').click(); });
     $('cbPve').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; openX('pve'); });
+    // 0.68: профиль (левый верхний угол) — статы и прокачка героя
+    $('tbProf').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; sec = 'up'; artSel = null; open('sec'); });
     $('cbMap').addEventListener('click', e => { e.stopPropagation(); press(e.currentTarget); stack.length = 0; page = null; open('map'); });
 
     // ---------- главное меню ----------
@@ -518,6 +520,7 @@
       // волна и % HP на экране боя
       if (!s.mode) $('waveLbl').textContent = 'Волна ' + Math.min(s.enemyIndex, CFG.enemiesPerFloor) + '/' + CFG.enemiesPerFloor; else $('waveLbl').textContent = '';
       const en = s.enemy; if (en && B.gt(en.maxHp, 0)) el.hpText.textContent = fmt(en.hp) + ' / ' + fmt(en.maxHp) + ' (' + Math.ceil(B.toNum(B.div(en.hp, en.maxHp)) * 100) + '%)';
+      $('tbLv').textContent = 'Ур. ' + C.prestigeLevel(s);
       $('cbMenuBang').classList.toggle('on', !!(navBang.up || navBang.heroes || navBang.souls));
       $('cbPveBang').classList.toggle('on', !!navBang.pve);
       // старая вкладка закрылась сама (например, старт режима PvE) — снять полноэкранную обёртку
