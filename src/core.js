@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 33,
+    saveVersion: 34,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -18,7 +18,7 @@
     bossHpMult: 6,
     bossTimeSec: 30,              // таймер босса (TBD)
     goldBase: 1,
-    goldGrowth: 1.1343,          // 0.50: подобрано симуляцией — этаж 400 за ~4–8 ч игры (было 1.16)
+    goldGrowth: 1.137,           // 0.67: подобрано симуляцией под ростер 52 героя — этаж 400 медиана ≈5,3 ч (было 1.1343)
     bossGoldMult: 8,
     firstClearGoldMult: 20,       // разовая награда за первое прохождение этажа
     tapBaseDamage: 1,
@@ -394,7 +394,8 @@
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
     // 0.54 (ответы 28, 29, 137): 10 фракций — пока только метка (для фильтров), без игровых функций;
     // роль героя = тип его ультимейта. Фракции героев — в FACTION_OF ниже (временное распределение по описанию).
-    factions: ['Тени', 'Война', 'Свет', 'Нежить', 'Бездна', 'Пламя', 'Дикий лес', 'Буря', 'Лёд', 'Кровь'],
+    factions: ['Свет', 'Буря', 'Лёд', 'Нежить', 'Кровь', 'Пламя', 'Война', 'Дикий лес', 'Тени', 'Бездна'],   // 10 народов
+    sides: { 'Свет': ['Свет', 'Буря', 'Лёд'], 'Тьма': ['Нежить', 'Кровь', 'Пламя'], 'Дикие': ['Война', 'Дикий лес'], 'Тени': ['Тени', 'Бездна'] },   // 0.67: 4 стороны
     roles: { nuke: 'Удар', teamBuff: 'Усиление отряда', mark: 'Метка', tapBuff: 'Усиление героя', critBuff: 'Криты' },
     presets: 3,                                    // 0.54 (ответ 186): пресеты отряда
     // 0.57 (ответ 197): трофеи — с каждого уникального босса биома один раз навсегда; выставлены в Зале трофеев.
@@ -450,16 +451,19 @@
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
-    bonds: [
-      { id: 'steel',  name: 'Стальной кулак',  heroes: ['borg', 'garret'],          bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Берсерк и ополченец прошли первую войну плечом к плечу.' },
-      { id: 'night',  name: 'Клинки в ночи',   heroes: ['irene', 'saya', 'nyx'],    bonus: { kind: 'allDmg', per: 0.15 }, lore: 'Королева ночи и её тени — стрела и нож.' },
-      { id: 'legion', name: 'Мёртвый легион',  heroes: ['velma', 'ragnar'],         bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Некромантка подняла рыцаря — и он остался служить.' },
-      { id: 'storm',  name: 'Око бури',        heroes: ['noa', 'seiren'],           bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Ученик-громовик и повелительница бурь.' },
-      { id: 'abyss',  name: 'Кровь бездны',    heroes: ['kael', 'kassian'],         bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Клинок бездны и тёмный паладин заключили договор крови.' },
-      { id: 'ash',    name: 'Пепел и пламя',   heroes: ['lia', 'azrael'],           bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Пиромантка, что молится ангелу пепла.' },
-      { id: 'frost',  name: 'Лёд и пламя',     heroes: ['yuki', 'lia'],             bonus: { kind: 'gold',   per: 0.10 }, lore: 'Снежная жрица и пиромантка — вечный спор.' },
-      { id: 'altar',  name: 'Хранители Алтаря', heroes: ['morra', 'kassian'],       bonus: { kind: 'gold',   per: 0.10 }, lore: 'Хранительница Алтаря доверяет только паладину крови.' },
-      { id: 'mask',   name: 'Маски и тени',    heroes: ['carna', 'nyx'],            bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Карнавал открывается только в ночь королевы.' },
+    bonds: [   // 0.67: связи из docs/HEROES.md
+      { id: 'legion', name: 'Мёртвый легион',   heroes: ['velma', 'rotgar'],             bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Она подняла его — и он остался служить.' },
+      { id: 'blood',  name: 'Брат по крови',    heroes: ['borg', 'urgash'],              bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Соперники, которые зовут друг друга братьями.' },
+      { id: 'night',  name: 'Клинки в ночи',    heroes: ['irene', 'saya', 'nokt'],       bonus: { kind: 'allDmg', per: 0.15 }, lore: 'Теневые охотники — стрела и нож.' },
+      { id: 'sky',    name: 'Небо и пламя',     heroes: ['zlatokryl', 'solarion'],       bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Звери Престола.' },
+      { id: 'pact',   name: 'Договор',          heroes: ['vorgat', 'kassian'],           bonus: { kind: 'gold',   per: 0.10 }, lore: 'Договоры, подписанные кровью.' },
+      { id: 'dragon', name: 'Дракон и тень',    heroes: ['ignisar', 'umbragor'],         bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Убийца и убитый.' },
+      { id: 'pack',   name: 'Стая',             heroes: ['fenra', 'gnar', 'morrak'],     bonus: { kind: 'allDmg', per: 0.15 }, lore: 'Волки — живые и мёртвые.' },
+      { id: 'guard',  name: 'Стража Эльдраса',  heroes: ['kaeron', 'azragor'],           bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Капитан стражи и его король.' },
+      { id: 'throne', name: 'Престол',          heroes: ['eliria', 'valtar', 'astrael'], bonus: { kind: 'allDmg', per: 0.15 }, lore: 'Закон Света.' },
+      { id: 'frost',  name: 'Лёд и пламя',      heroes: ['yuki', 'eon'],                 bonus: { kind: 'gold',   per: 0.10 }, lore: 'Вечный спор.' },
+      { id: 'altar',  name: 'Хранители Алтаря', heroes: ['morra', 'kassian'],            bonus: { kind: 'gold',   per: 0.10 }, lore: 'Хранительница доверяет только паладину крови.' },
+      { id: 'cycle',  name: 'Конец и начало',   heroes: ['eon', 'erebor'],               bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Обе Башни.' },
     ],
     ranks: { count: 10, subs: 10, capMin: 1000, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 },
       // 0.51 (ответ 155): ранги добавляются ступенями с обновлениями — каждое число здесь = новый ранг (10 подрангов)
@@ -650,55 +654,63 @@
     },
     // Каталог героев. Уровень 0 = не нанят в этом забеге. starter — открыт с начала игры.
     // hidden — не выпадает в портале, открывается скрытым рецептом Алтаря (повторяемый бесплатный путь).
+    // 0.67: ростер из docs/HEROES.md — 52 героя, 4 стороны (side) × 10 народов (faction). Стартовые 4 и прежние слоты
+    // (Ирэн ← Гаррет, Вейл ← Ноа, Ротгар ← Рагнар) — с прежними статами; остальные — по базе редкости ×(1 + 0,12·номер). Числа TBD.
     allies: [
-      { id: 'irene', name: 'Ирэн', role: 'Лучница теней', rarity: 'E', starter: true, baseDps: 4, attackInterval: 0.8,
-        hireCost: 25, costGrowth: 1.05,
-        ult: { name: 'Ливень стрел', kind: 'nuke', charge: 12, power: 20 } },
-      { id: 'borg', name: 'Борг', role: 'Берсерк', rarity: 'D', starter: true, baseDps: 120, attackInterval: 1.6,
-        hireCost: 400, costGrowth: 1.05,
-        ult: { name: 'Ярость', kind: 'teamBuff', charge: 20, power: 2, duration: 6 } },
-      { id: 'lia', name: 'Лиа', role: 'Пиромантка', rarity: 'C', starter: true, baseDps: 4000, attackInterval: 1.1,
-        hireCost: 7000, costGrowth: 1.05,
-        ult: { name: 'Метка пламени', kind: 'mark', charge: 18, power: 1.5, duration: 8 } },
-      { id: 'kael', name: 'Каэль', role: 'Клинок бездны', rarity: 'B', starter: true, baseDps: 150000, attackInterval: 0.45,
-        hireCost: 120000, costGrowth: 1.05,
-        ult: { name: 'Разрез бездны', kind: 'tapBuff', charge: 25, power: 3, duration: 8 } },
-      // открываются порталом
-      { id: 'garret', name: 'Гаррет', role: 'Ополченец', rarity: 'E', baseDps: 18, attackInterval: 1.0,
-        hireCost: 100, costGrowth: 1.05, ult: { name: 'Удар щитом', kind: 'nuke', charge: 15, power: 15 } },
-      { id: 'saya', name: 'Сая', role: 'Метательница ножей', rarity: 'D', baseDps: 900, attackInterval: 0.6,
-        hireCost: 2000, costGrowth: 1.05, ult: { name: 'Ядовитые клинки', kind: 'critBuff', charge: 16, chance: 0.15, dmg: 0.5, duration: 6 } },
-      { id: 'drake', name: 'Дрейк', role: 'Копейщик', rarity: 'C', baseDps: 40000, attackInterval: 1.2,
-        hireCost: 40000, costGrowth: 1.05, ult: { name: 'Боевой клич', kind: 'teamBuff', charge: 22, power: 1.8, duration: 6 } },
-      { id: 'noa', name: 'Ноа', role: 'Громовой маг', rarity: 'B', baseDps: 4e6, attackInterval: 1.4,
-        hireCost: 2e6, costGrowth: 1.05, ult: { name: 'Цепная молния', kind: 'nuke', charge: 14, power: 25 } },
-      { id: 'velma', name: 'Вельма', role: 'Некромантка', rarity: 'A', baseDps: 2e8, attackInterval: 1.0,
-        hireCost: 5e7, costGrowth: 1.05, ult: { name: 'Проклятие плоти', kind: 'mark', charge: 18, power: 2, duration: 8 } },
-      { id: 'ragnar', name: 'Рагнар', role: 'Рыцарь смерти', rarity: 'A', baseDps: 6e9, attackInterval: 1.5,
-        hireCost: 1e9, costGrowth: 1.05, ult: { name: 'Знамя мёртвых', kind: 'teamBuff', charge: 20, power: 2.5, duration: 6 } },
-      { id: 'seiren', name: 'Сэйрен', role: 'Повелительница бурь', rarity: 'S', baseDps: 3e11, attackInterval: 0.7,
-        hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Око бури', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
-      { id: 'kassian', name: 'Кассиан', role: 'Тёмный паладин', rarity: 'SS', baseDps: 2e12, attackInterval: 1.0,
-        hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Клятва тьмы', kind: 'critBuff', charge: 20, chance: 0.25, dmg: 1.5, duration: 7 } },
-      { id: 'nyx', name: 'Никс', role: 'Королева ночи', rarity: 'SSS', baseDps: 7e12, attackInterval: 0.8,
-        hireCost: 5e11, costGrowth: 1.05, ult: { name: 'Беззвёздная ночь', kind: 'nuke', charge: 15, power: 30 } },
-      { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', baseDps: 2e13, attackInterval: 0.9,
-        hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд пепла', kind: 'nuke', charge: 15, power: 40 } },
-      // скрытая: рецепт — пожертвовать за раз по копии всех четырёх героев стартового отряда
-      { id: 'morra', name: 'Морра', role: 'Хранительница Алтаря', rarity: 'A', hidden: true, baseDps: 1e8, attackInterval: 1.2,
-        hireCost: 2e7, costGrowth: 1.05, ult: { name: 'Печать жертвы', kind: 'teamBuff', charge: 20, power: 2.2, duration: 7 },
-        recipe: ['irene', 'borg', 'lia', 'kael'] },
-      // сезонные (GDD §11): не выпадают в портале; бесплатно — тропой сезона или обменом жетонов; возвращаются в следующих сезонах
-      { id: 'carna', name: 'Карна', role: 'Маска карнавала', rarity: 'S', seasonal: true, baseDps: 2e11, attackInterval: 0.8,
-        hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Фейерверк', kind: 'nuke', charge: 14, power: 30 } },
-      { id: 'yuki', name: 'Юки', role: 'Снежная жрица', rarity: 'S', seasonal: true, baseDps: 1.5e11, attackInterval: 1.0,
-        hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Вьюга', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
+      { id: 'shorokh', name: 'Шорох', role: 'Теневая тварь', rarity: 'E', side: 'Тени', faction: 'Тени', starter: true, baseDps: 4, attackInterval: 0.8, hireCost: 25, costGrowth: 1.05, ult: { name: 'Теневой шквал', kind: 'nuke', charge: 12, power: 20 } },
+      { id: 'kostik', name: 'Костик', role: 'Скелет-боец', rarity: 'E', side: 'Тьма', faction: 'Нежить', starter: true, baseDps: 120, attackInterval: 1.6, hireCost: 400, costGrowth: 1.05, ult: { name: 'Костяной клич', kind: 'teamBuff', charge: 20, power: 2, duration: 6 } },
+      { id: 'shmyg', name: 'Шмыг', role: 'Гоблин', rarity: 'E', side: 'Дикие', faction: 'Дикий лес', starter: true, baseDps: 4000, attackInterval: 1.1, hireCost: 7000, costGrowth: 1.05, ult: { name: 'Метка вора', kind: 'mark', charge: 18, power: 1.5, duration: 8 } },
+      { id: 'lumi', name: 'Люми', role: 'Светлячок-дух', rarity: 'E', side: 'Свет', faction: 'Свет', starter: true, baseDps: 150000, attackInterval: 0.45, hireCost: 120000, costGrowth: 1.05, ult: { name: 'Вспышка надежды', kind: 'tapBuff', charge: 25, power: 3, duration: 8 } },
+      { id: 'irene', name: 'Ирэн', role: 'Эльфийка тени, лучница', rarity: 'E', side: 'Тени', faction: 'Тени', baseDps: 18, attackInterval: 1.0, hireCost: 100, costGrowth: 1.05, ult: { name: 'Ливень стрел', kind: 'nuke', charge: 15, power: 15 } },
+      { id: 'zlatokryl', name: 'Златокрыл', role: 'Молодой грифон', rarity: 'D', side: 'Свет', faction: 'Буря', baseDps: 900, attackInterval: 1.4, hireCost: 2e3, costGrowth: 1.05, ult: { name: 'Клич неба', kind: 'teamBuff', charge: 20, power: 1.9, duration: 6 } },
+      { id: 'morgul', name: 'Моргул', role: 'Упырь', rarity: 'D', side: 'Тьма', faction: 'Нежить', baseDps: 1.01e3, attackInterval: 1.1, hireCost: 2.24e3, costGrowth: 1.05, ult: { name: 'Гнилой укус', kind: 'mark', charge: 18, power: 1.58, duration: 8 } },
+      { id: 'krag', name: 'Краг', role: 'Орк', rarity: 'D', side: 'Дикие', faction: 'Война', baseDps: 1.12e3, attackInterval: 1.0, hireCost: 2.48e3, costGrowth: 1.05, ult: { name: 'Дубьё', kind: 'nuke', charge: 15, power: 18 } },
+      { id: 'borg', name: 'Борг', role: 'Орк-берсерк', rarity: 'D', side: 'Дикие', faction: 'Война', baseDps: 1.22e3, attackInterval: 1.4, hireCost: 2.72e3, costGrowth: 1.05, ult: { name: 'Ярость', kind: 'teamBuff', charge: 20, power: 1.9, duration: 6 } },
+      { id: 'nokt', name: 'Нокт', role: 'Теневой гоблин', rarity: 'D', side: 'Тени', faction: 'Тени', baseDps: 1.33e3, attackInterval: 0.7, hireCost: 2.96e3, costGrowth: 1.05, ult: { name: 'Двойной нож', kind: 'critBuff', charge: 17, chance: 0.135, dmg: 0.62, duration: 6 } },
+      { id: 'saya', name: 'Сая', role: 'Полуэльфийка, метательница ножей', rarity: 'D', side: 'Тени', faction: 'Тени', baseDps: 900, attackInterval: 0.6, hireCost: 2000, costGrowth: 1.05, ult: { name: 'Ядовитые клинки', kind: 'critBuff', charge: 16, chance: 0.15, dmg: 0.5, duration: 6 } },
+      { id: 'auron', name: 'Аурон', role: 'Ожившие доспехи', rarity: 'C', side: 'Свет', faction: 'Свет', baseDps: 4e4, attackInterval: 1.1, hireCost: 4e4, costGrowth: 1.05, ult: { name: 'Святая метка', kind: 'mark', charge: 18, power: 1.66, duration: 8 } },
+      { id: 'grim', name: 'Грим', role: 'Парящий череп-колдун', rarity: 'C', side: 'Тьма', faction: 'Нежить', baseDps: 4.48e4, attackInterval: 0.6, hireCost: 4.48e4, costGrowth: 1.05, ult: { name: 'Чёрная корона', kind: 'tapBuff', charge: 22, power: 3.3, duration: 8 } },
+      { id: 'gnar', name: 'Гнар', role: 'Пещерный волк', rarity: 'C', side: 'Дикие', faction: 'Дикий лес', baseDps: 4.96e4, attackInterval: 1.1, hireCost: 4.96e4, costGrowth: 1.05, ult: { name: 'След зверя', kind: 'mark', charge: 18, power: 1.66, duration: 8 } },
+      { id: 'drake', name: 'Дрейк', role: 'Драконорождённый копейщик', rarity: 'C', side: 'Дикие', faction: 'Война', baseDps: 40000, attackInterval: 1.2, hireCost: 40000, costGrowth: 1.05, ult: { name: 'Чешуя отца', kind: 'teamBuff', charge: 22, power: 1.8, duration: 6 } },
+      { id: 'morrak', name: 'Моррак', role: 'Призрачный волк', rarity: 'C', side: 'Тени', faction: 'Тени', baseDps: 5.92e4, attackInterval: 1.1, hireCost: 5.92e4, costGrowth: 1.05, ult: { name: 'Фиолетовая пасть', kind: 'mark', charge: 18, power: 1.66, duration: 8 } },
+      { id: 'seraphim', name: 'Серафим', role: 'Четырёхкрылый ангел', rarity: 'B', side: 'Свет', faction: 'Свет', baseDps: 4e6, attackInterval: 1.0, hireCost: 2e6, costGrowth: 1.05, ult: { name: 'Небесный разрез', kind: 'nuke', charge: 14, power: 24 } },
+      { id: 'kristalis', name: 'Кристалис', role: 'Кристаллический голем', rarity: 'B', side: 'Свет', faction: 'Лёд', baseDps: 4.48e6, attackInterval: 1.4, hireCost: 2.24e6, costGrowth: 1.05, ult: { name: 'Призма', kind: 'teamBuff', charge: 20, power: 2.1, duration: 6 } },
+      { id: 'vorgat', name: 'Воргат', role: 'Рогатый демон-палач', rarity: 'B', side: 'Тьма', faction: 'Пламя', baseDps: 4.96e6, attackInterval: 1.0, hireCost: 2.48e6, costGrowth: 1.05, ult: { name: 'Казнь', kind: 'nuke', charge: 14, power: 24 } },
+      { id: 'nekris', name: 'Некрис', role: 'Костяной паук', rarity: 'B', side: 'Тьма', faction: 'Нежить', baseDps: 5.44e6, attackInterval: 1.1, hireCost: 2.72e6, costGrowth: 1.05, ult: { name: 'Паутина из костей', kind: 'mark', charge: 18, power: 1.74, duration: 8 } },
+      { id: 'brum', name: 'Брум', role: 'Болотный тролль', rarity: 'B', side: 'Дикие', faction: 'Дикий лес', baseDps: 5.92e6, attackInterval: 1.4, hireCost: 2.96e6, costGrowth: 1.05, ult: { name: 'Мшистая спина', kind: 'teamBuff', charge: 20, power: 2.1, duration: 6 } },
+      { id: 'skrit', name: 'Скрит', role: 'Гоблин-шаман', rarity: 'B', side: 'Дикие', faction: 'Дикий лес', baseDps: 6.4e6, attackInterval: 0.6, hireCost: 3.2e6, costGrowth: 1.05, ult: { name: 'Тотем предков', kind: 'tapBuff', charge: 22, power: 3.45, duration: 8 } },
+      { id: 'veil', name: 'Вейл', role: 'Безликий лучник', rarity: 'B', side: 'Тени', faction: 'Тени', baseDps: 4e6, attackInterval: 1.4, hireCost: 2e6, costGrowth: 1.05, ult: { name: 'Теневая стрела', kind: 'nuke', charge: 14, power: 25 } },
+      { id: 'zerik', name: 'Зерик', role: 'Теневой паук', rarity: 'B', side: 'Тени', faction: 'Бездна', baseDps: 7.36e6, attackInterval: 1.1, hireCost: 3.68e6, costGrowth: 1.05, ult: { name: 'Фиолетовое ядро', kind: 'mark', charge: 18, power: 1.74, duration: 8 } },
+      { id: 'eliria', name: 'Элирия', role: 'Небесная жрица', rarity: 'A', side: 'Свет', faction: 'Свет', baseDps: 2e8, attackInterval: 0.6, hireCost: 5e7, costGrowth: 1.05, ult: { name: 'Благословение печати', kind: 'tapBuff', charge: 22, power: 3.6, duration: 8 } },
+      { id: 'solarion', name: 'Соларион', role: 'Солнечный лев', rarity: 'A', side: 'Свет', faction: 'Свет', baseDps: 2.24e8, attackInterval: 1.0, hireCost: 5.6e7, costGrowth: 1.05, ult: { name: 'Рык полудня', kind: 'nuke', charge: 15, power: 27 } },
+      { id: 'malgora', name: 'Малгора', role: 'Четырёхрогая демонесса', rarity: 'A', side: 'Тьма', faction: 'Пламя', baseDps: 2.48e8, attackInterval: 0.7, hireCost: 6.2e7, costGrowth: 1.05, ult: { name: 'Хвост-клинок', kind: 'critBuff', charge: 17, chance: 0.18, dmg: 0.98, duration: 6 } },
+      { id: 'rotgar', name: 'Ротгар', role: 'Рыцарь смерти', rarity: 'A', side: 'Тьма', faction: 'Нежить', baseDps: 6e9, attackInterval: 1.5, hireCost: 1e9, costGrowth: 1.05, ult: { name: 'Мёртвый строй', kind: 'teamBuff', charge: 20, power: 2.5, duration: 6 } },
+      { id: 'velma', name: 'Вельма', role: 'Некромантка-нежить', rarity: 'A', side: 'Тьма', faction: 'Нежить', baseDps: 2e8, attackInterval: 1.0, hireCost: 5e7, costGrowth: 1.05, ult: { name: 'Смена хозяина', kind: 'mark', charge: 18, power: 2, duration: 8 } },
+      { id: 'morra', name: 'Морра', role: 'Хранительница Алтаря', rarity: 'A', side: 'Тьма', faction: 'Кровь', hidden: true, baseDps: 1e8, attackInterval: 1.2, hireCost: 2e7, costGrowth: 1.05, ult: { name: 'Каждая жертва', kind: 'teamBuff', charge: 20, power: 2.2, duration: 7 }, recipe: ['shorokh', 'kostik', 'shmyg', 'lumi'] },
+      { id: 'urgash', name: 'Ургаш', role: 'Орк-берсерк', rarity: 'A', side: 'Дикие', faction: 'Война', baseDps: 3.44e8, attackInterval: 0.7, hireCost: 8.6e7, costGrowth: 1.05, ult: { name: 'Красная раскраска', kind: 'critBuff', charge: 17, chance: 0.18, dmg: 0.98, duration: 6 } },
+      { id: 'taurok', name: 'Таурок', role: 'Минотавр', rarity: 'A', side: 'Дикие', faction: 'Война', baseDps: 3.68e8, attackInterval: 1.0, hireCost: 9.2e7, costGrowth: 1.05, ult: { name: 'Таран', kind: 'nuke', charge: 15, power: 27 } },
+      { id: 'kaeron', name: 'Каэрон', role: 'Теневой рыцарь, Клинок Бездны', rarity: 'A', side: 'Тени', faction: 'Тени', baseDps: 3.92e8, attackInterval: 1.0, hireCost: 9.8e7, costGrowth: 1.05, ult: { name: 'Приговор Бездны', kind: 'nuke', charge: 15, power: 27 } },
+      { id: 'noktar', name: 'Ноктар', role: 'Теневой маг', rarity: 'A', side: 'Тени', faction: 'Бездна', baseDps: 4.16e8, attackInterval: 0.6, hireCost: 1.04e8, costGrowth: 1.05, ult: { name: 'Шесть глаз', kind: 'tapBuff', charge: 22, power: 3.6, duration: 8 } },
+      { id: 'yuki', name: 'Юки', role: 'Дух первого снега', rarity: 'S', side: 'Свет', faction: 'Лёд', seasonal: true, baseDps: 1.5e11, attackInterval: 1.0, hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Белое безмолвие', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
+      { id: 'seiren', name: 'Сэйрен', role: 'Сирена бурь', rarity: 'S', side: 'Свет', faction: 'Буря', baseDps: 3e11, attackInterval: 0.7, hireCost: 3e10, costGrowth: 1.05, ult: { name: 'Песнь шторма', kind: 'tapBuff', charge: 22, power: 4, duration: 8 } },
+      { id: 'valtar', name: 'Вальтар', role: 'Ангел-каратель', rarity: 'S', side: 'Свет', faction: 'Свет', baseDps: 3.1e11, attackInterval: 1.0, hireCost: 3.1e10, costGrowth: 1.05, ult: { name: 'Приговор небес', kind: 'nuke', charge: 16, power: 30 } },
+      { id: 'beltraks', name: 'Белтракс', role: 'Четырёхрукий демон', rarity: 'S', side: 'Тьма', faction: 'Кровь', baseDps: 3.4e11, attackInterval: 0.7, hireCost: 3.4e10, costGrowth: 1.05, ult: { name: 'Четыре клинка', kind: 'critBuff', charge: 17, chance: 0.195, dmg: 1.1, duration: 6 } },
+      { id: 'carna', name: 'Карна', role: 'Фея карнавала', rarity: 'S', side: 'Дикие', faction: 'Дикий лес', seasonal: true, baseDps: 3.7e11, attackInterval: 1.0, hireCost: 3.7e10, costGrowth: 1.05, ult: { name: 'Последний номер', kind: 'nuke', charge: 16, power: 30 } },
+      { id: 'fenra', name: 'Фенра', role: 'Древняя волчица', rarity: 'S', side: 'Дикие', faction: 'Дикий лес', baseDps: 4e11, attackInterval: 1.4, hireCost: 4e10, costGrowth: 1.05, ult: { name: 'Лунный вой', kind: 'teamBuff', charge: 20, power: 2.3, duration: 6 } },
+      { id: 'vargos', name: 'Варгос', role: 'Теневой генерал', rarity: 'S', side: 'Тени', faction: 'Тени', baseDps: 4.3e11, attackInterval: 1.4, hireCost: 4.3e10, costGrowth: 1.05, ult: { name: 'Призрачная армия', kind: 'teamBuff', charge: 20, power: 2.3, duration: 6 } },
+      { id: 'astrael', name: 'Астраэль', role: 'Шестикрылый страж', rarity: 'SS', side: 'Свет', faction: 'Буря', baseDps: 2e12, attackInterval: 1.4, hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Звёздная корона', kind: 'teamBuff', charge: 20, power: 2.4, duration: 6 } },
+      { id: 'kassian', name: 'Кассиан', role: 'Падший паладин', rarity: 'SS', side: 'Тьма', faction: 'Кровь', baseDps: 2e12, attackInterval: 1.0, hireCost: 2e11, costGrowth: 1.05, ult: { name: 'Договор крови', kind: 'critBuff', charge: 20, chance: 0.25, dmg: 1.5, duration: 7 } },
+      { id: 'azragor', name: 'Азрагор', role: 'Древний лич', rarity: 'SS', side: 'Тьма', faction: 'Нежить', baseDps: 2.48e12, attackInterval: 1.1, hireCost: 2.48e11, costGrowth: 1.05, ult: { name: 'Корона черепов', kind: 'mark', charge: 18, power: 1.98, duration: 8 } },
+      { id: 'gromtar', name: 'Громтар', role: 'Каменный исполин', rarity: 'SS', side: 'Дикие', faction: 'Дикий лес', baseDps: 2.72e12, attackInterval: 1.1, hireCost: 2.72e11, costGrowth: 1.05, ult: { name: 'Корни горы', kind: 'mark', charge: 18, power: 1.98, duration: 8 } },
+      { id: 'umbragor', name: 'Умбрагор', role: 'Теневой дракон', rarity: 'SS', side: 'Тени', faction: 'Бездна', baseDps: 2.96e12, attackInterval: 1.0, hireCost: 2.96e11, costGrowth: 1.05, ult: { name: 'Фиолетовый огонь', kind: 'nuke', charge: 14, power: 33 } },
+      { id: 'nyx', name: 'Никс', role: 'Королева ночи', rarity: 'SSS', side: 'Тени', faction: 'Тени', baseDps: 7e12, attackInterval: 0.8, hireCost: 5e11, costGrowth: 1.05, ult: { name: 'Звёзды гаснут', kind: 'nuke', charge: 15, power: 30 } },
+      { id: 'eon', name: 'Эон', role: 'Первородный феникс', rarity: 'GOD', side: 'Свет', faction: 'Свет', baseDps: 2e13, attackInterval: 1.0, hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Солнечный хвост', kind: 'nuke', charge: 16, power: 39 } },
+      { id: 'azrael', name: 'Азраэль', role: 'Ангел пепла', rarity: 'GOD', side: 'Свет', faction: 'Свет', baseDps: 2e13, attackInterval: 0.9, hireCost: 1e12, costGrowth: 1.05, ult: { name: 'Суд из пепла', kind: 'nuke', charge: 15, power: 40 } },
+      { id: 'abadron', name: 'Абадрон', role: 'Владыка преисподней', rarity: 'GOD', side: 'Тьма', faction: 'Пламя', baseDps: 2.48e13, attackInterval: 1.4, hireCost: 1.24e12, costGrowth: 1.05, ult: { name: 'Адское сердце', kind: 'teamBuff', charge: 20, power: 2.6, duration: 6 } },
+      { id: 'ignisar', name: 'Игнисар', role: 'Первобытный дракон', rarity: 'GOD', side: 'Дикие', faction: 'Война', baseDps: 2.72e13, attackInterval: 1.0, hireCost: 1.36e12, costGrowth: 1.05, ult: { name: 'Вулканическое дыхание', kind: 'nuke', charge: 16, power: 39 } },
+      { id: 'erebor', name: 'Эребор', role: 'Первородная тень', rarity: 'GOD', side: 'Тени', faction: 'Бездна', baseDps: 2.96e13, attackInterval: 1.1, hireCost: 1.48e12, costGrowth: 1.05, ult: { name: 'Ядро Бездны', kind: 'mark', charge: 18, power: 2.14, duration: 8 } },
     ],
   };
-  const FACTION_OF = { irene: 'Тени', borg: 'Война', lia: 'Пламя', kael: 'Бездна', garret: 'Война', saya: 'Тени', drake: 'Дикий лес',
-    noa: 'Буря', velma: 'Нежить', ragnar: 'Нежить', seiren: 'Буря', kassian: 'Кровь', nyx: 'Тени', azrael: 'Свет', morra: 'Кровь',
-    carna: 'Пламя', yuki: 'Лёд' };
-  for (const a of CONFIG.allies) if (!a.faction) a.faction = FACTION_OF[a.id] || 'Тени';
   // 0.51 (ответ 20): «Сердца стража» слиты в осколки. Все награды из CONFIG вида { heart: n } пересчитываются в осколки
   // (n × heartRecipe), чтобы интерфейс и выдача показывали одну валюту. Справочник CONFIG.materials не трогаем.
   (function heartsToShards(o, top) {
@@ -707,42 +719,114 @@
     for (const k in o) if (!(top && k === 'materials')) heartsToShards(o[k], false);
   })(CONFIG, true);
 
+  // 0.67: прежние id → новые (по слотам и статам): стартовые Ирэн/Борг/Лиа/Каэль → Шорох/Костик/Шмыг/Люми, Гаррет → Ирэн, Ноа → Вейл, Рагнар → Ротгар
+  const HERO_MIGRATE = { irene: 'shorokh', borg: 'kostik', lia: 'shmyg', kael: 'lumi', garret: 'irene', noa: 'veil', ragnar: 'rotgar' };
   // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
   const LORE = {
-    irene:  { race: 'Эльфийка тени',  cls: 'Стрелок',   quote: 'Тень не промахивается.',
-      story: 'Последняя из лесной стражи теней. Ушла в Башню за убийцей своей сестры — и нашла его на сороковом этаже, уже мёртвым. С тех пор ищет, кто его опередил.' },
-    borg:   { race: 'Орк',            cls: 'Воин',      quote: 'Больше врагов — больше ярости!',
-      story: 'Вождь без племени: своих он увёл через Врата, но вернулся один. Говорит, что ярость — единственное, что Башня не может отнять.' },
-    lia:    { race: 'Человек',        cls: 'Маг огня',  quote: 'Всё сгорит — и станет светом.',
-      story: 'Училась в академии пламени, пока огонь не ответил ей сам. Теперь она слышит его шёпот и не уверена, кто из них кем управляет.' },
-    kael:   { race: 'Полудемон',      cls: 'Убийца',    quote: 'Бездна смотрит моими глазами.',
-      story: 'Наполовину человек, наполовину то, что живёт за краем Бездны. Каждую ночь торгуется с собственной тенью — и пока выигрывает.' },
-    garret: { race: 'Человек',        cls: 'Страж',     quote: 'Я не герой. Я просто не отступаю.',
-      story: 'Простой ополченец из пограничной деревни. Не ищет славы — просто ни разу не отступил, и Башня это запомнила.' },
-    saya:   { race: 'Полуэльфийка',   cls: 'Убийца',    quote: 'Один нож — один ответ.',
-      story: 'Бродячая метательница ножей. Говорит, что её клинки возвращаются сами, — и никто ещё не видел, чтобы она их подбирала.' },
-    drake:  { race: 'Драконорождённый', cls: 'Воин',    quote: 'Копьё помнит каждого врага.',
-      story: 'Драконорождённый копейщик. Его копьё — чешуя отца, павшего у подножия Башни. Каждый удар — шаг к тому, кто это сделал.' },
-    noa:    { race: 'Человек',        cls: 'Маг бури',  quote: 'Гром — это просто мой голос.',
-      story: 'Юный громовой маг, сбежавший от учителя. Учитель — Сэйрен. Она до сих пор ищет его, и он это знает.' },
-    velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.',
-      story: 'Некромантка, которая однажды подняла не того — и не смогла отпустить. Рагнар идёт за ней с тех пор, верный и мёртвый.' },
-    ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.',
-      story: 'Рыцарь, павший за чужого короля. Поднятый Вельмой, он выбрал служить ей — первый выбор, сделанный им самим.' },
-    seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.',
-      story: 'Повелительница бурь с далёких берегов. Её песня топила флоты. В Башне она поёт тише — бережёт голос для вершины.' },
-    kassian: { race: 'Падший паладин', cls: 'Страж',   quote: 'Мой свет погас. Осталась клятва.',
-      story: 'Паладин, чей свет погас в Бездне. Он заключил договор крови, чтобы выжить, и теперь платит по нему каждый день.' },
-    nyx:    { race: 'Дитя ночи',      cls: 'Тень',      quote: 'Звёзды гаснут, когда я прихожу.',
-      story: 'Королева ночи, правившая городом, которого больше нет. Говорят, она сама погасила его огни, чтобы спрятать от Башни.' },
-    azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.',
-      story: 'Ангел, сожжённый собственным судом. Из пепла он вынес лишь меч и уверенность, что вершина Башни должна быть сожжена.' },
-    morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.',
-      story: 'Хранительница Алтаря с первого дня Башни. Она помнит каждую жертву по имени — и ждёт ту, что откроет последнюю дверь.' },
-    carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!',
-      story: 'Фея кочующего карнавала. Её представления длятся одну ночь, а зрители потом годами не могут вспомнить, где были.' },
-    yuki:   { race: 'Дух снега',      cls: 'Жрица',     quote: 'Тишина зимы крепче стали.',
-      story: 'Дух первого снега. Она пришла в Башню погасить пламя, которое растёт на её верхних этажах, — и пока проигрывает.' },
+    shorokh: { race: 'Теневая тварь', cls: 'Метка', quote: '…ш-ш-ш…',
+      story: 'Маленькое бесформенное существо с двумя глазами и дымящимися лапами. Привязалось к Призванному, как котёнок.' },
+    kostik: { race: 'Скелет-боец', cls: 'Удар', quote: '…',
+      story: 'Большой череп, ржавый шлем, костяная дубинка. Не помнит, кем был. Решил, что был героем.' },
+    shmyg: { race: 'Гоблин', cls: 'Криты', quote: '…',
+      story: 'Маленький, ушастый, огромный кинжал, хитрая ухмылка. Стащил у Башни больше, чем любой герой.' },
+    lumi: { race: 'Светлячок-дух', cls: 'Удар', quote: 'А что там, наверху? А там? А там?',
+      story: 'Маленький летающий светлячок с сияющим телом и прозрачными крылышками. Первый, кто откликнулся на Печать Призыва, — просто из любопытства.' },
+    irene: { race: 'Эльфийка тени, лучница', cls: 'Удар', quote: '…',
+      story: 'Последняя из лесной стражи теней. Пришла за убийцей сестры — и нашла его мёртвым. Ищет, кто её опередил.' },
+    zlatokryl: { race: 'Молодой грифон', cls: 'Усиление отряда', quote: '…',
+      story: 'Золотые перья, белая шерсть, массивные когти. Сбежал из небесного гнезда, чтобы доказать, что достоин неба.' },
+    morgul: { race: 'Упырь', cls: 'Метка', quote: '…',
+      story: 'Сгорбленный, длинные когти, рваные уши, гниющая кожа. Падальщик катакомб; служит тому, кто кормит.' },
+    krag: { race: 'Орк', cls: 'Удар', quote: '…',
+      story: 'Коренастый, нижние клыки, дубина, броня из шкур. Простой, как его дубина.' },
+    borg: { race: 'Орк-берсерк', cls: 'Усиление отряда', quote: 'Больше врагов — больше ярости!',
+      story: 'Вождь без племени: своих увёл через Врата, вернулся один. Ярость — единственное, что Башня не отняла.' },
+    nokt: { race: 'Теневой гоблин', cls: 'Криты', quote: '…',
+      story: 'Длинные уши, кинжалы, полупрозрачные конечности. Бывший гоблин Диких, умерший в Башне и вернувшийся тенью.' },
+    saya: { race: 'Полуэльфийка, метательница ножей', cls: 'Криты', quote: '…',
+      story: 'Говорит, что её ножи возвращаются сами, — никто не видел, чтобы она их подбирала.' },
+    auron: { race: 'Ожившие доспехи', cls: 'Метка', quote: '…',
+      story: 'Рыцарские латы с пустотой внутри, светящиеся швы, длинное копьё. Внутри когда-то был паладин; что осталось — лишь клятва.' },
+    grim: { race: 'Парящий череп-колдун', cls: 'Усиление героя', quote: '…',
+      story: 'Горящие глаза, костяная корона, дым. Мелкий лич, мечтающий о большом склепе.' },
+    gnar: { race: 'Пещерный волк', cls: 'Метка', quote: '…',
+      story: 'Мощные лапы, костяные наросты на спине. Чует выходы — которых в Башне нет.' },
+    drake: { race: 'Драконорождённый копейщик', cls: 'Усиление отряда', quote: '…',
+      story: 'Его копьё — чешуя отца, павшего у подножия Башни. Каждый удар — шаг к тому, кто это сделал (это Игнисар? — тайна для ивента).' },
+    morrak: { race: 'Призрачный волк', cls: 'Метка', quote: '…',
+      story: 'Дымчатая шерсть, фиолетовая пасть. Тень одного из волков Фенры.' },
+    seraphim: { race: 'Четырёхкрылый ангел', cls: 'Удар', quote: '…',
+      story: 'Серебряно-золотые латы, изогнутый меч. Младший страж Престола, приставленный следить за Призванным. Пока следит.' },
+    kristalis: { race: 'Кристаллический голем', cls: 'Усиление отряда', quote: '…свет… дальше… свет…',
+      story: 'Прозрачные кристаллы на золотых креплениях. Живой маяк Престола: свет, проходя сквозь него, становится сильнее.' },
+    vorgat: { race: 'Рогатый демон-палач', cls: 'Удар', quote: '…',
+      story: 'Тяжёлый топор, раскалённые трещины на коже. Первым предложил Призванному договор крови — и честно его выполняет.' },
+    nekris: { race: 'Костяной паук', cls: 'Метка', quote: '…щёлк… щёлк… ещё одна кость…',
+      story: 'Восемь длинных конечностей, шипы. Плетёт сети из костей павших призванных.' },
+    brum: { race: 'Болотный тролль', cls: 'Усиление отряда', quote: 'Брум спал. Зачем разбудил?',
+      story: 'Мох на спине, массивные кулаки, грибы на плечах. Медленный и добрый — пока не разбудишь.' },
+    skrit: { race: 'Гоблин-шаман', cls: 'Усиление героя', quote: '…',
+      story: 'Деревянная маска, костяной посох, тотемы. Слышит духов проглоченных земель.' },
+    veil: { race: 'Безликий лучник', cls: 'Удар', quote: '…',
+      story: 'Рваный плащ, теневой лук. Не помнит своего лица — и стреляет в тех, у кого оно есть.' },
+    zerik: { race: 'Теневой паук', cls: 'Метка', quote: '…',
+      story: 'Полупрозрачное тело, фиолетовое ядро. Плетёт сети между мирами.' },
+    eliria: { race: 'Небесная жрица', cls: 'Усиление героя', quote: '…',
+      story: 'Нимб, длинные одежды, магические печати. Верит, что печать Башни спасёт миры, — и что Призванный станет её ключом.' },
+    solarion: { race: 'Солнечный лев', cls: 'Удар', quote: '…',
+      story: 'Пламенная грива, солнечные узоры, броня на лапах. Зверь-хранитель Престола; презирает ангелов за их холодную логику.' },
+    malgora: { race: 'Четырёхрогая демонесса', cls: 'Криты', quote: '…',
+      story: 'Бронированный хвост, длинные когти. Генерал Преисподней; ставит на Призванного, как на скакуна.' },
+    rotgar: { race: 'Рыцарь смерти', cls: 'Усиление отряда', quote: '…',
+      story: 'Разрушенные латы, чёрный меч, красные глаза. Пал за чужого короля; теперь служит только себе — и тому, кто его поднял.' },
+    velma: { race: 'Некромантка-нежить', cls: 'Метка', quote: '…',
+      story: 'Однажды подняла не того и не смогла отпустить. Ротгар идёт за ней — верный и мёртвый (связь «Мёртвый легион»).' },
+    morra: { race: 'Хранительница Алтаря', cls: 'Усиление отряда', quote: '…',
+      story: 'Хранительница Алтаря с первого дня Башни. Помнит каждую жертву по имени — и ждёт ту, что откроет последнюю дверь.' },
+    urgash: { race: 'Орк-берсерк', cls: 'Криты', quote: '…',
+      story: 'Боевая раскраска, зазубренная секира. Соперник Борга — и единственный, кого Борг называет братом.' },
+    taurok: { race: 'Минотавр', cls: 'Удар', quote: '…',
+      story: 'Кольца на рогах, массивные копыта, тяжёлая броня. Выросший в Зеркальном лабиринте — и вышедший из него.' },
+    kaeron: { race: 'Теневой рыцарь, Клинок Бездны', cls: 'Удар', quote: '…Ты звал. Мы ответили.',
+      story: 'Бывший командир королевской стражи Эльдраса; погиб, защищая крепость от Бездны, и стал безмолвным теневым воином. Холодный, молчаливый, преданный. Ульта: поднимает меч — огромная теневая копия — гигантский разлом на враге.' },
+    noktar: { race: 'Теневой маг', cls: 'Усиление героя', quote: '…',
+      story: 'Шесть энергетических глаз, магические кольца. Видит Бездну насквозь — и боится того, что видит.' },
+    yuki: { race: 'Дух первого снега', cls: 'уникальная ульта', quote: '…',
+      story: 'Пришла погасить пламя на верхних этажах Башни — и пока проигрывает.' },
+    seiren: { race: 'Сирена бурь', cls: 'уникальная ульта', quote: '…',
+      story: 'Её песня топила флоты. В Башне поёт тише — бережёт голос для вершины.' },
+    valtar: { race: 'Ангел-каратель', cls: 'уникальная ульта', quote: '…',
+      story: 'Тяжёлая броня, металлические перья, алебарда. Карает призванных, нарушивших закон Престола. Призванный — первый, кого он не смог покарать.' },
+    beltraks: { race: 'Четырёхрукий демон', cls: 'уникальная ульта', quote: '…',
+      story: 'Парные клинки, рога, багровые прожилки. Чемпион Кровавой арены, не проигравший ни разу.' },
+    carna: { race: 'Фея карнавала', cls: 'уникальная ульта', quote: 'Улыбнись — это последний номер!',
+      story: 'Её представления длятся одну ночь; зрители потом годами не могут вспомнить, где были.' },
+    fenra: { race: 'Древняя волчица', cls: 'уникальная ульта', quote: '…',
+      story: 'Серебристая шерсть, лунные узоры. Мать всех волков Первобытных Земель.' },
+    vargos: { race: 'Теневой генерал', cls: 'уникальная ульта', quote: '…',
+      story: 'Рогатая броня, алебарда, дымный плащ. Командует всеми павшими в Башне; присягнул Призванному последним.' },
+    astrael: { race: 'Шестикрылый страж', cls: 'уникальная ульта', quote: '…',
+      story: 'Звёздная корона, сияющий меч, парящие латы. Страж ворот Престола; видел, как Башня пробила небо Эльдраса, и не успел.' },
+    kassian: { race: 'Падший паладин', cls: 'уникальная ульта', quote: '…',
+      story: 'Его свет погас в Бездне; он заключил договор крови, чтобы выжить, и платит каждый день. Свет называет его предателем, Тьма — своим.' },
+    azragor: { race: 'Древний лич', cls: 'уникальная ульта', quote: '…',
+      story: 'Корона из черепов, парящие костяные руки. Король под Курганом; помнит Эльдрас живым.' },
+    gromtar: { race: 'Каменный исполин', cls: 'уникальная ульта', quote: '…',
+      story: 'Корни вместо сухожилий, светящиеся руны. Гора, которую Башня проглотила, — и которая проснулась внутри.' },
+    umbragor: { race: 'Теневой дракон', cls: 'уникальная ульта', quote: '…',
+      story: 'Полупрозрачные крылья, фиолетовый огонь. Тень дракона, убитого Игнисаром.' },
+    nyx: { race: 'Королева ночи', cls: 'уникальная ульта', quote: '…',
+      story: 'Правила городом, которого больше нет. Говорят, сама погасила его огни, чтобы спрятать от Башни.' },
+    eon: { race: 'Первородный феникс', cls: 'уникальная ульта', quote: '…',
+      story: 'Бело-золотое пламя, хвост солнечной энергии. Умирает и рождается с каждым циклом Башни — и помнит каждый.' },
+    azrael: { race: 'Ангел пепла', cls: 'уникальная ульта', quote: '…',
+      story: 'Сожжён собственным судом Престола. Из пепла вынес меч и уверенность, что вершину надо сжечь, — Свет его за это изгнал.' },
+    abadron: { race: 'Владыка преисподней', cls: 'уникальная ульта', quote: '…',
+      story: 'Колоссальный, шесть рогов, адское сердце. Хочет трон Башни — и, возможно, единственный, кто готов честно его делить.' },
+    ignisar: { race: 'Первобытный дракон', cls: 'уникальная ульта', quote: '…',
+      story: 'Вулканическая чешуя, раскалённые рога. Старейший зверь Диких; первым ударил в стену Башни и проиграл.' },
+    erebor: { race: 'Первородная тень', cls: 'уникальная ульта', quote: '…',
+      story: 'Сияющее ядро, корона, призрачные руки. То, что осталось от прошлой Башни. Знает правду о вершине — и ждёт, кто спросит.' },
   };
   for (const a of CONFIG.allies) Object.assign(a, LORE[a.id] || {});
   // Понятное описание ультимейта по его виду
@@ -2712,7 +2796,7 @@
     f = f || {};
     const pow = id => s.heroes[id].unlocked ? B.log10(B.max(allyDpsAt(id, Math.max(1, s.allies[id].level)), 1e-300)) + Math.log10(heroMult(s, id)) : -Infinity;
     return CONFIG.allies.filter(a => !a.hidden || s.heroes[a.id].unlocked)
-      .filter(a => (!f.faction || a.faction === f.faction) && (!f.rarity || a.rarity === f.rarity) && (!f.role || roleOf(a) === f.role)
+      .filter(a => (!f.side || a.side === f.side) && (!f.faction || a.faction === f.faction) && (!f.rarity || a.rarity === f.rarity) && (!f.role || roleOf(a) === f.role)
                 && (!f.fav || isFav(s, a.id)) && (!f.owned || s.heroes[a.id].unlocked))
       .sort((a, b) => (isFav(s, b.id) - isFav(s, a.id)) || (s.heroes[b.id].unlocked - s.heroes[a.id].unlocked)
         || (f.sort === 'power' ? pow(b.id) - pow(a.id) : CONFIG.rarities.indexOf(b.rarity) - CONFIG.rarities.indexOf(a.rarity)))
@@ -2975,6 +3059,18 @@
       for (let k = 0; secretFloor(k) <= (d.bestFloor | 0) - 1; k++) d.secrets.push({ floor: secretFloor(k), done: false });
     }
     if (d.v === 32) { d.v = 33; d.prestigeClaimed = 0; d.frame = null; }       // 0.63 → 0.64: престиж аккаунта
+    if (d.v === 33) {                                      // 0.66 → 0.67: новый ростер (52 героя) — прогресс по прежним слотам
+      d.v = 34;
+      const M = HERO_MIGRATE, ren = id => M[id] || id;
+      const mapObj = o => { if (!o || typeof o !== 'object') return o; const r = {}; for (const k in o) if (allyDef(ren(k))) r[ren(k)] = o[k]; return r; };
+      const kept = !!(d.heroes && d.heroes.borg);              // Борг был в стартовом отряде — остаётся открытым
+      d.heroes = mapObj(d.heroes); d.allies = mapObj(d.allies);
+      if (kept && !d.heroes.borg) d.heroes.borg = { copies: 0, stars: 0, evo: 0, rank: 0 };
+      if (Array.isArray(d.squad)) d.squad = d.squad.map(ren).filter(id => allyDef(id));
+      if (Array.isArray(d.bones)) for (const b of d.bones) if (b && b.on && b.on !== 'hero') b.on = allyDef(ren(b.on)) ? ren(b.on) : null;
+      for (const k of ['locks', 'discovered', 'favs']) if (Array.isArray(d[k])) d[k] = d[k].map(ren).filter(id => allyDef(id));
+      if (Array.isArray(d.presets)) d.presets = d.presets.map(p => p && Array.isArray(p.squad) ? { ...p, squad: p.squad.map(ren).filter(id => allyDef(id)) } : p);
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
