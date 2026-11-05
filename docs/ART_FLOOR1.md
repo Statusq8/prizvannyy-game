@@ -22,3 +22,14 @@ Sprite sheet for 2D game animation, 4 columns x 3 rows grid of 12 equal frames, 
 5. **Страж 10 этажа — Король слаймов** — a huge violet slime king, a broken golden crown sunk into its jelly, half-digested sword and armor of fallen adventurers visible inside, glowing eyes, threatening.
 
 Фон зала — одна картинка: частицы, пыль, мерцание рун и свет делает игра (живой фон), отдельные кадры не нужны.
+
+## Этажи 11–50 (тот же шаблон листа 4×3)
+Враги (вместе с первыми четырьмя будут чередоваться):
+6. **Павший призванный** — a skeleton of a fallen novice adventurer in torn 1-star leather gear, rusty short sword, violet glow in the eye sockets, broken summoning mark on the chest.
+7. **Каменная горгулья** — a small stone gargoyle with cracked wings, violet runes glowing in the cracks, crouching, claws and horns.
+8. **Рунный бес** — a small mischievous imp with dark purple skin, glowing rune tattoos, bat ears, a long tail, holding a violet fireball.
+9. **Теневой волк** — a lean shadow wolf made of black smoke and fur, violet eyes, wisps of smoke trailing from the body.
+
+Стражи:
+10. **Каменный страж** (этажи 20 и 40) — a big stone golem guardian of the summoning hall, carved runes and a glowing violet summoning circle on its chest, heavy fists, moss and cracks.
+11. **Хранитель Врат** (мега-босс, этаж 50) — a giant armored knight-warden with a horned helmet and a huge halberd, a glowing violet gate/portal behind his back, chains around his arms, cape, imposing and very large.
