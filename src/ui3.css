@@ -281,3 +281,18 @@
   body.oldOpen #questsTab .qBar i { background: linear-gradient(90deg, #6a1ab0, #e3b6ff) !important; }
   /* офлайн-отчёт и подтверждения — окна Системы */
   #away .sysWin, #ask .sysWin { padding-top: 12px; }
+
+  /* ===== 0.70: живой фон и чиби-риги ===== */
+  #amb { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  #ambFg { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  #ambFlash { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: #dfe8ff; opacity: 0; }
+  #ambFlash.on { animation: boltFlash .45s ease-out; }
+  @keyframes boltFlash { 0% { opacity: .55; } 15% { opacity: .1; } 25% { opacity: .4; } 100% { opacity: 0; } }
+  body.clean #bgHall { animation: bgBreath 16s ease-in-out infinite alternate; }
+  @keyframes bgBreath { from { transform: scale(1); } to { transform: scale(1.045) translateY(-4px); } }
+  body.lowq #bgHall { animation: none; }
+  .rigCv { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; display: none; }
+  body.rigOn .rigCv { display: block; }
+  body.rigOn #hero .fig, body.rigOn .ally .fig { opacity: 0 !important; }
+  #hero .rigCv { width: 62%; bottom: calc(24% - 34px); }
+  .ally .rigCv { width: 115%; bottom: -10px; }

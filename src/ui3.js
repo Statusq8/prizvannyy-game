@@ -456,7 +456,7 @@
     // ==================================================================
     // НАСТРОЙКИ — полноэкранная страница (ответы 137–148)
     // ==================================================================
-    const SDEF = { snd: 'on', mus: 'on', bsnd: 'on', uisnd: 'on', allyNum: 'on', pushChest: 'on', pushPve: 'on', pushEvent: 'on', qsum: 'off' };
+    const SDEF = { rig: 'on', snd: 'on', mus: 'on', bsnd: 'on', uisnd: 'on', allyNum: 'on', pushChest: 'on', pushPve: 'on', pushEvent: 'on', qsum: 'off' };
     for (const k in SDEF) if (setg[k] == null) setg[k] = SDEF[k];
     const sp = mk('div', 'pgSet', 'pg', '<div class="tower"></div><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" aria-label="Назад">←</button><div class="titlePl">Настройки</div></div><div class="pgBody" id="setBody"></div>', $('cbMenu').parentNode);
     sp.querySelector('.backBtn').addEventListener('click', () => { U.click(); U.show(null); });
@@ -468,7 +468,7 @@
     function renderSet() {
       $('setBody').innerHTML =
         '<div class="grpT">ЗВУК</div><div class="rowList">' + tg('snd', 'Весь звук') + tg('mus', 'Музыка', 'своя для каждой локации — с артом') + tg('bsnd', 'Звуки боя') + tg('uisnd', 'Звуки интерфейса') + tg('vibro', 'Вибрация') + '</div>' +
-        '<div class="grpT">ГРАФИКА</div><div class="rowList">' + tg('eco', 'Экономия батареи', 'слабый телефон: 30 кадров, без эффектов') + tg('shake', 'Тряска экрана') + tg('hitstop', 'Замирание при ударе') +
+        '<div class="grpT">ГРАФИКА</div><div class="rowList">' + tg('rig', 'Анимированные чиби-герои', 'пробник: пока заглушки, потом ваш арт') + tg('eco', 'Экономия батареи', 'слабый телефон: 30 кадров, без эффектов') + tg('shake', 'Тряска экрана') + tg('hitstop', 'Замирание при ударе') +
           sg('fx', 'Эффекты', [['full', 'Все'], ['less', 'Меньше'], ['off', 'Выкл']]) + sg('fps', 'Частота кадров', [[30, '30'], [60, '60']]) + '</div>' +
         '<div class="grpT">ЧИСЛА</div><div class="rowList">' + tg('allyNum', 'Числа урона отряда') + sg('num', 'Запись чисел', [['short', '1.5aa'], ['sci', '1.5e18']]) + '</div>' +
         '<div class="grpT">ЯЗЫК</div><div class="rowList"><div><span>Русский<small>другие языки — позже</small></span><b>✓</b></div></div>' +
@@ -479,7 +479,7 @@
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = '0.69';
+    const VERSION = '0.70';
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
