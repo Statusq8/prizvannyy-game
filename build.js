@@ -26,7 +26,12 @@ for (const f of fs.existsSync(artDir) ? fs.readdirSync(artDir) : []) {
   (rigArt[m[1]] = rigArt[m[1]] || {})[m[2]] = 'data:image/webp;base64,' + fs.readFileSync(path.join(artDir, f)).toString('base64');
 }
 for (const id in rigArt) { const j = path.join(dir, 'assets/rig', id + '.json'); if (fs.existsSync(j)) rigArt[id]._piv = JSON.parse(fs.readFileSync(j, 'utf8')); }
-const extra = () => fs.readFileSync(path.join(dir, 'src/ambient.js'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'src/rig.js'), 'utf8').replace('/*__RIG_ART__*/{}', () => JSON.stringify(rigArt));
+const anims = {};
+if (fs.existsSync(path.join(dir, 'assets/anim'))) for (const f of fs.readdirSync(path.join(dir, 'assets/anim'))) {
+  const n = f.replace(/\.json$/, ''), img = path.join(artDir, 'anim_' + n + '.webp'); if (!f.endsWith('.json') || !fs.existsSync(img)) continue;
+  anims[n] = { meta: JSON.parse(fs.readFileSync(path.join(dir, 'assets/anim', f), 'utf8')), src: 'data:image/webp;base64,' + fs.readFileSync(img).toString('base64') };
+}
+const extra = () => fs.readFileSync(path.join(dir, 'src/anim.js'), 'utf8').replace('/*__ANIM__*/{}', () => JSON.stringify(anims)) + '\n' + fs.readFileSync(path.join(dir, 'src/ambient.js'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'src/rig.js'), 'utf8').replace('/*__RIG_ART__*/{}', () => JSON.stringify(rigArt));
 const ui2 = n => fs.readFileSync(path.join(dir, 'src/ui2.' + n), 'utf8');
 fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('/*__UI2_CSS__*/', () => ui2('css')).replace('<!--__UI2_HTML__-->', () => ui2('html')).replace('/*__UI2_JS__*/', () => ui2('js')).replace('/*__UI3_CSS__*/', () => ui3('css')).replace('/*__UI3_JS__*/', () => ui3('js') + '\n' + extra()).replace('__BG_HALL__', () => bg).replace('/*__HERO_ART__*/{}', () => JSON.stringify(heroArt))
   .replace(/__ART_([a-z0-9_]+)__/g, (m, n) => art(n)));

@@ -296,3 +296,7 @@
   body.rigOn #hero .fig, body.rigOn .ally .fig { opacity: 0 !important; }
   #hero .rigCv { width: 92%; bottom: calc(24% - 52px); }
   .ally .rigCv { width: 115%; bottom: -10px; }
+  /* ===== 0.71: покадровый герой ===== */
+  #heroAnim { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(24% - 24px); width: 118%; pointer-events: none; display: none; z-index: 1; }
+  body.animOn:not(.rigOn) #heroAnim { display: block; }
+  body.animOn:not(.rigOn) #hero .fig { opacity: 0 !important; }
