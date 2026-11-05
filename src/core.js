@@ -2429,6 +2429,46 @@
     if (p.pet && petForm(s, p.pet)) setPet(s, p.pet);
     return true;
   }
+  // «Надеть лучшие» (ответ 168): все кости снимаются и раздаются заново — лучшие в каждом слоте главному герою,
+  // затем отряду, затем резерву по силе (резерв бьёт в полную силу, у всех свои слоты)
+  function equipBestAll(s) {
+    const pow = id => B.log10(B.max(allyDpsAt(id, Math.max(1, s.allies[id].level)), 1e-300)) + Math.log10(heroMult(s, id));
+    const reserve = CONFIG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id).sort((a, b) => pow(b) - pow(a));
+    const holders = ['hero', ...s.squad, ...reserve];
+    const before = s.bones.map(b => b.on).join();
+    for (const b of s.bones) b.on = null;
+    for (const sl of CONFIG.bones.slots) {
+      const list = s.bones.filter(b => b.slot === sl.id).sort((a, b) => boneValue(b) - boneValue(a));
+      list.slice(0, holders.length).forEach((b, i) => { b.on = holders[i]; });
+    }
+    return s.bones.map(b => b.on).join() !== before;
+  }
+  // «Качать лучшего» (ответ 169): все уровни, на какие хватает золота, — самому сильному герою отряда
+  function levelBest(s) {
+    const can = s.squad.filter(id => s.allies[id].level < allyCap(s, id));
+    if (!can.length) return null;
+    const pow = id => B.log10(B.max(allyDps(s, id), 1e-300));
+    const id = can.sort((a, b) => pow(b) - pow(a))[0], lv = s.allies[id].level;
+    if (!buyAlly(s, id, 'max')) return null;
+    return { id, levels: s.allies[id].level - lv };
+  }
+  // Умный офлайн-отчёт (ответ 189): что теперь можно купить или сделать
+  function nowAffordable(s) {
+    const out = { tap: 0, allies: [], ranks: [], stars: [], evolve: [], pets: [], find: false, ritual: canRitual(s) };
+    out.tap = Math.min(maxAffordable(s.tapLevel, s.gold), tapCap(s) - s.tapLevel);
+    for (const a of CONFIG.allies) {
+      if (!s.heroes[a.id].unlocked) continue;
+      const n = Math.min(allyMax(s, a.id), allyCap(s, a.id) - s.allies[a.id].level);
+      if (n > 0 && s.squad.includes(a.id)) out.allies.push({ id: a.id, n });
+      if (canRankUp(s, a.id)) out.ranks.push(a.id);
+      const sc = starCost(s, a.id); if (sc != null && s.heroes[a.id].copies >= sc) out.stars.push(a.id);
+      if (canEvolve(s, a.id)) out.evolve.push(a.id);
+    }
+    if (canRankUp(s, 'hero')) out.ranks.unshift('hero');
+    for (const p of CONFIG.pets.list) if (canEvolvePet(s, p.id)) out.pets.push(p.id);
+    const fc = findCost(s); out.find = fc != null && B.gte(s.souls, fc);
+    return out;
+  }
   // «Забрать всё» (ответ 180): вход дня, задания и сундуки, достижения, почта, пропуск — одной кнопкой
   function claimEverything(s, dayKey) {
     const sum = {}; let n = 0;
@@ -2799,7 +2839,15 @@
     for (let k = 0; k < len; k++) { out = String.fromCharCode(97 + i % 26) + out; i = Math.floor(i / 26); }
     return out;
   }
+  // 0.55 (ответ 18): запись чисел — 'short' (1.5K, 2.3aa…) или 'sci' (1.5e12); переключается в настройках
+  let numMode = 'short';
+  function setNumMode(m) { numMode = m === 'sci' ? 'sci' : 'short'; return numMode; }
+  function sci(n) {
+    const neg = B.sign(n) < 0, l = B.log10(n), e = Math.floor(l + 1e-12), m = Math.pow(10, l - e);
+    return (neg ? '-' : '') + (Math.floor(m * 100 + 1e-9) / 100).toFixed(2).replace(/\.?0+$/, '') + 'e' + e;
+  }
   function fmt(n) {
+    if (numMode === 'sci' && B.sign(n) !== 0 && (n instanceof Big || (isFinite(n) && Math.abs(n) >= 1e6))) return sci(n);
     if (n instanceof Big) {
       if (n.m < 0) return '-' + fmt(B.neg(n));
       const tier = Math.floor(n.e / 3), v = n.m * Math.pow(10, n.e - tier * 3);
@@ -2837,7 +2885,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
