@@ -2584,3 +2584,20 @@ test('престиж аккаунта: уровень из всего прогр
   const old = JSON.parse(C.serialize(s)); old.v = 32; delete old.prestigeClaimed; delete old.frame;
   assert.strictEqual(C.deserialize(JSON.stringify(old)).prestigeClaimed, 0);
 });
+
+// ---------- 0.65: перенос прокачки ----------
+test('перенос прокачки: 70% звёзд и ранга новому герою той же редкости или выше, источник теряет; ранг не выше эволюции цели', () => {
+  const s = C.newState(NOCRIT); s.essence = 1000;
+  s.heroes.irene.stars = 10; s.heroes.irene.rank = 50; s.allies.irene.level = 3000;
+  assert.strictEqual(C.transferPreview(s, 'kael', 'irene'), null);   // B → E нельзя (редкость ниже)
+  const p = C.transferPreview(s, 'irene', 'borg');
+  assert.strictEqual(p.stars, 7);
+  assert.strictEqual(p.rank, C.rankCapForEvo(0));                     // 35 упирается в потолок без эволюции (29)
+  assert.ok(C.transferProgress(s, 'irene', 'borg'));
+  assert.strictEqual(s.heroes.borg.stars, 7); assert.strictEqual(s.heroes.irene.stars, 0); assert.strictEqual(s.heroes.irene.rank, 0);
+  assert.strictEqual(s.allies.irene.level, C.allyCap(s, 'irene'));    // уровень обрезан до нового потолка
+  assert.strictEqual(s.essence, 1000 - CFG.transfer.essence * 2);      // D — номер 1
+  assert.strictEqual(C.transferPreview(s, 'irene', 'borg'), null);    // переносить больше нечего
+  s.heroes.lia.evo = 1; s.heroes.borg.rank = 40;
+  assert.strictEqual(C.transferPreview(s, 'borg', 'lia').rank, 28);   // 40·0,7, эволюция I позволяет до 59
+});

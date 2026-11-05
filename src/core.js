@@ -443,6 +443,10 @@
       xp: { floor: 1, ritual: 200, hero: 100, star: 20, ach: 50, trophy: 30, page: 150, title: 300, secret: 500 },
       reward: { tickets: 2, essence: 10 }, frameEvery: 10,
       frames: ['Бронзовая', 'Серебряная', 'Золотая', 'Платиновая', 'Изумрудная', 'Алмазная', 'Кровавая', 'Теневая', 'Звёздная', 'Божественная'] },
+    // 0.65 (ответ 191): перенос прокачки — звёзды и ранг одного героя частично переходят другому (той же редкости или выше).
+    // Цель получает не меньше keep доли (не суммируется — берётся большее), источник теряет звёзды и ранг (копии, эволюция и уровни остаются).
+    // Ранг цели не выше того, что позволяет её эволюция. Цена — эссенция × (номер редкости цели + 1).
+    transfer: { keep: 0.7, essence: 50 },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1625,6 +1629,34 @@
     return events;
   }
 
+  // ---------- перенос прокачки (0.65) ----------
+  function rankCapForEvo(evo) {
+    const R = CONFIG.ranks; let cap = maxSteps();
+    for (const k of Object.keys(R.evoFor).map(Number).sort((a, b) => a - b)) if (R.evoFor[k] > evo) { cap = k * R.subs - 1; break; }
+    return cap;
+  }
+  function transferPreview(s, from, to) {
+    const A = allyDef(from), T = allyDef(to), X = CONFIG.transfer;
+    if (!A || !T || from === to) return null;
+    const hf = s.heroes[from], ht = s.heroes[to];
+    if (!hf.unlocked || !ht.unlocked) return null;
+    if (CONFIG.rarities.indexOf(T.rarity) < CONFIG.rarities.indexOf(A.rarity)) return null;
+    const stars = Math.max(ht.stars, Math.min(CONFIG.maxStars, Math.floor(hf.stars * X.keep)));
+    const rank = Math.max(ht.rank, Math.min(rankCapForEvo(ht.evo), Math.floor(hf.rank * X.keep)));
+    if (stars === ht.stars && rank === ht.rank) return null;      // нечего переносить
+    return { stars, rank, cost: X.essence * (CONFIG.rarities.indexOf(T.rarity) + 1) };
+  }
+  function transferProgress(s, from, to) {
+    const p = transferPreview(s, from, to);
+    if (!p || s.essence < p.cost) return null;
+    s.essence -= p.cost;
+    const hf = s.heroes[from], ht = s.heroes[to];
+    ht.stars = p.stars; ht.rank = p.rank;
+    hf.stars = 0; hf.rank = 0;
+    if (s.allies[from].level > allyCap(s, from)) s.allies[from].level = allyCap(s, from);
+    cnt(s, 'transfer');
+    return p;
+  }
   // ---------- престиж аккаунта (0.64) ----------
   function prestigeXp(s) {
     const X = CONFIG.prestige.xp, heroes = CONFIG.allies.filter(a => s.heroes[a.id].unlocked);
@@ -3184,7 +3216,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, transferPreview, transferProgress, rankCapForEvo, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
