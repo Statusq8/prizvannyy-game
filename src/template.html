@@ -1116,11 +1116,12 @@
   // ---------- эффекты ----------
   // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
   const SET_KEY = 'prizvannyy_v2_settings';
-  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'on', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'less', fxV: 1, flash: 'on', shake: 'on', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
   // 0.55 (ответ 198): «Режим экономии» одним переключателем — низкое качество, 30 кадров, без эффектов, вспышек, тряски и hit-stop
   const ECO = { quality: 'low', fps: 30, fx: 'off', flash: 'off', shake: 'off', hitstop: 'off' };
   let setg = { ...SET_DEF };
   try { setg = { ...SET_DEF, ...JSON.parse(localStorage.getItem(SET_KEY) || '{}') }; } catch (e) {}
+  if (setg.fxV !== 1) { if (setg.fx === 'full') setg.fx = 'less'; setg.fxV = 1; }   // 0.75.2: «слишком много эффектов» — у всех по умолчанию «Меньше»
   const SET_ROWS = [
     { k: 'eco', name: 'Режим экономии (слабый телефон, батарея)', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
     { k: 'num', name: 'Запись чисел', opts: [['short', '1.5aa'], ['sci', '1.5e18']] },
@@ -1200,7 +1201,7 @@
           // 0.69 (ответы 2–3): средние числа разлетаются в стороны; у крита отдельная надпись «КРИТ!»
           const dn = fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 40 - 20, y, fmt(e.dmg), e.crit ? 850 : 700);
           dn.style.setProperty('--dx', (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 50) + 'px');
-          if (e.crit) fx('critLbl', x, y - 34, 'КРИТ!', 800);
+          if (e.crit && setg.fx === 'full') fx('critLbl', x, y - 34, 'КРИТ!', 800);
         } else if (e.source === 'pet') {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const pe = $('pet'); pe.classList.remove('attack'); void pe.offsetWidth; pe.classList.add('attack');

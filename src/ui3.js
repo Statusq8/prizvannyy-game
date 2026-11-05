@@ -112,7 +112,7 @@
     function coins() {
       if (setg.fx === 'off' || document.body.classList.contains('pageOpen')) return;
       const q = el.enemy.getBoundingClientRect(), g = $('tbGold').getBoundingClientRect();
-      const n = setg.fx === 'less' ? 3 : 6, tx = g.left + 12, ty = g.top + g.height / 2;
+      const n = setg.fx === 'less' ? 2 : 6, tx = g.left + 12, ty = g.top + g.height / 2;
       for (let i = 0; i < n; i++) {
         const c = mk('div', '', 'flyCoin', '', document.body);
         const x = q.left + q.width / 2 + Math.random() * 70 - 35, y = q.top + q.height * 0.65 + Math.random() * 30 - 15;

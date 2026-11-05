@@ -1638,6 +1638,7 @@
   const CONFIG = {
     saveVersion: 34,
     enemiesPerFloor: 10,
+    allyUlts: false,              // 0.75.2: ульты союзников выключены — ульта только у Призванного
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
     enemyBaseHp: 10,
@@ -3291,7 +3292,7 @@
     tickPotions(s, dt);
     if (s.critBuff) s.critBuff.t = Math.max(0, s.critBuff.t - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
-    for (const a of squadDefs(s)) {
+    if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')) * (1 + petBonus(s, 'ult')));   // готовность копится и сохраняется между врагами
     }
@@ -3303,7 +3304,7 @@
     }
     const rule = modeRule(s);
     // Ультимейты срабатывают автоматически, как только заряжены и враг жив
-    for (const a of squadDefs(s)) {
+    if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (rule === 'noUlts' || rule === 'tapOnly' || rule === 'trial') break;
       if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
@@ -5232,11 +5233,12 @@
   // ---------- эффекты ----------
   // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
   const SET_KEY = 'prizvannyy_v2_settings';
-  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'on', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'less', fxV: 1, flash: 'on', shake: 'on', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
   // 0.55 (ответ 198): «Режим экономии» одним переключателем — низкое качество, 30 кадров, без эффектов, вспышек, тряски и hit-stop
   const ECO = { quality: 'low', fps: 30, fx: 'off', flash: 'off', shake: 'off', hitstop: 'off' };
   let setg = { ...SET_DEF };
   try { setg = { ...SET_DEF, ...JSON.parse(localStorage.getItem(SET_KEY) || '{}') }; } catch (e) {}
+  if (setg.fxV !== 1) { if (setg.fx === 'full') setg.fx = 'less'; setg.fxV = 1; }   // 0.75.2: «слишком много эффектов» — у всех по умолчанию «Меньше»
   const SET_ROWS = [
     { k: 'eco', name: 'Режим экономии (слабый телефон, батарея)', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
     { k: 'num', name: 'Запись чисел', opts: [['short', '1.5aa'], ['sci', '1.5e18']] },
@@ -5316,7 +5318,7 @@
           // 0.69 (ответы 2–3): средние числа разлетаются в стороны; у крита отдельная надпись «КРИТ!»
           const dn = fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 40 - 20, y, fmt(e.dmg), e.crit ? 850 : 700);
           dn.style.setProperty('--dx', (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 50) + 'px');
-          if (e.crit) fx('critLbl', x, y - 34, 'КРИТ!', 800);
+          if (e.crit && setg.fx === 'full') fx('critLbl', x, y - 34, 'КРИТ!', 800);
         } else if (e.source === 'pet') {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const pe = $('pet'); pe.classList.remove('attack'); void pe.offsetWidth; pe.classList.add('attack');
@@ -7684,7 +7686,7 @@
     function coins() {
       if (setg.fx === 'off' || document.body.classList.contains('pageOpen')) return;
       const q = el.enemy.getBoundingClientRect(), g = $('tbGold').getBoundingClientRect();
-      const n = setg.fx === 'less' ? 3 : 6, tx = g.left + 12, ty = g.top + g.height / 2;
+      const n = setg.fx === 'less' ? 2 : 6, tx = g.left + 12, ty = g.top + g.height / 2;
       for (let i = 0; i < n; i++) {
         const c = mk('div', '', 'flyCoin', '', document.body);
         const x = q.left + q.width / 2 + Math.random() * 70 - 35, y = q.top + q.height * 0.65 + Math.random() * 30 - 15;
@@ -8329,8 +8331,8 @@
     }
     function setBiome(id) {
       curId = id; cur = AMB[id] || AMB.crypt;
-      const k = setg.fx === 'less' ? 0.5 : 1;
-      ps = []; for (const [type, n] of cur.p) for (let i = 0; i < Math.round(n * k); i++) ps.push(spawn(type, true));
+      const k = setg.fx === 'less' ? 0.35 : 1;
+      ps = []; for (const [type, n] of cur.p) if (setg.fx === 'full' || !/wisp|firefly/.test(type)) for (let i = 0; i < Math.round(n * k); i++) ps.push(spawn(type, true));
       fps = []; if (cur.front && setg.fx === 'full') for (let i = 0; i < (cur.front === 'rain' ? 14 : 5); i++) { const p = spawn(cur.front, true); p.r *= cur.front === 'rain' ? 2.2 : 3.2; p.vy *= 1.8; p.front = 1; fps.push(p); }
       fogs = []; for (let i = 0; i < 5; i++) fogs.push({ x: R(-W * .3, W), y: R(H * .35, H * .95), w: R(W * .5, W * 1.1), h: R(60, 140), v: R(4, 12) * (Math.random() < .5 ? -1 : 1), a: R(.05, .13) });
       document.body.dataset.biome = id;
