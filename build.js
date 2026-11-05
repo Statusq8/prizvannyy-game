@@ -33,6 +33,7 @@ if (fs.existsSync(path.join(dir, 'assets/anim'))) for (const f of fs.readdirSync
 }
 const uiArt = {}, uiDir = path.join(dir, 'assets/ui');
 if (fs.existsSync(uiDir)) for (const f of fs.readdirSync(uiDir)) if (f.endsWith('.webp')) uiArt[f.slice(0, -5)] = 'data:image/webp;base64,' + fs.readFileSync(path.join(uiDir, f)).toString('base64');
+uiArt._bg_menu = 'data:image/webp;base64,' + fs.readFileSync(path.join(dir, 'assets/ui_bg_menu.webp')).toString('base64');
 const extra = () => fs.readFileSync(path.join(dir, 'src/uiart.js'), 'utf8').replace('/*__UI_ART__*/{}', () => JSON.stringify(uiArt)) + '\n' + fs.readFileSync(path.join(dir, 'src/anim.js'), 'utf8').replace('/*__ANIM__*/{}', () => JSON.stringify(anims)) + '\n' + fs.readFileSync(path.join(dir, 'src/ambient.js'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'src/rig.js'), 'utf8').replace('/*__RIG_ART__*/{}', () => JSON.stringify(rigArt));
 const ui2 = n => fs.readFileSync(path.join(dir, 'src/ui2.' + n), 'utf8');
 fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('/*__UI2_CSS__*/', () => ui2('css')).replace('<!--__UI2_HTML__-->', () => ui2('html')).replace('/*__UI2_JS__*/', () => ui2('js')).replace('/*__UI3_CSS__*/', () => ui3('css')).replace('/*__UI3_JS__*/', () => ui3('js') + '\n' + extra()).replace('__BG_HALL__', () => bg).replace('/*__HERO_ART__*/{}', () => JSON.stringify(heroArt))
