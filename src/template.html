@@ -1186,6 +1186,8 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'towerMs') {
+        setTimeout(() => toast('🗼 Веха Башни: этаж ' + e.at + '!<small>' + (e.what ? e.what + ' · ' : '') + 'награда — в центре наград 📬</small>'), 1500);
       } else if (e.type === 'curseOffer') {                // 0.59: проклятый этаж — по желанию
         const K = CFG.curse, mod = e.mod;
         setTimeout(() => { if (!s.curse || s.curse.on || s.curse.floor !== s.floor) return;
@@ -1673,10 +1675,18 @@
       ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
     ];
     $('statsTab').innerHTML = '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
-      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml() + trophiesHtml();
+      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml() + trophiesHtml() + towerMsHtml();
   }
   // Титулы за 1-й/10-й/100-й ритуал: каждый полученный даёт небольшой постоянный бонус (0.53), выбранный — для профиля
   function titleBonusTxt(m) { return '+' + Math.round(m.bonus.per * 100) + '% ' + (m.bonus.kind === 'gold' ? 'золота' : 'урона'); }
+  // 0.61: вехи Башни
+  function towerMsHtml() {
+    const T = CFG.towerMs, nx = C.nextTowerMs(s), nm = id => CFG.allies.find(a => a.id === id).name, fl = n => n.toLocaleString('ru-RU');
+    const what = m => m.hero ? 'герой ' + nm(m.hero) : m.pet ? 'питомец ' + C.petDef(m.pet).name : m.art ? CFG.artifacts.find(a => a.id === m.art).name + ' +' + m.levels + ' ур.' : 'большая награда';
+    let h = '<div class="secTitle">ВЕХИ БАШНИ · следующая — этаж ' + fl(nx.at) + '</div><div class="spare" style="gap:6px;flex-wrap:wrap">';
+    for (const m of T.list) h += '<span class="badge ' + (s.towerMs >= m.at ? 'sq">✓ ' : 'rs">') + fl(m.at) + ' · ' + what(m) + '</span>';
+    return h + '<span class="badge rs">дальше каждые ' + fl(T.every) + ' — 🎟 ' + T.after.tickets + ', ✦ ' + T.after.essence + '</span></div>';
+  }
   // 0.57: Зал трофеев — по биомам; неполученные скрыты до встречи с биомом
   function trophiesHtml() {
     const T = CFG.trophies, got = s.trophies.length, all = C.allTrophies().length;
@@ -2411,7 +2421,7 @@
     for (const a of arts) {
       const lv = C.artLevel(s, a.id);
       if (!lv) {
-        html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">???</div><div class="hSub">Ещё не найден</div></div></div>';
+        html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">' + (a.special ? a.icon : '?') + '</div><div class="hInfo"><div class="hName">' + (a.special ? a.name : '???') + '</div><div class="hSub">' + (a.special ? 'Только за вехи Башни — этаж 5000' : 'Ещё не найден') + '</div></div></div>';
         continue;
       }
       const c = C.upgradeArtCost(s, a.id);

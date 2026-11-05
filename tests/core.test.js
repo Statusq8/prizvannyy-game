@@ -2506,3 +2506,25 @@ test('алхимия: зелья за осколки и эссенцию, ×2 н
   assert.strictEqual(C.deserialize(C.serialize(s)).potions.gold, s.potions.gold);
   C.offlineProgress(s, 8 * 3600); assert.strictEqual(s.potions.gold, undefined);
 });
+
+// ---------- 0.61: вехи Башни ----------
+test('вехи Башни: 1000 — герой, 2500 — питомец, 5000 — особый артефакт; повтор — копии; дальше каждые 50 000; поиск за души без «Венца»', () => {
+  const s = C.newState(NOCRIT);
+  s.bestFloor = s.maxFloor = 5000;
+  const got = C.towerMilestones(s, []);
+  assert.deepStrictEqual(got, [1000, 2500, 5000]);
+  assert.ok(s.heroes.seiren.unlocked); assert.ok(C.petForm(s, 'griffin')); assert.strictEqual(C.artLevel(s, 'crown'), 1);
+  assert.strictEqual(s.inbox.length, 3);
+  assert.deepStrictEqual(C.towerMilestones(s, []), []);              // второй раз не выдаётся
+  assert.strictEqual(C.nextTowerMs(s).at, 10000);
+  const t = C.newState(NOCRIT); t.heroes.seiren.unlocked = true; t.bestFloor = 1000;
+  C.towerMilestones(t, []); assert.strictEqual(t.heroes.seiren.copies, 5);
+  const u = C.newState(NOCRIT); u.towerMs = 100000; u.bestFloor = 200000;
+  assert.deepStrictEqual(C.towerMilestones(u, []), [150000, 200000]);
+  assert.strictEqual(C.nextTowerMs(u).at, 250000);
+  // «Венец» не находится поиском и не мешает «все найдены»
+  const v = C.newState(NOCRIT); v.souls = 1e30;
+  while (C.findCost(v) != null) assert.notStrictEqual(C.findArtifact(v), 'crown');
+  assert.strictEqual(C.artLevel(v, 'crown'), 0);
+  assert.strictEqual(C.deserialize(C.serialize(s)).towerMs, 5000);
+});
