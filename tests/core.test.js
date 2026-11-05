@@ -992,12 +992,12 @@ test('биомы: по 50 этажей, по кругу после 400, свои
   assert.strictEqual(C.biomeOf(1).id, 'crypt'); assert.strictEqual(C.biomeOf(50).id, 'crypt');
   assert.strictEqual(C.biomeOf(51).id, 'ash'); assert.strictEqual(C.biomeOf(400).id, 'throne');
   assert.strictEqual(CFG.biomes.length, 20); assert.strictEqual(C.biomeOf(1000).id, 'heart');
-  assert.strictEqual(C.biomeOf(1001).id, 'crypt'); assert.strictEqual(C.biomeName(1001), 'Гнилые катакомбы II');
+  assert.strictEqual(C.biomeOf(1001).id, 'crypt'); assert.strictEqual(C.biomeName(1001), 'Зал призыва II');
   assert.strictEqual(C.hallOf(1), CFG.halls[0]); assert.strictEqual(C.hallOf(10), CFG.halls[0]);
   assert.strictEqual(C.hallOf(11), CFG.halls[1]); assert.strictEqual(C.hallOf(50), CFG.halls[4]);
   assert.strictEqual(C.hallOf(51), CFG.halls[0]); assert.strictEqual(C.hallOf(1000), CFG.halls[4]);
   for (const b of CFG.biomes) assert.ok(b.bg.length === 3 && b.enemies.length === 4 && b.bosses.length === 2 && b.final);
-  assert.strictEqual(C.biomeName(1), 'Гнилые катакомбы');
+  assert.strictEqual(C.biomeName(1), 'Зал призыва');
   assert.ok(C.isFinalBoss(50) && !C.isFinalBoss(49));
   const s = C.newState(NOCRIT);
   s.floor = s.maxFloor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
