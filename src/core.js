@@ -383,6 +383,19 @@
     factions: ['Тени', 'Война', 'Свет', 'Нежить', 'Бездна', 'Пламя', 'Дикий лес', 'Буря', 'Лёд', 'Кровь'],
     roles: { nuke: 'Удар', teamBuff: 'Усиление отряда', mark: 'Метка', tapBuff: 'Усиление героя', critBuff: 'Криты' },
     presets: 3,                                    // 0.54 (ответ 186): пресеты отряда
+    // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
+    // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
+    bonds: [
+      { id: 'steel',  name: 'Стальной кулак',  heroes: ['borg', 'garret'],          bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Берсерк и ополченец прошли первую войну плечом к плечу.' },
+      { id: 'night',  name: 'Клинки в ночи',   heroes: ['irene', 'saya', 'nyx'],    bonus: { kind: 'allDmg', per: 0.15 }, lore: 'Королева ночи и её тени — стрела и нож.' },
+      { id: 'legion', name: 'Мёртвый легион',  heroes: ['velma', 'ragnar'],         bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Некромантка подняла рыцаря — и он остался служить.' },
+      { id: 'storm',  name: 'Око бури',        heroes: ['noa', 'seiren'],           bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Ученик-громовик и повелительница бурь.' },
+      { id: 'abyss',  name: 'Кровь бездны',    heroes: ['kael', 'kassian'],         bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Клинок бездны и тёмный паладин заключили договор крови.' },
+      { id: 'ash',    name: 'Пепел и пламя',   heroes: ['lia', 'azrael'],           bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Пиромантка, что молится ангелу пепла.' },
+      { id: 'frost',  name: 'Лёд и пламя',     heroes: ['yuki', 'lia'],             bonus: { kind: 'gold',   per: 0.10 }, lore: 'Снежная жрица и пиромантка — вечный спор.' },
+      { id: 'altar',  name: 'Хранители Алтаря', heroes: ['morra', 'kassian'],       bonus: { kind: 'gold',   per: 0.10 }, lore: 'Хранительница Алтаря доверяет только паладину крови.' },
+      { id: 'mask',   name: 'Маски и тени',    heroes: ['carna', 'nyx'],            bonus: { kind: 'allDmg', per: 0.10 }, lore: 'Карнавал открывается только в ночь королевы.' },
+    ],
     ranks: { count: 10, subs: 10, capMin: 1000, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 },
       // 0.51 (ответ 155): ранги добавляются ступенями с обновлениями — каждое число здесь = новый ранг (10 подрангов)
       // с этим потолком уровня; потолок между рангами растёт плавно (геометрически). Пока пусто: на старте 10 рангов, 15 000.
@@ -1030,12 +1043,12 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')), CONFIG.softcap.goldStart); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')), CONFIG.softcap.goldStart); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
@@ -2403,6 +2416,11 @@
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
+  // ---------- связи героев (0.56) ----------
+  function bondActive(s, b) { return b.heroes.every(id => s.squad.includes(id)); }
+  function activeBonds(s) { return CONFIG.bonds.filter(b => bondActive(s, b)); }
+  function bondPower(s, kind) { return activeBonds(s).reduce((t, b) => t + (b.bonus.kind === kind ? b.bonus.per : 0), 0); }
+  function bondsOf(id) { return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
   // ---------- удобство (0.54) ----------
   function roleOf(a) { return CONFIG.roles[a.ult.kind] || 'Особая'; }
   function isFav(s, id) { return s.favs.includes(id); }
@@ -2885,7 +2903,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
