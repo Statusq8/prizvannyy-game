@@ -98,8 +98,9 @@
       clearTimeout(plateT); plateT = setTimeout(() => plate.classList.remove('show'), (opt.dur || 1.4) * 1000);
     }
     // ---------- ульта союзника: арт, затемнение ----------
+    let lastCut = 0;
     function ultCut(id) {
-      if (setg.fx === 'off') return;
+      if (setg.fx === 'off' || performance.now() - lastCut < 4000) return; lastCut = performance.now();
       const A = HERO_ART[id], u = allyUi[id];
       const src = A && (A.side || A.back || A.avatar);
       cut.style.setProperty('--uc', u ? u.color : '#b14dff');
@@ -232,10 +233,7 @@
       const ce = C.currentEvent(s); evBtn.style.display = ce ? '' : 'none';
       if (ce && !(syncN++ % 20)) { evBtn.querySelector('.ico').textContent = ce.icon || '🏮'; evBtn.querySelector('small').textContent = weekLeft(); }
       // кнопки открываются постепенно (ответ 163): портал — после первого героя-союзника, событие — с 10 этажа, PvE — с 15
-      const best = Math.max(s.maxFloor, s.bestFloor);
-      pBtn.style.visibility = best >= 3 ? '' : 'hidden';
-      if (best < 10) evBtn.style.display = 'none';
-      $('cbPve').style.visibility = best >= 15 ? '' : 'hidden';
+      evBtn.style.display = 'none';   // 0.74: события — в книге
       decorAllies();
     }
     function weekLeft() {
@@ -361,7 +359,7 @@
     // ==================================================================
     const hp = mk('div', 'pgHero', 'pg', '<div class="tower"></div><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" aria-label="Назад">←</button><div class="titlePl">Герой</div></div><div class="pgBody" id="hvBody"></div>', $('cbMenu').parentNode);
     let hvId = null, hvTab = 'lv';
-    const HVT = [['lv', 'Уровень'], ['st', 'Звёзды'], ['bn', 'Кости'], ['sk', 'Умения']];
+    const HVT = () => [['lv', 'Уровень'], ['st', 'Звёзды'], ...(C.unlockedAt(s, 'bones') ? [['bn', 'Кости']] : []), ['sk', 'Умения']];
     hp.querySelector('.backBtn').addEventListener('click', () => { U.click(); hp.classList.remove('show'); U.sec('up'); });
     function hvList() { return CFG.allies.filter(a => s.heroes[a.id].unlocked).map(a => a.id); }
     function openHero(id) { hvId = id; U.show('pgHero'); renderHero(); $('hvBody').scrollTop = 0; }
@@ -371,21 +369,20 @@
       let o = '<div class="hvArt" style="--rc:' + rc + '">' + (A && (A.side || A.back) ? '<img src="' + (A.side || A.back) + '" alt="">' : '<div class="big">' + (v.icon || '✦') + '</div>') +
         '<button class="nav l" data-hn="-1">‹</button><button class="nav r" data-hn="1">›</button></div>' +
         '<div class="hvName" style="--rc:' + rc + '">' + a.name + '</div><div class="hvSub"><b style="color:' + rc + '">' + a.rarity + '</b> · ★' + h.stars + ' · ' + a.side + ' / ' + a.faction + ' · ' + C.roleOf(a) + (C.inSquad(s, a.id) ? ' · в отряде' : '') + '</div>' +
-        '<div class="hvTabs">' + HVT.map(([k, n]) => '<button data-ht="' + k + '" class="' + (k === hvTab ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
+        '<div class="hvTabs">' + HVT().map(([k, n]) => '<button data-ht="' + k + '" class="' + (k === hvTab ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
       if (hvTab === 'lv') {
         const lv = st.level, cap = C.allyCap(s, a.id), u = allyUi[a.id];
         o += '<div class="statGrid"><div>Уровень<b>' + fmt(lv) + ' / ' + fmt(cap) + '</b></div><div>DPS<b>' + (lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—') + '</b></div>' +
           '<div>Удар раз в<b>' + a.attackInterval + ' с</b></div><div>Ранг<b>' + C.rankLabel(h.rank).rank + '</b></div></div>' +
           '<div style="display:flex;gap:8px;justify-content:center;margin:10px 0"><button class="upBtn" data-hbuy' + (u.btn.disabled ? ' disabled' : '') + ' style="width:auto;padding:4px 18px">' + u.btn.innerHTML + '</button>' +
-          '<button class="upBtn alt" data-hsq style="width:auto;padding:4px 14px">' + (C.inSquad(s, a.id) ? 'Убрать из отряда' : 'В отряд') + '</button></div>';
+          '</div>';
         const nx = C.nextMilestone(lv), ms = []; let m = nx; for (let i = 0; i < 4; i++) { ms.push(m); m = C.nextMilestone(m); }
         o += '<div class="grpT">ВЕХИ УРОВНЯ · ×' + CFG.milestoneMult + ' УРОНА</div><div class="rowList">' + ms.map((m, i) => '<div class="' + (i ? 'lock' : 'on') + '"><span>Ур. ' + fmt(m) + '<small>' + (i ? '' : 'осталось ' + fmt(m - lv) + ' ур.') + '</small></span><b>×' + CFG.milestoneMult + '</b></div>').join('') + '</div>';
       } else if (hvTab === 'st') {
         const sc = C.starCost(s, a.id), ec = C.evoCost(s, a.id);
         o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div></div>' +
           '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (sc != null && h.copies >= sc ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Повысить звезду<span>копий ' + sc + '</span>') + '</button></div>' +
-          '<div class="grpT">ПРОБУЖДЕНИЕ</div><div class="rowList">' + CFG.evolution.stages.map((g, i) => '<div class="' + (h.evo > i ? 'on' : h.evo === i ? '' : 'lock') + '"><span>' + (h.evo > i ? '✓ ' : '') + g.name + '<small>★' + g.stars + ' · ×' + g.mult + ' урона</small></span></div>').join('') + '</div>' +
-          (ec ? '<div style="text-align:center;margin:10px 0"><button class="upBtn gold" data-hevo' + (C.canEvolve(s, a.id) ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + ec.name + '<span>★' + ec.stars + ' · ' + CFG.materials.shard.icon + ' ' + ec.shards + '</span></button></div>' : '');
+          '';   // 0.74: пробуждение убрано (ответ 43)
       } else if (hvTab === 'bn') {
         const SL = CFG.bones.slots, POS = { head: [50, 8], chest: [50, 40], armR: [16, 40], armL: [84, 40], legR: [32, 84], legL: [68, 84] };
         o += '<div class="skel"><div class="sil">💀</div>' + SL.map(sl => { const b = s.bones.find(q => q.on === a.id && q.slot === sl.id);
@@ -480,7 +477,7 @@
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = '0.72';
+    const VERSION = '0.74';
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -549,7 +546,7 @@
         html: '<div class="sysGrid">' + days.map((r, i) => { const n = week + i; return '<div style="' + (n < idx ? 'opacity:.4' : n === idx && can ? 'border-color:#e3b6ff;box-shadow:0 0 8px #b14dff' : '') + '"><b>' + (n < idx ? '✓' : ic(r)) + '</b>день ' + (n + 1) + '<br>' + rewardLine(r) + '</div>'; }).join('') + '</div>',
         btns: can ? [{ t: 'Забрать', fn: () => { const r = C.claimLogin(s, dayKey()); if (r) { toast('Бонус за вход · день ' + r.day + '<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } } }] : [{ t: 'OK' }] });
     }
-    if (prof.name) setTimeout(() => loginWin(false), 2200);
+    if (prof.name) setTimeout(() => { if (C.unlockedAt(s, 'login')) loginWin(false); }, 2200);
     // свайпы между вкладками раздела (ответ 52)
     let tsx = null;
     $('sBody').addEventListener('touchstart', e => { tsx = e.touches[0].clientX; }, { passive: true });

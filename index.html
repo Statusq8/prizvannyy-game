@@ -1339,6 +1339,35 @@
   body.animOn:not(.rigOn) #heroAnim { display: block; }
   body.animOn:not(.rigOn) #hero .fig { opacity: 0 !important; }
 
+  /* ===== 0.74: только ГГ на экране боя, книга, ритуал, кузница, квест справа ===== */
+  body.clean .ally { display: none !important; }
+  body.clean #cbPve { top: calc(env(safe-area-inset-top) + 220px); }
+  body.clean #cbBook { left: 17px; top: calc(env(safe-area-inset-top) + 274px); }
+  body.clean #cbRitual { left: 17px; top: calc(env(safe-area-inset-top) + 328px); }
+  body.clean #cbForge { left: 17px; top: calc(env(safe-area-inset-top) + 382px); }
+  #bookList { position: absolute; z-index: 30; left: 70px; top: calc(env(safe-area-inset-top) + 262px); display: none; flex-direction: column; gap: 4px; padding: 6px; border-radius: 4px;
+    background: #05030af2; border: 1px solid var(--sys); box-shadow: 0 0 14px #b14dff88; }
+  #bookList.show { display: flex; }
+  #bookList button { display: flex; align-items: center; gap: 8px; min-width: 150px; height: 40px; padding: 0 8px; border-radius: 3px; background: #160f1e; border: 1px solid #3e3747; color: #fff; font: 600 13px system-ui; text-align: left; }
+  #bookList button img { width: 30px; height: 30px; }
+  #questPanel { position: absolute; z-index: 9; right: 8px; top: calc(env(safe-area-inset-top) + 330px); width: 132px; }
+  #questPanel .qBox { position: relative; padding: 8px 8px 7px; border-radius: 4px; background: #05030ad9; border: 1px solid var(--sys); box-shadow: 0 0 10px #b14dff55; }
+  #questPanel .qT { font: 400 10px 'Russo One', system-ui; letter-spacing: 2px; color: var(--sysHi); }
+  #questPanel .qTxt { font: 600 12px/1.25 system-ui; color: #fff; margin: 3px 0 4px; cursor: pointer; }
+  #questPanel .qR { font: 600 11px system-ui; color: #ffd36b; }
+  #questPanel .qClaim { width: 100%; height: 28px; border-radius: 3px; border: 1px solid #ffe08a; background: linear-gradient(#d6a640, #7a5212); color: #fff; font: 700 11px system-ui; animation: bossPulse 1.4s infinite; }
+  #questPanel .qNext { margin-top: 6px; padding-top: 5px; border-top: 1px solid #b14dff55; font: 600 10px/1.25 system-ui; color: #b9b1c3; }
+  #questPanel .qMin { position: absolute; right: 2px; top: 0; width: 22px; height: 22px; background: none; border: none; color: #b9b1c3; font: 700 16px system-ui; }
+  #questPanel .qFold { position: relative; float: right; width: 46px; height: 46px; padding: 0; background: none; border: none; }
+  #questPanel .qDot { position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #e0202a; }
+  body.clean.pageOpen #questPanel, body.clean.pageOpen #bookList, body.photo #questPanel { visibility: hidden; }
+  .pgTabs { display: flex !important; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+  .pgTabs button { flex: 0 0 76px; height: 62px !important; font-size: 0 !important; }
+  .pgTabs button b.hasUA { width: 46px !important; height: 46px !important; }
+  #secHelp { flex: none; width: 34px; height: 34px; font-style: normal; }
+  .upBtn:disabled { background: linear-gradient(#4a4552, #26222c) !important; border-color: #6e6678 !important; filter: none !important; opacity: 1 !important; }
+  .upBtn:disabled span { color: #ff5a5a !important; }
+
 </style>
 </head>
 <body>
@@ -1632,7 +1661,7 @@
     // Портал: обычный баннер. Шансы в %, гарантии (pity) раздельные: A+ и S+ (TBD)
     portal: {
       odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, SS: 0.6, SSS: 0.3, GOD: 0.15 },   // TBD
-      pityA: 30, pityS: 90,
+      pityA: 10, pityS: 100,                   // 0.74: гарант A за 10, S за 100 (ответ 61)
       ticketsPerFifth: 1, ticketsPerTenth: 3, // за первое в игре прохождение босса каждого 5-го / 10-го этажа
       // «Возрастающие шансы»: после softS призывов без S+ шанс S растёт на softStep п.п. за призыв (до гарантии)
       softS: 70, softStep: 3,
@@ -1652,8 +1681,12 @@
     // Все числа временные (TBD по GDD §16).
     souls: { dpsPerSoul: 0.1 },
     // Ритуал (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
+    // 0.74: лесенка открытий функций по рекорду этажа (опрос docs/ui/ANSWERS_UNLOCKS.md, ответ 18). До открытия кнопка скрыта.
+    unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 25, artifacts: 50, pve: 100, runes: 150, forge: 150, ritual: 200, tree: 200,
+               events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
+    megaSouls: { base: 5, per50: 1.25 },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
     ritual: {
-      floor: 400,
+      floor: 200,
       // старт нового забега: этаж 1 + бонус артефакта «Врата восхождения», строго ниже 400
       // (решение пользователя: заменяет прежнее правило 1 + 20·число ритуалов)
       soulsBase: 50, soulsGrowth: 1.04,  // души за забег: 50 · 1.04^(этаж − 400) до soulsKnee
@@ -1694,7 +1727,7 @@
       // 0.61 (ответы 63, 182): особый артефакт — только за вехи Башни, поиском за души не находится; качается за души
       { id: 'crown',  name: 'Венец Башни',       icon: '👑', kind: 'allDmg', per: 0.5, cost: 5, growth: 1.25, special: true,
         desc: '+50% всего урона за уровень. Только за вехи Башни' },
-      { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 398,
+      { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 198,
         desc: 'После ритуала новый забег начинается на 1 этаж выше за уровень (всегда ниже 400)' },
     ],
     // Материалы (GDD §6): от боссов, переживают ритуал. Гарантированная альтернатива — рецепт Алтаря (TBD)
@@ -2715,6 +2748,7 @@
   }
   // башенные питомцы — за первую победу над боссом своего этажа (рекорд за всю игру; выдаются и задним числом)
   function petsCatchUp(s, events) {
+    if (!unlockedAt(s, 'pets')) return;
     for (const p of CONFIG.pets.list) if (p.floor && (s.bestCleared | 0) >= p.floor) grantPet(s, p.id, events);
   }
   // «Логово»: ранг недели по кругу E → GOD
@@ -2723,6 +2757,7 @@
   function lairSync(s) { const wk = (s.event && s.event.week) || ''; if (s.pets.lair.week !== wk) s.pets.lair = { week: wk, kills: 0 }; }
   // Хранитель: моб питомца в его биоме, на этажах не ниже этажа питомца; ≈1 из 50 врагов; в офлайне не появляется
   function keeperRoll(s, events) {
+    if (!unlockedAt(s, 'pets')) return;
     const P = CONFIG.pets, bio = biomeOf(s.floor).id;
     const pool = P.list.filter(p => p.biome === bio && s.floor >= (p.floor || P.floors[p.rank][1]) && petForm(s, p.id) < P.forms.length);
     if (!pool.length) return;
@@ -2931,7 +2966,9 @@
   function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
-  function inSquad(s, id) { return s.squad.includes(id); }
+  // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые
+  function inSquad(s, id) { return !!(s.heroes[id] && s.heroes[id].unlocked && s.allies[id] && s.allies[id].level > 0); }
+  function unlockedAt(s, key) { const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return B.mul(allyDps(s, id), inSquad(s, id) ? 1 : CONFIG.reserveShare); }
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
@@ -2948,7 +2985,7 @@
     return B.mul(B.add(autoDps(s), B.mul(tapHit(s), tps)), critF);
   }
   function reserveDps(s) { return CONFIG.allies.reduce((sum, a) => (inSquad(s, a.id) ? sum : B.add(sum, contribDps(s, a.id))), 0); }
-  function squadDefs(s) { return s.squad.map(allyDef); }
+  function squadDefs(s) { return CONFIG.allies.filter(a => inSquad(s, a.id)); }
   // Уровень 0 → первая покупка = найм по hireCost
   function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
   function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
@@ -3008,7 +3045,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
-      prestigeClaimed: 0, frame: null,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
+      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -3168,10 +3205,21 @@
       if (mat.firstHeart) {
         s.heartFloor = s.floor;
         const b = biomeOf(s.floor);
-        if (isFinalBoss(s.floor) && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
+        if (isFinalBoss(s.floor) && unlockedAt(s, 'totems') && !s.totems[b.id]) { s.totems[b.id] = 1; events.push({ type: 'totem', id: b.id, name: b.name }); }
       }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
-      const bone = rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor);
+      const bone = unlockedAt(s, 'bones') ? rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor) : null;
+      // 0.74 (ответы 8, 57): мега-босс даёт души и без ритуала; первый мега-босс (этаж 50) — первый артефакт даром
+      if (isFinalBoss(s.floor) && !s.mode && s.floor >= (s.megaSoulsFloor | 0) + 1) {
+        s.megaSoulsFloor = s.floor;
+        const M = CONFIG.megaSouls, n = Math.ceil(M.base * Math.pow(M.per50, s.floor / 50 - 1));
+        s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n);
+        events.push({ type: 'megaSouls', n });
+        if (!foundCount(s) && unlockedAt(s, 'artifacts')) {
+          const pool = CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) === 0);
+          if (pool.length) { const a = pool[Math.floor(s.rng() * pool.length) % pool.length]; s.artifacts[a.id] = 1; events.push({ type: 'freeArtifact', id: a.id, name: a.name }); }
+        }
+      }
       if (bone) events.push({ type: 'bone', bone });
       // «Автопереход» выключен: этаж открыт, но остаёмся и фармим текущий
       if (!s.autoAdvance && s.floor < CONFIG.maxFloor) {
@@ -3335,6 +3383,7 @@
   function secretFloor(block) { const E = CONFIG.secret.every; return block * E + 1 + Math.floor(hash01(block + 1, 4219, 77) * (E - 1)); }
   function isSecretFloor(f) { return secretFloor(Math.floor((f - 1) / CONFIG.secret.every)) === f; }
   function secretFind(s, f, events) {
+    if (!unlockedAt(s, 'secret')) return null;
     if (!isSecretFloor(f) || s.secrets.some(x => x.floor === f)) return null;
     const x = { floor: f, done: false }; s.secrets.push(x);
     if (events) events.push({ type: 'secretFound', floor: f });
@@ -3381,7 +3430,7 @@
   function curseMod(s) { const c = s.curse; return c && c.on && c.floor === s.floor && !s.mode ? CONFIG.curse.mods.find(m => m.id === c.mod) : null; }
   function curseOffer(s, events, offline) {
     const K = CONFIG.curse, f = s.floor;
-    if (offline || s.mode || f < K.minFloor || f <= (s.bestCleared | 0) || hash01(f, 977, 31) >= K.chance) return null;
+    if (offline || s.mode || !unlockedAt(s, 'curse') || f < K.minFloor || f <= (s.bestCleared | 0) || hash01(f, 977, 31) >= K.chance) return null;
     const mod = K.mods[Math.floor(hash01(f, 131, 7) * K.mods.length) % K.mods.length];
     s.curse = { floor: f, mod: mod.id, on: false };
     if (events) events.push({ type: 'curseOffer', floor: f, mod });
@@ -3607,7 +3656,7 @@
   function echoSync(s) { const wk = (s.event && s.event.week) || ''; if (s.echo.week !== wk) s.echo = { week: wk, used: 0, won: false }; }
   function echoInfo(s) {
     const E = CONFIG.pve.echo;
-    if (s.bestFloor < E.minFloor) return null;
+    if (s.bestFloor < E.minFloor || !unlockedAt(s, 'echo')) return null;
     echoSync(s);
     const n = s.echo.week ? Math.max(0, weekNum(s.echo.week)) : 0;
     const cleared = Math.min(CONFIG.biomes.length, Math.floor(s.bestFloor / CONFIG.biomeFloors));
@@ -3681,7 +3730,7 @@
     let v;
     if (q.key === 'allDaily') v = CONFIG.quests.daily.filter(x => x.id !== q.id && questDone(s, x.id)).length;
     else if (q.value === 'floor') v = s.bestFloor;
-    else if (q.value === 'hired') v = s.squad.filter(id => s.allies[id].level > 0).length;
+    else if (q.value === 'hired') v = CONFIG.allies.filter(a => inSquad(s, a.id)).length;
     else if (q.value === 'runFloor') v = s.maxFloor;
     else if (q.value === 'runHire') v = CONFIG.allies.filter(a => s.allies[a.id].level > 0).length;
     else {
@@ -4355,7 +4404,7 @@
     return k;
   }
   // ---------- связи героев (0.56) ----------
-  function bondActive(s, b) { return b.heroes.every(id => s.squad.includes(id)); }
+  function bondActive(s, b) { return b.heroes.every(id => inSquad(s, id)); }   // 0.74: связи — по всем нанятым (ответ 67)
   function activeBonds(s) { return CONFIG.bonds.filter(b => bondActive(s, b)); }
   function bondPower(s, kind) { return activeBonds(s).reduce((t, b) => t + (b.bonus.kind === kind ? b.bonus.per : 0), 0); }
   function bondsOf(id) { return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
@@ -4536,7 +4585,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame,
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -4791,6 +4840,7 @@
     if (!Array.isArray(d.secrets)) return null;
     s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
     if (!int(d.prestigeClaimed, 0)) return null;
+    s.megaSoulsFloor = +d.megaSoulsFloor > 0 ? +d.megaSoulsFloor : 0;
     s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
@@ -4884,7 +4934,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, transferPreview, transferProgress, rankCapForEvo, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    unlockedAt, perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, transferPreview, transferProgress, rankCapForEvo, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
@@ -6967,7 +7017,9 @@
 
     // ---------- разделы с вкладками ----------
     function renderSec() {
-      setHtml('sTabs', SECS.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
+      const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : true);
+      if (!SECS_ON.some(x => x[0] === sec)) sec = 'up';
+      setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
       const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
         : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
       setHtml('sTop', top);
@@ -6996,7 +7048,7 @@
     function upHtml() {
       // 0.69 (ответы 59, 68): одна кнопка множителя — по кругу; «Лучший отряд»
       const mlab = (MULTS.find(x => x[0] === mult) || [0, '×1'])[1];
-      let h = '<div class="upTool" style="gap:6px"><button class="chip" data-bestsq>⚡ Лучший отряд</button><button class="chip on" data-mc style="min-width:64px">' + mlab + '</button></div>';
+      let h = '<div class="upTool" style="gap:6px"><button class="chip on" data-mc style="min-width:64px">' + mlab + '</button></div>';
       const r = C.rankLabel(s.heroRank), RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
       h += '<div class="hCard pin" style="' + rvar('S') + '"><div class="pt">' + (heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡') + '<span class="rk">' + RN[r.rank || 1] + '</span></div>' +
         '<div class="inf"><div class="nm">Призванный</div><div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> / ' + fmt(C.tapCap(s)) + '</div>' +
@@ -7015,7 +7067,7 @@
         if (!hh.unlocked) {
           h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0) + '</div>' +
             '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +
-            '<button class="upBtn alt" data-free="' + a.id + '">🔒 Освободить героя</button></div>';
+            '<button class="upBtn alt" data-free="' + a.id + '">🔒</button></div>';
           continue;
         }
         const dps = lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—';
@@ -7023,7 +7075,7 @@
         h += '<div class="hCard" style="position:relative;' + rvar(a.rarity) + '">' + (hi ? '<i class="glowR"></i>' : '') + '<div class="pt" data-hv="' + a.id + '">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars) + '</div>' +
           '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. <b>' + (lv ? fmt(lv) : '--') + '</b>' + (lv ? ' / ' + fmt(C.allyCap(s, a.id)) : '') + '</div>' +
           '<div class="ln">⚔ <b>' + dps + '</b>' + (gn ? ' → <b style="color:#6be37a">' + gn + '</b>' : '') + ' DPS</div>' + (lv ? msLine(lv) : '') +
-          '<button class="sqBtn' + (sq ? ' on' : '') + '" data-sq="' + a.id + '">' + (sq ? '✓ в отряде' : '+ В отряд') + '</button></div>' +
+          '</div>' +
           '<button class="upBtn" data-ub="' + a.id + '"' + (u.btn.disabled ? ' disabled' : '') + '>' + u.btn.innerHTML + '</button></div>';
       }
       return h;
@@ -7083,9 +7135,9 @@
                 : '<button class="chip" data-bsel="on">☑ Выбрать</button>') + '</div>';
       const cells = list.map(x => '<button class="iCell' + (bagSel && bagSel.has(x.id) ? ' sel' : '') + (bagSel && !canSel(x) ? ' dim' : '') + '" data-item="' + x.id + '" style="position:relative;' + rvar(RAR_BY_N[Math.min(RAR_BY_N.length - 1, x.r)]) + (bagSel && !canSel(x) ? ';opacity:.35' : '') + '">' +
         (/^(b|r|pf_)/.test(x.id) && !seen[x.id] ? '<span class="newDot">NEW</span>' : '') + x.icon + (x.n > 1 ? '<span class="q">' + fmt(x.n) + '</span>' : '') + '</button>');
-      const total = Math.max(36, Math.ceil(cells.length / 6) * 6 + 6);
+      const total = Math.max(30, Math.ceil(cells.length / 5) * 5 + 5);
       for (let i = cells.length; i < total; i++) cells.push('<div class="iCell empty">✦</div>');
-      return h + '<div class="grid5 bagGrid g6">' + cells.join('') + '</div>';
+      return h + '<div class="grid5 bagGrid">' + cells.join('') + '</div>';
     }
     const BAG_CAP = 200, SEEN_KEY = 'prizvannyy_bagseen';
     let bagSel = null;
@@ -7315,7 +7367,7 @@
         return '<tr style="' + (on ? '' : 'opacity:.4') + '"><td><b style="color:' + (RC[r] || '#888') + '">' + r + '</b></td><td style="text-align:right">' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : (g && !C.rarityOpen(s, r) ? 'с ' + g + ' эт.' : '—')) + '</td></tr>';
       }).join('') + '</table><p class="hint3">После ' + P.softS + ' призывов без S шанс S растёт с каждым. Гарантии у баннеров раздельные. SS/SSS/GOD открываются рекордом этажа.</p>';
       h += '<label class="qk"><input type="checkbox" data-qk' + (setg.qsum === 'on' ? ' checked' : '') + '> Быстрый призыв</label>';
-      h += '<div style="text-align:center"><button class="iBtn" data-odds>i</button> <span class="hint3">шансы призыва</span></div>';
+      h += '<div style="text-align:center"><button class="iBtn" data-odds>?</button> <span class="hint3">шансы призыва</span></div>';
       return h;
     }
     function histHtml() {
@@ -7581,8 +7633,9 @@
       clearTimeout(plateT); plateT = setTimeout(() => plate.classList.remove('show'), (opt.dur || 1.4) * 1000);
     }
     // ---------- ульта союзника: арт, затемнение ----------
+    let lastCut = 0;
     function ultCut(id) {
-      if (setg.fx === 'off') return;
+      if (setg.fx === 'off' || performance.now() - lastCut < 4000) return; lastCut = performance.now();
       const A = HERO_ART[id], u = allyUi[id];
       const src = A && (A.side || A.back || A.avatar);
       cut.style.setProperty('--uc', u ? u.color : '#b14dff');
@@ -7715,10 +7768,7 @@
       const ce = C.currentEvent(s); evBtn.style.display = ce ? '' : 'none';
       if (ce && !(syncN++ % 20)) { evBtn.querySelector('.ico').textContent = ce.icon || '🏮'; evBtn.querySelector('small').textContent = weekLeft(); }
       // кнопки открываются постепенно (ответ 163): портал — после первого героя-союзника, событие — с 10 этажа, PvE — с 15
-      const best = Math.max(s.maxFloor, s.bestFloor);
-      pBtn.style.visibility = best >= 3 ? '' : 'hidden';
-      if (best < 10) evBtn.style.display = 'none';
-      $('cbPve').style.visibility = best >= 15 ? '' : 'hidden';
+      evBtn.style.display = 'none';   // 0.74: события — в книге
       decorAllies();
     }
     function weekLeft() {
@@ -7844,7 +7894,7 @@
     // ==================================================================
     const hp = mk('div', 'pgHero', 'pg', '<div class="tower"></div><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" aria-label="Назад">←</button><div class="titlePl">Герой</div></div><div class="pgBody" id="hvBody"></div>', $('cbMenu').parentNode);
     let hvId = null, hvTab = 'lv';
-    const HVT = [['lv', 'Уровень'], ['st', 'Звёзды'], ['bn', 'Кости'], ['sk', 'Умения']];
+    const HVT = () => [['lv', 'Уровень'], ['st', 'Звёзды'], ...(C.unlockedAt(s, 'bones') ? [['bn', 'Кости']] : []), ['sk', 'Умения']];
     hp.querySelector('.backBtn').addEventListener('click', () => { U.click(); hp.classList.remove('show'); U.sec('up'); });
     function hvList() { return CFG.allies.filter(a => s.heroes[a.id].unlocked).map(a => a.id); }
     function openHero(id) { hvId = id; U.show('pgHero'); renderHero(); $('hvBody').scrollTop = 0; }
@@ -7854,21 +7904,20 @@
       let o = '<div class="hvArt" style="--rc:' + rc + '">' + (A && (A.side || A.back) ? '<img src="' + (A.side || A.back) + '" alt="">' : '<div class="big">' + (v.icon || '✦') + '</div>') +
         '<button class="nav l" data-hn="-1">‹</button><button class="nav r" data-hn="1">›</button></div>' +
         '<div class="hvName" style="--rc:' + rc + '">' + a.name + '</div><div class="hvSub"><b style="color:' + rc + '">' + a.rarity + '</b> · ★' + h.stars + ' · ' + a.side + ' / ' + a.faction + ' · ' + C.roleOf(a) + (C.inSquad(s, a.id) ? ' · в отряде' : '') + '</div>' +
-        '<div class="hvTabs">' + HVT.map(([k, n]) => '<button data-ht="' + k + '" class="' + (k === hvTab ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
+        '<div class="hvTabs">' + HVT().map(([k, n]) => '<button data-ht="' + k + '" class="' + (k === hvTab ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
       if (hvTab === 'lv') {
         const lv = st.level, cap = C.allyCap(s, a.id), u = allyUi[a.id];
         o += '<div class="statGrid"><div>Уровень<b>' + fmt(lv) + ' / ' + fmt(cap) + '</b></div><div>DPS<b>' + (lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—') + '</b></div>' +
           '<div>Удар раз в<b>' + a.attackInterval + ' с</b></div><div>Ранг<b>' + C.rankLabel(h.rank).rank + '</b></div></div>' +
           '<div style="display:flex;gap:8px;justify-content:center;margin:10px 0"><button class="upBtn" data-hbuy' + (u.btn.disabled ? ' disabled' : '') + ' style="width:auto;padding:4px 18px">' + u.btn.innerHTML + '</button>' +
-          '<button class="upBtn alt" data-hsq style="width:auto;padding:4px 14px">' + (C.inSquad(s, a.id) ? 'Убрать из отряда' : 'В отряд') + '</button></div>';
+          '</div>';
         const nx = C.nextMilestone(lv), ms = []; let m = nx; for (let i = 0; i < 4; i++) { ms.push(m); m = C.nextMilestone(m); }
         o += '<div class="grpT">ВЕХИ УРОВНЯ · ×' + CFG.milestoneMult + ' УРОНА</div><div class="rowList">' + ms.map((m, i) => '<div class="' + (i ? 'lock' : 'on') + '"><span>Ур. ' + fmt(m) + '<small>' + (i ? '' : 'осталось ' + fmt(m - lv) + ' ур.') + '</small></span><b>×' + CFG.milestoneMult + '</b></div>').join('') + '</div>';
       } else if (hvTab === 'st') {
         const sc = C.starCost(s, a.id), ec = C.evoCost(s, a.id);
         o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div></div>' +
           '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (sc != null && h.copies >= sc ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Повысить звезду<span>копий ' + sc + '</span>') + '</button></div>' +
-          '<div class="grpT">ПРОБУЖДЕНИЕ</div><div class="rowList">' + CFG.evolution.stages.map((g, i) => '<div class="' + (h.evo > i ? 'on' : h.evo === i ? '' : 'lock') + '"><span>' + (h.evo > i ? '✓ ' : '') + g.name + '<small>★' + g.stars + ' · ×' + g.mult + ' урона</small></span></div>').join('') + '</div>' +
-          (ec ? '<div style="text-align:center;margin:10px 0"><button class="upBtn gold" data-hevo' + (C.canEvolve(s, a.id) ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + ec.name + '<span>★' + ec.stars + ' · ' + CFG.materials.shard.icon + ' ' + ec.shards + '</span></button></div>' : '');
+          '';   // 0.74: пробуждение убрано (ответ 43)
       } else if (hvTab === 'bn') {
         const SL = CFG.bones.slots, POS = { head: [50, 8], chest: [50, 40], armR: [16, 40], armL: [84, 40], legR: [32, 84], legL: [68, 84] };
         o += '<div class="skel"><div class="sil">💀</div>' + SL.map(sl => { const b = s.bones.find(q => q.on === a.id && q.slot === sl.id);
@@ -7963,7 +8012,7 @@
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = '0.72';
+    const VERSION = '0.74';
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -8032,7 +8081,7 @@
         html: '<div class="sysGrid">' + days.map((r, i) => { const n = week + i; return '<div style="' + (n < idx ? 'opacity:.4' : n === idx && can ? 'border-color:#e3b6ff;box-shadow:0 0 8px #b14dff' : '') + '"><b>' + (n < idx ? '✓' : ic(r)) + '</b>день ' + (n + 1) + '<br>' + rewardLine(r) + '</div>'; }).join('') + '</div>',
         btns: can ? [{ t: 'Забрать', fn: () => { const r = C.claimLogin(s, dayKey()); if (r) { toast('Бонус за вход · день ' + r.day + '<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } } }] : [{ t: 'OK' }] });
     }
-    if (prof.name) setTimeout(() => loginWin(false), 2200);
+    if (prof.name) setTimeout(() => { if (C.unlockedAt(s, 'login')) loginWin(false); }, 2200);
     // свайпы между вкладками раздела (ответ 52)
     let tsx = null;
     $('sBody').addEventListener('touchstart', e => { tsx = e.touches[0].clientX; }, { passive: true });
@@ -8524,6 +8573,110 @@
     }
     requestAnimationFrame(frame);
     window.U3 = window.U3 || {}; window.U3.rigPlay = (k, v) => heroRig && play(heroRig, k, v);
+  })();
+
+  // ===================== 0.74: лесенка открытий, книга, ритуал, кузница, квест справа (опрос docs/ui/ANSWERS_UNLOCKS.md) =====================
+  (function () {
+    const U = window.U2, sys = window.U3.sys, UA = window.UI_ART || {};
+    const on = k => C.unlockedAt(s, k), best = () => Math.max(s.bestFloor | 0, s.maxFloor | 0);
+    const img = n => UA[n] ? '<img class="uiA" src="' + UA[n] + '" alt="">' : '';
+    const mk = (tag, id, cls, html, parent) => { const n = document.createElement(tag); if (id) n.id = id; if (cls) n.className = cls; if (html != null) n.innerHTML = html; if (parent) parent.appendChild(n); return n; };
+    const host = $('cbMenu').parentNode;
+    // ---------- мечи → сразу «Прокачка» (вкладки сверху, ответ 32) ----------
+    const om = $('cbMenu'), menuBtn = om.cloneNode(true); om.replaceWith(menuBtn);
+    menuBtn.addEventListener('click', e => { e.stopPropagation(); U.press(menuBtn); U.sec('up'); });
+    // ---------- маленькие кнопки: книга (слева), ритуал и кузница (слева), портал (справа) ----------
+    function sm(id, ico, art, label) {
+      const b = mk('button', id, 'cBtn sm cbA', img(art) || '<span class="ico">' + ico + '</span>', host); b.setAttribute('aria-label', label); b.dataset.ua = 1; return b;
+    }
+    const book = sm('cbBook', '📕', 'st_book', 'Книга: задания, почта, события, магазин, дневник');
+    const rit = sm('cbRitual', '👻', 'md_ritual', 'Ритуал');
+    const forge = sm('cbForge', '⚒', 'fg_anvil', 'Кузница');
+    const list = mk('div', 'bookList', '', '', host);
+    const BOOK = [['quests', 'ic_quests', 'Задания', 'quests'], ['inbox', 'q_gift', 'Почта', null], ['events', 'q_event', 'События', 'events'], ['season', 'pr_medal', 'Сезон', 'season'], ['@shop', 'sh_cart', 'Магазин', 'shop'], ['diary', 'st_book', 'Дневник', null]];
+    function renderBook() {
+      list.innerHTML = BOOK.filter(x => !x[3] || on(x[3])).map(([k, a, n]) => '<button data-bk="' + k + '">' + img(a) + '<span>' + n + '</span></button>').join('');
+    }
+    book.addEventListener('click', e => { e.stopPropagation(); U.press(book); renderBook(); list.classList.toggle('show'); });
+    list.addEventListener('click', e => { const b = e.target.closest('[data-bk]'); if (!b) return; e.stopPropagation(); list.classList.remove('show'); U.click(); U.home();
+      if (b.dataset.bk === '@shop') window.U3.menuAct('shop'); else U.openOld(b.dataset.bk); });
+    document.addEventListener('pointerdown', e => { if (!e.target.closest('#bookList, #cbBook')) list.classList.remove('show'); }, true);
+    rit.addEventListener('click', e => { e.stopPropagation(); U.press(rit); U.home(); U.openX('souls'); });
+    forge.addEventListener('click', e => { e.stopPropagation(); U.press(forge);
+      const F = [['runes', 'runes', 'fg_anvil', 'Руны'], ['altar', 'altar', 'md_altar', 'Алтарь'], ['altar', 'alchemy', 'potion_red', 'Алхимия'], ['bones', 'bones', 'ac_armor', 'Кости']].filter(x => on(x[1]));
+      sys({ title: 'КУЗНИЦА', html: '<div class="rowList">' + F.map(([t, k, a, n]) => '<button data-fg="' + t + '"><span style="display:flex;align-items:center;gap:8px"><i style="width:36px;height:36px;display:inline-block">' + img(a) + '</i>' + n + '</span><b>›</b></button>').join('') + '</div>',
+        btns: [{ t: 'Закрыть' }], onShow: w => w.querySelector('.rowList').addEventListener('click', ev => { const b = ev.target.closest('[data-fg]'); if (!b) return; $('sysOv').classList.remove('show'); U.home(); U.openOld(b.dataset.fg); }) }); });
+    // ---------- «?» в разделах (ответ 52) ----------
+    const HELP = { up: 'Прокачка: золотом повышайте уровень главного героя и союзников. Каждые несколько уровней — веха ×3 урона. Ранг (потолок уровня) — за осколки Башни. Звёзды — слиянием копий героя и «корма».',
+      art: 'Артефакты: вечные бонусы, переживают ритуал. Покупаются и улучшаются душами. Первый артефакт — за мега-босса 50 этажа.',
+      bag: 'Сумка: все предметы. Нажмите на предмет — описание, «Использовать», «Продать», «Где добыть». Кости можно продавать пачкой.',
+      pets: 'Питомцы: сильно усиливают урон (×5 и больше с эволюцией). Уровень — за золото, эволюция — за фрагменты из Теневой башни.' };
+    const qBtn = mk('button', 'secHelp', 'iBtn', '?'); $('sTitle').parentNode.appendChild(qBtn);
+    qBtn.addEventListener('click', () => { const t = document.querySelector('#sTabs button.on'); const k = t ? t.dataset.st : 'up'; sys({ title: 'СПРАВКА', text: HELP[k] || '' }); });
+    // ---------- видимость кнопок по лесенке (ответы 1–19, до открытия — скрыта) ----------
+    function gate() {
+      const vis = (el, k) => { if (el) el.style.display = on(k) ? '' : 'none'; };
+      vis($('cbPortal'), 'portal'); vis($('cbPve'), 'pve'); vis(rit, 'ritual'); vis(forge, 'forge');
+      book.style.display = on('quests') ? '' : 'none';
+    }
+    // ---------- квест справа: задача с наградой + следующая функция (ответы 35–38) ----------
+    const QK = 'prizvannyy_story';
+    let st = { i: 0, fold: false }; try { Object.assign(st, JSON.parse(localStorage.getItem(QK) || '{}')); } catch (e) {}
+    const saveQ = () => { try { localStorage.setItem(QK, JSON.stringify(st)); } catch (e) {} };
+    const hired = id => s.allies[id] && s.allies[id].level > 0;
+    const STARTERS = CFG.allies.filter(a => a.starter).map(a => a.id);
+    const unlockedHeroes = () => CFG.allies.filter(a => s.heroes[a.id].unlocked).length;
+    const STORY = [
+      { t: 'Найми первого союзника', ok: () => STARTERS.some(hired), r: { gold: 50 }, go: 'up' },
+      { t: 'Подними главного героя до 10 ур.', ok: () => s.tapLevel >= 10, r: { gold: 200 }, go: 'up' },
+      { t: 'Дойди до 5 этажа', ok: () => best() >= 5, r: { tickets: 1 }, go: 'battle' },
+      { t: 'Найми всех четырёх союзников', ok: () => STARTERS.every(hired), r: { shard: 20 }, go: 'up' },
+      { t: 'Победи первого стража (10 этаж)', ok: () => best() >= 11, r: { tickets: 2 }, go: 'battle' },
+      { t: 'Дойди до 25 этажа', ok: () => best() >= 25, r: { tickets: 5 }, go: 'battle' },
+      { t: 'Призови героя в портале', ok: () => unlockedHeroes() > STARTERS.length, r: { tickets: 3 }, go: 'portal' },
+      { t: 'Победи мега-босса (50 этаж)', ok: () => best() >= 51, r: { tickets: 5 }, go: 'battle' },
+      { t: 'Улучши артефакт', ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
+      { t: 'Дойди до 100 этажа', ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
+      { t: 'Дойди до 200 этажа', ok: () => best() >= 200, r: { tickets: 10 }, go: 'battle' },
+      { t: 'Проведи первый ритуал', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
+    ];
+    const NAMES = { ult: 'ульта героя', quests: 'задания', login: 'награда за вход', portal: 'портал призыва', shop: 'магазин', artifacts: 'артефакты', pve: 'PvE', runes: 'руны', forge: 'кузница',
+      ritual: 'ритуал', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
+    function nextUnlock() {
+      const b = best(); let f = Infinity; for (const k in CFG.unlocks) if (CFG.unlocks[k] > b) f = Math.min(f, CFG.unlocks[k]);
+      if (f === Infinity) return null;
+      const names = []; for (const k in CFG.unlocks) if (CFG.unlocks[k] === f) names.push(NAMES[k] || k);
+      return { f, names: [...new Set(names)] };
+    }
+    const rTxt = r => r.gold ? '◆ ' + fmt(r.gold) : r.tickets ? '🎟 ' + r.tickets : r.shard ? CFG.materials.shard.icon + ' ' + r.shard : '';
+    const qp = mk('div', 'questPanel', '', '', host);
+    let qHtml = '';
+    function renderQuest() {
+      const q = STORY[st.i], nu = nextUnlock();
+      let h;
+      if (st.fold) h = '<button class="qFold" data-q="unfold">' + img('scroll_quest') + (q && q.ok() ? '<i class="qDot"></i>' : '') + '</button>';
+      else {
+        h = '<div class="qBox"><button class="qMin" data-q="fold" aria-label="Свернуть">–</button>';
+        if (q) { const done = q.ok(); h += '<div class="qT" data-q="go">КВЕСТ</div><div class="qTxt" data-q="go">' + q.t + '</div><div class="qR">' + (done ? '<button class="qClaim" data-q="claim">Забрать ' + rTxt(q.r) + '</button>' : 'Награда: ' + rTxt(q.r)) + '</div>'; }
+        if (nu) h += '<div class="qNext">' + nu.f + ' этаж: ' + nu.names.join(', ') + '</div>';
+        h += '</div>';
+      }
+      if (h !== qHtml) { qp.innerHTML = h; qHtml = h; }
+    }
+    qp.addEventListener('click', e => {
+      const b = e.target.closest('[data-q]'); if (!b) return; e.stopPropagation(); U.click();
+      const k = b.dataset.q, q = STORY[st.i];
+      if (k === 'fold') st.fold = true; else if (k === 'unfold') st.fold = false;
+      else if (k === 'claim' && q && q.ok()) {
+        if (q.r.gold) s.gold = B.add(s.gold, q.r.gold); if (q.r.tickets) s.tickets += q.r.tickets; if (q.r.shard) s.materials.shard += q.r.shard;
+        toast('Квест выполнен<small>' + rTxt(q.r) + '</small>'); st.i++; save(); render();
+      } else if (k === 'go' && q) {
+        U.home();
+        if (q.go === 'up' || q.go === 'art') U.sec(q.go); else if (q.go === 'portal') U.openX('portal'); else if (q.go === 'ritual') U.openX('souls'); else U.show(null);
+      }
+      saveQ(); qHtml = ''; renderQuest();
+    });
+    setInterval(() => { gate(); renderQuest(); }, 500); gate(); renderQuest();
   })();
 
   if (restoredFrom) setTimeout(() => toast('Сохранение восстановлено<small>из резервной копии от ' + new Date(restoredFrom.t).toLocaleString('ru-RU') + '</small>'), 600);
