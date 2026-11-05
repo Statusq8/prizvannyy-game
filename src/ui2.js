@@ -462,6 +462,7 @@
         const r = C.ritual(s); if (!r) return;
         dmgLog.length = 0; restartAnim('spawn');
         toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>награды — в центре наград 📬</small>'), 2500);
         save(); render();
       });
     }

@@ -1595,8 +1595,24 @@
       ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
     ];
     $('statsTab').innerHTML = '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
-      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>';
+      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml();
   }
+  // Титулы за 1-й/10-й/100-й ритуал (0.51): только для красоты, выбранный показывается в профиле
+  function titlesHtml() {
+    const all = CFG.ritual.milestones;
+    let h = '<div class="secTitle">ТИТУЛЫ' + (s.title ? ' · сейчас «' + s.title + '»' : '') + '</div><div class="spare">';
+    for (const m of all) {
+      const own = s.titles.includes(m.title), cur = s.title === m.title;
+      h += own ? '<button class="hBtn' + (cur ? ' go' : '') + '" data-title="' + m.title + '"' + (cur ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + m.title + '</button>'
+               : '<span class="badge rs">🔒 ' + m.title + ' — ритуал №' + m.n + '</span>';
+    }
+    if (s.skins.includes('eternal')) h += '<span class="badge sq">облик «Вечный призванный» открыт</span>';
+    return h + '</div>';
+  }
+  $('statsTab').addEventListener('click', e => {
+    const b = e.target.closest('[data-title]'); if (!b) return;
+    if (C.setTitle(s, b.dataset.title)) { toast('Титул<small>' + b.dataset.title + '</small>'); save(); render(); }
+  });
   $('statsBtn').addEventListener('click', () => { el.modal.classList.remove('show'); tab = 'stats'; setCollapsed(false); render(); });
 
   // ---------- карта Башни (0.32): путь по этажам биома, замки, финальный босс ----------
@@ -2325,6 +2341,7 @@
         dmgLog.length = 0;
         restartAnim('spawn');
         toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>награды — в центре наград 📬</small>'), 2500);
         save(); render();
       });
       return;
