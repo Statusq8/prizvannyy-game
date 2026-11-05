@@ -4,6 +4,7 @@ const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
 const TAP_CAP = CFG.maxTapsPerSec; CFG.maxTapsPerSec = Infinity;   // тесты бьют много раз за кадр; предел проверяется отдельно
+const UNLOCKS = CFG.unlocks; CFG.unlocks = {};   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
 const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 
 function killCurrent(s) {
@@ -531,8 +532,8 @@ test('гарантии: A+ не позже pityA призывов, S+ не по�
 test('шансы портала примерно соответствуют таблице', () => {
   const s = C.newState();
   s.tickets = 40000;
-  s.pity = { a: -1e9, s: -1e9 };                       // отключаем гарантии для замера
-  const r = C.summon(s, 40000);
+  const P = CFG.portal, pa = P.pityA, ps = P.pityS; P.pityA = P.pityS = 1e9;   // отключаем гарантии для замера
+  const r = C.summon(s, 40000); P.pityA = pa; P.pityS = ps;
   const share = r.filter(x => x.rarity === 'E').length / r.length;
   const total = Object.values(CFG.portal.odds).reduce((a, b) => a + b, 0);
   assert.ok(Math.abs(share - CFG.portal.odds.E / total) < 0.02, 'E ' + share);
@@ -554,29 +555,25 @@ test('звёзды: за дубликаты, до 10, повышают толь�
   assert.strictEqual(H('shorokh').ult.power, 20);       // ульт не меняется от звёзд
 });
 
-test('отряд: максимум четыре, резерв даёт долю DPS, ненанятые — ничего', () => {
+test('0.74: бьют все нанятые союзники в полную силу, ненанятые — ничего', () => {
   const s = C.newState(NOCRIT);
   s.heroes.irene.unlocked = true;
-  assert.strictEqual(C.squadAdd(s, 'irene'), false);  // отряд полон
+  assert.strictEqual(C.contribDps(s, 'irene'), 0);                    // открыта, но не нанята
   s.allies.irene.level = 10;
-  assert.strictEqual(C.contribDps(s, 'irene'), C.allyDps(s, 'irene') * CFG.reserveShare);
-  assert.ok(C.squadRemove(s, 'shorokh'));
-  assert.ok(C.squadAdd(s, 'irene'));
+  assert.ok(C.inSquad(s, 'irene'));
   assert.strictEqual(C.contribDps(s, 'irene'), C.allyDps(s, 'irene'));
-  assert.strictEqual(C.contribDps(s, 'shorokh'), 0);     // Ирэн не нанята
-  s.allies.shorokh.level = 5;
-  assert.strictEqual(C.reserveDps(s), C.allyDps(s, 'shorokh') * CFG.reserveShare);
+  assert.strictEqual(C.reserveDps(s), 0);
 });
 
-test('резерв наносит урон сам, ульты и атаки — только у отряда', () => {
+test('0.74: нанятый союзник бьёт сам и копит ульту', () => {
   const s = C.newState(NOCRIT); tough(s);
   s.heroes.irene.unlocked = true;
-  s.allies.irene.level = 10;                          // в резерве
+  s.allies.irene.level = 10;
   const ev = runFor(s, 20);
-  const res = ev.filter(e => e.type === 'hit' && e.source === 'reserve');
-  assert.ok(Math.abs(res.length - 20) <= 1);
-  assert.ok(!ev.some(e => e.source === 'irene' || (e.type === 'ult' && e.id === 'irene')));
+  assert.ok(ev.some(e => e.type === 'hit' && e.source === 'irene'));
+  assert.ok(!ev.some(e => e.source === 'reserve'));
 });
+
 
 test('сохранение коллекции и миграция с версии 0.6 (билеты за пройденных боссов)', () => {
   const s = C.newState(NOCRIT);
@@ -704,9 +701,10 @@ test('бонус DPS линеен по неизрасходованным душ
   assert.ok(Math.abs((C.soulMult(s) - 1) - 2 * (1 + 10 * CFG.souls.dpsPerSoul - 1)) < 1e-9);
 });
 
-test('ритуал доступен только с этажа 400', () => {
+test('ритуал доступен только с этажа ритуала (0.74: 200)', () => {
   const s = C.newState(NOCRIT);
-  reach(s, 399);
+  assert.strictEqual(CFG.ritual.floor, 200);
+  reach(s, CFG.ritual.floor - 1);
   assert.strictEqual(C.canRitual(s), false);
   assert.strictEqual(C.ritual(s), null);
   reach(s, 400);
@@ -952,6 +950,7 @@ test('офлайн: отряд проходит этажи до стены, за
 test('офлайн: повторный уход не опускает ниже — снова пробует рубеж и фармит под ним', () => {
   const s = C.newState(NOCRIT);
   s.allies.shorokh.level = 50;
+  s.megaSoulsFloor = 1e9;                                             // души мега-боссов меняли бы силу между уходами
   const a = C.offlineProgress(s, 12 * 3600);
   const b = C.offlineProgress(s, 12 * 3600);
   assert.strictEqual(b.wallFloor, a.wallFloor); assert.strictEqual(s.floor, a.wallFloor - 1);
@@ -2018,10 +2017,10 @@ test('баннеры: цена, редкий — только C+, событий
 
 test('гарантии баннеров раздельные', () => {
   const s = C.newState({ rng: () => 0 }); s.tickets = 1000;
-  C.summon(s, 10, 'normal');
-  assert.strictEqual(s.pity.a, 10);
+  C.summon(s, 5, 'normal');
+  assert.strictEqual(s.pity.a, 5);
   C.summon(s, 5, 'rare');
-  assert.strictEqual(s.pity.a, 10); assert.strictEqual(C.bannerPity(s, 'rare').a, 5);
+  assert.strictEqual(s.pity.a, 5); assert.strictEqual(C.bannerPity(s, 'rare').a, 5);
   const r = C.summon(s, 10, 'rare');                         // 15-й на редком — A+
   assert.ok(['A', 'S', 'GOD'].includes(r[9].rarity));
   assert.strictEqual(C.bannerPity(s, 'rare').a, 0);
@@ -2414,12 +2413,12 @@ test('умный офлайн-отчёт: что можно купить; зап
 });
 
 // ---------- 0.56: связи героев ----------
-test('связи героев: все участники в отряде — бонус урона или золота; герои в связях существуют', () => {
+test('связи героев: все участники наняты — бонус урона или золота; герои в связях существуют', () => {
   for (const b of CFG.bonds) for (const id of b.heroes) assert.ok(CFG.allies.find(a => a.id === id), b.id + ':' + id);
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
   assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), []);
-  for (const x of [s, t]) { x.heroes.velma.unlocked = true; x.heroes.rotgar.unlocked = true; C.squadRemove(x, 'lumi'); C.squadRemove(x, 'shmyg'); C.squadAdd(x, 'velma'); }
-  C.squadAdd(s, 'rotgar'); C.squadAdd(t, 'shmyg');
+  for (const x of [s, t]) { x.heroes.velma.unlocked = true; x.heroes.rotgar.unlocked = true; x.allies.velma.level = 1; }
+  s.allies.rotgar.level = 1; t.allies.shmyg.level = 1;               // 0.74: связи — по всем нанятым
   assert.deepStrictEqual(C.activeBonds(s).map(b => b.id), ['legion']);
   assert.ok(Math.abs(C.bondPower(s, 'allDmg') - 0.10) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.10) < 1e-9);   // одинаковые наборы героев, кроме связи
@@ -2633,4 +2632,25 @@ test('фильтр списка героев по стороне', () => {
   const s = C.newState(NOCRIT);
   const t = C.heroList(s, { side: 'Тени' });
   assert.strictEqual(t.length, 13); assert.ok(t.every(id => CFG.allies.find(a => a.id === id).side === 'Тени'));
+});
+
+test('0.74: лесенка открытий — системы закрыты до своего этажа', () => {
+  const U = UNLOCKS, s = C.newState(NOCRIT);
+  CFG.unlocks = U;
+  try {
+    assert.strictEqual(U.portal, 25); assert.strictEqual(U.artifacts, 50); assert.strictEqual(U.ritual, 200); assert.strictEqual(U.pets, 1250); assert.strictEqual(U.bones, 2000);
+    assert.strictEqual(C.unlockedAt(s, 'portal'), false);
+    s.bestFloor = 25; assert.strictEqual(C.unlockedAt(s, 'portal'), true); assert.strictEqual(C.unlockedAt(s, 'pets'), false);
+    s.floor = 600; s.bestCleared = 599; assert.strictEqual(C.secretFind(s, 750, []), null);   // скрытые комнаты — с 750
+  } finally { CFG.unlocks = {}; }
+});
+
+test('0.74: мега-босс даёт души и первый артефакт даром', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e9;
+  reach(s, 50); s.floor = 50; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const souls0 = C.B.toNum(s.souls);
+  const ev = killCurrent(s);
+  assert.ok(ev.some(e => e.type === 'megaSouls'));
+  assert.ok(C.B.toNum(s.souls) > souls0);
+  assert.ok(CFG.artifacts.some(a => !a.special && C.artLevel(s, a.id) === 1));
 });
