@@ -134,14 +134,15 @@
     }
     const gainOf = html => { const m = /→ <b>([^<]+)<\/b>/.exec(html || ''); return m ? m[1] : ''; };
     function upHtml() {
-      // 0.69 (ответы 59, 68): одна кнопка множителя — по кругу; «Лучший отряд»
+      // 0.75: карточки «как в Крушителях» (docs/reference/dungeon-crusher/upgrade_card_user.jpg)
       const mlab = (MULTS.find(x => x[0] === mult) || [0, '×1'])[1];
-      let h = '<div class="upTool" style="gap:6px"><button class="chip on" data-mc style="min-width:64px">' + mlab + '</button></div>';
+      let h = '<div class="dcTop"><span class="dcTtl">Герои</span><button class="dcMult" data-mc>' + mlab + '</button></div>';
       const r = C.rankLabel(s.heroRank), RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-      h += '<div class="hCard pin" style="' + rvar('S') + '"><div class="pt">' + (heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡') + '<span class="rk">' + RN[r.rank || 1] + '</span></div>' +
-        '<div class="inf"><div class="nm">Призванный</div><div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> / ' + fmt(C.tapCap(s)) + '</div>' +
-        '<div class="ln">⚔ <b>' + fmt(C.tapHit(s)) + '</b> за тап' + (gainOf(el.tapSub.innerHTML) ? ' → <b style="color:#6be37a">' + gainOf(el.tapSub.innerHTML) + '</b>' : '') + '</div>' + msLine(s.tapLevel) + '</div>' +
-        '<button class="upBtn" data-ub="hero"' + (el.buyTap.disabled ? ' disabled' : '') + '>' + el.buyTap.innerHTML + '</button></div>';
+      const ms = lv => '<span class="dcMs" title="следующая веха ×' + CFG.milestoneMult + '">✦ ' + fmt(C.nextMilestone(lv)) + '</span>';
+      const btn = (key, src) => '<button class="upBtn dc' + (src.classList.contains('hire') ? ' hire' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '>' + src.innerHTML + '</button>';
+      h += '<div class="dcCard pin"><div class="pt">' + (heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡') + '<span class="rk">' + RN[r.rank || 1] + '</span></div>' +
+        '<div class="inf"><div class="nm">Призванный</div><div class="ln">ур.: <b>' + fmt(s.tapLevel) + '</b></div>' +
+        '<div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>' + ms(s.tapLevel) + '</div>' + btn('hero', el.buyTap) + '</div>';
       const list = CFG.allies.slice().sort((a, b) => {
         const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
         if (ua !== ub) return ua ? -1 : 1;
@@ -151,20 +152,20 @@
       });
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
-        const fig = '<div style="width:100%;height:100%">' + (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo)) + '</div>';
+        const fig = '<div class="fg">' + (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo)) + '</div>';
         if (!hh.unlocked) {
-          h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0) + '</div>' +
-            '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +
-            '<button class="upBtn alt" data-free="' + a.id + '">🔒</button></div>';
+          // ответ 72: чёрный силуэт с замком; отдельная тёмная карточка
+          h += '<div class="dcCard lock"><div class="pt">' + fig + '<i class="lk">🔒</i></div>' +
+            '<div class="inf"><div class="nm">' + a.name + '</div><button class="dcFree" data-free="' + a.id + '">Освободить героя</button></div></div>';
           continue;
         }
-        const dps = lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—';
-        const sq = C.inSquad(s, a.id), gn = gainOf(u.sub.innerHTML), hi = RANKS.indexOf(a.rarity) >= RANKS.indexOf('A');
-        h += '<div class="hCard" style="position:relative;' + rvar(a.rarity) + '">' + (hi ? '<i class="glowR"></i>' : '') + '<div class="pt" data-hv="' + a.id + '">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars) + '</div>' +
-          '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. <b>' + (lv ? fmt(lv) : '--') + '</b>' + (lv ? ' / ' + fmt(C.allyCap(s, a.id)) : '') + '</div>' +
-          '<div class="ln">⚔ <b>' + dps + '</b>' + (gn ? ' → <b style="color:#6be37a">' + gn + '</b>' : '') + ' DPS</div>' + (lv ? msLine(lv) : '') +
-          '</div>' +
-          '<button class="upBtn" data-ub="' + a.id + '"' + (u.btn.disabled ? ' disabled' : '') + '>' + u.btn.innerHTML + '</button></div>';
+        const sc = C.starCost(s, a.id), plus = sc != null && hh.copies >= sc;
+        const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
+        const crown = RANKS.indexOf(a.rarity) >= RANKS.indexOf('S');
+        h += '<div class="dcCard' + (lv ? '' : ' off') + '" style="' + rvar(a.rarity) + '"><div class="pt" data-hv="' + a.id + '">' + fig +
+          (plus ? '<i class="plus">+</i>' : '') + (crown ? '<i class="crown">👑</i>' : '') + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars) + '</div>' +
+          '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">ур.: <b>' + fmt(lv) + '</b></div>' +
+          '<div class="ln"><i class="dcI">🗡</i><b>' + fmt(dps) + '</b></div>' + ms(lv) + '</div>' + btn(a.id, u.btn) + '</div>';
       }
       return h;
     }
