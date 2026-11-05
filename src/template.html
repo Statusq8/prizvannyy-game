@@ -1523,17 +1523,35 @@
     if (tab === 'pve') renderPve();
     $('pveDot').classList.toggle('on', !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0));
   }
+  // 0.54: фильтры списка героев (фракция, редкость, роль, избранные, нанятые) и сортировка; переключаются касанием
+  const heroF = { faction: '', rarity: '', role: '', fav: false, owned: false, sort: 'rarity' };
+  function heroFilterHtml() {
+    const chip = (k, label, on) => '<button class="chip' + (on ? ' on' : '') + '" data-hf="' + k + '">' + label + '</button>';
+    return '<div class="spare" style="gap:6px;flex-wrap:wrap">' +
+      chip('faction', 'Фракция: ' + (heroF.faction || 'все'), !!heroF.faction) + chip('rarity', 'Редкость: ' + (heroF.rarity || 'все'), !!heroF.rarity) +
+      chip('role', 'Роль: ' + (heroF.role || 'все'), !!heroF.role) + chip('fav', '★ избранные', heroF.fav) + chip('owned', 'только нанятые', heroF.owned) +
+      chip('sort', heroF.sort === 'power' ? 'по силе' : 'по редкости', heroF.sort === 'power') +
+      (heroF.faction || heroF.rarity || heroF.role || heroF.fav || heroF.owned ? chip('reset', '✕ сброс', false) : '') + '</div>';
+  }
+  function cycle(list, cur) { const i = list.indexOf(cur); return i + 1 >= list.length ? '' : list[i + 1]; }
+  function presetHtml() {
+    let h = '<div class="secTitle">ПРЕСЕТЫ ОТРЯДА</div><div class="spare" style="gap:6px">';
+    for (let i = 0; i < CFG.presets; i++) {
+      const p = s.presets[i];
+      h += '<span class="badge rs" style="display:inline-flex;gap:4px;align-items:center">' +
+        '<button class="hBtn' + (p ? ' go' : '') + '" data-pl="' + i + '"' + (p ? '' : ' disabled') + '>Состав ' + (i + 1) + (p ? ' · ' + p.squad.length : '') + '</button>' +
+        '<button class="hBtn" data-ps="' + i + '" title="Сохранить текущий отряд">💾</button></span>';
+    }
+    return h + '</div>';
+  }
   function renderHeroes() {
-    const list = CFG.allies.slice().sort((a, b) => {
-      const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
-      if (ua !== ub) return ua ? -1 : 1;
-      return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
-    });
+    const list = C.heroList(s, heroF).map(id => CFG.allies.find(a => a.id === id));
     const M = CFG.materials, ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
     let html = '<div class="matHead"><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span></div>' +
-      heroDetailHtml() + heroTopHtml() +
+      heroDetailHtml() + heroTopHtml() + presetHtml() +
       '<div class="secTitle">СОЮЗНИКИ</div><div class="hint2">Отряд ' + s.squad.length + '/' + CFG.squadSize + ' — на арене, у них работают ультимейты. ' +
-      'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>';
+      'Нанятые вне отряда тоже бьют в полную силу. Звёзды — за дубликаты из портала. Эволюция — за звёзды и материалы с боссов, навсегда.</div>' + heroFilterHtml() +
+      (list.length ? '' : '<div class="hint2">Нет героев под эти фильтры.</div>');
     for (const a of list) {
       const h = s.heroes[a.id], v = ALLY_VIS[a.id];
       if (!h.unlocked) {
@@ -1551,8 +1569,10 @@
         : '<div class="evoNeed"><span class="ok">Эволюция завершена</span></div>';
       html += '<div class="hRow r-' + a.rarity + '"><div class="hIcon" data-hd="' + a.id + '" style="background:' + v.iconBg + '">' + v.icon +
         (h.evo ? '<span class="evoPip">' + ROMAN[h.evo] + '</span>' : '') + '</div>' +
-        '<div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
+        '<div class="hInfo"><div class="hName"><button class="favBtn" data-fav="' + a.id + '" style="background:none;border:0;padding:0 4px 0 0;font-size:16px;color:' + (C.isFav(s, a.id) ? 'var(--gold)' : '#6a6070') + '">' + (C.isFav(s, a.id) ? '★' : '☆') + '</button>' +
+        '<span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name +
         (sq ? '<span class="badge sq">отряд</span>' : '') + '</div>' +
+        '<div class="hSub">' + a.faction + ' · ' + C.roleOf(a) + '</div>' +
         '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
         ' · ранг ' + (() => { const r = C.rankLabel(h.rank); return RN[r.rank] + (r.max ? ' макс' : '·' + r.sub); })() + ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
@@ -1836,7 +1856,8 @@
     return html;
   }
   function renderQuests() {
-    const Q = CFG.quests, n = C.claimableCount(s) + C.achClaimableCount(s);
+    const Q = CFG.quests, n = C.claimableCount(s) + C.achClaimableCount(s) + s.inbox.length + (C.loginAvailable(s, dayKey()) ? 1 : 0) +
+      CFG.questChests.filter((c, i) => C.questChestReady(s, i)).length;   // 0.54: «Забрать всё» — и вход, и почта, и сундуки
     let html = '<button class="claimAll" data-act="all"' + (n ? '' : ' disabled') + '>' + (n ? 'Забрать всё (' + n + ')' : 'Нечего забирать') + '</button>';
     const dc = C.dailyClaimedCount(s), QC = CFG.questChests, last = QC[QC.length - 1].need;
     html += '<div class="secTitle">СУНДУКИ ЗАДАНИЙ · выполнено ' + dc + '/' + last + ' ежедневных</div><div class="chestBar"><i style="width:' + Math.min(100, dc / last * 100) + '%"></i></div><div class="chestRow">' +
@@ -1868,9 +1889,8 @@
     if (d.chest) { const r = C.openQuestChest(s, +d.chest); if (r) { toast('🧰 Сундук открыт<small>' + rewardLine(r) + '</small>'); save(); } }
     else if (d.claim) { const r = C.claimQuest(s, d.claim); if (r) { toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); } }
     else if (d.act === 'all') {
-      const r = C.claimAll(s), a = C.claimAllAch(s), sum = {}; let n = 0;
-      for (const x of [r, a]) if (x) { n += x.count; for (const k in x.reward) sum[k] = B.add(sum[k] || 0, x.reward[k]); }
-      if (n) { toast('Забрано наград: ' + n + '<small>' + rewardLine(sum) + '</small>'); save(); }
+      const had = s.titles.length, x = C.claimEverything(s, dayKey());   // 0.54: вход, задания, сундуки, достижения, пропуск, почта
+      if (x) { toast('Забрано наград: ' + x.count + '<small>' + rewardLine(x.reward) + '</small>'); if (s.titles.length > had) setTimeout(() => toast('Новый титул!<small>смотрите в Статистике</small>'), 2000); save(); }
     }
     else if (d.ach) { const had = s.titles.length, r = C.claimAch(s, d.ach); if (r) { toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); if (s.titles.length > had) { const t = C.allTitles().find(x => x.title === s.titles[s.titles.length - 1]); setTimeout(() => toast('Новый титул: «' + t.title + '»<small>' + titleBonusTxt(t) + ' навсегда</small>'), 2000); } save(); } }
     else if (d.go) { if (d.go === 'arena') setCollapsed(true); else tab = d.go; }
@@ -2393,6 +2413,18 @@
     if (b.dataset.in) ok = C.squadAdd(s, b.dataset.in);
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
     const dd = b.dataset;
+    if (dd.fav) ok = C.toggleFav(s, dd.fav);
+    if (dd.hf) {
+      const k = dd.hf; ok = true;
+      if (k === 'faction') heroF.faction = cycle(['', ...CFG.factions], heroF.faction);
+      else if (k === 'rarity') heroF.rarity = cycle(['', ...RANKS.slice().reverse()], heroF.rarity);
+      else if (k === 'role') heroF.role = cycle(['', ...new Set(Object.values(CFG.roles))], heroF.role);
+      else if (k === 'fav' || k === 'owned') heroF[k] = !heroF[k];
+      else if (k === 'sort') heroF.sort = heroF.sort === 'power' ? 'rarity' : 'power';
+      else if (k === 'reset') Object.assign(heroF, { faction: '', rarity: '', role: '', fav: false, owned: false });
+    }
+    if (dd.ps) { ok = C.savePreset(s, +dd.ps); if (ok) toast('Состав ' + (+dd.ps + 1) + ' сохранён<small>' + s.squad.length + ' героев' + (s.pets.active ? ' и питомец' : '') + '</small>'); }
+    if (dd.pl) { ok = C.loadPreset(s, +dd.pl); if (ok) toast('Состав ' + (+dd.pl + 1) + '<small>отряд собран</small>'); }
     if (dd.cls) { ok = C.chooseClass(s, dd.cls, dayKey()); if (ok) { classPick = false; toast('Класс героя<small>' + C.classDef(dd.cls).name + '</small>'); } }
     if (dd.act === 'clsPick') { classPick = true; ok = true; }
     if (dd.act === 'clsBack') { classPick = false; ok = true; }
