@@ -2329,3 +2329,15 @@ test('титулы дают небольшие постоянные бонусы
   s.titles.push('Вечный призванный');
   assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.15) < 1e-9);
 });
+
+test('последняя ступень достижения даёт титул с бонусом; старые сохранения получают титулы закрытых достижений', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT), a = CFG.achievements.list.find(x => x.id === 'a_floor');
+  s.ach.a_floor = a.goals.length - 1; s.bestFloor = s.maxFloor = a.goals[a.goals.length - 1];
+  assert.ok(C.claimAch(s, 'a_floor'));
+  assert.ok(s.titles.includes(a.title.name));
+  assert.ok(Math.abs(C.titlePower(s, 'allDmg') - a.title.bonus.per) < 1e-9);
+  const old = JSON.parse(C.serialize(s)); old.titles = []; old.title = null;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.ok(m.titles.includes(a.title.name)); assert.strictEqual(m.title, a.title.name);
+  assert.strictEqual(C.titlePower(t, 'gold'), 0);
+});
