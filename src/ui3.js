@@ -456,7 +456,7 @@
     // ==================================================================
     // НАСТРОЙКИ — полноэкранная страница (ответы 137–148)
     // ==================================================================
-    const SDEF = { rig: 'on', snd: 'on', mus: 'on', bsnd: 'on', uisnd: 'on', allyNum: 'on', pushChest: 'on', pushPve: 'on', pushEvent: 'on', qsum: 'off' };
+    const SDEF = { rig: 'off', snd: 'on', mus: 'on', bsnd: 'on', uisnd: 'on', allyNum: 'on', pushChest: 'on', pushPve: 'on', pushEvent: 'on', qsum: 'off' };
     for (const k in SDEF) if (setg[k] == null) setg[k] = SDEF[k];
     const sp = mk('div', 'pgSet', 'pg', '<div class="tower"></div><div class="pgHead" style="padding-top:calc(env(safe-area-inset-top) + 8px)"><button class="backBtn" aria-label="Назад">←</button><div class="titlePl">Настройки</div></div><div class="pgBody" id="setBody"></div>', $('cbMenu').parentNode);
     sp.querySelector('.backBtn').addEventListener('click', () => { U.click(); U.show(null); });

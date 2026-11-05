@@ -131,7 +131,7 @@
     const PAL_HERO = { armor: '#1c1922', edge: '#8d8597', glow: '#c06bff', cape: '#241433', hair: '#14101a', blade: '#e3b6ff' };
     const palFor = col => ({ armor: '#2a2430', edge: '#a8a0b2', glow: col, cape: col + '88', hair: '#1a141e', blade: '#f0e8ff' });
     let heroRig = null;
-    function enabled() { return setg.rig !== 'off'; }
+    function enabled() { return setg.rig === 'on'; }
     function sync() {
       const on = enabled();
       document.body.classList.toggle('rigOn', on);
