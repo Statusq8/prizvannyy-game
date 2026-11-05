@@ -2461,3 +2461,29 @@ test('«Эхо Башни»: с этажа 50, биом из пройденны�
   const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.echo.used, 2); assert.strictEqual(t.echo.won, true);
   s.event.week = 'w2026-11-09'; assert.strictEqual(C.echoInfo(s).left, CFG.pve.echo.attempts);   // новая неделя
 });
+
+// ---------- 0.59: проклятые этажи ----------
+test('проклятые этажи: редкое предложение на новом этаже, по желанию; принято — условие и награда за босса; провал — снято', () => {
+  const K = CFG.curse;
+  let f = K.minFloor; const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  for (;; f++) { s.floor = f; s.bestCleared = f - 1; s.curse = null; if (C.curseOffer(s, [], false)) break; }
+  assert.ok(f < 2000);                                               // встречается
+  let n = 0; for (let g = K.minFloor; g < K.minFloor + 3000; g++) { s.floor = g; s.bestCleared = g - 1; s.curse = null; if (C.curseOffer(s, null, false)) n++; }
+  assert.ok(n > 3000 * K.chance * 0.5 && n < 3000 * K.chance * 1.6, 'частота ' + n);
+  s.floor = f; s.bestCleared = f - 1; s.curse = null; C.curseOffer(s, [], false);
+  s.maxFloor = s.bestFloor = f;
+  assert.strictEqual(C.curseMod(s), null);                            // пока не принято — обычный этаж
+  assert.ok(C.acceptCurse(s)); assert.ok(C.curseMod(s));
+  const mod = C.curseMod(s);
+  if (mod.hp) assert.ok(C.B.gt(s.enemy.maxHp, C.enemyMaxHp(f, false)));
+  s.curse.mod = 'hp2';                                                // дальше — без запрета тапов
+  const t0 = s.tickets; killBoss(s);
+  assert.strictEqual(s.tickets - t0 >= K.reward.tickets, true); assert.strictEqual(s.curse, null);
+  // провал босса снимает проклятие
+  s.floor = f; s.curse = { floor: f, mod: 'hp2', on: true }; s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s);
+  const ev = C.tick(s, 999); assert.ok(ev.some(e => e.type === 'curseLost')); assert.strictEqual(s.curse, null);
+  // повторно на уже пройденном этаже — не предлагается; сохранение
+  s.floor = f; s.bestCleared = f; assert.strictEqual(C.curseOffer(s, [], false), null);
+  s.curse = { floor: f, mod: 'noTap', on: false };
+  assert.deepStrictEqual(C.deserialize(C.serialize(s)).curse, { floor: f, mod: 'noTap', on: false });
+});
