@@ -60,8 +60,8 @@
     }
     function setBiome(id) {
       curId = id; cur = AMB[id] || AMB.crypt;
-      const k = setg.fx === 'less' ? 0.5 : 1;
-      ps = []; for (const [type, n] of cur.p) for (let i = 0; i < Math.round(n * k); i++) ps.push(spawn(type, true));
+      const k = setg.fx === 'less' ? 0.35 : 1;
+      ps = []; for (const [type, n] of cur.p) if (setg.fx === 'full' || !/wisp|firefly/.test(type)) for (let i = 0; i < Math.round(n * k); i++) ps.push(spawn(type, true));
       fps = []; if (cur.front && setg.fx === 'full') for (let i = 0; i < (cur.front === 'rain' ? 14 : 5); i++) { const p = spawn(cur.front, true); p.r *= cur.front === 'rain' ? 2.2 : 3.2; p.vy *= 1.8; p.front = 1; fps.push(p); }
       fogs = []; for (let i = 0; i < 5; i++) fogs.push({ x: R(-W * .3, W), y: R(H * .35, H * .95), w: R(W * .5, W * 1.1), h: R(60, 140), v: R(4, 12) * (Math.random() < .5 ? -1 : 1), a: R(.05, .13) });
       document.body.dataset.biome = id;

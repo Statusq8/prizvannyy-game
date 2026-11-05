@@ -6,6 +6,7 @@
   const CONFIG = {
     saveVersion: 34,
     enemiesPerFloor: 10,
+    allyUlts: false,              // 0.75.2: ульты союзников выключены — ульта только у Призванного
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
     enemyBaseHp: 10,
@@ -1659,7 +1660,7 @@
     tickPotions(s, dt);
     if (s.critBuff) s.critBuff.t = Math.max(0, s.critBuff.t - dt);
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
-    for (const a of squadDefs(s)) {
+    if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')) * (1 + petBonus(s, 'ult')));   // готовность копится и сохраняется между врагами
     }
@@ -1671,7 +1672,7 @@
     }
     const rule = modeRule(s);
     // Ультимейты срабатывают автоматически, как только заряжены и враг жив
-    for (const a of squadDefs(s)) {
+    if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
       if (rule === 'noUlts' || rule === 'tapOnly' || rule === 'trial') break;
       if (st.level <= 0 || st.ult < a.ult.charge || !s.enemy.alive) continue;
