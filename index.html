@@ -322,7 +322,7 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab, #panel[data-tab="stats"] #statsTab, #panel[data-tab="map"] #mapTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab, #panel[data-tab="stats"] #statsTab, #panel[data-tab="map"] #mapTab, #panel[data-tab="diary"] #diaryTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
   .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
@@ -1190,6 +1190,7 @@
     <div id="inboxTab" class="tabBody"></div>
     <div id="bonesTab" class="tabBody"></div>
     <div id="statsTab" class="tabBody"></div>
+    <div id="diaryTab" class="tabBody"></div>
     <div id="mapTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="spare" id="bannerPick" style="margin-bottom:6px"></div>
@@ -1237,7 +1238,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 30,
+    saveVersion: 31,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -1663,6 +1664,9 @@
       { at: 50000,  hero: 'azrael',  copies: 5, reward: { tickets: 100 } },
       { at: 100000, art: 'crown',    levels: 20, reward: { tickets: 200, essence: 1000 } },
     ], every: 50000, after: { tickets: 100, essence: 500 } },
+    // 0.62 (ответ 174): «Дневник призванного» — бестиарий (каждый вид врага: первая встреча, 100 и 1000 побед) и лор героев
+    // (история открывается звёздами). Маленькие награды: за страницу биома (все враги и боссы встречены) и за знатока вида.
+    diary: { page: { tickets: 2, essence: 20 }, master: 1000, masterReward: { essence: 5 }, loreStars: [0, 3, 8] },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1925,23 +1929,40 @@
 
   // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
   const LORE = {
-    irene:  { race: 'Эльфийка тени',  cls: 'Стрелок',   quote: 'Тень не промахивается.' },
-    borg:   { race: 'Орк',            cls: 'Воин',      quote: 'Больше врагов — больше ярости!' },
-    lia:    { race: 'Человек',        cls: 'Маг огня',  quote: 'Всё сгорит — и станет светом.' },
-    kael:   { race: 'Полудемон',      cls: 'Убийца',    quote: 'Бездна смотрит моими глазами.' },
-    garret: { race: 'Человек',        cls: 'Страж',     quote: 'Я не герой. Я просто не отступаю.' },
-    saya:   { race: 'Полуэльфийка',   cls: 'Убийца',    quote: 'Один нож — один ответ.' },
-    drake:  { race: 'Драконорождённый', cls: 'Воин',    quote: 'Копьё помнит каждого врага.' },
-    noa:    { race: 'Человек',        cls: 'Маг бури',  quote: 'Гром — это просто мой голос.' },
-    velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.' },
-    ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.' },
-    seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.' },
-    kassian: { race: 'Падший паладин', cls: 'Страж',   quote: 'Мой свет погас. Осталась клятва.' },
-    nyx:    { race: 'Дитя ночи',      cls: 'Тень',      quote: 'Звёзды гаснут, когда я прихожу.' },
-    azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.' },
-    morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.' },
-    carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!' },
-    yuki:   { race: 'Дух снега',      cls: 'Жрица',     quote: 'Тишина зимы крепче стали.' },
+    irene:  { race: 'Эльфийка тени',  cls: 'Стрелок',   quote: 'Тень не промахивается.',
+      story: 'Последняя из лесной стражи теней. Ушла в Башню за убийцей своей сестры — и нашла его на сороковом этаже, уже мёртвым. С тех пор ищет, кто его опередил.' },
+    borg:   { race: 'Орк',            cls: 'Воин',      quote: 'Больше врагов — больше ярости!',
+      story: 'Вождь без племени: своих он увёл через Врата, но вернулся один. Говорит, что ярость — единственное, что Башня не может отнять.' },
+    lia:    { race: 'Человек',        cls: 'Маг огня',  quote: 'Всё сгорит — и станет светом.',
+      story: 'Училась в академии пламени, пока огонь не ответил ей сам. Теперь она слышит его шёпот и не уверена, кто из них кем управляет.' },
+    kael:   { race: 'Полудемон',      cls: 'Убийца',    quote: 'Бездна смотрит моими глазами.',
+      story: 'Наполовину человек, наполовину то, что живёт за краем Бездны. Каждую ночь торгуется с собственной тенью — и пока выигрывает.' },
+    garret: { race: 'Человек',        cls: 'Страж',     quote: 'Я не герой. Я просто не отступаю.',
+      story: 'Простой ополченец из пограничной деревни. Не ищет славы — просто ни разу не отступил, и Башня это запомнила.' },
+    saya:   { race: 'Полуэльфийка',   cls: 'Убийца',    quote: 'Один нож — один ответ.',
+      story: 'Бродячая метательница ножей. Говорит, что её клинки возвращаются сами, — и никто ещё не видел, чтобы она их подбирала.' },
+    drake:  { race: 'Драконорождённый', cls: 'Воин',    quote: 'Копьё помнит каждого врага.',
+      story: 'Драконорождённый копейщик. Его копьё — чешуя отца, павшего у подножия Башни. Каждый удар — шаг к тому, кто это сделал.' },
+    noa:    { race: 'Человек',        cls: 'Маг бури',  quote: 'Гром — это просто мой голос.',
+      story: 'Юный громовой маг, сбежавший от учителя. Учитель — Сэйрен. Она до сих пор ищет его, и он это знает.' },
+    velma:  { race: 'Нежить',         cls: 'Некромант', quote: 'Смерть — лишь смена хозяина.',
+      story: 'Некромантка, которая однажды подняла не того — и не смогла отпустить. Рагнар идёт за ней с тех пор, верный и мёртвый.' },
+    ragnar: { race: 'Падший рыцарь',  cls: 'Рыцарь',    quote: 'Мёртвые тоже держат строй.',
+      story: 'Рыцарь, павший за чужого короля. Поднятый Вельмой, он выбрал служить ей — первый выбор, сделанный им самим.' },
+    seiren: { race: 'Сирена',         cls: 'Маг бури',  quote: 'Небо поёт для меня.',
+      story: 'Повелительница бурь с далёких берегов. Её песня топила флоты. В Башне она поёт тише — бережёт голос для вершины.' },
+    kassian: { race: 'Падший паладин', cls: 'Страж',   quote: 'Мой свет погас. Осталась клятва.',
+      story: 'Паладин, чей свет погас в Бездне. Он заключил договор крови, чтобы выжить, и теперь платит по нему каждый день.' },
+    nyx:    { race: 'Дитя ночи',      cls: 'Тень',      quote: 'Звёзды гаснут, когда я прихожу.',
+      story: 'Королева ночи, правившая городом, которого больше нет. Говорят, она сама погасила его огни, чтобы спрятать от Башни.' },
+    azrael: { race: 'Ангел',          cls: 'Каратель',  quote: 'Из пепла — суд. Из суда — пепел.',
+      story: 'Ангел, сожжённый собственным судом. Из пепла он вынес лишь меч и уверенность, что вершина Башни должна быть сожжена.' },
+    morra:  { race: 'Хранительница',  cls: 'Жрица',     quote: 'Каждая жертва что-то открывает.',
+      story: 'Хранительница Алтаря с первого дня Башни. Она помнит каждую жертву по имени — и ждёт ту, что откроет последнюю дверь.' },
+    carna:  { race: 'Фея карнавала',  cls: 'Иллюзионист', quote: 'Улыбнись — это последний номер!',
+      story: 'Фея кочующего карнавала. Её представления длятся одну ночь, а зрители потом годами не могут вспомнить, где были.' },
+    yuki:   { race: 'Дух снега',      cls: 'Жрица',     quote: 'Тишина зимы крепче стали.',
+      story: 'Дух первого снега. Она пришла в Башню погасить пламя, которое растёт на её верхних этажах, — и пока проигрывает.' },
   };
   for (const a of CONFIG.allies) Object.assign(a, LORE[a.id] || {});
   // Понятное описание ультимейта по его виду
@@ -2549,6 +2570,7 @@
       curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа
       potions: {},                               // 0.60: id зелья → осталось секунд
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
+      bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -2661,6 +2683,7 @@
   function rewardKill(s, isBoss, events, rareId, offline) {
     const rare = rareId ? rareDef(rareId) : null;
     const gold = B.ceil(B.mul(killGold(s.floor, isBoss), goldMult(s) * (rare ? rare.gold : 1)));
+    diaryKill(s, rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss), s.floor, offline ? null : events);
     s.gold = B.add(s.gold, gold); earnGold(s, gold);
     s.stats.kills++; cnt(s, 'kill');
     addEventPoints(s, isBoss ? CONFIG.events.pointsBoss : CONFIG.events.pointsKill);
@@ -2823,6 +2846,22 @@
     return events;
   }
 
+  // ---------- дневник призванного (0.62) ----------
+  function diaryNames(b) { return [...b.enemies, ...b.bosses, b.final]; }
+  function diaryKill(s, name, floor, events) {
+    const n = (s.bestiary[name] | 0) + 1, D = CONFIG.diary;
+    s.bestiary[name] = n;
+    if (n === 1 && events) events.push({ type: 'diaryNew', name });
+    if (n === D.master) { grant(s, D.masterReward); if (events) events.push({ type: 'diaryMaster', name }); }
+    const b = biomeOf(floor);
+    if (n === 1 && !s.diaryPages.includes(b.id) && diaryNames(b).every(x => s.bestiary[x])) {
+      s.diaryPages.push(b.id);
+      inboxAdd(s, 'Дневник: страница «' + b.name + '» заполнена', D.page);
+      if (events) events.push({ type: 'diaryPage', name: b.name });
+    }
+  }
+  // Лор героя открывается по звёздам: 0 — раса и класс, loreStars[1] — цитата, loreStars[2] — история
+  function loreLevel(s, id) { const h = s.heroes[id]; if (!h || !h.unlocked) return -1; return CONFIG.diary.loreStars.filter(x => h.stars >= x).length - 1; }
   // ---------- вехи Башни (0.61) ----------
   function towerMsList(s, upTo) {           // вехи (at) в промежутке (s.towerMs, upTo]
     const T = CONFIG.towerMs, last = T.list[T.list.length - 1].at, out = T.list.filter(m => m.at > s.towerMs && m.at <= upTo);
@@ -3987,7 +4026,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs,
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages],
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -4076,6 +4115,7 @@
     if (d.v === 27) { d.v = 28; d.curse = null; }                                // 0.58 → 0.59: проклятые этажи
     if (d.v === 28) { d.v = 29; d.potions = {}; }                                // 0.59 → 0.60: алхимия
     if (d.v === 29) { d.v = 30; d.towerMs = 0; }                                 // 0.60 → 0.61: вехи Башни (выдадутся на следующем этаже)
+    if (d.v === 30) { d.v = 31; d.bestiary = {}; d.diaryPages = []; }            // 0.61 → 0.62: дневник (заполняется с новых побед)
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -4218,6 +4258,9 @@
     s.curse = cu && int(cu.floor, 1) && CONFIG.curse.mods.some(m => m.id === cu.mod) ? { floor: cu.floor, mod: cu.mod, on: !!cu.on } : null;
     if (!d.potions || typeof d.potions !== 'object') return null;
     if (!int(d.towerMs, 0)) return null; s.towerMs = d.towerMs;
+    if (!d.bestiary || typeof d.bestiary !== 'object' || !Array.isArray(d.diaryPages)) return null;
+    s.bestiary = {}; for (const k in d.bestiary) { const v = d.bestiary[k]; if (int(v, 1)) s.bestiary[k] = v; }
+    s.diaryPages = d.diaryPages.filter(id => CONFIG.biomes.some(b => b.id === id));
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
@@ -4310,7 +4353,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
@@ -4479,7 +4522,7 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { diary: 'Дневник призванного', stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   // как в «Крушителях»: левый верхний угол — группа героя, правый — «Сумка» (стрелка «назад» справа),
   // задания/события/сезон — окна-свитки поверх боя, карта и PvE — отдельные экраны
   const GROUP_L = [['up', '⚔', 'Прокачка'], ['heroes', '🪖', 'Герои'], ['portal', '🌀', 'Портал'], ['altar', '🕯', 'Алтарь'], ['souls', '👻', 'Души']];
@@ -4671,6 +4714,10 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'diaryPage') {
+        setTimeout(() => toast('📖 Страница дневника заполнена<small>' + e.name + ' · награда в центре наград 📬</small>'), 1300);
+      } else if (e.type === 'diaryMaster') {
+        toast('📖 Знаток: ' + e.name + '<small>' + fmt(CFG.diary.master) + ' побед · ✦ ' + CFG.diary.masterReward.essence + '</small>');
       } else if (e.type === 'towerMs') {
         setTimeout(() => toast('🗼 Веха Башни: этаж ' + e.at + '!<small>' + (e.what ? e.what + ' · ' : '') + 'награда — в центре наград 📬</small>'), 1500);
       } else if (e.type === 'curseOffer') {                // 0.59: проклятый этаж — по желанию
@@ -5018,6 +5065,7 @@
     if (tab === 'inbox') renderInbox();
     if (tab === 'bones') renderBones();
     if (tab === 'stats') renderStats();
+    if (tab === 'diary') renderDiary();
     if (tab === 'map') renderMap();
     const inbN = s.inbox.length + (C.loginAvailable(s, dayKey()) ? 1 : 0) + (C.travelCost(s, dayKey()) === 0 && B.gt(C.offlineDps(s), 0) ? 1 : 0);
     $('inboxCnt').textContent = inbN; $('inboxCnt').classList.toggle('on', inbN > 0);
@@ -5197,6 +5245,38 @@
     if (s.skins.includes('eternal')) h += '<span class="badge sq">облик «Вечный призванный» открыт</span>';
     return h + '</div>';
   }
+  // 0.62: «Дневник призванного» — бестиарий по биомам и лор героев (открывается звёздами)
+  let diaryPage = 'beasts', diaryHtml = '';
+  function renderDiary() {
+    const D = CFG.diary, seen = Object.keys(s.bestiary).length;
+    let h = '<div class="multRow" style="display:flex;gap:6px;margin-bottom:8px"><button class="chip' + (diaryPage === 'beasts' ? ' on' : '') + '" data-dp="beasts">Бестиарий · ' + seen + '</button>' +
+      '<button class="chip' + (diaryPage === 'heroes' ? ' on' : '') + '" data-dp="heroes">Герои</button></div>';
+    if (diaryPage === 'beasts') {
+      h += '<div class="hint2">Каждая первая победа над видом — запись. Все враги и боссы биома — страница заполнена: 🎟 ' + D.page.tickets + ', ✦ ' + D.page.essence + '. ' +
+        fmt(D.master) + ' побед над видом — «знаток»: ✦ ' + D.masterReward.essence + '. Страниц: ' + s.diaryPages.length + '/' + CFG.biomes.length + '.</div>';
+      const rare = CFG.rare.kinds.filter(k => s.bestiary[k.name]);
+      if (rare.length) h += '<div class="secTitle">РЕДКИЕ</div><div class="spare" style="gap:6px;flex-wrap:wrap">' + rare.map(k => '<span class="badge sq">✦ ' + k.name + ' · ' + fmt(s.bestiary[k.name]) + '</span>').join('') + '</div>';
+      for (const b of CFG.biomes) {
+        const names = C.diaryNames(b), got = names.filter(n => s.bestiary[n]).length;
+        if (!got) { h += '<div class="hint2" style="opacity:.5">🔒 ' + b.name + '</div>'; continue; }
+        h += '<div class="secTitle">' + (s.diaryPages.includes(b.id) ? '✓ ' : '') + b.name.toUpperCase() + ' · ' + got + '/' + names.length + '</div><div class="spare" style="gap:6px;flex-wrap:wrap;height:auto;margin-bottom:10px">' +
+          names.map((n, i) => { const k = s.bestiary[n] | 0, tag = i >= b.enemies.length ? (n === b.final ? '👑 ' : '👹 ') : '';
+            return k ? '<span class="badge ' + (k >= D.master ? 'sq' : 'rs') + '">' + tag + n + ' · ' + fmt(k) + (k >= D.master ? ' · знаток' : '') + '</span>' : '<span class="badge rs" style="opacity:.5">' + tag + '???</span>'; }).join('') + '</div>';
+      }
+    } else {
+      h += '<div class="hint2">История героя открывается звёздами: цитата — с ★' + D.loreStars[1] + ', полная история — с ★' + D.loreStars[2] + '.</div>';
+      for (const a of CFG.allies) {
+        const lv = C.loreLevel(s, a.id);
+        if (lv < 0) { h += '<div class="hRow locked" style="--r:#3a2a4a"><div class="hInfo"><div class="hName">???</div><div class="hSub">Герой ещё не открыт</div></div></div>'; continue; }
+        h += '<div class="hRow r-' + a.rarity + '"><div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + a.race + ', ' + a.cls + '</div>' +
+          '<div class="hSub">' + a.faction + ' · ' + a.role + '</div>' +
+          '<div class="hSub" style="font-style:italic">' + (lv >= 1 ? '«' + a.quote + '»' : '🔒 цитата — ★' + D.loreStars[1]) + '</div>' +
+          '<div class="hSub">' + (lv >= 2 ? a.story : '🔒 история — ★' + D.loreStars[2]) + '</div></div></div>';
+      }
+    }
+    if (h !== diaryHtml) { $('diaryTab').innerHTML = h; diaryHtml = h; }
+  }
+  $('diaryTab').addEventListener('click', e => { const b = e.target.closest('[data-dp]'); if (b) { diaryPage = b.dataset.dp; render(); } });
   $('statsTab').addEventListener('click', e => {
     const b = e.target.closest('[data-title]'); if (!b) return;
     if (C.setTitle(s, b.dataset.title)) { toast('Титул<small>' + b.dataset.title + '</small>'); save(); render(); }
@@ -6146,7 +6226,7 @@
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
     const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
-      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['@backup', '💾', 'Резервные копии']];
+      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
     const heroImg = (document.querySelector('#cards .cardIcon img') || {}).src || '';

@@ -322,7 +322,7 @@
   #ticketDot.on { display: inline-block; }
   #panel.collapsed #tabs, #panel.collapsed .tabBody { display: none !important; }
   .tabBody { display: none; max-height: 30dvh; overflow-y: auto; overscroll-behavior: contain; }
-  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab, #panel[data-tab="stats"] #statsTab, #panel[data-tab="map"] #mapTab { display: block; }
+  #panel[data-tab="heroes"] #heroesTab, #panel[data-tab="portal"] #portalTab, #panel[data-tab="altar"] #altarTab, #panel[data-tab="souls"] #soulsTab, #panel[data-tab="runes"] #runesTab, #panel[data-tab="pve"] #pveTab, #panel[data-tab="quests"] #questsTab, #panel[data-tab="season"] #seasonTab, #panel[data-tab="events"] #eventsTab, #panel[data-tab="inbox"] #inboxTab, #panel[data-tab="bones"] #bonesTab, #panel[data-tab="stats"] #statsTab, #panel[data-tab="map"] #mapTab, #panel[data-tab="diary"] #diaryTab { display: block; }
   #soulDot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #8fe6ff; vertical-align: middle; }
   #soulDot.on { display: inline-block; }
   .tab { font-size: 11px; padding: 7px 8px; flex: 1 0 auto; white-space: nowrap; }
@@ -808,6 +808,7 @@
     <div id="inboxTab" class="tabBody"></div>
     <div id="bonesTab" class="tabBody"></div>
     <div id="statsTab" class="tabBody"></div>
+    <div id="diaryTab" class="tabBody"></div>
     <div id="mapTab" class="tabBody"></div>
     <div id="portalTab" class="tabBody">
       <div class="spare" id="bannerPick" style="margin-bottom:6px"></div>
@@ -994,7 +995,7 @@
   let anyAffordable = false;
   const heroEl = $('hero');
   const UI_KEY = 'prizvannyy_v2_ui';
-  const TAB_NAMES = { stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
+  const TAB_NAMES = { diary: 'Дневник призванного', stats: 'Статистика', map: 'Карта Башни', bones: 'Кости', inbox: 'Награды', events: 'События', season: 'Сезон', up: 'Прокачка', quests: 'Задания', heroes: 'Герои', portal: 'Портал', altar: 'Алтарь', souls: 'Души', runes: 'Руны', pve: 'PvE' };
   // как в «Крушителях»: левый верхний угол — группа героя, правый — «Сумка» (стрелка «назад» справа),
   // задания/события/сезон — окна-свитки поверх боя, карта и PvE — отдельные экраны
   const GROUP_L = [['up', '⚔', 'Прокачка'], ['heroes', '🪖', 'Герои'], ['portal', '🌀', 'Портал'], ['altar', '🕯', 'Алтарь'], ['souls', '👻', 'Души']];
@@ -1186,6 +1187,10 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'diaryPage') {
+        setTimeout(() => toast('📖 Страница дневника заполнена<small>' + e.name + ' · награда в центре наград 📬</small>'), 1300);
+      } else if (e.type === 'diaryMaster') {
+        toast('📖 Знаток: ' + e.name + '<small>' + fmt(CFG.diary.master) + ' побед · ✦ ' + CFG.diary.masterReward.essence + '</small>');
       } else if (e.type === 'towerMs') {
         setTimeout(() => toast('🗼 Веха Башни: этаж ' + e.at + '!<small>' + (e.what ? e.what + ' · ' : '') + 'награда — в центре наград 📬</small>'), 1500);
       } else if (e.type === 'curseOffer') {                // 0.59: проклятый этаж — по желанию
@@ -1533,6 +1538,7 @@
     if (tab === 'inbox') renderInbox();
     if (tab === 'bones') renderBones();
     if (tab === 'stats') renderStats();
+    if (tab === 'diary') renderDiary();
     if (tab === 'map') renderMap();
     const inbN = s.inbox.length + (C.loginAvailable(s, dayKey()) ? 1 : 0) + (C.travelCost(s, dayKey()) === 0 && B.gt(C.offlineDps(s), 0) ? 1 : 0);
     $('inboxCnt').textContent = inbN; $('inboxCnt').classList.toggle('on', inbN > 0);
@@ -1712,6 +1718,38 @@
     if (s.skins.includes('eternal')) h += '<span class="badge sq">облик «Вечный призванный» открыт</span>';
     return h + '</div>';
   }
+  // 0.62: «Дневник призванного» — бестиарий по биомам и лор героев (открывается звёздами)
+  let diaryPage = 'beasts', diaryHtml = '';
+  function renderDiary() {
+    const D = CFG.diary, seen = Object.keys(s.bestiary).length;
+    let h = '<div class="multRow" style="display:flex;gap:6px;margin-bottom:8px"><button class="chip' + (diaryPage === 'beasts' ? ' on' : '') + '" data-dp="beasts">Бестиарий · ' + seen + '</button>' +
+      '<button class="chip' + (diaryPage === 'heroes' ? ' on' : '') + '" data-dp="heroes">Герои</button></div>';
+    if (diaryPage === 'beasts') {
+      h += '<div class="hint2">Каждая первая победа над видом — запись. Все враги и боссы биома — страница заполнена: 🎟 ' + D.page.tickets + ', ✦ ' + D.page.essence + '. ' +
+        fmt(D.master) + ' побед над видом — «знаток»: ✦ ' + D.masterReward.essence + '. Страниц: ' + s.diaryPages.length + '/' + CFG.biomes.length + '.</div>';
+      const rare = CFG.rare.kinds.filter(k => s.bestiary[k.name]);
+      if (rare.length) h += '<div class="secTitle">РЕДКИЕ</div><div class="spare" style="gap:6px;flex-wrap:wrap">' + rare.map(k => '<span class="badge sq">✦ ' + k.name + ' · ' + fmt(s.bestiary[k.name]) + '</span>').join('') + '</div>';
+      for (const b of CFG.biomes) {
+        const names = C.diaryNames(b), got = names.filter(n => s.bestiary[n]).length;
+        if (!got) { h += '<div class="hint2" style="opacity:.5">🔒 ' + b.name + '</div>'; continue; }
+        h += '<div class="secTitle">' + (s.diaryPages.includes(b.id) ? '✓ ' : '') + b.name.toUpperCase() + ' · ' + got + '/' + names.length + '</div><div class="spare" style="gap:6px;flex-wrap:wrap;height:auto;margin-bottom:10px">' +
+          names.map((n, i) => { const k = s.bestiary[n] | 0, tag = i >= b.enemies.length ? (n === b.final ? '👑 ' : '👹 ') : '';
+            return k ? '<span class="badge ' + (k >= D.master ? 'sq' : 'rs') + '">' + tag + n + ' · ' + fmt(k) + (k >= D.master ? ' · знаток' : '') + '</span>' : '<span class="badge rs" style="opacity:.5">' + tag + '???</span>'; }).join('') + '</div>';
+      }
+    } else {
+      h += '<div class="hint2">История героя открывается звёздами: цитата — с ★' + D.loreStars[1] + ', полная история — с ★' + D.loreStars[2] + '.</div>';
+      for (const a of CFG.allies) {
+        const lv = C.loreLevel(s, a.id);
+        if (lv < 0) { h += '<div class="hRow locked" style="--r:#3a2a4a"><div class="hInfo"><div class="hName">???</div><div class="hSub">Герой ещё не открыт</div></div></div>'; continue; }
+        h += '<div class="hRow r-' + a.rarity + '"><div class="hInfo"><div class="hName"><span class="rar r-' + a.rarity + '">' + a.rarity + '</span> ' + a.name + ' · ' + a.race + ', ' + a.cls + '</div>' +
+          '<div class="hSub">' + a.faction + ' · ' + a.role + '</div>' +
+          '<div class="hSub" style="font-style:italic">' + (lv >= 1 ? '«' + a.quote + '»' : '🔒 цитата — ★' + D.loreStars[1]) + '</div>' +
+          '<div class="hSub">' + (lv >= 2 ? a.story : '🔒 история — ★' + D.loreStars[2]) + '</div></div></div>';
+      }
+    }
+    if (h !== diaryHtml) { $('diaryTab').innerHTML = h; diaryHtml = h; }
+  }
+  $('diaryTab').addEventListener('click', e => { const b = e.target.closest('[data-dp]'); if (b) { diaryPage = b.dataset.dp; render(); } });
   $('statsTab').addEventListener('click', e => {
     const b = e.target.closest('[data-title]'); if (!b) return;
     if (C.setTitle(s, b.dataset.title)) { toast('Титул<small>' + b.dataset.title + '</small>'); save(); render(); }

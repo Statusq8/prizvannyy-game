@@ -2528,3 +2528,23 @@ test('вехи Башни: 1000 — герой, 2500 — питомец, 5000 �
   assert.strictEqual(C.artLevel(v, 'crown'), 0);
   assert.strictEqual(C.deserialize(C.serialize(s)).towerMs, 5000);
 });
+
+// ---------- 0.62: дневник призванного ----------
+test('дневник: победы по видам, страница биома — награда в почту, знаток вида; лор по звёздам; сохраняется', () => {
+  const s = C.newState(NOCRIT); s.tapLevel = 1e12;
+  const b = CFG.biomes[0], names = C.diaryNames(b);
+  for (const n of names.slice(0, -1)) s.bestiary[n] = 1;
+  const ev = [];
+  for (let f = 1; f <= 50 && !s.diaryPages.length; f++) { reach(s, f); s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s); ev.push(...killCurrent(s)); respawn(s); }
+  assert.deepStrictEqual(s.diaryPages, [b.id]);
+  assert.ok(s.inbox.some(x => /Дневник/.test(x.title)));
+  assert.ok(ev.some(e => e.type === 'diaryPage'));
+  s.bestiary[b.final] = CFG.diary.master - 1; const e0 = s.essence;        // тысячная победа над видом — эссенция
+  reach(s, 50); killBoss(s);
+  assert.strictEqual(s.bestiary[b.final], CFG.diary.master);
+  assert.strictEqual(s.essence, e0 + CFG.diary.masterReward.essence);
+  assert.strictEqual(C.loreLevel(s, 'irene'), 0); s.heroes.irene.stars = 3; assert.strictEqual(C.loreLevel(s, 'irene'), 1);
+  s.heroes.irene.stars = 8; assert.strictEqual(C.loreLevel(s, 'irene'), 2); assert.strictEqual(C.loreLevel(s, 'azrael'), -1);
+  assert.ok(CFG.allies.every(a => a.story && a.quote));
+  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.diaryPages, [b.id]); assert.strictEqual(t.bestiary[b.final], CFG.diary.master);
+});
