@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 25,
+    saveVersion: 26,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -383,6 +383,10 @@
     factions: ['Тени', 'Война', 'Свет', 'Нежить', 'Бездна', 'Пламя', 'Дикий лес', 'Буря', 'Лёд', 'Кровь'],
     roles: { nuke: 'Удар', teamBuff: 'Усиление отряда', mark: 'Метка', tapBuff: 'Усиление героя', critBuff: 'Криты' },
     presets: 3,                                    // 0.54 (ответ 186): пресеты отряда
+    // 0.57 (ответ 197): трофеи — с каждого уникального босса биома один раз навсегда; выставлены в Зале трофеев.
+    // Босс биома: +0,5% всего урона; финальный босс биома: +1% золота (босс на каждом этаже — трофеи идут быстро;
+    // при 1% / 2% этаж 400 ускорялся до 2–4 ч, симуляция). Числа временные.
+    trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
     bonds: [
@@ -1043,12 +1047,12 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')), CONFIG.softcap.goldStart); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
@@ -1251,6 +1255,7 @@
       inbox: [], inboxSeq: 1,                    // центр наград
       titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов и достижений)
       favs: [],                                  // 0.54: избранные герои (ответ 199)
+      trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1391,6 +1396,7 @@
         s.gold = B.add(s.gold, bonus); earnGold(s, bonus);
         events.push({ type: 'firstClear', floor: s.floor, gold: bonus });
       }
+      if (!s.mode) grantTrophy(s, s.floor, events);
       if (s.floor > s.ticketFloor) {
         s.ticketFloor = s.floor;
         const n = ticketsForFloor(s.floor);
@@ -2416,6 +2422,19 @@
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
+  // ---------- трофеи боссов (0.57) ----------
+  function trophyKey(floor) { const b = biomeOf(floor); return b.id + ':' + (isFinalBoss(floor) ? 'f' : (floor - 1) % b.bosses.length); }
+  function trophyName(key) { const [id, k] = key.split(':'), b = CONFIG.biomes.find(x => x.id === id); return k === 'f' ? b.final : b.bosses[+k]; }
+  function allTrophies() { const out = []; for (const b of CONFIG.biomes) { b.bosses.forEach((n, i) => out.push(b.id + ':' + i)); out.push(b.id + ':f'); } return out; }
+  function trophyBonus(key) { return CONFIG.trophies[key.endsWith(':f') ? 'final' : 'boss']; }
+  function trophyPower(s, kind) { return s.trophies.reduce((t, k) => { const x = trophyBonus(k); return t + (x.kind === kind ? x.per : 0); }, 0); }
+  function grantTrophy(s, floor, events) {
+    const k = trophyKey(floor);
+    if (s.trophies.includes(k)) return null;
+    s.trophies.push(k);
+    if (events) events.push({ type: 'trophy', key: k, name: trophyName(k) });
+    return k;
+  }
   // ---------- связи героев (0.56) ----------
   function bondActive(s, b) { return b.heroes.every(id => s.squad.includes(id)); }
   function activeBonds(s) { return CONFIG.bonds.filter(b => bondActive(s, b)); }
@@ -2597,7 +2616,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs],
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies],
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2677,6 +2696,11 @@
       d.title = d.titles[0] || null;
     }
     if (d.v === 24) { d.v = 25; d.favs = []; d.presets = [null, null, null]; }   // 0.53 → 0.54: избранные и пресеты
+    if (d.v === 25) {                                      // 0.56 → 0.57: трофеи за всех боссов до рекорда
+      d.v = 26; const t = new Set();
+      for (let f = 1; f <= Math.min(d.bestFloor | 0, CONFIG.biomeFloors * CONFIG.biomes.length); f++) t.add(trophyKey(f));
+      d.trophies = [...t];
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2811,7 +2835,8 @@
     // титулы за уже закрытые достижения (сохранения до 0.53)
     for (const a of CONFIG.achievements.list) if (a.title && s.ach[a.id] === a.goals.length && !s.titles.includes(a.title.name)) s.titles.push(a.title.name);
     s.title = s.titles.includes(d.title) ? d.title : (s.titles[0] || null);
-    if (!Array.isArray(d.favs) || !Array.isArray(d.presets)) return null;
+    if (!Array.isArray(d.favs) || !Array.isArray(d.presets) || !Array.isArray(d.trophies)) return null;
+    { const all = allTrophies(); s.trophies = [...new Set(d.trophies.filter(k => all.includes(k)))]; }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
@@ -2903,7 +2928,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,

@@ -1181,6 +1181,9 @@
       } else if (e.type === 'petFrag') {
         const pd = C.petDef(e.id);
         toast('Хранитель повержен<small>' + pd.icon + ' +' + e.n + ' фрагм. · ' + pd.name + '</small>');
+      } else if (e.type === 'trophy') {
+        const tb = C.trophyBonus(e.key);
+        setTimeout(() => toast('🏆 Трофей: ' + e.name + '<small>+' + Math.round(tb.per * 100) + '% ' + (tb.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · Зал трофеев в Статистике</small>'), 1200);
       } else if (e.type === 'totem') {
         setTimeout(() => toast('Тотем получен!<small>🗿 ' + e.name + ' · вкладка «Руны»</small>'), 4800);
       } else if (e.type === 'biome') {
@@ -1649,10 +1652,23 @@
       ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
     ];
     $('statsTab').innerHTML = '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
-      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml();
+      cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml() + trophiesHtml();
   }
   // Титулы за 1-й/10-й/100-й ритуал: каждый полученный даёт небольшой постоянный бонус (0.53), выбранный — для профиля
   function titleBonusTxt(m) { return '+' + Math.round(m.bonus.per * 100) + '% ' + (m.bonus.kind === 'gold' ? 'золота' : 'урона'); }
+  // 0.57: Зал трофеев — по биомам; неполученные скрыты до встречи с биомом
+  function trophiesHtml() {
+    const T = CFG.trophies, got = s.trophies.length, all = C.allTrophies().length;
+    let h = '<div class="secTitle">ЗАЛ ТРОФЕЕВ · ' + got + '/' + all + ' · +' + Math.round(C.trophyPower(s, 'allDmg') * 100) + '% урона, +' + Math.round(C.trophyPower(s, 'gold') * 100) + '% золота</div>' +
+      '<div class="hint2">Первая победа над каждым боссом биома — трофей навсегда: босс +' + Math.round(T.boss.per * 100) + '% урона, финальный +' + Math.round(T.final.per * 100) + '% золота.</div>';
+    for (const b of CFG.biomes) {
+      const keys = [...b.bosses.map((n, i) => b.id + ':' + i), b.id + ':f'], have = keys.filter(k => s.trophies.includes(k));
+      if (!have.length) { h += '<div class="hint2" style="opacity:.5">🔒 ' + b.name + ' — ещё не пройден</div>'; continue; }
+      h += '<div class="spare" style="gap:6px;margin-bottom:4px"><span class="badge rs">' + b.name + '</span>' +
+        keys.map(k => s.trophies.includes(k) ? '<span class="badge sq">' + (k.endsWith(':f') ? '👑 ' : '🏆 ') + C.trophyName(k) + '</span>' : '<span class="badge rs">🔒 ???</span>').join('') + '</div>';
+    }
+    return h;
+  }
   function titlesHtml() {
     const all = C.allTitles();
     let h = '<div class="secTitle">ТИТУЛЫ' + (s.title ? ' · сейчас «' + s.title + '»' : '') + '</div>' +

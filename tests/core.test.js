@@ -2422,3 +2422,18 @@ test('связи героев: все участники в отряде — б�
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.10) < 1e-9);   // одинаковые наборы героев, кроме связи
   assert.ok(C.bondsOf('lia').length >= 2);
 });
+
+// ---------- 0.57: трофеи боссов ----------
+test('трофеи: первый босс-убийца даёт трофей один раз; босс +0,5% урона, финальный +1% золота; миграция по рекорду', () => {
+  const s = C.newState(NOCRIT), t = C.newState(NOCRIT); s.tapLevel = 1e12;
+  assert.strictEqual(C.allTrophies().length, CFG.biomes.length * 3);
+  reach(s, 10); killBoss(s);
+  assert.deepStrictEqual(s.trophies, [C.trophyKey(10)]);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.005) < 1e-9);
+  C.goToFloor(s, 10); killBoss(s); assert.strictEqual(s.trophies.length, 1);         // повторно — нет
+  assert.ok(C.grantTrophy(s, CFG.biomeFloors));                                      // финальный
+  assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 1.01) < 1e-9);
+  const old = JSON.parse(C.serialize(s)); old.v = 25; delete old.trophies; old.bestFloor = 120;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.strictEqual(m.trophies.length, 3 + 3 + 2);                                  // 2 полных биома (по 3) + 2 босса третьего
+});
