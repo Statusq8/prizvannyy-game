@@ -329,3 +329,34 @@
   #secHelp { flex: none; width: 34px; height: 34px; font-style: normal; }
   .upBtn:disabled { background: linear-gradient(#4a4552, #26222c) !important; border-color: #6e6678 !important; filter: none !important; opacity: 1 !important; }
   .upBtn:disabled span { color: #ff5a5a !important; }
+
+/* 0.75: карточки героев «как в Крушителях» */
+.dcTop { display: flex; justify-content: flex-end; gap: 8px; margin: 0 0 8px; }
+.dcTtl, .dcMult { height: 34px; padding: 0 18px; border-radius: 4px; display: grid; place-items: center; font: 400 15px 'Russo One', system-ui; text-shadow: 0 1px 0 #000; box-shadow: 0 0 0 2px #2a2a30, 0 0 0 3px #000; }
+.dcTtl { min-width: 120px; color: #eaffea; background: linear-gradient(#2fb77a, #127048); }
+.dcMult { min-width: 72px; color: #fff; border: 0; background: linear-gradient(#d8d02a, #8a8410); }
+.dcCard { display: grid; grid-template-columns: 82px 1fr auto; gap: 10px; align-items: center; min-height: 108px; margin-bottom: 10px; padding: 10px 10px 10px 12px; border-radius: 8px;
+  background: radial-gradient(120% 140% at 30% 20%, #caa064, #a57a42 60%, #86602f); border: 3px solid #3a2a1a; box-shadow: 0 0 0 2px #14100c, inset 0 0 18px #5a3a1a99, 0 4px 6px #000a; }
+.dcCard .pt { position: relative; width: 82px; height: 82px; border: 3px solid #6b6d72; outline: 2px solid #1a1a1c; background: #22252b; display: grid; place-items: center; font-size: 40px; }
+.dcCard .pt .fg, .dcCard .pt img, .dcCard .pt svg { width: 100%; height: 100%; object-fit: cover; }
+.dcCard.off .pt .fg, .dcCard.off .pt img { filter: grayscale(1) brightness(.85); }
+.dcCard .pt .plus { position: absolute; left: -10px; top: -10px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 900 20px system-ui; font-style: normal; color: #2a1a04; background: radial-gradient(#d8ff5a, #7aa810); border: 2px solid #1a1a1c; box-shadow: 0 0 0 2px #e8c45a; z-index: 3; }
+.dcCard .pt .crown { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-size: 20px; font-style: normal; z-index: 3; }
+.dcCard .pt .rk { right: -8px; top: auto; bottom: -8px; }
+.dcCard .pt .stars { bottom: auto; top: -2px; }
+.dcCard .inf .nm, .dcCard .nm { font: 400 16px 'Russo One', system-ui; color: #2a1c10 !important; text-shadow: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dcCard .inf .ln, .dcCard .ln { font: 400 17px 'Russo One', system-ui; color: #4a3622 !important; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+.dcCard .ln b { font-weight: 400; color: #fff4dc; text-shadow: 0 1px 0 #3a2410, 1px 0 0 #3a2410, -1px 0 0 #3a2410, 0 -1px 0 #3a2410; }
+.dcI { font-style: normal; font-size: 18px; }
+.dcMs { display: inline-block; margin-top: 4px; padding: 1px 10px; border-radius: 3px; background: #3c3a44; border: 1px solid #1a1a1c; font: 400 12px 'Russo One', system-ui; color: #e6e2ee; }
+.upBtn.dc { width: 128px; min-height: 64px; border-radius: 8px; font: 400 16px 'Russo One', system-ui; border: 3px solid #2a2c32; box-shadow: 0 0 0 2px #6b6d72, inset 0 2px 0 #ffffff40, 0 3px 6px #000a; background: linear-gradient(#e0302a, #8a0c10); }
+.upBtn.dc.hire { background: linear-gradient(#8a3ad8, #4a1080); }
+.upBtn.dc span { font-size: 17px; color: #fff; }
+.upBtn.dc:disabled { filter: none; background: linear-gradient(#6a6670, #3a3840); }
+.upBtn.dc:disabled span { color: #ff5a5a; }
+.dcCard.lock { grid-template-columns: 82px 1fr; background: linear-gradient(90deg, #2a3a2e, #1e2a22); border-color: #4a3a5a; box-shadow: 0 0 0 2px #14100c, inset 0 0 24px #000c; }
+.dcCard.lock .pt .fg { filter: brightness(0) drop-shadow(0 0 2px #8a7aa0); }
+.dcCard.lock .pt .lk { position: absolute; font-style: normal; font-size: 26px; }
+.dcCard.lock .inf { text-align: center; }
+.dcCard.lock .nm { color: #f0ece4 !important; text-shadow: 0 1px 0 #000; }
+.dcFree { margin-top: 10px; padding: 8px 16px; border-radius: 3px; border: 2px solid #0e3a5a; background: linear-gradient(#4ab8e8, #1a78b0); color: #fff; font: 400 14px 'Russo One', system-ui; text-shadow: 0 1px 0 #000; }
