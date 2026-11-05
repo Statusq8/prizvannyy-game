@@ -380,8 +380,11 @@
         o += '<div class="grpT">ВЕХИ УРОВНЯ · ×' + CFG.milestoneMult + ' УРОНА</div><div class="rowList">' + ms.map((m, i) => '<div class="' + (i ? 'lock' : 'on') + '"><span>Ур. ' + fmt(m) + '<small>' + (i ? '' : 'осталось ' + fmt(m - lv) + ' ур.') + '</small></span><b>×' + CFG.milestoneMult + '</b></div>').join('') + '</div>';
       } else if (hvTab === 'st') {
         const sc = C.starCost(s, a.id), ec = C.evoCost(s, a.id);
-        o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div></div>' +
-          '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (sc != null && h.copies >= sc ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Повысить звезду<span>копий ' + sc + '</span>') + '</button></div>' +
+        const sf = C.starFodder(s, a.id), fh = C.fodderHave(s, a.id);
+        o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div>' +
+          (sf ? '<div>Корм<b' + (fh < sf ? ' style="color:#ff5a5a"' : '') + '>' + fh + ' / ' + sf + '</b></div>' : '') + '</div>' +
+          '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (C.canStar(s, a.id) ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Слияние ★' + (h.stars + 1) + '<span>копий ' + sc + (sf ? ' + корм ' + sf : '') + '</span>') + '</button></div>' +
+          (sf ? '<div style="text-align:center;font:600 11px system-ui;color:#9a8fae;margin:-4px 0 8px">Корм — лишние копии любых других героев (сначала низкой редкости)</div>' : '') +
           '';   // 0.74: пробуждение убрано (ответ 43)
       } else if (hvTab === 'bn') {
         const SL = CFG.bones.slots, POS = { head: [50, 8], chest: [50, 40], armR: [16, 40], armL: [84, 40], legR: [32, 84], legL: [68, 84] };

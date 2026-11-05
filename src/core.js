@@ -57,7 +57,9 @@
     reserveShare: 1,                          // резерв — 100% (решение пользователя)
     maxStars: 15,                             // GDD 1.2: 15 звёзд (было 10)
     starDpsBonus: 0.5,                        // +50% индивидуального DPS за звезду (TBD)
-    starCopies: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8], // копий на 1-ю … 15-ю звезду (TBD)
+    // 0.76 (опрос «как в Idle Heroes», ответы 5, 10, 11): 1–5★ — копии, с 6★ — копия + корм (лишние копии любых других героев)
+    starCopies: [1, 1, 2, 2, 3, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
+    starFodder: [0, 0, 0, 0, 0, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10],
     // Портал: обычный баннер. Шансы в %, гарантии (pity) раздельные: A+ и S+ (TBD)
     portal: {
       odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, SS: 0.6, SSS: 0.3, GOD: 0.15 },   // TBD
@@ -2598,10 +2600,23 @@
     const st = s.heroes[id].stars;
     return st >= CONFIG.maxStars ? null : CONFIG.starCopies[st];
   }
-  function starUp(s, id) {
+  // корм для звезды: сколько нужно и какие копии съедим (сначала низкая редкость, потом у кого копий больше; закреплённых не трогаем)
+  function starFodder(s, id) { const st = s.heroes[id].stars; return st >= CONFIG.maxStars ? 0 : (CONFIG.starFodder[st] || 0); }
+  function fodderPool(s, id) {
+    return CONFIG.allies.filter(a => a.id !== id && !(s.locks && s.locks[a.id]) && s.heroes[a.id].copies > 0)
+      .sort((a, b) => CONFIG.rarities.indexOf(a.rarity) - CONFIG.rarities.indexOf(b.rarity) || s.heroes[b.id].copies - s.heroes[a.id].copies);
+  }
+  function fodderHave(s, id) { return fodderPool(s, id).reduce((n, a) => n + s.heroes[a.id].copies, 0); }
+  function canStar(s, id) {
     const h = s.heroes[id], need = h && starCost(s, id);
-    if (!h || !h.unlocked || need == null || h.copies < need) return false;
-    h.copies -= need; h.stars++; cnt(s, 'star');
+    return !!(h && h.unlocked && need != null && h.copies >= need && fodderHave(s, id) >= starFodder(s, id));
+  }
+  function starUp(s, id) {
+    if (!canStar(s, id)) return false;
+    const h = s.heroes[id];
+    let f = starFodder(s, id);
+    for (const a of fodderPool(s, id)) { if (!f) break; const k = Math.min(f, s.heroes[a.id].copies); s.heroes[a.id].copies -= k; f -= k; }
+    h.copies -= starCost(s, id); h.stars++; cnt(s, 'star');
     return true;
   }
   function squadAdd(s, id) {
@@ -2866,7 +2881,7 @@
       const n = Math.min(allyMax(s, a.id), allyCap(s, a.id) - s.allies[a.id].level);
       if (n > 0 && s.squad.includes(a.id)) out.allies.push({ id: a.id, n });
       if (canRankUp(s, a.id)) out.ranks.push(a.id);
-      const sc = starCost(s, a.id); if (sc != null && s.heroes[a.id].copies >= sc) out.stars.push(a.id);
+      if (canStar(s, a.id)) out.stars.push(a.id);
       if (canEvolve(s, a.id)) out.evolve.push(a.id);
     }
     if (canRankUp(s, 'hero')) out.ranks.unshift('hero');
@@ -3333,7 +3348,7 @@
     totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
-    summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starFodder, fodderHave, canStar, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     unlockedAt, perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, transferPreview, transferProgress, rankCapForEvo, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,

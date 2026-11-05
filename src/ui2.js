@@ -159,7 +159,7 @@
             '<div class="inf"><div class="nm">' + a.name + '</div><button class="dcFree" data-free="' + a.id + '">Освободить героя</button></div></div>';
           continue;
         }
-        const sc = C.starCost(s, a.id), plus = sc != null && hh.copies >= sc;
+        const plus = C.canStar(s, a.id);
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const crown = RANKS.indexOf(a.rarity) >= RANKS.indexOf('S');
         h += '<div class="dcCard' + (lv ? '' : ' off') + '" style="' + rvar(a.rarity) + '"><div class="pt" data-hv="' + a.id + '">' + fig +

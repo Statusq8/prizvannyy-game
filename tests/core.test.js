@@ -547,10 +547,15 @@ test('звёзды: за дубликаты, до 10, повышают толь�
   s.heroes.shorokh.copies = 1000;
   assert.ok(C.starUp(s, 'shorokh'));
   assert.strictEqual(C.allyDps(s, 'shorokh'), before * (1 + CFG.starDpsBonus));
+  assert.strictEqual(C.starUp(s, 'shorokh'), true);
+  while (C.starUp(s, 'shorokh'));
+  assert.strictEqual(s.heroes.shorokh.stars, 5);           // с 6★ нужен корм — его нет
+  s.heroes.kostik.copies = 40; s.heroes.lumi.copies = 40;
   while (C.starUp(s, 'shorokh'));
   assert.strictEqual(s.heroes.shorokh.stars, CFG.maxStars);
-  const spent = CFG.starCopies.reduce((a, b) => a + b, 0);
+  const spent = CFG.starCopies.reduce((a, b) => a + b, 0), fed = CFG.starFodder.reduce((a, b) => a + b, 0);
   assert.strictEqual(s.heroes.shorokh.copies, 1000 - spent);
+  assert.strictEqual(s.heroes.kostik.copies + s.heroes.lumi.copies, 80 - fed);
   assert.strictEqual(C.starCost(s, 'shorokh'), null);
   assert.strictEqual(H('shorokh').ult.power, 20);       // ульт не меняется от звёзд
 });
