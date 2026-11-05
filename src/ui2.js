@@ -162,7 +162,7 @@
       h += '<div class="grid4">' + (artTab === 'got' ? got : not).map(a => {
         const lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), can = c != null && B.gte(s.souls, c);
         return '<button class="aCell' + (lv ? '' : ' lock') + '" data-art="' + (lv ? a.id : '') + '" style="' + rvar(lv && a.max && lv >= a.max ? 'S' : 'B') + '">' +
-          (lv ? '<span class="lv">Ур. ' + lv + '</span>' : '') + '<span class="ai">' + a.icon + '</span><span class="an">' + (lv ? a.name : '???') + '</span>' +
+          (lv ? '<span class="lv">Ур. ' + lv + '</span>' : '') + '<span class="ai">' + a.icon + '</span><span class="an">' + (lv ? a.name : a.special ? 'веха Башни' : '???') + '</span>' +
           (can ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
       }).join('') + '</div>';
       return h;

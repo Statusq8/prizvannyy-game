@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 29,
+    saveVersion: 30,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -119,6 +119,9 @@
         desc: '+20% золота за уровень' },
       { id: 'sand',   name: 'Песочные часы',     icon: '⏳', kind: 'bossTime', per: 1, cost: 2, growth: 1.35, max: 15,
         desc: '+1 с к таймеру босса за уровень' },
+      // 0.61 (ответы 63, 182): особый артефакт — только за вехи Башни, поиском за души не находится; качается за души
+      { id: 'crown',  name: 'Венец Башни',       icon: '👑', kind: 'allDmg', per: 0.5, cost: 5, growth: 1.25, special: true,
+        desc: '+50% всего урона за уровень. Только за вехи Башни' },
       { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 398,
         desc: 'После ритуала новый забег начинается на 1 этаж выше за уровень (всегда ниже 400)' },
     ],
@@ -414,6 +417,19 @@
       { id: 'dmg',   name: 'Зелье ярости',   icon: '⚗', kind: 'allDmg', mult: 2, sec: 900,  shardsPer: 25, essence: 20, desc: '×2 всего урона' },
       { id: 'shard', name: 'Зелье жатвы',    icon: '🫙', kind: 'shards', mult: 2, sec: 1800, shardsPer: 0,  essence: 40, desc: '×2 осколков' },
     ] },
+    // 0.61 (ответ 182): вехи Башни — большие разовые награды за рекорд этажа (навсегда, ритуал не сбрасывает).
+    // hero — открыть героя (если уже есть — copies копий), pet — питомец (если есть — frags фрагментов), art — уровни особого
+    // артефакта; reward — в центр наград. Дальше последней — каждые every этажей награда after. Числа временные.
+    towerMs: { list: [
+      { at: 1000,   hero: 'seiren',  copies: 5, reward: { tickets: 20 } },
+      { at: 2500,   pet: 'griffin',  frags: 60, reward: { essence: 100 } },
+      { at: 5000,   art: 'crown',    levels: 1, reward: { tickets: 30 } },
+      { at: 10000,  hero: 'kassian', copies: 5, reward: { tickets: 50 } },
+      { at: 20000,  pet: 'world_eater', frags: 120, reward: { essence: 300 } },
+      { at: 33000,  art: 'crown',    levels: 10, reward: { tickets: 60 } },
+      { at: 50000,  hero: 'azrael',  copies: 5, reward: { tickets: 100 } },
+      { at: 100000, art: 'crown',    levels: 20, reward: { tickets: 200, essence: 1000 } },
+    ], every: 50000, after: { tickets: 100, essence: 500 } },
     trophies: { boss: { kind: 'allDmg', per: 0.005 }, final: { kind: 'gold', per: 0.01 } },
     // 0.56 (ответы 48, 195): связи героев — пары и тройки по лору; если все в отряде, бонус действует на весь урон
     // (или золото). Помимо фракций. Герой может входить в несколько связей. Числа временные.
@@ -1299,6 +1315,7 @@
       trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
       curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа
       potions: {},                               // 0.60: id зелья → осталось секунд
+      towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1479,6 +1496,7 @@
       s.enemyIndex = 1;
       events.push({ type: 'floor', floor: s.floor });
       if (s.curse && s.curse.floor !== s.floor) s.curse = null;
+      towerMilestones(s, events);
       curseOffer(s, events, offline);
       if (isBiomeStart(s.floor) && s.floor >= s.maxFloor) events.push({ type: 'biome', floor: s.floor, name: biomeName(s.floor) });
     } else if (s.farming && s.enemyIndex === CONFIG.enemiesPerFloor - 1) {
@@ -1572,6 +1590,26 @@
     return events;
   }
 
+  // ---------- вехи Башни (0.61) ----------
+  function towerMsList(s, upTo) {           // вехи (at) в промежутке (s.towerMs, upTo]
+    const T = CONFIG.towerMs, last = T.list[T.list.length - 1].at, out = T.list.filter(m => m.at > s.towerMs && m.at <= upTo);
+    for (let at = last + T.every; at <= upTo; at += T.every) if (at > s.towerMs) out.push({ at, reward: T.after });
+    return out;
+  }
+  function nextTowerMs(s) { const T = CONFIG.towerMs, m = T.list.find(x => x.at > s.towerMs); if (m) return m; const last = T.list[T.list.length - 1].at; return { at: last + T.every * (Math.floor(Math.max(0, s.towerMs - last) / T.every) + 1), reward: T.after }; }
+  function towerMilestones(s, events) {
+    const best = Math.max(s.bestFloor, s.maxFloor), got = [];
+    for (const m of towerMsList(s, best)) {
+      const what = [];
+      if (m.hero) { const h = s.heroes[m.hero]; if (h.unlocked) { h.copies += m.copies; what.push('копии ' + allyDef(m.hero).name + ' ×' + m.copies); } else { h.unlocked = true; what.push('герой ' + allyDef(m.hero).name); } }
+      if (m.pet) { if (petForm(s, m.pet)) { s.pets.frags[m.pet] = petFrags(s, m.pet) + m.frags; what.push('фрагменты ×' + m.frags); } else { grantPet(s, m.pet, events); what.push('питомец ' + petDef(m.pet).name); } }
+      if (m.art) { s.artifacts[m.art] = artLevel(s, m.art) + m.levels; what.push(artDef(m.art).name + ' +' + m.levels + ' ур.'); }
+      inboxAdd(s, 'Веха Башни: этаж ' + m.at + (what.length ? ' — ' + what.join(', ') : ''), m.reward);
+      s.towerMs = m.at; got.push(m.at);
+      if (events) events.push({ type: 'towerMs', at: m.at, what: what.join(', ') });
+    }
+    return got;
+  }
   // ---------- проклятые этажи (0.59) ----------
   function curseMod(s) { const c = s.curse; return c && c.on && c.floor === s.floor && !s.mode ? CONFIG.curse.mods.find(m => m.id === c.mod) : null; }
   function curseOffer(s, events, offline) {
@@ -2433,16 +2471,16 @@
   }
 
   // ---------- артефакты за души ----------
-  function foundCount(s) { return CONFIG.artifacts.filter(a => artLevel(s, a.id) > 0).length; }
+  function foundCount(s) { return CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) > 0).length; }
   function findCost(s) {
-    const f = CONFIG.artifactFind;
-    return foundCount(s) >= CONFIG.artifacts.length ? null : Math.ceil(f.cost * Math.pow(f.growth, foundCount(s)));
+    const f = CONFIG.artifactFind, n = CONFIG.artifacts.filter(a => !a.special).length;
+    return foundCount(s) >= n ? null : Math.ceil(f.cost * Math.pow(f.growth, foundCount(s)));
   }
   // Найти случайный ещё не найденный артефакт
   function findArtifact(s) {
     const cost = findCost(s);
     if (cost == null || B.lt(s.souls, cost)) return null;
-    const pool = CONFIG.artifacts.filter(a => artLevel(s, a.id) === 0);
+    const pool = CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) === 0);
     const a = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
     s.souls = B.sub(s.souls, cost);
     s.artifacts[a.id] = 1;
@@ -2716,7 +2754,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions },
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2804,6 +2842,7 @@
     if (d.v === 26) { d.v = 27; d.echo = { week: '', used: 0, won: false }; }   // 0.57 → 0.58: «Эхо Башни»
     if (d.v === 27) { d.v = 28; d.curse = null; }                                // 0.58 → 0.59: проклятые этажи
     if (d.v === 28) { d.v = 29; d.potions = {}; }                                // 0.59 → 0.60: алхимия
+    if (d.v === 29) { d.v = 30; d.towerMs = 0; }                                 // 0.60 → 0.61: вехи Башни (выдадутся на следующем этаже)
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2945,6 +2984,7 @@
     const cu = d.curse;
     s.curse = cu && int(cu.floor, 1) && CONFIG.curse.mods.some(m => m.id === cu.mod) ? { floor: cu.floor, mod: cu.mod, on: !!cu.on } : null;
     if (!d.potions || typeof d.potions !== 'object') return null;
+    if (!int(d.towerMs, 0)) return null; s.towerMs = d.towerMs;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
@@ -3037,7 +3077,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
