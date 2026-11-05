@@ -520,7 +520,7 @@
       else if (d.sa === 'bak') { U.popBackups(); return; }
       else if (d.sa === 'reset') { sys({ title: 'СБРОС ПРОГРЕССА', glitch: true, text: 'Весь прогресс будет удалён без возврата. Введите слово УДАЛИТЬ.', html: '<input class="sysIn" placeholder="УДАЛИТЬ">',
           btns: [{ t: 'Отмена' }, { t: 'Удалить', red: true, fn: w => { if (w.querySelector('input').value.trim().toUpperCase() !== 'УДАЛИТЬ') { w.querySelector('input').style.borderColor = '#ff4a4a'; return false; }
-            try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(PROF_KEY); } catch (er) {} blockSave = true; location.reload(); } }] }); return; }
+            wipeAll(); blockSave = true; location.reload(); } }] }); return; }
       else if (d.sa === 'photo') { U.show(null); photoMode(true); return; }
       else if (d.sa === 'tut') { U.show(null); tutorial(true); return; }
       else if (d.sa === 'help') { sys({ title: 'ПОДДЕРЖКА', text: 'Нашли ошибку или есть идея? Напишите автору игры — контакты появятся в Android-версии.' }); return; }

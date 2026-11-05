@@ -5548,9 +5548,13 @@
   $('askNo').addEventListener('click', () => { $('ask').classList.remove('show'); askYesFn = null; });
   $('askYes').addEventListener('click', () => { $('ask').classList.remove('show'); const f = askYesFn; askYesFn = null; if (f) f(); });
 
+  // 0.79.2: сброс стирает ВСЁ игровое — сохранение, резервные копии (иначе игра восстанавливалась из копии), профиль, квесты, пролог; настройки остаются
+  function wipeAll() {
+    try { Object.keys(localStorage).filter(k => k.startsWith('prizvannyy') && k !== SET_KEY).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  }
   $('resetBtn').addEventListener('click', () => {
     ask('Сбросить весь прогресс? Это нельзя отменить.', 'Сбросить', () => {
-      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      wipeAll();
       s = C.newState(); tapped = false; dmgLog.length = 0;
       el.modal.classList.remove('show'); restartAnim('spawn'); render();
     });
@@ -8146,7 +8150,7 @@
       else if (d.sa === 'bak') { U.popBackups(); return; }
       else if (d.sa === 'reset') { sys({ title: 'СБРОС ПРОГРЕССА', glitch: true, text: 'Весь прогресс будет удалён без возврата. Введите слово УДАЛИТЬ.', html: '<input class="sysIn" placeholder="УДАЛИТЬ">',
           btns: [{ t: 'Отмена' }, { t: 'Удалить', red: true, fn: w => { if (w.querySelector('input').value.trim().toUpperCase() !== 'УДАЛИТЬ') { w.querySelector('input').style.borderColor = '#ff4a4a'; return false; }
-            try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(PROF_KEY); } catch (er) {} blockSave = true; location.reload(); } }] }); return; }
+            wipeAll(); blockSave = true; location.reload(); } }] }); return; }
       else if (d.sa === 'photo') { U.show(null); photoMode(true); return; }
       else if (d.sa === 'tut') { U.show(null); tutorial(true); return; }
       else if (d.sa === 'help') { sys({ title: 'ПОДДЕРЖКА', text: 'Нашли ошибку или есть идея? Напишите автору игры — контакты появятся в Android-версии.' }); return; }
