@@ -105,7 +105,7 @@
 
     // ---------- разделы с вкладками ----------
     function renderSec() {
-      const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : true);
+      const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : id === 'bag' ? C.unlockedAt(s, 'bag') : true);
       if (!SECS_ON.some(x => x[0] === sec)) sec = 'up';
       setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
       const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)

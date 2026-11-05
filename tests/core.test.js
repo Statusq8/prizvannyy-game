@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
 const TAP_CAP = CFG.maxTapsPerSec; CFG.maxTapsPerSec = Infinity;   // тесты бьют много раз за кадр; предел проверяется отдельно
-const UNLOCKS = CFG.unlocks; CFG.unlocks = {}; CFG.allyUlts = true;   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
+const UNLOCKS = CFG.unlocks; CFG.unlocks = {}; CFG.disabled = []; CFG.allyUlts = true;   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
 const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 
 function killCurrent(s) {

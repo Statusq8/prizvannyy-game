@@ -351,7 +351,7 @@
     if (!prof.name) setTimeout(() => askName(true), 1500); else setTimeout(() => window.U3.tutorial && window.U3.tutorial(false), 1200);
     // повышение уровня аккаунта — окно Системы (ответы 39, 40)
     let lastL = C.prestigeLevel(s);
-    setInterval(() => { const L = C.prestigeLevel(s); if (L > lastL) { lastL = L; sys({ title: 'УРОВЕНЬ ПОВЫШЕН', text: 'Уровень аккаунта: ' + L + '. Награды престижа ждут в профиле.', btns: [{ t: 'Забрать', fn: () => { const r = C.claimPrestige(s); if (r) { toast('Престиж +' + r.levels + '<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } } }, { t: 'Позже' }] }); } }, 2000);
+    setInterval(() => { const L = C.prestigeLevel(s); if (L > lastL && !C.unlockedAt(s, 'prestige')) lastL = L; if (L > lastL) { lastL = L; sys({ title: 'УРОВЕНЬ ПОВЫШЕН', text: 'Уровень аккаунта: ' + L + '. Награды престижа ждут в профиле.', btns: [{ t: 'Забрать', fn: () => { const r = C.claimPrestige(s); if (r) { toast('Престиж +' + r.levels + '<small>' + rewardLine(r.reward) + '</small>'); save(); render(); } } }, { t: 'Позже' }] }); } }, 2000);
 
 
     // ==================================================================

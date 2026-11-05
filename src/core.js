@@ -86,6 +86,9 @@
     // 0.74: лесенка открытий функций по рекорду этажа (опрос docs/ui/ANSWERS_UNLOCKS.md, ответ 18). До открытия кнопка скрыта.
     unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 25, artifacts: 50, pve: 100, runes: 150, forge: 150, ritual: 200, tree: 200,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
+    // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
+    disabled: ['quests', 'login', 'portal', 'shop', 'artifacts', 'pve', 'runes', 'forge', 'ritual', 'tree', 'events', 'season',
+               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag'],
     megaSouls: { base: 5, per50: 1.25 },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
     ritual: {
       floor: 200,
@@ -1370,7 +1373,7 @@
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые
   function inSquad(s, id) { return !!(s.heroes[id] && s.heroes[id].unlocked && s.allies[id] && s.allies[id].level > 0); }
-  function unlockedAt(s, key) { const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
+  function unlockedAt(s, key) { if (CONFIG.disabled && CONFIG.disabled.includes(key)) return false; const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return B.mul(allyDps(s, id), inSquad(s, id) ? 1 : CONFIG.reserveShare); }
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
