@@ -2341,3 +2341,44 @@ test('последняя ступень достижения даёт титул
   assert.ok(m.titles.includes(a.title.name)); assert.strictEqual(m.title, a.title.name);
   assert.strictEqual(C.titlePower(t, 'gold'), 0);
 });
+
+// ---------- 0.54: удобство ----------
+test('у каждого героя фракция из 10 и роль по ульте; избранные и фильтры списка героев', () => {
+  for (const a of CFG.allies) { assert.ok(CFG.factions.includes(a.faction), a.id); assert.ok(C.roleOf(a)); }
+  const s = C.newState(NOCRIT);
+  const all = C.heroList(s, {});
+  assert.ok(all.indexOf('kael') < all.indexOf('irene'));                        // нанятые, редкость выше — выше
+  assert.ok(C.toggleFav(s, 'irene')); assert.strictEqual(C.heroList(s, {})[0], 'irene');  // избранный — первым
+  assert.deepStrictEqual(C.heroList(s, { fav: true }), ['irene']);
+  assert.ok(C.heroList(s, { faction: 'Тени' }).every(id => CFG.allies.find(a => a.id === id).faction === 'Тени'));
+  assert.ok(C.heroList(s, { rarity: 'E', owned: true }).every(id => s.heroes[id].unlocked));
+  assert.ok(C.heroList(s, { role: 'Удар' }).includes('irene'));
+  s.allies.irene.level = 500; C.toggleFav(s, 'irene');
+  assert.strictEqual(C.heroList(s, { sort: 'power', owned: true })[0], 'irene');
+});
+
+test('пресеты отряда: сохранить и загрузить состав и питомца; сохраняется в файле', () => {
+  const s = C.newState(NOCRIT);
+  const first = [...s.squad];
+  assert.ok(C.savePreset(s, 0));
+  C.squadRemove(s, first[0]); C.squadRemove(s, first[1]);
+  assert.ok(C.savePreset(s, 1));
+  assert.ok(C.loadPreset(s, 0)); assert.deepStrictEqual(s.squad, first);
+  assert.strictEqual(C.loadPreset(s, 2), false); assert.strictEqual(C.savePreset(s, 3), false);
+  const t = C.deserialize(C.serialize(s));
+  assert.deepStrictEqual(t.presets[0].squad, first); assert.strictEqual(t.presets[1].squad.length, first.length - 2);
+  C.toggleFav(s, 'kael'); assert.deepStrictEqual(C.deserialize(C.serialize(s)).favs, ['kael']);
+});
+
+test('«Забрать всё»: вход, задания, достижения и почта одной кнопкой', () => {
+  const s = C.newState(NOCRIT); C.questsReset(s, 'd1', 'w1');
+  for (const q of CFG.quests.daily) s.counters[q.key] = (s.counters[q.key] || 0) + q.goal;
+  C.inboxAdd(s, 'тест', { tickets: 7 });
+  const t0 = s.tickets;
+  const r = C.claimEverything(s, '2026-11-05');
+  assert.ok(r.count >= 3);
+  assert.strictEqual(s.inbox.length, 0); assert.strictEqual(C.loginAvailable(s, '2026-11-05'), false);
+  assert.ok(s.tickets >= t0 + 7);
+  assert.strictEqual(r.reward.day, undefined); assert.strictEqual(r.reward.reward, undefined);
+  assert.strictEqual(C.claimEverything(s, '2026-11-05'), null);
+});

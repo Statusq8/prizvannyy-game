@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 24,
+    saveVersion: 25,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -378,6 +378,11 @@
     // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
     // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
+    // 0.54 (ответы 28, 29, 137): 10 фракций — пока только метка (для фильтров), без игровых функций;
+    // роль героя = тип его ультимейта. Фракции героев — в FACTION_OF ниже (временное распределение по описанию).
+    factions: ['Тени', 'Война', 'Свет', 'Нежить', 'Бездна', 'Пламя', 'Дикий лес', 'Буря', 'Лёд', 'Кровь'],
+    roles: { nuke: 'Удар', teamBuff: 'Усиление отряда', mark: 'Метка', tapBuff: 'Усиление героя', critBuff: 'Криты' },
+    presets: 3,                                    // 0.54 (ответ 186): пресеты отряда
     ranks: { count: 10, subs: 10, capMin: 1000, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 },
       // 0.51 (ответ 155): ранги добавляются ступенями с обновлениями — каждое число здесь = новый ранг (10 подрангов)
       // с этим потолком уровня; потолок между рангами растёт плавно (геометрически). Пока пусто: на старте 10 рангов, 15 000.
@@ -612,6 +617,10 @@
         hireCost: 2e10, costGrowth: 1.05, ult: { name: 'Вьюга', kind: 'teamBuff', charge: 20, power: 2.4, duration: 7 } },
     ],
   };
+  const FACTION_OF = { irene: 'Тени', borg: 'Война', lia: 'Пламя', kael: 'Бездна', garret: 'Война', saya: 'Тени', drake: 'Дикий лес',
+    noa: 'Буря', velma: 'Нежить', ragnar: 'Нежить', seiren: 'Буря', kassian: 'Кровь', nyx: 'Тени', azrael: 'Свет', morra: 'Кровь',
+    carna: 'Пламя', yuki: 'Лёд' };
+  for (const a of CONFIG.allies) if (!a.faction) a.faction = FACTION_OF[a.id] || 'Тени';
   // 0.51 (ответ 20): «Сердца стража» слиты в осколки. Все награды из CONFIG вида { heart: n } пересчитываются в осколки
   // (n × heartRecipe), чтобы интерфейс и выдача показывали одну валюту. Справочник CONFIG.materials не трогаем.
   (function heartsToShards(o, top) {
@@ -1227,7 +1236,9 @@
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
-      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов), только для красоты
+      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов и достижений)
+      favs: [],                                  // 0.54: избранные герои (ответ 199)
+      presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
       rituals: 0,
@@ -2392,6 +2403,44 @@
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
+  // ---------- удобство (0.54) ----------
+  function roleOf(a) { return CONFIG.roles[a.ult.kind] || 'Особая'; }
+  function isFav(s, id) { return s.favs.includes(id); }
+  function toggleFav(s, id) { if (!allyDef(id)) return false; const i = s.favs.indexOf(id); if (i < 0) s.favs.push(id); else s.favs.splice(i, 1); return true; }
+  // Список героев для экрана: фильтры { faction, rarity, role, fav, owned } и сортировка 'power' | 'rarity'
+  function heroList(s, f) {
+    f = f || {};
+    const pow = id => s.heroes[id].unlocked ? B.log10(B.max(allyDpsAt(id, Math.max(1, s.allies[id].level)), 1e-300)) + Math.log10(heroMult(s, id)) : -Infinity;
+    return CONFIG.allies.filter(a => !a.hidden || s.heroes[a.id].unlocked)
+      .filter(a => (!f.faction || a.faction === f.faction) && (!f.rarity || a.rarity === f.rarity) && (!f.role || roleOf(a) === f.role)
+                && (!f.fav || isFav(s, a.id)) && (!f.owned || s.heroes[a.id].unlocked))
+      .sort((a, b) => (isFav(s, b.id) - isFav(s, a.id)) || (s.heroes[b.id].unlocked - s.heroes[a.id].unlocked)
+        || (f.sort === 'power' ? pow(b.id) - pow(a.id) : CONFIG.rarities.indexOf(b.rarity) - CONFIG.rarities.indexOf(a.rarity)))
+      .map(a => a.id);
+  }
+  function savePreset(s, i) {
+    if (!Number.isInteger(i) || i < 0 || i >= CONFIG.presets || !s.squad.length) return false;
+    s.presets[i] = { squad: [...s.squad], pet: s.pets.active }; return true;
+  }
+  function loadPreset(s, i) {
+    const p = s.presets[i]; if (!p) return false;
+    for (const id of [...s.squad]) squadRemove(s, id);
+    for (const id of p.squad) squadAdd(s, id);
+    if (p.pet && petForm(s, p.pet)) setPet(s, p.pet);
+    return true;
+  }
+  // «Забрать всё» (ответ 180): вход дня, задания и сундуки, достижения, почта, пропуск — одной кнопкой
+  function claimEverything(s, dayKey) {
+    const sum = {}; let n = 0;
+    const add = x => { if (!x) return; n += x.count || 1; for (const k in (x.reward || x)) if (k !== 'count') sum[k] = B.add(sum[k] || 0, (x.reward || x)[k]); };
+    if (dayKey) { const L = claimLogin(s, dayKey); if (L) add({ count: 1, reward: L.reward }); }
+    add(claimAll(s));
+    for (let i = 0; i < CONFIG.questChests.length; i++) { const r = openQuestChest(s, i); if (r) add({ count: 1, reward: r }); }
+    add(claimAllAch(s));
+    add(claimPassAll(s));
+    add(claimInboxAll(s));
+    return n ? { count: n, reward: sum } : null;
+  }
   // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
   function allTitles() {
     return [...CONFIG.ritual.milestones.map(m => ({ title: m.title, bonus: m.bonus, src: 'ritual', n: m.n })),
@@ -2490,7 +2539,8 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins],
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs],
+      presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
@@ -2568,6 +2618,7 @@
       for (const m of CONFIG.ritual.milestones) if ((d.rituals | 0) >= m.n) { d.titles.push(m.title); if (m.skin) d.skins.push(m.skin); }
       d.title = d.titles[0] || null;
     }
+    if (d.v === 24) { d.v = 25; d.favs = []; d.presets = [null, null, null]; }   // 0.53 → 0.54: избранные и пресеты
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2702,6 +2753,9 @@
     // титулы за уже закрытые достижения (сохранения до 0.53)
     for (const a of CONFIG.achievements.list) if (a.title && s.ach[a.id] === a.goals.length && !s.titles.includes(a.title.name)) s.titles.push(a.title.name);
     s.title = s.titles.includes(d.title) ? d.title : (s.titles[0] || null);
+    if (!Array.isArray(d.favs) || !Array.isArray(d.presets)) return null;
+    s.favs = d.favs.filter(id => allyDef(id));
+    s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
     const se = d.season;
     if (!se || typeof se !== 'object' || !Number.isInteger(se.n) || !int(se.xp, 0) || !int(se.tokens, 0) || !int(se.trail, 0) ||
@@ -2783,7 +2837,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
