@@ -3657,6 +3657,46 @@
     if (p.pet && petForm(s, p.pet)) setPet(s, p.pet);
     return true;
   }
+  // «Надеть лучшие» (ответ 168): все кости снимаются и раздаются заново — лучшие в каждом слоте главному герою,
+  // затем отряду, затем резерву по силе (резерв бьёт в полную силу, у всех свои слоты)
+  function equipBestAll(s) {
+    const pow = id => B.log10(B.max(allyDpsAt(id, Math.max(1, s.allies[id].level)), 1e-300)) + Math.log10(heroMult(s, id));
+    const reserve = CONFIG.allies.filter(a => s.heroes[a.id].unlocked && !s.squad.includes(a.id)).map(a => a.id).sort((a, b) => pow(b) - pow(a));
+    const holders = ['hero', ...s.squad, ...reserve];
+    const before = s.bones.map(b => b.on).join();
+    for (const b of s.bones) b.on = null;
+    for (const sl of CONFIG.bones.slots) {
+      const list = s.bones.filter(b => b.slot === sl.id).sort((a, b) => boneValue(b) - boneValue(a));
+      list.slice(0, holders.length).forEach((b, i) => { b.on = holders[i]; });
+    }
+    return s.bones.map(b => b.on).join() !== before;
+  }
+  // «Качать лучшего» (ответ 169): все уровни, на какие хватает золота, — самому сильному герою отряда
+  function levelBest(s) {
+    const can = s.squad.filter(id => s.allies[id].level < allyCap(s, id));
+    if (!can.length) return null;
+    const pow = id => B.log10(B.max(allyDps(s, id), 1e-300));
+    const id = can.sort((a, b) => pow(b) - pow(a))[0], lv = s.allies[id].level;
+    if (!buyAlly(s, id, 'max')) return null;
+    return { id, levels: s.allies[id].level - lv };
+  }
+  // Умный офлайн-отчёт (ответ 189): что теперь можно купить или сделать
+  function nowAffordable(s) {
+    const out = { tap: 0, allies: [], ranks: [], stars: [], evolve: [], pets: [], find: false, ritual: canRitual(s) };
+    out.tap = Math.min(maxAffordable(s.tapLevel, s.gold), tapCap(s) - s.tapLevel);
+    for (const a of CONFIG.allies) {
+      if (!s.heroes[a.id].unlocked) continue;
+      const n = Math.min(allyMax(s, a.id), allyCap(s, a.id) - s.allies[a.id].level);
+      if (n > 0 && s.squad.includes(a.id)) out.allies.push({ id: a.id, n });
+      if (canRankUp(s, a.id)) out.ranks.push(a.id);
+      const sc = starCost(s, a.id); if (sc != null && s.heroes[a.id].copies >= sc) out.stars.push(a.id);
+      if (canEvolve(s, a.id)) out.evolve.push(a.id);
+    }
+    if (canRankUp(s, 'hero')) out.ranks.unshift('hero');
+    for (const p of CONFIG.pets.list) if (canEvolvePet(s, p.id)) out.pets.push(p.id);
+    const fc = findCost(s); out.find = fc != null && B.gte(s.souls, fc);
+    return out;
+  }
   // «Забрать всё» (ответ 180): вход дня, задания и сундуки, достижения, почта, пропуск — одной кнопкой
   function claimEverything(s, dayKey) {
     const sum = {}; let n = 0;
@@ -4027,7 +4067,15 @@
     for (let k = 0; k < len; k++) { out = String.fromCharCode(97 + i % 26) + out; i = Math.floor(i / 26); }
     return out;
   }
+  // 0.55 (ответ 18): запись чисел — 'short' (1.5K, 2.3aa…) или 'sci' (1.5e12); переключается в настройках
+  let numMode = 'short';
+  function setNumMode(m) { numMode = m === 'sci' ? 'sci' : 'short'; return numMode; }
+  function sci(n) {
+    const neg = B.sign(n) < 0, l = B.log10(n), e = Math.floor(l + 1e-12), m = Math.pow(10, l - e);
+    return (neg ? '-' : '') + (Math.floor(m * 100 + 1e-9) / 100).toFixed(2).replace(/\.?0+$/, '') + 'e' + e;
+  }
   function fmt(n) {
+    if (numMode === 'sci' && B.sign(n) !== 0 && (n instanceof Big || (isFinite(n) && Math.abs(n) >= 1e6))) return sci(n);
     if (n instanceof Big) {
       if (n.m < 0) return '-' + fmt(B.neg(n));
       const tier = Math.floor(n.e / 3), v = n.m * Math.pow(10, n.e - tier * 3);
@@ -4065,7 +4113,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
@@ -4287,10 +4335,14 @@
   // ---------- эффекты ----------
   // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
   const SET_KEY = 'prizvannyy_v2_settings';
-  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on', hitstop: 'on' };
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
+  // 0.55 (ответ 198): «Режим экономии» одним переключателем — низкое качество, 30 кадров, без эффектов, вспышек, тряски и hit-stop
+  const ECO = { quality: 'low', fps: 30, fx: 'off', flash: 'off', shake: 'off', hitstop: 'off' };
   let setg = { ...SET_DEF };
   try { setg = { ...SET_DEF, ...JSON.parse(localStorage.getItem(SET_KEY) || '{}') }; } catch (e) {}
   const SET_ROWS = [
+    { k: 'eco', name: 'Режим экономии (слабый телефон, батарея)', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
+    { k: 'num', name: 'Запись чисел', opts: [['short', '1.5aa'], ['sci', '1.5e18']] },
     { k: 'quality', name: 'Качество графики', opts: [['high', 'Высокое'], ['low', 'Низкое']] },
     { k: 'fps', name: 'Частота кадров', opts: [[60, '60'], [30, '30']] },
     { k: 'fx', name: 'Эффекты и числа урона', opts: [['full', 'Все'], ['less', 'Меньше'], ['off', 'Выкл']] },
@@ -4300,6 +4352,7 @@
     { k: 'vibro', name: 'Вибрация', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
   ];
   function applySettings() {
+    C.setNumMode(setg.num);
     document.body.classList.toggle('lowq', setg.quality === 'low');
     try { localStorage.setItem(SET_KEY, JSON.stringify(setg)); } catch (e) {}
   }
@@ -4490,8 +4543,10 @@
   });
   $('setList').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    const v = b.dataset.sv; setg[b.dataset.sk] = b.dataset.sk === 'fps' ? +v : v;
-    applySettings(); renderSettings();
+    const v = b.dataset.sv, k = b.dataset.sk; setg[k] = k === 'fps' ? +v : v;
+    if (k === 'eco') Object.assign(setg, v === 'on' ? ECO : Object.fromEntries(Object.keys(ECO).map(x => [x, SET_DEF[x]])));
+    else if (k in ECO) setg.eco = 'off';                     // ручная настройка — режим экономии выключается
+    applySettings(); renderSettings(); if (k === 'num') render();
   });
   $('closeModal').addEventListener('click', () => el.modal.classList.remove('show'));
   // ---------- окно подтверждения ----------
@@ -4535,6 +4590,17 @@
       if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
       if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
     }
+    // 0.55 (ответ 189): умный отчёт — что теперь можно купить или сделать
+    const na = C.nowAffordable(s), nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, can = [];
+    if (na.ritual) can.push('провести <b>ритуал</b>');
+    if (na.tap > 0) can.push('удар героя +' + fmt(na.tap) + ' ур.');
+    for (const x of na.allies) can.push(nm(x.id) + ' +' + fmt(x.n) + ' ур.');
+    if (na.ranks.length) can.push('ранг: ' + na.ranks.map(nm).join(', '));
+    if (na.stars.length) can.push('звезда: ' + na.stars.map(nm).join(', '));
+    if (na.evolve.length) can.push('эволюция: ' + na.evolve.map(nm).join(', '));
+    if (na.pets.length) can.push('питомцы: ' + na.pets.length);
+    if (na.find) can.push('найти артефакт за души');
+    if (can.length) lines.push('<b>Теперь можно:</b> ' + can.join(' · '));
     $('awayList').innerHTML = lines.join('<br>');
     $('away').classList.add('show');
     save(); render();
@@ -4780,7 +4846,8 @@
   }
   function cycle(list, cur) { const i = list.indexOf(cur); return i + 1 >= list.length ? '' : list[i + 1]; }
   function presetHtml() {
-    let h = '<div class="secTitle">ПРЕСЕТЫ ОТРЯДА</div><div class="spare" style="gap:6px">';
+    let h = '<button class="claimAll" data-lbest="1">Качать лучшего — всё золото сильнейшему в отряде</button>' +
+      '<div class="secTitle">ПРЕСЕТЫ ОТРЯДА</div><div class="spare" style="gap:6px">';
     for (let i = 0; i < CFG.presets; i++) {
       const p = s.presets[i];
       h += '<span class="badge rs" style="display:inline-flex;gap:4px;align-items:center">' +
@@ -5156,6 +5223,7 @@
     const nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name;
     let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
       '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после ритуала.</div>';
+    html += '<button class="claimAll" data-bbest="1"' + (s.bones.length ? '' : ' disabled') + '>Надеть лучшие — всем героям</button>';
     html += '<div class="spare" style="margin-bottom:6px">' + who.map(id => '<button class="hBtn' + (id === boneWho ? ' go' : '') + '" data-bwho="' + id + '">' + nm(id) + ' · ' + C.equippedOn(s, id).length + '/6</button>').join('') + '</div>';
     html += '<div class="secTitle">СЛОТЫ · ' + nm(boneWho).toUpperCase() + '</div>';
     for (const x of X.slots) {
@@ -5191,7 +5259,8 @@
   $('bonesTab').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
-    if (d.bwho) boneWho = d.bwho;
+    if (d.bbest) { if (C.equipBestAll(s)) toast('Кости надеты<small>лучшие — герою, затем отряду и резерву</small>'); else toast('Уже надето лучшее'); }
+    else if (d.bwho) boneWho = d.bwho;
     else if (d.bput) C.equipBone(s, +d.bput, boneWho);
     else if (d.boff) C.unequipBone(s, +d.boff);
     else if (d.bup) C.upgradeBone(s, +d.bup);
@@ -5659,6 +5728,7 @@
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
     const dd = b.dataset;
     if (dd.fav) ok = C.toggleFav(s, dd.fav);
+    if (dd.lbest) { const x = C.levelBest(s); ok = !!x; toast(x ? CFG.allies.find(a => a.id === x.id).name + '<small>+' + fmt(x.levels) + ' ур.</small>' : 'Не хватает золота<small>или отряд на потолке уровня</small>'); }
     if (dd.hf) {
       const k = dd.hf; ok = true;
       if (k === 'faction') heroF.faction = cycle(['', ...CFG.factions], heroF.faction);

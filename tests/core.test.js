@@ -2382,3 +2382,30 @@ test('«Забрать всё»: вход, задания, достижения 
   assert.strictEqual(r.reward.day, undefined); assert.strictEqual(r.reward.reward, undefined);
   assert.strictEqual(C.claimEverything(s, '2026-11-05'), null);
 });
+
+// ---------- 0.55: удобство-2 ----------
+test('«надеть лучшие»: лучшая кость слота — герою, следующие — отряду и резерву', () => {
+  const s = C.newState(NOCRIT);
+  const lo = mkBone(s, 'armR', 1), hi = mkBone(s, 'armR', 4), mid = mkBone(s, 'armR', 2);
+  assert.ok(C.equipBestAll(s));
+  assert.strictEqual(hi.on, 'hero'); assert.strictEqual(mid.on, s.squad[0]); assert.strictEqual(lo.on, s.squad[1]);
+  assert.strictEqual(C.equipBestAll(s), false);                      // уже лучшее — без изменений
+});
+
+test('«качать лучшего»: всё золото — в уровни самого сильного героя отряда', () => {
+  const s = C.newState(NOCRIT);
+  for (const id of s.squad) s.allies[id].level = 1;
+  s.gold = 1e9;
+  const r = C.levelBest(s);
+  assert.strictEqual(r.id, 'kael'); assert.ok(r.levels > 0);
+  assert.ok(s.gold < C.allyCost(s, 'kael', 1));
+});
+
+test('умный офлайн-отчёт: что можно купить; запись чисел — короткая или научная', () => {
+  const s = C.newState(NOCRIT); s.gold = 1e6; s.materials.shard = 1e6;
+  const a = C.nowAffordable(s);
+  assert.ok(a.tap > 0 && a.allies.length > 0 && a.ranks.includes('hero'));
+  assert.strictEqual(a.ritual, false);
+  C.setNumMode('sci'); assert.strictEqual(C.fmt(1234567), '1.23e6'); assert.strictEqual(C.fmt(999), '999');
+  C.setNumMode('short'); assert.strictEqual(C.fmt(1234567), '1.23M');
+});

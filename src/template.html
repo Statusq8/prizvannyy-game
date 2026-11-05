@@ -1042,10 +1042,14 @@
   // ---------- эффекты ----------
   // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
   const SET_KEY = 'prizvannyy_v2_settings';
-  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on', hitstop: 'on' };
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
+  // 0.55 (ответ 198): «Режим экономии» одним переключателем — низкое качество, 30 кадров, без эффектов, вспышек, тряски и hit-stop
+  const ECO = { quality: 'low', fps: 30, fx: 'off', flash: 'off', shake: 'off', hitstop: 'off' };
   let setg = { ...SET_DEF };
   try { setg = { ...SET_DEF, ...JSON.parse(localStorage.getItem(SET_KEY) || '{}') }; } catch (e) {}
   const SET_ROWS = [
+    { k: 'eco', name: 'Режим экономии (слабый телефон, батарея)', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
+    { k: 'num', name: 'Запись чисел', opts: [['short', '1.5aa'], ['sci', '1.5e18']] },
     { k: 'quality', name: 'Качество графики', opts: [['high', 'Высокое'], ['low', 'Низкое']] },
     { k: 'fps', name: 'Частота кадров', opts: [[60, '60'], [30, '30']] },
     { k: 'fx', name: 'Эффекты и числа урона', opts: [['full', 'Все'], ['less', 'Меньше'], ['off', 'Выкл']] },
@@ -1055,6 +1059,7 @@
     { k: 'vibro', name: 'Вибрация', opts: [['on', 'Вкл'], ['off', 'Выкл']] },
   ];
   function applySettings() {
+    C.setNumMode(setg.num);
     document.body.classList.toggle('lowq', setg.quality === 'low');
     try { localStorage.setItem(SET_KEY, JSON.stringify(setg)); } catch (e) {}
   }
@@ -1245,8 +1250,10 @@
   });
   $('setList').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    const v = b.dataset.sv; setg[b.dataset.sk] = b.dataset.sk === 'fps' ? +v : v;
-    applySettings(); renderSettings();
+    const v = b.dataset.sv, k = b.dataset.sk; setg[k] = k === 'fps' ? +v : v;
+    if (k === 'eco') Object.assign(setg, v === 'on' ? ECO : Object.fromEntries(Object.keys(ECO).map(x => [x, SET_DEF[x]])));
+    else if (k in ECO) setg.eco = 'off';                     // ручная настройка — режим экономии выключается
+    applySettings(); renderSettings(); if (k === 'num') render();
   });
   $('closeModal').addEventListener('click', () => el.modal.classList.remove('show'));
   // ---------- окно подтверждения ----------
@@ -1290,6 +1297,17 @@
       if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
       if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
     }
+    // 0.55 (ответ 189): умный отчёт — что теперь можно купить или сделать
+    const na = C.nowAffordable(s), nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, can = [];
+    if (na.ritual) can.push('провести <b>ритуал</b>');
+    if (na.tap > 0) can.push('удар героя +' + fmt(na.tap) + ' ур.');
+    for (const x of na.allies) can.push(nm(x.id) + ' +' + fmt(x.n) + ' ур.');
+    if (na.ranks.length) can.push('ранг: ' + na.ranks.map(nm).join(', '));
+    if (na.stars.length) can.push('звезда: ' + na.stars.map(nm).join(', '));
+    if (na.evolve.length) can.push('эволюция: ' + na.evolve.map(nm).join(', '));
+    if (na.pets.length) can.push('питомцы: ' + na.pets.length);
+    if (na.find) can.push('найти артефакт за души');
+    if (can.length) lines.push('<b>Теперь можно:</b> ' + can.join(' · '));
     $('awayList').innerHTML = lines.join('<br>');
     $('away').classList.add('show');
     save(); render();
@@ -1535,7 +1553,8 @@
   }
   function cycle(list, cur) { const i = list.indexOf(cur); return i + 1 >= list.length ? '' : list[i + 1]; }
   function presetHtml() {
-    let h = '<div class="secTitle">ПРЕСЕТЫ ОТРЯДА</div><div class="spare" style="gap:6px">';
+    let h = '<button class="claimAll" data-lbest="1">Качать лучшего — всё золото сильнейшему в отряде</button>' +
+      '<div class="secTitle">ПРЕСЕТЫ ОТРЯДА</div><div class="spare" style="gap:6px">';
     for (let i = 0; i < CFG.presets; i++) {
       const p = s.presets[i];
       h += '<span class="badge rs" style="display:inline-flex;gap:4px;align-items:center">' +
@@ -1911,6 +1930,7 @@
     const nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name;
     let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
       '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после ритуала.</div>';
+    html += '<button class="claimAll" data-bbest="1"' + (s.bones.length ? '' : ' disabled') + '>Надеть лучшие — всем героям</button>';
     html += '<div class="spare" style="margin-bottom:6px">' + who.map(id => '<button class="hBtn' + (id === boneWho ? ' go' : '') + '" data-bwho="' + id + '">' + nm(id) + ' · ' + C.equippedOn(s, id).length + '/6</button>').join('') + '</div>';
     html += '<div class="secTitle">СЛОТЫ · ' + nm(boneWho).toUpperCase() + '</div>';
     for (const x of X.slots) {
@@ -1946,7 +1966,8 @@
   $('bonesTab').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
-    if (d.bwho) boneWho = d.bwho;
+    if (d.bbest) { if (C.equipBestAll(s)) toast('Кости надеты<small>лучшие — герою, затем отряду и резерву</small>'); else toast('Уже надето лучшее'); }
+    else if (d.bwho) boneWho = d.bwho;
     else if (d.bput) C.equipBone(s, +d.bput, boneWho);
     else if (d.boff) C.unequipBone(s, +d.boff);
     else if (d.bup) C.upgradeBone(s, +d.bup);
@@ -2414,6 +2435,7 @@
     if (b.dataset.out) ok = C.squadRemove(s, b.dataset.out);
     const dd = b.dataset;
     if (dd.fav) ok = C.toggleFav(s, dd.fav);
+    if (dd.lbest) { const x = C.levelBest(s); ok = !!x; toast(x ? CFG.allies.find(a => a.id === x.id).name + '<small>+' + fmt(x.levels) + ' ур.</small>' : 'Не хватает золота<small>или отряд на потолке уровня</small>'); }
     if (dd.hf) {
       const k = dd.hf; ok = true;
       if (k === 'faction') heroF.faction = cycle(['', ...CFG.factions], heroF.faction);
