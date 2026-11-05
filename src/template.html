@@ -1633,7 +1633,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) + C.questChestsReady(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || C.canStar(s, a.id))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -1727,7 +1727,7 @@
         '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
         ' · ранг ' + (() => { const r = C.rankLabel(h.rank); return RN[r.rank] + (r.max ? ' макс' : '·' + r.sub); })() + ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
-                      : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
+                      : '<button class="hBtn' + (C.canStar(s, a.id) ? ' go' : '') + '" data-star="' + a.id + '"' + (C.canStar(s, a.id) ? '' : ' disabled') + '>★ за ' + need + '</button>') +
         (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'
             : '<button class="hBtn go" data-in="' + a.id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
         (ec ? '<button class="hBtn' + (canEvo ? ' evo' : '') + '" data-evo="' + a.id + '"' + (canEvo ? '' : ' disabled') + '>⬆ ' + ROMAN[ec.stage] + '</button>' : '') +
@@ -1917,7 +1917,7 @@
         '<div class="hdPerk' + (p.open ? '' : ' lock') + '"><span class="pl">' + (p.open ? 'ур. ' : '🔒 ') + p.lvl + '</span><span class="pd"><b>' + p.name + '</b>' + p.desc + '</span>' +
         (p.open ? '<span class="pk" style="color:#1a6a3a">✓</span>' : '<span class="pk">Требуется ур. ' + p.lvl + '</span>') + '</div>').join('') + '</div>' +
       '<div class="hdBtns">' +
-      '<button data-star="' + id + '"' + (need != null && h.copies >= need ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
+      '<button data-star="' + id + '"' + (C.canStar(s, id) ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
       '<button data-evo="' + id + '"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>⬆ Эволюция</button>' +
       '<button data-hrank="' + id + '"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Ранг' + (rc ? ' 🔹' + fmt(rc.shards) : '') + '</button>' +
       '<button data-hbones="' + id + '">Кости</button>' +

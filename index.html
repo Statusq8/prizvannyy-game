@@ -1689,7 +1689,9 @@
     reserveShare: 1,                          // резерв — 100% (решение пользователя)
     maxStars: 15,                             // GDD 1.2: 15 звёзд (было 10)
     starDpsBonus: 0.5,                        // +50% индивидуального DPS за звезду (TBD)
-    starCopies: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8], // копий на 1-ю … 15-ю звезду (TBD)
+    // 0.76 (опрос «как в Idle Heroes», ответы 5, 10, 11): 1–5★ — копии, с 6★ — копия + корм (лишние копии любых других героев)
+    starCopies: [1, 1, 2, 2, 3, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
+    starFodder: [0, 0, 0, 0, 0, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10],
     // Портал: обычный баннер. Шансы в %, гарантии (pity) раздельные: A+ и S+ (TBD)
     portal: {
       odds: { E: 40, D: 28, C: 17, B: 9, A: 4.5, S: 1.2, SS: 0.6, SSS: 0.3, GOD: 0.15 },   // TBD
@@ -4230,10 +4232,23 @@
     const st = s.heroes[id].stars;
     return st >= CONFIG.maxStars ? null : CONFIG.starCopies[st];
   }
-  function starUp(s, id) {
+  // корм для звезды: сколько нужно и какие копии съедим (сначала низкая редкость, потом у кого копий больше; закреплённых не трогаем)
+  function starFodder(s, id) { const st = s.heroes[id].stars; return st >= CONFIG.maxStars ? 0 : (CONFIG.starFodder[st] || 0); }
+  function fodderPool(s, id) {
+    return CONFIG.allies.filter(a => a.id !== id && !(s.locks && s.locks[a.id]) && s.heroes[a.id].copies > 0)
+      .sort((a, b) => CONFIG.rarities.indexOf(a.rarity) - CONFIG.rarities.indexOf(b.rarity) || s.heroes[b.id].copies - s.heroes[a.id].copies);
+  }
+  function fodderHave(s, id) { return fodderPool(s, id).reduce((n, a) => n + s.heroes[a.id].copies, 0); }
+  function canStar(s, id) {
     const h = s.heroes[id], need = h && starCost(s, id);
-    if (!h || !h.unlocked || need == null || h.copies < need) return false;
-    h.copies -= need; h.stars++; cnt(s, 'star');
+    return !!(h && h.unlocked && need != null && h.copies >= need && fodderHave(s, id) >= starFodder(s, id));
+  }
+  function starUp(s, id) {
+    if (!canStar(s, id)) return false;
+    const h = s.heroes[id];
+    let f = starFodder(s, id);
+    for (const a of fodderPool(s, id)) { if (!f) break; const k = Math.min(f, s.heroes[a.id].copies); s.heroes[a.id].copies -= k; f -= k; }
+    h.copies -= starCost(s, id); h.stars++; cnt(s, 'star');
     return true;
   }
   function squadAdd(s, id) {
@@ -4498,7 +4513,7 @@
       const n = Math.min(allyMax(s, a.id), allyCap(s, a.id) - s.allies[a.id].level);
       if (n > 0 && s.squad.includes(a.id)) out.allies.push({ id: a.id, n });
       if (canRankUp(s, a.id)) out.ranks.push(a.id);
-      const sc = starCost(s, a.id); if (sc != null && s.heroes[a.id].copies >= sc) out.stars.push(a.id);
+      if (canStar(s, a.id)) out.stars.push(a.id);
       if (canEvolve(s, a.id)) out.evolve.push(a.id);
     }
     if (canRankUp(s, 'hero')) out.ranks.unshift('hero');
@@ -4965,7 +4980,7 @@
     totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
-    summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
+    summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starFodder, fodderHave, canStar, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
     unlockedAt, perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, curseMod, curseOffer, acceptCurse, declineCurse, potionDef, potionMult, potionCost, brewPotion, towerMilestones, nextTowerMs, towerMsList, diaryNames, loreLevel, secretFloor, isSecretFloor, secretFind, secretReward, transferPreview, transferProgress, rankCapForEvo, prestigeXp, prestigeNeed, prestigeLevel, prestigeFrames, claimPrestige, setFrame, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
@@ -5750,7 +5765,7 @@
     const fcost = C.findCost(s);
     const bang = {
       up: anyAffordable, quests: C.claimableCount(s) + C.achClaimableCount(s) + C.questChestsReady(s) > 0, portal: s.tickets > 0,
-      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || (C.starCost(s, a.id) != null && s.heroes[a.id].copies >= C.starCost(s, a.id)))),
+      heroes: (C.classUnlocked(s) && (!s.cls.id || C.classFree(s) > 0)) || CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) || CFG.allies.some(a => s.heroes[a.id].unlocked && (C.canEvolve(s, a.id) || C.canStar(s, a.id))),
       souls: C.canRitual(s) || (fcost != null && B.gte(s.souls, fcost)),
       pve: !s.mode && CFG.pve.dungeons.some(d => C.attemptsLeft(s, d.id) > 0),
       bones: s.bones.some(b => !b.on) && CFG.bones.slots.some(x => !s.bones.some(b => b.on === 'hero' && b.slot === x.id) && s.bones.some(b => !b.on && b.slot === x.id)),
@@ -5844,7 +5859,7 @@
         '<div class="hSub"><span class="stars">' + stars + '</span>' + (h.evo ? ' · <span class="evoTag">облик ' + ROMAN[h.evo] + '/' + ROMAN[nEvo] + '</span>' : '') +
         ' · ранг ' + (() => { const r = C.rankLabel(h.rank); return RN[r.rank] + (r.max ? ' макс' : '·' + r.sub); })() + ' · копий ' + h.copies + ' · ' + a.ult.name + '</div>' + evoNeed + '</div><div class="hBtns">' +
         (need == null ? '<button class="hBtn" disabled>★ max</button>'
-                      : '<button class="hBtn' + (h.copies >= need ? ' go' : '') + '" data-star="' + a.id + '"' + (h.copies >= need ? '' : ' disabled') + '>★ за ' + need + '</button>') +
+                      : '<button class="hBtn' + (C.canStar(s, a.id) ? ' go' : '') + '" data-star="' + a.id + '"' + (C.canStar(s, a.id) ? '' : ' disabled') + '>★ за ' + need + '</button>') +
         (sq ? '<button class="hBtn" data-out="' + a.id + '">Убрать</button>'
             : '<button class="hBtn go" data-in="' + a.id + '"' + (s.squad.length >= CFG.squadSize ? ' disabled' : '') + '>В отряд</button>') +
         (ec ? '<button class="hBtn' + (canEvo ? ' evo' : '') + '" data-evo="' + a.id + '"' + (canEvo ? '' : ' disabled') + '>⬆ ' + ROMAN[ec.stage] + '</button>' : '') +
@@ -6034,7 +6049,7 @@
         '<div class="hdPerk' + (p.open ? '' : ' lock') + '"><span class="pl">' + (p.open ? 'ур. ' : '🔒 ') + p.lvl + '</span><span class="pd"><b>' + p.name + '</b>' + p.desc + '</span>' +
         (p.open ? '<span class="pk" style="color:#1a6a3a">✓</span>' : '<span class="pk">Требуется ур. ' + p.lvl + '</span>') + '</div>').join('') + '</div>' +
       '<div class="hdBtns">' +
-      '<button data-star="' + id + '"' + (need != null && h.copies >= need ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
+      '<button data-star="' + id + '"' + (C.canStar(s, id) ? '' : ' disabled') + '>★ Звезда' + (need != null ? ' (' + h.copies + '/' + need + ')' : '') + '</button>' +
       '<button data-evo="' + id + '"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>⬆ Эволюция</button>' +
       '<button data-hrank="' + id + '"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Ранг' + (rc ? ' 🔹' + fmt(rc.shards) : '') + '</button>' +
       '<button data-hbones="' + id + '">Кости</button>' +
@@ -7109,7 +7124,7 @@
             '<div class="inf"><div class="nm">' + a.name + '</div><button class="dcFree" data-free="' + a.id + '">Освободить героя</button></div></div>';
           continue;
         }
-        const sc = C.starCost(s, a.id), plus = sc != null && hh.copies >= sc;
+        const plus = C.canStar(s, a.id);
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const crown = RANKS.indexOf(a.rarity) >= RANKS.indexOf('S');
         h += '<div class="dcCard' + (lv ? '' : ' off') + '" style="' + rvar(a.rarity) + '"><div class="pt" data-hv="' + a.id + '">' + fig +
@@ -7954,8 +7969,11 @@
         o += '<div class="grpT">ВЕХИ УРОВНЯ · ×' + CFG.milestoneMult + ' УРОНА</div><div class="rowList">' + ms.map((m, i) => '<div class="' + (i ? 'lock' : 'on') + '"><span>Ур. ' + fmt(m) + '<small>' + (i ? '' : 'осталось ' + fmt(m - lv) + ' ур.') + '</small></span><b>×' + CFG.milestoneMult + '</b></div>').join('') + '</div>';
       } else if (hvTab === 'st') {
         const sc = C.starCost(s, a.id), ec = C.evoCost(s, a.id);
-        o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div></div>' +
-          '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (sc != null && h.copies >= sc ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Повысить звезду<span>копий ' + sc + '</span>') + '</button></div>' +
+        const sf = C.starFodder(s, a.id), fh = C.fodderHave(s, a.id);
+        o += '<div class="statGrid"><div>Звёзды<b>★ ' + h.stars + ' / ' + CFG.maxStars + '</b></div><div>Копий<b>' + h.copies + (sc != null ? ' / ' + sc : '') + '</b></div>' +
+          (sf ? '<div>Корм<b' + (fh < sf ? ' style="color:#ff5a5a"' : '') + '>' + fh + ' / ' + sf + '</b></div>' : '') + '</div>' +
+          '<div style="text-align:center;margin:10px 0"><button class="upBtn" data-hstar' + (C.canStar(s, a.id) ? '' : ' disabled') + ' style="width:auto;padding:4px 18px">' + (sc == null ? 'Максимум звёзд' : 'Слияние ★' + (h.stars + 1) + '<span>копий ' + sc + (sf ? ' + корм ' + sf : '') + '</span>') + '</button></div>' +
+          (sf ? '<div style="text-align:center;font:600 11px system-ui;color:#9a8fae;margin:-4px 0 8px">Корм — лишние копии любых других героев (сначала низкой редкости)</div>' : '') +
           '';   // 0.74: пробуждение убрано (ответ 43)
       } else if (hvTab === 'bn') {
         const SL = CFG.bones.slots, POS = { head: [50, 8], chest: [50, 40], armR: [16, 40], armL: [84, 40], legR: [32, 84], legL: [68, 84] };
