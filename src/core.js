@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 26,
+    saveVersion: 27,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -289,6 +289,17 @@
       dailyAttempts: 2, dungeonEnemies: 6, dungeonTime: 45, tierFloors: 10,   // уровень N ≈ этаж 10·N; открыт до рекорда/10
       vaultGold: 30, mineShards: 5, forgeTierEvery: 10,                        // кузня: редкость руны = уровень / 10
       // Бесконечное подземелье: волны по одному врагу, каждые 10 — контрольный босс с таймером; рекорд волн
+      // 0.58 (ответ 173): «Эхо Башни» — раз в неделю пройденный биом с модификатором недели. Сила врагов — как на этаже
+      // floorPct · рекорд; 9 врагов + финальный босс биома за time с. Первая победа недели — большая награда, дальше — осколки.
+      echo: { attempts: 3, enemies: 10, time: 60, floorPct: 0.85, minFloor: 50,
+        mods: [
+          { id: 'noTap',  name: 'Без тапов',          rule: 'alliesOnly', text: 'тапы не наносят урона — бьёт только отряд' },
+          { id: 'tapOnly', name: 'Только тапы',       rule: 'tapOnly',    text: 'отряд не атакует — только удары героя' },
+          { id: 'noUlt',  name: 'Тишина',             rule: 'noUlts',     text: 'ультимейты отряда не срабатывают' },
+          { id: 'hp2',    name: 'Двойная плоть',      hp: 2,              text: 'у врагов ×2 HP' },
+          { id: 'fast',   name: 'Спешка',             time: 30,           text: 'всего 30 секунд на всех' },
+        ],
+        first: { tickets: 5, essence: 60, shardMult: 20 }, repeat: { shardMult: 5 } },
       endless: { attempts: 3, bossEvery: 10, hpMult: 3, bossTime: 30, essenceBase: 1, essenceStep: 20 },
       // Испытательная башня (GDD §10): равные условия для всех — только тапы фиксированной силы, без прокачки, критов,
       // союзников, питомца, способностей и бонусов. 15 с на стража; рекорд недели и за всё время. Числа TBD.
@@ -1242,7 +1253,8 @@
       tree: {},                                  // дерево душ: id узла → уровень
       runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
       totems: {},                                // id биома → уровень тотема
-      pve: { day: '', used: {}, endlessBest: 0 },  // ежедневные попытки и рекорд бесконечного подземелья
+      pve: { day: '', used: {}, endlessBest: 0 },
+      echo: { week: '', used: 0, won: false },   // 0.58: «Эхо Башни» — попытки недели и первая победа  // ежедневные попытки и рекорд бесконечного подземелья
       trial: { week: '', weekBest: 0, best: 0 },  // испытательная башня: рекорды недели и за всё время
       mode: null,                                // текущий PvE-режим (не сохраняется)
       counters: {},                              // счётчики действий за всю игру (для заданий)
@@ -1575,6 +1587,12 @@
       if (!attemptsLeft(s, 'trial')) return null;
       m = { kind, id: 'trial', name: 'Испытательная башня', rule: 'trial', step: 1, timeLeft: P.trial.time, timeMax: P.trial.time };
       s.pve.used.trial = (s.pve.used.trial | 0) + 1;
+    } else if (kind === 'echo') {
+      const x = echoInfo(s);
+      if (!x || x.left <= 0) return null;
+      m = { kind, id: 'echo', name: 'Эхо: ' + x.biome.name + ' · ' + x.mod.name, rule: x.mod.rule || null, hpMult: x.mod.hp || 1,
+            floor: x.floor, biome: x.biome.id, step: 1, total: P.echo.enemies, timeLeft: x.time, timeMax: x.time };
+      s.echo.used++;
     } else if (kind === 'personal') {
       const b = personalBosses(s).find(x => x.id === opts.id), D = P.personal.diffs.find(x => x.id === opts.diff);
       if (!b || !D || !attemptsLeft(s, 'personal')) return null;
@@ -1594,6 +1612,11 @@
       isBoss = m.step === m.total;
       hp = enemyMaxHp(f, isBoss);
       name = isBoss ? 'Страж: ' + m.name : enemyName(f, m.step, false);
+    } else if (m.kind === 'echo') {
+      const b = CONFIG.biomes.find(x => x.id === m.biome);
+      isBoss = m.step === m.total;
+      hp = B.ceil(B.mul(enemyMaxHp(m.floor, isBoss), m.hpMult));
+      name = isBoss ? 'Эхо: ' + b.final : 'Эхо: ' + b.enemies[(m.step * 3) % b.enemies.length];
     } else if (m.kind === 'endless') {
       isBoss = m.step % P.endless.bossEvery === 0;
       hp = B.ceil(B.mul(enemyMaxHp(m.step, isBoss), P.endless.hpMult));
@@ -1673,6 +1696,11 @@
       if (bone) r.bone = bone;
       s.materials.shard += r.shard + heartShards(r.heart || 0);
       res.reward = r;
+    } else if (m.kind === 'echo' && win) {
+      const E = P.echo, first = !s.echo.won, sh = Math.ceil(shardsForBoss(m.floor) * (first ? E.first.shardMult : E.repeat.shardMult) * shardMult(s));
+      const r = first ? { tickets: E.first.tickets, essence: E.first.essence, shard: sh, first: true } : { shard: sh };
+      s.echo.won = true; grant(s, r); cnt(s, 'echo');
+      res.reward = r;
     } else if (m.kind === 'trial') {
       const n = m.step - 1, e = n * P.trial.essencePer;
       s.essence += e;
@@ -1698,6 +1726,19 @@
     spawn(s);
   }
 
+  // ---------- «Эхо Башни» (0.58) ----------
+  // Неделя — по ключу недели события (s.event.week). Биом — один из пройденных, модификатор — по номеру недели.
+  function echoSync(s) { const wk = (s.event && s.event.week) || ''; if (s.echo.week !== wk) s.echo = { week: wk, used: 0, won: false }; }
+  function echoInfo(s) {
+    const E = CONFIG.pve.echo;
+    if (s.bestFloor < E.minFloor) return null;
+    echoSync(s);
+    const n = s.echo.week ? Math.max(0, weekNum(s.echo.week)) : 0;
+    const cleared = Math.min(CONFIG.biomes.length, Math.floor(s.bestFloor / CONFIG.biomeFloors));
+    const biome = CONFIG.biomes[n % cleared], mod = E.mods[n % E.mods.length];
+    return { biome, mod, floor: Math.max(1, Math.floor(s.bestFloor * E.floorPct)), time: mod.time || E.time,
+             left: Math.max(0, E.attempts - s.echo.used), won: s.echo.won };
+  }
   // ---------- еженедельные события ----------
   function weekNum(weekKey) { return Math.floor((dayNum(weekKey.replace(/^w/, '')) - dayNum(CONFIG.season.epoch)) / 7); }
   function eventFor(weekKey) { const L = CONFIG.events.list, n = weekNum(weekKey); return L[((n % L.length) + L.length) % L.length]; }
@@ -2616,7 +2657,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies],
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo },
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -2701,6 +2742,7 @@
       for (let f = 1; f <= Math.min(d.bestFloor | 0, CONFIG.biomeFloors * CONFIG.biomes.length); f++) t.add(trophyKey(f));
       d.trophies = [...t];
     }
+    if (d.v === 26) { d.v = 27; d.echo = { week: '', used: 0, won: false }; }   // 0.57 → 0.58: «Эхо Башни»
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2837,6 +2879,8 @@
     s.title = s.titles.includes(d.title) ? d.title : (s.titles[0] || null);
     if (!Array.isArray(d.favs) || !Array.isArray(d.presets) || !Array.isArray(d.trophies)) return null;
     { const all = allTrophies(); s.trophies = [...new Set(d.trophies.filter(k => all.includes(k)))]; }
+    if (!d.echo || typeof d.echo.week !== 'string' || !int(d.echo.used, 0)) return null;
+    s.echo = { week: d.echo.week, used: d.echo.used, won: !!d.echo.won };
     s.favs = d.favs.filter(id => allyDef(id));
     s.presets = [0, 1, 2].map(i => { const p = d.presets[i]; return p && Array.isArray(p.squad) ? { squad: p.squad.filter(id => allyDef(id)).slice(0, CONFIG.squadSize), pet: typeof p.pet === 'string' ? p.pet : null } : null; });
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
@@ -2928,7 +2972,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, titlePower, allTitles, roleOf, isFav, toggleFav, heroList, savePreset, loadPreset, claimEverything, equipBestAll, levelBest, nowAffordable, setNumMode, bondActive, activeBonds, bondPower, bondsOf, echoInfo, echoSync, trophyKey, trophyName, allTrophies, trophyBonus, trophyPower, grantTrophy, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
