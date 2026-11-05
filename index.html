@@ -6926,16 +6926,21 @@
   function loop(now) {
     acc += Math.min(0.25, (now - last) / 1000); last = now;
     let changed = false;
-    while (acc >= STEP) {
-      const ev = C.tick(s, STEP); acc -= STEP;
-      if (ev.length) { handle(ev); changed = true; }
-    }
+    // 0.75.1: ошибка интерфейса не должна останавливать бой — следующий кадр ставим первым
+    requestAnimationFrame(loop);
+    try {
+      while (acc >= STEP) {
+        const ev = C.tick(s, STEP); acc -= STEP;
+        if (ev.length) { handle(ev); changed = true; }
+      }
+    } catch (e) { acc = 0; console.error(e); }
     // FPS 30: логика идёт с прежним шагом, перерисовка — через кадр
     const skip = setg.fps === 30 && (frameN++ & 1);
-    if (changed && !skip) render(); else if (changed) pendingRender = true;
-    if (!skip) { if (pendingRender) { render(); pendingRender = false; } renderLive(); }
+    try {
+      if (changed && !skip) render(); else if (changed) pendingRender = true;
+      if (!skip) { if (pendingRender) { render(); pendingRender = false; } renderLive(); }
+    } catch (e) { console.error(e); }
     if (Date.now() - lastSave > 5000) save();
-    requestAnimationFrame(loop);
   }
   buildAllies();
   buildAbilities();
@@ -7798,7 +7803,7 @@
       const inb = +($('inboxCnt').textContent || 0); const mi = mail.querySelector('i'); mi.textContent = inb; mi.classList.toggle('on', inb > 0);
       // событие недели — значок с таймером до конца недели
       const ce = C.currentEvent(s); evBtn.style.display = ce ? '' : 'none';
-      if (ce && !(syncN++ % 20)) { evBtn.querySelector('.ico').textContent = ce.icon || '🏮'; evBtn.querySelector('small').textContent = weekLeft(); }
+      if (ce && !(syncN++ % 20)) { const ic = evBtn.querySelector('.ico'), sm = evBtn.querySelector('small'); if (ic && !ic.querySelector('img')) ic.textContent = ce.icon || '🏮'; if (sm) sm.textContent = weekLeft(); }
       // кнопки открываются постепенно (ответ 163): портал — после первого героя-союзника, событие — с 10 этажа, PvE — с 15
       evBtn.style.display = 'none';   // 0.74: события — в книге
       decorAllies();

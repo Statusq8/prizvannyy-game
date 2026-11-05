@@ -231,7 +231,7 @@
       const inb = +($('inboxCnt').textContent || 0); const mi = mail.querySelector('i'); mi.textContent = inb; mi.classList.toggle('on', inb > 0);
       // событие недели — значок с таймером до конца недели
       const ce = C.currentEvent(s); evBtn.style.display = ce ? '' : 'none';
-      if (ce && !(syncN++ % 20)) { evBtn.querySelector('.ico').textContent = ce.icon || '🏮'; evBtn.querySelector('small').textContent = weekLeft(); }
+      if (ce && !(syncN++ % 20)) { const ic = evBtn.querySelector('.ico'), sm = evBtn.querySelector('small'); if (ic && !ic.querySelector('img')) ic.textContent = ce.icon || '🏮'; if (sm) sm.textContent = weekLeft(); }
       // кнопки открываются постепенно (ответ 163): портал — после первого героя-союзника, событие — с 10 этажа, PvE — с 15
       evBtn.style.display = 'none';   // 0.74: события — в книге
       decorAllies();
