@@ -52,6 +52,7 @@
       P.torso.sy = 1 + br * .025; P.torso.r = br * .02; P.head.r = Math.sin(t * 2.4 - .6) * .04; P.head.y = br * .8;
       P.armLu.r = .25 + br * .06; P.armLl.r = -.3; P.armRu.r = -.35 + br * .05; P.armRl.r = -.9; P.sword.r = .55;
       P.root.y = 0; P.legL.r = .03; P.legR.r = -.03;
+      if (R.rest) for (const b in R.rest) P[b].r += R.rest[b];
       const A = R.anim;
       if (A) {
         const k = Math.min(1, (t - A.t0) / A.dur);
@@ -89,10 +90,10 @@
       c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, R.cv.width, R.cv.height);
       const S = R.cv.width / 200; c.setTransform(S, 0, 0, S, 0, 0);
       // тень
-      c.fillStyle = 'rgba(0,0,0,.45)'; c.beginPath(); c.ellipse(100 + P.root.x * .6, 214, 40, 9, 0, 0, 6.28); c.fill();
+      c.fillStyle = 'rgba(0,0,0,.45)'; c.beginPath(); c.ellipse(100 + P.root.x * .6, R.bones.root.y + 44, 40, 9, 0, 0, 6.28); c.fill();
       const world = b => {
         if (M[b]) return M[b];
-        const d = BONES[b], q = P[b], m = new DOMMatrix();
+        const d = R.bones[b], q = P[b], m = new DOMMatrix();
         const base = d.p ? world(d.p) : m;
         const r = base.translate(d.x + q.x, d.y + q.y).rotate(q.r * 57.2958).scale(q.sx, q.sy);
         return (M[b] = r);
@@ -110,7 +111,7 @@
       if (R.trail.some(p => p[2]) && setg.fx !== 'off') {
         c.setTransform(S, 0, 0, S, 0, 0); c.save(); c.globalCompositeOperation = 'lighter';
         for (let i = 1; i < R.trail.length; i++) { const [x0, y0, a0] = R.trail[i - 1], [x1, y1, a1] = R.trail[i]; if (!a0 || !a1) continue;
-          c.globalAlpha = i / R.trail.length * .9; c.strokeStyle = R.pal.glow; c.lineWidth = 2 + i * 1.3; c.lineCap = 'round'; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
+          c.globalAlpha = i / R.trail.length * .9; c.strokeStyle = R.pal.glow; c.lineWidth = 1.5 + i * .9; c.lineCap = 'round'; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
         c.restore();
       }
       if (R.tint) { c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(255,60,60,' + (R.tint * .45) + ')'; c.fillRect(0, 0, R.cv.width, R.cv.height); c.globalCompositeOperation = 'source-over'; }
@@ -121,6 +122,9 @@
       const cv = document.createElement('canvas'); cv.className = 'rigCv'; host.appendChild(cv);
       const R = { id, host, cv, ctx: cv.getContext('2d'), pal, anim: null, trail: [], img: {}, order: ['legL', 'legR', 'armLu', 'armLl', 'torso', 'cape', 'head', 'armRu', 'armRl', 'sword'], dt: .016, scale: scale || 1, ph: Math.random() * 6 };
       const ART = RIG_ART[id]; if (ART) for (const p of PARTS) if (ART[p]) { const im = new Image(); im.src = ART[p]; R.img[p] = im; }
+      const pv = ART && ART._piv || {};
+      R.bones = {}; for (const b in BONES) R.bones[b] = Object.assign({}, BONES[b], (pv._bones || {})[b] || {});
+      if (pv._order) R.order = pv._order.slice(); if (pv._rest) R.rest = pv._rest;
       rigs.push(R); return R;
     }
     function play(R, kind, v) { R.anim = { kind, v: v | 0, t0: performance.now() / 1000 + R.ph, dur: kind === 'atk' ? .3 : .35 }; }
@@ -139,7 +143,7 @@
       for (const a of CFG.allies) {
         const u = allyUi[a.id]; if (!u || u.rig) continue;
         u.rig = makeRig(u.sprite, a.id, palFor(u.color), .8);
-        u.rig.order = ['legL', 'legR', 'cape', 'armLu', 'armLl', 'torso', 'head', 'armRu', 'armRl', 'sword'];
+        if (!u.rig.rest) u.rig.order = ['legL', 'legR', 'cape', 'armLu', 'armLl', 'torso', 'head', 'armRu', 'armRl', 'sword'];
         let n = 0; new MutationObserver(() => { if (u.sprite.classList.contains('attack')) play(u.rig, 'atk', n++ % 3); }).observe(u.sprite, { attributes: true, attributeFilter: ['class'] });
       }
     }
@@ -152,7 +156,7 @@
       const t = now / 1000;
       if (heroRig) heroRig.ult = s.abilities.flurry.active > 0;
       for (const R of rigs) {
-        if (!R.host.offsetParent) continue;
+        if (!R.host.isConnected || !R.cv.clientWidth) continue;
         const w = Math.round(R.cv.clientWidth * Math.min(2, devicePixelRatio || 1)); if (!w) continue;
         if (R.cv.width !== w) { R.cv.width = w; R.cv.height = Math.round(w * 1.2); }
         R.dt = dt; try { render(R, t + R.ph); } catch (e) { if (!R.err) { R.err = 1; console.error('rig', e && e.stack); } }
@@ -160,7 +164,14 @@
     }
     // урон по герою (пока враги не бьют — дрожь при провале босса)
     const h0 = handle; handle = function (ev, x, y) { h0(ev, x, y); for (const e of ev) if (e.type === 'bossFail' && heroRig) play(heroRig, 'hurt'); };
+    window.__rig = { rigs, pose };
     sync(); setInterval(sync, 1000);
+    // отладка: адрес с #rigdebug — крупный герой на сером фоне (подгонка частей)
+    if (/rigdebug/.test(location.hash)) {
+      const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:360px;height:432px;z-index:9999;background:#556;';
+      document.body.appendChild(box); const R = makeRig(box, 'hero', PAL_HERO, 1); R.cv.style.cssText = 'display:block;position:absolute;left:0;top:0;width:360px;transform:none';
+      window.__rig.dbg = R;
+    }
     requestAnimationFrame(frame);
-    window.U3 = window.U3 || {}; window.__rig = { rigs, pose }; window.U3.rigPlay = (k, v) => heroRig && play(heroRig, k, v);
+    window.U3 = window.U3 || {}; window.U3.rigPlay = (k, v) => heroRig && play(heroRig, k, v);
   })();

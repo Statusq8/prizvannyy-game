@@ -294,5 +294,5 @@
   .rigCv { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; display: none; }
   body.rigOn .rigCv { display: block; }
   body.rigOn #hero .fig, body.rigOn .ally .fig { opacity: 0 !important; }
-  #hero .rigCv { width: 62%; bottom: calc(24% - 34px); }
+  #hero .rigCv { width: 92%; bottom: calc(24% - 52px); }
   .ally .rigCv { width: 115%; bottom: -10px; }

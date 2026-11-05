@@ -71,9 +71,17 @@ def main():
     os.makedirs('assets/game', exist_ok=True); os.makedirs('assets/rig', exist_ok=True)
     piv = {}
     full = Image.fromarray(arr)
+    rot = {}
+    if '--rot' in sys.argv:
+        for kv in sys.argv[sys.argv.index('--rot') + 1].split(','): k, v = kv.split('='); rot[k] = float(v)
+    mul = {}
+    if '--mul' in sys.argv:
+        for kv in sys.argv[sys.argv.index('--mul') + 1].split(','): k, v = kv.split('='); mul[k] = float(v)
     for name, (x0, y0, x1, y1, n) in parts.items():
         crop = full.crop((x0, y0, x1, y1))
-        w, h = max(1, round(crop.width * scale * 2)), max(1, round(crop.height * scale * 2))     # ×2 — чёткость на экранах с плотностью 2
+        if name in rot: crop = crop.rotate(rot[name], expand=True, resample=Image.BICUBIC); crop = crop.crop(crop.getbbox())
+        k = scale * mul.get(name, 1)
+        w, h = max(1, round(crop.width * k * 2)), max(1, round(crop.height * k * 2))     # ×2 — чёткость на экранах с плотностью 2
         crop = crop.resize((w, h), Image.LANCZOS)
         crop.save('assets/game/rig_%s_%s.webp' % (hid, name), 'WEBP', quality=90)
         px, py = PIVOT.get(name, (.5, .5))
