@@ -349,21 +349,22 @@
     }
     // первый запуск — имя (ответ лора: имя даёт игрок)
     // 0.78: пролог «Последний босс» (docs/START.md) — 4 кадра, тап — дальше, «Пропустить»; после — имя и первый враг
-    const PRO = /*__PROLOGUE__*/[];
+    const PRO = /*__PROLOGUE__*/[], PRO_T = /*__PROLOGUE_T__*/[];
     function prologue(done) {
       if (!PRO.length) return done();
       const ov = mk('div', 'proOv', '', '', document.body), box = mk('div', '', 'proBox', '', ov);
       const skip = mk('button', '', 'proSkip', 'Пропустить ›', ov);
+      // текст кадров 2–3 нарисован прямо в кадре (assets/prologue/p2t, p3t — tools/prologue_text.py), здесь — подписи
       const T = [
         '<div class="proCap">Финальный босс.<br>Ещё один удар…</div>',
-        '<div class="proWin"><b>ПОБЕДА</b></div><div class="proWin2">Вы первый в мире</div>',
-        '<div class="proSys"><b>Ты достоин.</b><b class="g">Поднимись.</b></div>',
+        '<div class="proCap">Вы первый в мире.</div>',
+        '',
         '<div class="proCap">Статус: <b>1★</b>.<br>Имя?</div>'];
       let i = -1, busy = false;
       const end = () => { if (ov._end) return; ov._end = 1; ov.classList.add('out'); setTimeout(() => { ov.remove(); done(); }, 450); try { localStorage.setItem('prizvannyy_prologue', '1'); } catch (e) {} };
       const next = () => {
         if (busy) return; if (++i >= PRO.length) return end(); busy = true; setTimeout(() => busy = false, 450);
-        const cap = /proCap/.test(T[i]), f = mk('div', '', 'proF', '<img src="' + PRO[i] + '" alt="">' + (cap ? '' : T[i]), box);
+        const L = PRO_T[i], f = mk('div', '', 'proF', '<img src="' + PRO[i] + '" alt="">' + (L ? '<img class="proT t' + i + '" src="' + L + '" alt="">' : ''), box), cap = !!T[i];
         [...ov.querySelectorAll('.proCap')].forEach(c => c.remove()); if (cap) ov.insertAdjacentHTML('beforeend', T[i]);   // подпись — по краям экрана, не картинки
         requestAnimationFrame(() => requestAnimationFrame(() => f.classList.add('on')));
         if (i === 2 && navigator.vibrate) try { navigator.vibrate([30, 40, 30]); } catch (e) {}
