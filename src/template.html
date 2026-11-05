@@ -696,6 +696,7 @@
   body.clean .dot.boss { width: 12px; height: 12px; background: #3a1410; border-color: #c24a2a; }
   body.clean .dot.boss.cur { background: #ff6b4a; box-shadow: 0 0 8px #ff6b4a; }
 /*__UI2_CSS__*/
+/*__UI3_CSS__*/
 </style>
 </head>
 <body>
@@ -1115,7 +1116,7 @@
   // ---------- эффекты ----------
   // ---------- настройки устройства (GDD §12): качество, FPS, эффекты, вспышки, камера, вибрация ----------
   const SET_KEY = 'prizvannyy_v2_settings';
-  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'off', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
+  const SET_DEF = { quality: 'high', fps: 60, fx: 'full', flash: 'on', shake: 'on', vibro: 'on', hitstop: 'on', eco: 'off', num: 'short' };
   // 0.55 (ответ 198): «Режим экономии» одним переключателем — низкое качество, 30 кадров, без эффектов, вспышек, тряски и hit-stop
   const ECO = { quality: 'low', fps: 30, fx: 'off', flash: 'off', shake: 'off', hitstop: 'off' };
   let setg = { ...SET_DEF };
@@ -1195,7 +1196,10 @@
           fx('slash', x, y, null, 240).style.setProperty('--r', (Math.random() * 70 - 35) + 'deg');
           hitStop(e.crit ? HITSTOP.crit : HITSTOP.tap);
           if (e.crit) fx('critFlash', x, y, null, 160);
-          fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 30 - 15, y, (e.crit ? 'КРИТ ' : '') + fmt(e.dmg), e.crit ? 850 : 700);
+          // 0.69 (ответы 2–3): средние числа разлетаются в стороны; у крита отдельная надпись «КРИТ!»
+          const dn = fx('dmg' + (e.crit ? ' crit' : ''), x + Math.random() * 40 - 20, y, fmt(e.dmg), e.crit ? 850 : 700);
+          dn.style.setProperty('--dx', (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 50) + 'px');
+          if (e.crit) fx('critLbl', x, y - 34, 'КРИТ!', 800);
         } else if (e.source === 'pet') {
           dmgLog.push([performance.now(), e.dmg, 'auto']);
           const pe = $('pet'); pe.classList.remove('attack'); void pe.offsetWidth; pe.classList.add('attack');
@@ -2792,7 +2796,7 @@
     for (const d of dmgLog) { allSum = B.add(allSum, d[1]); if (d[2] === 'tap') tapSum = B.add(tapSum, d[1]); }
     const tapDps = B.div(tapSum, DPS_WINDOW), auto = C.autoDps(s);
     el.dps.textContent = fmt(B.add(tapDps, auto));                       // общий DPS
-    tbGold.textContent = fmt(s.gold); tbDps.textContent = el.dps.textContent;
+    tbGold.textContent = fmt(s.gold); tbDps.textContent = fmt(auto);   // 0.69 (ответ 24): справа вверху — только DPS отряда
     liveTapDps = tapDps; liveAllDps = B.div(allSum, DPS_WINDOW);
     goldSample(now);
     if (el.statsMore.classList.contains('show'))
@@ -2821,6 +2825,7 @@
   render();
   if (s.savedAt) applyOffline((Date.now() - s.savedAt) / 1000);
 /*__UI2_JS__*/
+/*__UI3_JS__*/
   if (restoredFrom) setTimeout(() => toast('Сохранение восстановлено<small>из резервной копии от ' + new Date(restoredFrom.t).toLocaleString('ru-RU') + '</small>'), 600);
   if (C.loginAvailable(s, dayKey())) setTimeout(() => toast('📬 Бонус за вход ждёт<small>день ' + (C.loginDayIndex(s) + 1) + ' из ' + CFG.login.days.length + '</small>'), 1200);
   requestAnimationFrame(loop);

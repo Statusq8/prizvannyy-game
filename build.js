@@ -17,7 +17,9 @@ for (const f of fs.existsSync(artDir) ? fs.readdirSync(artDir) : []) {
   const m = /^hero_([a-z0-9]+)_(avatar|side|back)\.webp$/.exec(f); if (!m) continue;
   (heroArt[m[1]] = heroArt[m[1]] || {})[m[2]] = 'data:image/webp;base64,' + fs.readFileSync(path.join(artDir, f)).toString('base64');
 }
+// 0.69: слой ui3 — экран боя, профиль, настройки по опросу docs/ui/ANSWERS_UI.md
+const ui3 = n => fs.readFileSync(path.join(dir, 'src/ui3.' + n), 'utf8');
 const ui2 = n => fs.readFileSync(path.join(dir, 'src/ui2.' + n), 'utf8');
-fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('/*__UI2_CSS__*/', () => ui2('css')).replace('<!--__UI2_HTML__-->', () => ui2('html')).replace('/*__UI2_JS__*/', () => ui2('js')).replace('__BG_HALL__', () => bg).replace('/*__HERO_ART__*/{}', () => JSON.stringify(heroArt))
+fs.writeFileSync(path.join(dir, 'index.html'), tpl.replace('/*__CORE__*/', () => core).replace('/*__UI2_CSS__*/', () => ui2('css')).replace('<!--__UI2_HTML__-->', () => ui2('html')).replace('/*__UI2_JS__*/', () => ui2('js')).replace('/*__UI3_CSS__*/', () => ui3('css')).replace('/*__UI3_JS__*/', () => ui3('js')).replace('__BG_HALL__', () => bg).replace('/*__HERO_ART__*/{}', () => JSON.stringify(heroArt))
   .replace(/__ART_([a-z0-9_]+)__/g, (m, n) => art(n)));
 console.log('index.html собран');

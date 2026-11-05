@@ -531,5 +531,10 @@
       else if (page === 'x') renderX();
     }
     ui2Refresh = refresh;
+    // 0.69: доступ для слоя ui3 (экран боя, профиль, настройки)
+    window.U2 = { open, openX, openOld, back, show, click, refresh, press,
+      sec: v => { stack.length = 0; page = null; sec = v; artSel = null; open('sec'); },
+      home: () => { stack.length = 0; page = null; },
+      get page() { return page; } };
     refresh();
   })();
