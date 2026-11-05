@@ -4,7 +4,7 @@
 
   // ВРЕМЕННЫЕ значения для испытаний. По GDD (раздел 16) это TBD — не окончательный баланс.
   const CONFIG = {
-    saveVersion: 23,
+    saveVersion: 24,
     enemiesPerFloor: 10,
     maxFloor: Infinity,           // 0.51: Башня бесконечна (ответ 5); вершина — тайна (ответ 140)
     maxTapsPerSec: 15,            // 0.51: предел тапов в секунду (ответ 14); лишние тапы не засчитываются
@@ -89,6 +89,13 @@
       // Экспонента душ при бесконечной Башне обгоняла HP и давала бесконечный разгон.
       soulsKnee: 1000,
       recordBonus: 1,                    // + душа за каждый новый рекордный этаж
+      // 0.51 (ответы 8, 67): разовые награды за 1-й, 10-й и 100-й ритуал — титул (только для красоты, ответ 104),
+      // на 100-м ещё облик Призванного; плюс билеты и эссенция в центр наград. Числа временные.
+      milestones: [
+        { n: 1,   title: 'Пробуждённый',      reward: { tickets: 10, essence: 50 } },
+        { n: 10,  title: 'Жрец Башни',        reward: { tickets: 30, essence: 200 } },
+        { n: 100, title: 'Вечный призванный', skin: 'eternal', reward: { tickets: 100, essence: 1000 } },
+      ],
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
     // уровни переживают ритуал. Действуют на главного героя, союзников и питомца.
@@ -358,7 +365,10 @@
     // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,
     // переход на новый ранг — ещё сердца (по номеру ранга); союзнику для рангов IV, VII, X нужна эволюция I, II, III.
     // Цена у союзников умножается на редкость (как у эволюции). Числа TBD.
-    ranks: { count: 10, subs: 10, capMin: 1000, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 } },
+    ranks: { count: 10, subs: 10, capMin: 1000, capMax: 15000, shards: 50, growth: 1.07, evoFor: { 3: 1, 6: 2, 9: 3 },
+      // 0.51 (ответ 155): ранги добавляются ступенями с обновлениями — каждое число здесь = новый ранг (10 подрангов)
+      // с этим потолком уровня; потолок между рангами растёт плавно (геометрически). Пока пусто: на старте 10 рангов, 15 000.
+      extra: [] },
     // Сезоны и боевой пропуск (GDD §11). Сезон — 28 дней, считается по дате устройства от epoch (понедельник).
     // Сезонный герой чередуется по номеру сезона. Тропа сезона — линейные задания. Числа TBD.
     season: {
@@ -1204,6 +1214,7 @@
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
+      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов), только для красоты
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
       rituals: 0,
@@ -2016,14 +2027,20 @@
   // n: число уровней или 'max'
   // ---------- ранги и потолки уровней ----------
   // k — число пройденных ступеней (0…100). Ранг = ⌊k/10⌋+1 (до 10), подранг = k mod 10.
-  function maxSteps() { const R = CONFIG.ranks; return R.count * R.subs; }
+  function rankCount() { const R = CONFIG.ranks; return R.count + (R.extra ? R.extra.length : 0); }
+  function maxSteps() { return rankCount() * CONFIG.ranks.subs; }
   function capAt(k) {
-    const R = CONFIG.ranks, t = Math.min(k, maxSteps()) / maxSteps();
-    return Math.round(R.capMin * Math.pow(R.capMax / R.capMin, t) / 10) * 10;
+    const R = CONFIG.ranks, base = R.count * R.subs;
+    k = Math.min(k, maxSteps());
+    if (k <= base) return Math.round(R.capMin * Math.pow(R.capMax / R.capMin, k / base) / 10) * 10;
+    // ранги из обновлений: между потолком предыдущего ранга и потолком нового — геометрически по подрангам
+    const i = Math.floor((k - base - 1) / R.subs), from = i ? R.extra[i - 1] : R.capMax, to = R.extra[i];
+    const t = (k - base - i * R.subs) / R.subs;
+    return Math.round(from * Math.pow(to / from, t) / 10) * 10;
   }
   function rankLabel(k) {
     const R = CONFIG.ranks;
-    if (k >= maxSteps()) return { rank: R.count, sub: R.subs, max: true };
+    if (k >= maxSteps()) return { rank: rankCount(), sub: R.subs, max: true };
     return { rank: Math.floor(k / R.subs) + 1, sub: k % R.subs, max: false };
   }
   function tapCap(s) { return capAt(s.heroRank); }
@@ -2334,6 +2351,7 @@
     const souls = ritualSouls(s);
     s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
+    const ms = ritualMilestone(s, s.rituals);
     // ритуальные задания начинаются заново
     s.quests.runBase = { ...s.counters };
     for (const q of CONFIG.quests.ritual) delete s.quests.claimed[q.id];
@@ -2348,8 +2366,19 @@
     s.enemyIndex = 1; s.farming = false; s.reserveAcc = 0; s.heroAutoAcc = 0;
     spawn(s);
     // сохраняется: дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
-    return { souls, start };
+    return { souls, start, milestone: ms };
   }
+  // Награда за n-й ритуал (1/10/100): титул (и облик) сразу, ценности — в центр наград
+  function ritualMilestone(s, n) {
+    const m = CONFIG.ritual.milestones.find(x => x.n === n);
+    if (!m) return null;
+    if (!s.titles.includes(m.title)) s.titles.push(m.title);
+    if (!s.title) s.title = m.title;
+    if (m.skin && !s.skins.includes(m.skin)) s.skins.push(m.skin);
+    inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
+    return m;
+  }
+  function setTitle(s, t) { if (t !== null && !s.titles.includes(t)) return false; s.title = t; return true; }
 
   // ---------- Алтарь ----------
   function setLock(s, id, on) {
@@ -2440,6 +2469,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
+      titles: [...s.titles], title: s.title, skins: [...s.skins],
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
@@ -2512,6 +2542,11 @@
       d.bestCleared = Math.max(d.highestCleared | 0, (d.bestFloor | 0) - 1, 0);
     }
     if (d.v === 22) { d.v = 23; d.trial = { week: '', weekBest: 0, best: 0 }; }   // 0.43 → 0.44: испытательная башня
+    if (d.v === 23) {                                      // 0.50 → 0.51: титулы за уже проведённые ритуалы (без повторной выдачи ценностей)
+      d.v = 24; d.titles = []; d.skins = [];
+      for (const m of CONFIG.ritual.milestones) if ((d.rituals | 0) >= m.n) { d.titles.push(m.title); if (m.skin) d.skins.push(m.skin); }
+      d.title = d.titles[0] || null;
+    }
     if (d.v !== CONFIG.saveVersion) return null;
     const int = (x, min) => Number.isInteger(x) && x >= min;
     if (!int(d.floor, 1) || !int(d.maxFloor, 1) || !int(d.highestCleared, 0) ||
@@ -2640,6 +2675,10 @@
     for (const i of ev.ms) if (int(i, 0)) s.event.ms[i] = true;
     s.event.bought = nums(ev.bought);
     for (const it of d.inbox) if (it && int(it.id, 1) && typeof it.title === 'string') s.inbox.push({ id: it.id, title: it.title, reward: nums(it.reward) });
+    const TT = CONFIG.ritual.milestones;
+    if (!Array.isArray(d.titles) || !Array.isArray(d.skins)) return null;
+    s.titles = d.titles.filter(t => TT.some(m => m.title === t)); s.skins = d.skins.filter(k => TT.some(m => m.skin === k));
+    s.title = s.titles.includes(d.title) ? d.title : null;
     s.inboxSeq = Math.max(d.inboxSeq, ...s.inbox.map(x => x.id + 1));
     const se = d.season;
     if (!se || typeof se !== 'object' || !Number.isInteger(se.n) || !int(se.xp, 0) || !int(se.tokens, 0) || !int(se.trail, 0) ||
@@ -2721,7 +2760,7 @@
     treeDef, treeLevel, treePower, branchOpen, treeNodeOpen, treeCost, buyTreeNode,
     setLock, sacrifice, sacrificeValue, needsRareConfirm, selectAllUnlocked, tearOfPortal, heroTrace, traceCost,
     summon, rarityOpen, bannerDef, featuredHeroes, bannerPity, bannerCost, canSummon, starUp, starCost, starMult, evoMult, heroMult, evoCost, canEvolve, evolve, forgeHeart, shardsForBoss, heartsForFloor, bossMaterials, squadAdd, squadRemove, inSquad, contribDps, reserveDps, ticketsForFloor,
-    perkMult, capAt, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
+    perkMult, capAt, rankCount, ritualMilestone, setTitle, tapCap, allyCap, rankCost, canRankUp, rankUp, rankLabel, maxSteps,
     tapDamage, upgradeCost, maxAffordable, enemyMaxHp, killGold, firstClearGold,
     offlineDps, offlineProgress,
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,

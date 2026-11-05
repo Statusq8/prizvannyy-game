@@ -2288,3 +2288,33 @@ test('кривая дальних этажей: до 1000 — как раньш�
   assert.ok(l(100000) - l(99999) < l(2000) - l(1999));
   assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000));
 });
+
+// ---------- 0.51: ранги из обновлений, награды ритуалов ----------
+test('ранги из обновлений: новый ранг в CONFIG.ranks.extra поднимает потолок выше 15 000', () => {
+  const R = CFG.ranks, base = R.count * R.subs;
+  assert.strictEqual(C.maxSteps(), base); assert.strictEqual(C.capAt(base), R.capMax);
+  R.extra.push(20000);
+  try {
+    assert.strictEqual(C.rankCount(), R.count + 1); assert.strictEqual(C.maxSteps(), base + R.subs);
+    assert.ok(C.capAt(base + 1) > R.capMax && C.capAt(base + 5) < 20000);
+    assert.strictEqual(C.capAt(base + R.subs), 20000);
+    const s = C.newState(NOCRIT); s.heroRank = base;
+    assert.ok(C.rankCost(s, 'hero'));                                  // с 15 000 снова можно расти
+  } finally { R.extra.pop(); }
+});
+
+test('награды 1-го, 10-го и 100-го ритуала: титул, облик, ценности в центр наград; переносится и мигрирует', () => {
+  const s = C.newState(NOCRIT);
+  reach(s, 400); const r = C.ritual(s);
+  assert.strictEqual(r.milestone.n, 1);
+  assert.deepStrictEqual(s.titles, ['Пробуждённый']); assert.strictEqual(s.title, 'Пробуждённый');
+  assert.ok(s.inbox.some(x => /Ритуал №1/.test(x.title)));
+  s.rituals = 99; assert.strictEqual(C.ritualMilestone(s, 100).skin, 'eternal');
+  assert.ok(s.skins.includes('eternal'));
+  assert.strictEqual(C.setTitle(s, 'Нет такого'), false); assert.ok(C.setTitle(s, 'Вечный призванный'));
+  const t = C.deserialize(C.serialize(s));
+  assert.strictEqual(t.title, 'Вечный призванный'); assert.deepStrictEqual(t.skins, ['eternal']);
+  const old = JSON.parse(C.serialize(s)); old.v = 23; old.rituals = 12; delete old.titles; delete old.title; delete old.skins;
+  const m = C.deserialize(JSON.stringify(old));
+  assert.deepStrictEqual(m.titles, ['Пробуждённый', 'Жрец Башни']); assert.deepStrictEqual(m.skins, []);
+});
