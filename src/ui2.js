@@ -105,7 +105,9 @@
 
     // ---------- разделы с вкладками ----------
     function renderSec() {
-      setHtml('sTabs', SECS.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
+      const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : true);
+      if (!SECS_ON.some(x => x[0] === sec)) sec = 'up';
+      setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
       const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
         : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
       setHtml('sTop', top);
@@ -134,7 +136,7 @@
     function upHtml() {
       // 0.69 (ответы 59, 68): одна кнопка множителя — по кругу; «Лучший отряд»
       const mlab = (MULTS.find(x => x[0] === mult) || [0, '×1'])[1];
-      let h = '<div class="upTool" style="gap:6px"><button class="chip" data-bestsq>⚡ Лучший отряд</button><button class="chip on" data-mc style="min-width:64px">' + mlab + '</button></div>';
+      let h = '<div class="upTool" style="gap:6px"><button class="chip on" data-mc style="min-width:64px">' + mlab + '</button></div>';
       const r = C.rankLabel(s.heroRank), RN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
       h += '<div class="hCard pin" style="' + rvar('S') + '"><div class="pt">' + (heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡') + '<span class="rk">' + RN[r.rank || 1] + '</span></div>' +
         '<div class="inf"><div class="nm">Призванный</div><div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> / ' + fmt(C.tapCap(s)) + '</div>' +
@@ -153,7 +155,7 @@
         if (!hh.unlocked) {
           h += '<div class="hCard lock" style="' + rvar(a.rarity) + '"><div class="pt">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(0) + '</div>' +
             '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. --</div><span class="fac">' + a.role + '</span></div>' +
-            '<button class="upBtn alt" data-free="' + a.id + '">🔒 Освободить героя</button></div>';
+            '<button class="upBtn alt" data-free="' + a.id + '">🔒</button></div>';
           continue;
         }
         const dps = lv ? fmt(B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally'))) : '—';
@@ -161,7 +163,7 @@
         h += '<div class="hCard" style="position:relative;' + rvar(a.rarity) + '">' + (hi ? '<i class="glowR"></i>' : '') + '<div class="pt" data-hv="' + a.id + '">' + fig + '<span class="rk">' + a.rarity + '</span>' + stars(hh.stars) + '</div>' +
           '<div class="inf"><div class="nm">' + a.name + '</div><div class="ln">Ур. <b>' + (lv ? fmt(lv) : '--') + '</b>' + (lv ? ' / ' + fmt(C.allyCap(s, a.id)) : '') + '</div>' +
           '<div class="ln">⚔ <b>' + dps + '</b>' + (gn ? ' → <b style="color:#6be37a">' + gn + '</b>' : '') + ' DPS</div>' + (lv ? msLine(lv) : '') +
-          '<button class="sqBtn' + (sq ? ' on' : '') + '" data-sq="' + a.id + '">' + (sq ? '✓ в отряде' : '+ В отряд') + '</button></div>' +
+          '</div>' +
           '<button class="upBtn" data-ub="' + a.id + '"' + (u.btn.disabled ? ' disabled' : '') + '>' + u.btn.innerHTML + '</button></div>';
       }
       return h;
@@ -221,9 +223,9 @@
                 : '<button class="chip" data-bsel="on">☑ Выбрать</button>') + '</div>';
       const cells = list.map(x => '<button class="iCell' + (bagSel && bagSel.has(x.id) ? ' sel' : '') + (bagSel && !canSel(x) ? ' dim' : '') + '" data-item="' + x.id + '" style="position:relative;' + rvar(RAR_BY_N[Math.min(RAR_BY_N.length - 1, x.r)]) + (bagSel && !canSel(x) ? ';opacity:.35' : '') + '">' +
         (/^(b|r|pf_)/.test(x.id) && !seen[x.id] ? '<span class="newDot">NEW</span>' : '') + x.icon + (x.n > 1 ? '<span class="q">' + fmt(x.n) + '</span>' : '') + '</button>');
-      const total = Math.max(36, Math.ceil(cells.length / 6) * 6 + 6);
+      const total = Math.max(30, Math.ceil(cells.length / 5) * 5 + 5);
       for (let i = cells.length; i < total; i++) cells.push('<div class="iCell empty">✦</div>');
-      return h + '<div class="grid5 bagGrid g6">' + cells.join('') + '</div>';
+      return h + '<div class="grid5 bagGrid">' + cells.join('') + '</div>';
     }
     const BAG_CAP = 200, SEEN_KEY = 'prizvannyy_bagseen';
     let bagSel = null;
@@ -453,7 +455,7 @@
         return '<tr style="' + (on ? '' : 'opacity:.4') + '"><td><b style="color:' + (RC[r] || '#888') + '">' + r + '</b></td><td style="text-align:right">' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : (g && !C.rarityOpen(s, r) ? 'с ' + g + ' эт.' : '—')) + '</td></tr>';
       }).join('') + '</table><p class="hint3">После ' + P.softS + ' призывов без S шанс S растёт с каждым. Гарантии у баннеров раздельные. SS/SSS/GOD открываются рекордом этажа.</p>';
       h += '<label class="qk"><input type="checkbox" data-qk' + (setg.qsum === 'on' ? ' checked' : '') + '> Быстрый призыв</label>';
-      h += '<div style="text-align:center"><button class="iBtn" data-odds>i</button> <span class="hint3">шансы призыва</span></div>';
+      h += '<div style="text-align:center"><button class="iBtn" data-odds>?</button> <span class="hint3">шансы призыва</span></div>';
       return h;
     }
     function histHtml() {

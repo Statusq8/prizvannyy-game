@@ -300,3 +300,32 @@
   #heroAnim { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(24% - 24px); width: 118%; pointer-events: none; display: none; z-index: 1; }
   body.animOn:not(.rigOn) #heroAnim { display: block; }
   body.animOn:not(.rigOn) #hero .fig { opacity: 0 !important; }
+
+  /* ===== 0.74: только ГГ на экране боя, книга, ритуал, кузница, квест справа ===== */
+  body.clean .ally { display: none !important; }
+  body.clean #cbPve { top: calc(env(safe-area-inset-top) + 220px); }
+  body.clean #cbBook { left: 17px; top: calc(env(safe-area-inset-top) + 274px); }
+  body.clean #cbRitual { left: 17px; top: calc(env(safe-area-inset-top) + 328px); }
+  body.clean #cbForge { left: 17px; top: calc(env(safe-area-inset-top) + 382px); }
+  #bookList { position: absolute; z-index: 30; left: 70px; top: calc(env(safe-area-inset-top) + 262px); display: none; flex-direction: column; gap: 4px; padding: 6px; border-radius: 4px;
+    background: #05030af2; border: 1px solid var(--sys); box-shadow: 0 0 14px #b14dff88; }
+  #bookList.show { display: flex; }
+  #bookList button { display: flex; align-items: center; gap: 8px; min-width: 150px; height: 40px; padding: 0 8px; border-radius: 3px; background: #160f1e; border: 1px solid #3e3747; color: #fff; font: 600 13px system-ui; text-align: left; }
+  #bookList button img { width: 30px; height: 30px; }
+  #questPanel { position: absolute; z-index: 9; right: 8px; top: calc(env(safe-area-inset-top) + 330px); width: 132px; }
+  #questPanel .qBox { position: relative; padding: 8px 8px 7px; border-radius: 4px; background: #05030ad9; border: 1px solid var(--sys); box-shadow: 0 0 10px #b14dff55; }
+  #questPanel .qT { font: 400 10px 'Russo One', system-ui; letter-spacing: 2px; color: var(--sysHi); }
+  #questPanel .qTxt { font: 600 12px/1.25 system-ui; color: #fff; margin: 3px 0 4px; cursor: pointer; }
+  #questPanel .qR { font: 600 11px system-ui; color: #ffd36b; }
+  #questPanel .qClaim { width: 100%; height: 28px; border-radius: 3px; border: 1px solid #ffe08a; background: linear-gradient(#d6a640, #7a5212); color: #fff; font: 700 11px system-ui; animation: bossPulse 1.4s infinite; }
+  #questPanel .qNext { margin-top: 6px; padding-top: 5px; border-top: 1px solid #b14dff55; font: 600 10px/1.25 system-ui; color: #b9b1c3; }
+  #questPanel .qMin { position: absolute; right: 2px; top: 0; width: 22px; height: 22px; background: none; border: none; color: #b9b1c3; font: 700 16px system-ui; }
+  #questPanel .qFold { position: relative; float: right; width: 46px; height: 46px; padding: 0; background: none; border: none; }
+  #questPanel .qDot { position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #e0202a; }
+  body.clean.pageOpen #questPanel, body.clean.pageOpen #bookList, body.photo #questPanel { visibility: hidden; }
+  .pgTabs { display: flex !important; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+  .pgTabs button { flex: 0 0 76px; height: 62px !important; font-size: 0 !important; }
+  .pgTabs button b.hasUA { width: 46px !important; height: 46px !important; }
+  #secHelp { flex: none; width: 34px; height: 34px; font-style: normal; }
+  .upBtn:disabled { background: linear-gradient(#4a4552, #26222c) !important; border-color: #6e6678 !important; filter: none !important; opacity: 1 !important; }
+  .upBtn:disabled span { color: #ff5a5a !important; }
