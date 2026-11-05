@@ -1,0 +1,8 @@
+# Промты: пролог (4 кадра)
+
+Общее для всех: вертикально 9:16 (1080×1920), кадр манхвы, мрачный неон-фиолетовый стиль, детальная 2D game-art рисовка, без текста и букв на картинке (текст добавит игра), кинематографичный свет.
+
+1. **Ночь у монитора** — Dark bedroom at night, a young man in a black hoodie seen from behind over his shoulder, sitting at a gaming desk, face lit by the cold blue-violet glow of a big monitor; on the screen a huge dark final boss of a fantasy game, health bar almost empty; energy-drink cans, tangled cables, rain on the window; tense, focused mood; manhwa style, vertical 9:16, no text.
+2. **Победа** — Close-up of the monitor screen exploding with golden-violet victory light, shattered boss silhouette dissolving into particles, the gamer's hand on the mouse in the foreground, reflection of the light in the dark room; triumphant but eerie; manhwa style, vertical 9:16, no text, empty glowing banner area in the middle of the screen.
+3. **Голос Башни** — The monitor glitches: a cold purple system window with a crystal frame tears out of the screen into the real room, digital cracks and glitch lines spread across the walls, the gamer leans back in shock, his face lit purple; ominous, supernatural; manhwa style, vertical 9:16, no text, the system window is empty.
+4. **Падение в Зал призыва** — The gamer, now in simple dark 1-star adventurer clothes with a plain sword, falling from a swirling violet portal into a huge ancient stone hall full of glowing summoning circles and runes, seen from above, tiny figure, dust and light rays; awe and danger; manhwa style, vertical 9:16, no text.
