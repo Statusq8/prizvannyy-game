@@ -569,6 +569,10 @@
         '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
         '<div class="sfDone" style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="upBtn alt" id="sfAgain" style="width:130px">Ещё раз ×' + n + '</button><button class="upBtn gold" id="sfOk" style="width:130px">Готово</button></div></div>';
       $('sumFx').classList.toggle('ptv', !!window.PT_ART);
+      // 0.90: показ как в Raid: Shadow Legends — по одному герою: билет → круг → луч цвета ранга (нарастает) → вспышка → герой (src/portal.js)
+      if (window.PT_SEQ && !quick) window.PT_SEQ(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
+        return { rarity: x.rarity, isNew: x.isNew, name: a.name || x.id, role: a.role || '', faction: a.faction || '', art: A.side || A.avatar || A.back || '', artHtml: v.avatarImg || '', icon: v.icon || '✦', rc: RC[x.rarity] || '#b14dff' }; }),
+        () => { $('sfStage').querySelectorAll('.flip').forEach(f => f.classList.add('open')); const h = $('flipHint'); if (h) h.textContent = ''; });
       click();
     }
     function flipOpen(card) {

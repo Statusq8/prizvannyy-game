@@ -7601,6 +7601,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
         '<div class="sfDone" style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="upBtn alt" id="sfAgain" style="width:130px">Ещё раз ×' + n + '</button><button class="upBtn gold" id="sfOk" style="width:130px">Готово</button></div></div>';
       $('sumFx').classList.toggle('ptv', !!window.PT_ART);
+      // 0.90: показ как в Raid: Shadow Legends — по одному герою: билет → круг → луч цвета ранга (нарастает) → вспышка → герой (src/portal.js)
+      if (window.PT_SEQ && !quick) window.PT_SEQ(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
+        return { rarity: x.rarity, isNew: x.isNew, name: a.name || x.id, role: a.role || '', faction: a.faction || '', art: A.side || A.avatar || A.back || '', artHtml: v.avatarImg || '', icon: v.icon || '✦', rc: RC[x.rarity] || '#b14dff' }; }),
+        () => { $('sfStage').querySelectorAll('.flip').forEach(f => f.classList.add('open')); const h = $('flipHint'); if (h) h.textContent = ''; });
       click();
     }
     function flipOpen(card) {
@@ -9208,6 +9212,92 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #sumFx.ptv #sfOk { background-image: ${u('btn_gold')} !important; }
     `;
     document.head.appendChild(css);
+  })();
+  // ===================== 0.90: призыв как в Raid: Shadow Legends (просьба пользователя 6 ноября) =====================
+  // Каждый герой по очереди: билет летит в круг → круг заряжается → луч из портала, цвет нарастает до ранга
+  // (S — переход в золото, SS+ — в радугу, с тряской) → вспышка → герой, имя, ранг, «НОВЫЙ». Тап — дальше, «Пропустить всё» — к итогу.
+  (function () {
+    const A = window.PT_ART; if (!A) return;
+    const u = n => 'url("' + A[n] + '")';
+    const R = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'GOD'];
+    const ov = document.createElement('div'); ov.id = 'ptSeq';
+    ov.innerHTML = '<div class="sqBg"></div><div class="sqCircle"></div><div class="sqBeam"></div><div class="sqTk"></div><div class="sqFlash"></div>' +
+      '<div class="sqHero"><div class="sqArt"></div><div class="sqInfo"><i class="sqRk"></i><b class="sqNm"></b><span class="sqRole"></span><em class="sqNew">НОВЫЙ</em></div></div>' +
+      '<div class="sqCnt"></div><button class="sqSkip">Пропустить всё</button><div class="sqTap">Нажмите, чтобы продолжить</div>';
+    const css = document.createElement('style');
+    css.textContent = `
+      #ptSeq { position: absolute; inset: 0; z-index: 5; display: none; overflow: hidden; }
+      #ptSeq.show { display: block; }
+      #ptSeq .sqBg { position: absolute; inset: 0; background: linear-gradient(#000a, #000e), ${u('bg')} center top / cover no-repeat; }
+      #ptSeq .sqCircle { position: absolute; left: 50%; top: 66%; width: 86vw; max-width: 380px; aspect-ratio: 1; transform: translate(-50%, -50%) rotateX(68deg); border-radius: 50%;
+        border: 3px solid color-mix(in srgb, var(--c, #b14dff) 80%, #fff); box-shadow: 0 0 30px var(--c, #b14dff), inset 0 0 40px var(--c, #b14dff);
+        background: repeating-conic-gradient(from 0deg, transparent 0 8deg, color-mix(in srgb, var(--c, #b14dff) 35%, transparent) 8deg 10deg); opacity: .25; transition: opacity .4s, box-shadow .4s; }
+      #ptSeq.charge .sqCircle { opacity: 1; animation: sqSpin 3s linear infinite; }
+      @keyframes sqSpin { to { transform: translate(-50%, -50%) rotateX(68deg) rotate(360deg); } }
+      #ptSeq .sqBeam { position: absolute; left: 50%; bottom: 34%; width: 70px; height: 0; transform: translateX(-50%); border-radius: 40px 40px 0 0;
+        background: linear-gradient(0deg, #fff 0%, var(--c, #b14dff) 30%, transparent 100%); box-shadow: 0 0 40px 10px var(--c, #b14dff); filter: blur(2px); transition: height .5s ease-out, width .4s, background .4s, box-shadow .4s; }
+      #ptSeq.beam .sqBeam { height: 70%; }
+      #ptSeq.big .sqBeam { width: 140px; }
+      #ptSeq.rainbow .sqBeam, #ptSeq.rainbow .sqCircle { animation: sqHue .8s linear infinite; }
+      @keyframes sqHue { to { filter: blur(2px) hue-rotate(360deg); } }
+      #ptSeq.shake { animation: sqShake .12s linear infinite; }
+      @keyframes sqShake { 25% { transform: translate(2px, -2px); } 75% { transform: translate(-2px, 2px); } }
+      #ptSeq .sqTk { position: absolute; left: 50%; top: 100%; width: 70px; aspect-ratio: 90 / 75; transform: translate(-50%, 0); background: ${u('ticket')} center / contain no-repeat; filter: drop-shadow(0 0 10px #b14dff); opacity: 0; }
+      #ptSeq.fly .sqTk { animation: sqFly .6s cubic-bezier(.3,.7,.4,1) forwards; }
+      @keyframes sqFly { 0% { top: 100%; opacity: 1; transform: translate(-50%, 0) rotate(-20deg) scale(1.2); } 85% { opacity: 1; } 100% { top: 62%; opacity: 0; transform: translate(-50%, -50%) rotate(180deg) scale(.4); } }
+      #ptSeq .sqFlash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 55%, #fff, color-mix(in srgb, var(--c) 60%, #fff) 30%, transparent 70%); opacity: 0; pointer-events: none; }
+      #ptSeq.flash .sqFlash { animation: sqFlash .7s ease-out; }
+      @keyframes sqFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+      #ptSeq .sqHero { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: calc(env(safe-area-inset-bottom) + 120px); }
+      #ptSeq.hero .sqHero { display: flex; }
+      #ptSeq .sqArt { width: 84vw; max-width: 380px; height: 58vh; background: center bottom / contain no-repeat; filter: drop-shadow(0 0 24px var(--c)); animation: sqRise .7s cubic-bezier(.2,.8,.3,1) both; display: grid; place-items: end center; font-size: 120px; }
+      #ptSeq .sqArt img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      @keyframes sqRise { from { transform: translateY(40px) scale(.85); opacity: 0; filter: brightness(4) drop-shadow(0 0 40px var(--c)); } }
+      #ptSeq .sqInfo { margin-top: -10px; text-align: center; animation: sqRise .6s .2s both; }
+      #ptSeq .sqRk { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 6px; border: 2px solid var(--c); background: #0a060ee0; font: 900 20px Georgia, serif; font-style: normal; color: var(--c); text-shadow: 0 0 10px var(--c); }
+      #ptSeq .sqNm { display: block; margin-top: 6px; font: 800 30px Georgia, 'Times New Roman', serif; color: #fff; text-shadow: 0 2px 4px #000, 0 0 18px var(--c); }
+      #ptSeq .sqRole { display: block; font: 600 14px system-ui; color: #d8c8ec; text-shadow: 0 1px 2px #000; }
+      #ptSeq .sqNew { display: none; margin-top: 8px; padding: 2px 14px; font: 900 14px system-ui; font-style: normal; color: #fff3c8; background: ${u('ribbon')} center / 100% 100% no-repeat; }
+      #ptSeq.isNew .sqNew { display: inline-block; }
+      #ptSeq .sqCnt { position: absolute; left: 14px; top: calc(env(safe-area-inset-top) + 14px); font: 800 16px Georgia, serif; color: #e8dcf6; text-shadow: 0 1px 2px #000; }
+      #ptSeq .sqSkip { position: absolute; right: 12px; top: calc(env(safe-area-inset-top) + 8px); padding: 8px 14px; border-radius: 8px; border: 1px solid #8a6ab0; background: #12081ce0; color: #e8dcf6; font: 700 13px system-ui; }
+      #ptSeq .sqTap { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 40px); text-align: center; font: 600 13px system-ui; color: #cbbbe0; opacity: 0; transition: opacity .3s; animation: sqBlink 1.4s ease-in-out infinite; }
+      #ptSeq.hero .sqTap { opacity: 1; }
+      @keyframes sqBlink { 50% { color: #fff; } }
+    `;
+    document.head.appendChild(css);
+    let list = [], idx = 0, timers = [], done = null, busy = false;
+    const T = (f, ms) => timers.push(setTimeout(f, ms));
+    const clear = () => { timers.forEach(clearTimeout); timers = []; };
+    const cls = (...c) => { ov.className = 'show ' + c.join(' '); };
+    function reveal(h) {
+      clear(); busy = false;
+      ov.style.setProperty('--c', h.rc);
+      ov.querySelector('.sqArt').innerHTML = h.art ? '<img src="' + h.art + '" alt="">' : (h.artHtml || h.icon);
+      ov.querySelector('.sqRk').textContent = h.rarity; ov.querySelector('.sqNm').textContent = h.name; ov.querySelector('.sqRole').textContent = h.role + (h.faction ? ' · ' + h.faction : '');
+      cls('hero', 'flash', 'charge', h.isNew ? 'isNew' : '', R.indexOf(h.rarity) >= 6 ? 'rainbow' : '');
+      if (window.U2) window.U2.click();
+    }
+    function play() {
+      const h = list[idx]; if (!h) { finish(); return; }
+      ov.querySelector('.sqCnt').textContent = (idx + 1) + ' / ' + list.length;
+      const ri = R.indexOf(h.rarity), slow = ri >= 4;   // A и выше — дольше и с нарастанием
+      busy = true; ov.style.setProperty('--c', '#7a5cff'); cls('fly');
+      T(() => cls('charge'), 450);
+      T(() => cls('charge', 'beam'), 750);
+      let t = 750 + (slow ? 700 : 450);
+      if (ri >= 4) T(() => { ov.style.setProperty('--c', '#b04dff'); cls('charge', 'beam', 'big'); }, t - 250);
+      if (ri >= 5) { T(() => { ov.style.setProperty('--c', '#ffb52e'); cls('charge', 'beam', 'big', 'shake'); }, t + 300); t += 700; }
+      if (ri >= 6) { T(() => cls('charge', 'beam', 'big', 'shake', 'rainbow'), t + 300); t += 800; }
+      T(() => reveal(h), t);
+    }
+    function finish() { clear(); ov.className = ''; const d = done; done = null; d && d(); }
+    ov.addEventListener('click', e => {
+      if (e.target.closest('.sqSkip')) { finish(); return; }
+      if (busy) { reveal(list[idx]); return; }      // тап во время луча — сразу показать героя
+      idx++; play();
+    });
+    window.PT_SEQ = (L, cb) => { $('sumFx').appendChild(ov); list = L; idx = 0; done = cb; play(); };
   })();
 
   // ===================== 0.84: Штаб (прокачка героев) — пакет пользователя Upgrade_UI_Final_v3 (docs/ui/HQ.md, tools/hqprep.py → assets/hq) =====================
