@@ -152,6 +152,7 @@
       });
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
+        if (CFG.cage && !(lv > 0)) continue;   // 0.80: в списке только те, кто уже в отряде (Шорох — после клетки); остальных приведёт портал
         const fig = '<div class="fg">' + (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo)) + '</div>';
         if (!hh.unlocked) {
           // ответ 72: чёрный силуэт с замком; отдельная тёмная карточка

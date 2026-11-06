@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
 const TAP_CAP = CFG.maxTapsPerSec; CFG.maxTapsPerSec = Infinity;   // тесты бьют много раз за кадр; предел проверяется отдельно
-const UNLOCKS = CFG.unlocks; CFG.unlocks = {}; CFG.disabled = []; CFG.allyUlts = true;   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
+const UNLOCKS = CFG.unlocks; CFG.unlocks = {}; CFG.disabled = []; CFG.allyUlts = true; const CAGE = CFG.cage; CFG.cage = null;   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
 const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 
 function killCurrent(s) {
@@ -2658,4 +2658,22 @@ test('0.74: мега-босс даёт души и первый артефакт
   assert.ok(ev.some(e => e.type === 'megaSouls'));
   assert.ok(C.B.toNum(s.souls) > souls0);
   assert.ok(CFG.artifacts.some(a => !a.special && C.artLevel(s, a.id) === 1));
+});
+
+test('клетка с Шорохом: 3 этаж, 1-я волна, тапами — союзник свободен и в отряде', () => {
+  CFG.cage = CAGE;
+  try {
+    const s = C.newState(() => 0.5);
+    s.floor = 3; s.maxFloor = 3; s.enemyIndex = 1; s.heroes.shorokh.unlocked = false; s.allies.shorokh.level = 0;
+    s.enemy.alive = false; s.respawn = 0; C.tick(s, 0.05);
+    assert.strictEqual(s.enemy.name, CAGE.name); assert.ok(s.enemy.cage);
+    let ev = [], n = 0;
+    while (s.enemy.alive && n++ < 100) { s.tpsWin.n = 0; ev = ev.concat(C.tap(s)); }
+    assert.ok(n <= CAGE.taps + 1);
+    assert.ok(ev.some(e => e.type === 'freed' && e.id === 'shorokh'));
+    assert.ok(s.cageFreed && s.heroes.shorokh.unlocked && s.allies.shorokh.level >= 1);
+    s.respawn = 0; C.tick(s, 0.05);
+    assert.notStrictEqual(s.enemy.name, CAGE.name);   // второй раз клетки нет
+    assert.strictEqual(C.deserialize(C.serialize(s)).cageFreed, true);
+  } finally { CFG.cage = null; }
 });

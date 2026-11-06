@@ -401,3 +401,4 @@ body.clean #hero { bottom: 2.5% !important; height: min(27%, 185px) !important; 
 body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%; }
 #enemy .eSpr.fade { animation: eFade .35s ease-in forwards; }
 @keyframes eFade { to { opacity: 0; filter: brightness(2.5) blur(3px); transform: translateX(-50%) scale(.85); } }
+#enemy .eSpr.freeFx { z-index: 2; }

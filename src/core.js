@@ -89,7 +89,9 @@
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     disabled: ['quests', 'login', 'portal', 'shop', 'artifacts', 'pve', 'runes', 'forge', 'ritual', 'tree', 'events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
-    megaSouls: { base: 5, per50: 1.25 },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
+    megaSouls: { base: 5, per50: 1.25 },
+    // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
+    cage: { floor: 3, ally: 'shorokh', taps: 20, name: 'Клетка с Шорохом' },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
     ritual: {
       floor: 200,
       // старт нового забега: этаж 1 + бонус артефакта «Врата восхождения», строго ниже 400
@@ -1453,7 +1455,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
-      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
+      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1495,6 +1497,12 @@
 
   function spawn(s) {
     if (s.mode) return spawnMode(s);
+    const K = CONFIG.cage;
+    if (K && !s.cageFreed && s.floor === K.floor && s.enemyIndex === 1) {
+      const hp = B.ceil(B.mul(tapHit(s), K.taps));
+      s.enemy = { hp, maxHp: hp, isBoss: false, final: false, alive: true, mark: 0, markPower: 1, rare: null, phase: 1, vuln: 0, name: K.name, cage: true };
+      s.bossTimeLeft = 0; s.respawn = 0; return;
+    }
     const isBoss = s.enemyIndex === CONFIG.enemiesPerFloor;
     const rare = rollRare(s, s.floor, s.enemyIndex);
     const cm = curseMod(s), hp = B.ceil(B.mul(enemyMaxHp(s.floor, isBoss), (rare ? rare.hp : 1) * (cm && cm.hp || 1)));
@@ -1560,6 +1568,12 @@
     s.enemy.alive = false;
     s.respawn = CONFIG.respawnDelaySec;
     if (s.mode) return modeKill(s, events);
+    if (s.enemy.cage) {                          // клетка разбита — союзник свободен и сразу в отряде
+      const id = CONFIG.cage.ally;
+      s.cageFreed = true; s.heroes[id].unlocked = true;
+      if (s.allies[id].level < 1) s.allies[id].level = 1;
+      events.push({ type: 'freed', id });
+    }
     rewardKill(s, isBoss, events, s.enemy.rare);
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
@@ -3006,7 +3020,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor,
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed,
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -3262,6 +3276,7 @@
     s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
     if (!int(d.prestigeClaimed, 0)) return null;
     s.megaSoulsFloor = +d.megaSoulsFloor > 0 ? +d.megaSoulsFloor : 0;
+    s.cageFreed = d.cageFreed != null ? !!d.cageFreed : Math.max(+d.maxFloor || 0, +d.bestFloor || 0) > (CONFIG.cage ? CONFIG.cage.floor : 0);   // старые сохранения дальше 3 этажа — уже свободен
     s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
     s.favs = d.favs.filter(id => allyDef(id));
