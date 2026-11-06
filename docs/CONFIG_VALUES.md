@@ -222,6 +222,16 @@
 | `collection.setAlly` | `0.1` |
 | `perks` | `[{"lvl":10,"name":"Закалка","kind":"own","value":1},{"lvl":25,"name":"Верное оружие","kind":"own","value":1},{"lvl":50,"name":"Мастерство","kind":"own","valu…` |
 | `heroAutoInterval` | `1` |
+| `heroAutoMaxTps` | `10` |
+| `biomeTitles.dmg` | `0.25` |
+| `biomeTitles.gold` | `0.25` |
+| `special.minFloor` | `31` |
+| `special.chance` | `0.02` |
+| `special.hpMult` | `40` |
+| `special.timeSec` | `30` |
+| `special.cooldownSec` | `120` |
+| `special.name` | `"Посланник Башни"` |
+| `special.chest` | `{"goldKills":20,"shardBoss":1,"ticketChance":0.3,"tickets":1}` |
 | `altar.essence` | `{"E":1,"D":2,"C":4,"B":8,"A":16,"S":40,"SS":60,"SSS":80,"GOD":100}` |
 | `altar.ticketCost` | `30` |
 | `altar.traceCost` | `{"E":10,"D":20,"C":40,"B":80,"A":160,"S":400,"SS":600,"SSS":800,"GOD":1000}` |

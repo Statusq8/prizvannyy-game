@@ -16,7 +16,7 @@
       bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
-      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
+      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems }, biomeTitles: { ...(s.biomeTitles || {}) },
       pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest }, trial: { ...s.trial },
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
@@ -177,6 +177,9 @@
     for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    s.biomeTitles = {};
+    if (d.biomeTitles && typeof d.biomeTitles === 'object') { for (const b of CONFIG.biomes) if (d.biomeTitles[b.id]) s.biomeTitles[b.id] = 1; }
+    else for (let f = CONFIG.biomeFloors; f <= (+d.bestCleared | 0); f += CONFIG.biomeFloors) s.biomeTitles[biomeOf(f).id] = 1;   // старые сохранения: титулы за пройденных финальных боссов
     s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
     { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
       s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).filter(x => x.g !== 'potion' || potionDef(x.p)).slice(0, CONFIG.market.slots)

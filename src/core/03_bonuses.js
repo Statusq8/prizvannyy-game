@@ -270,7 +270,10 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold'); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
+  // 0.132: титул биома действует только на этажах своего биома (вне режимов)
+  function biomeTitlePower(s, kind) { return !s.mode && s.biomeTitles && s.biomeTitles[biomeOf(s.floor).id] ? CONFIG.biomeTitles[kind] || 0 : 0; }
+  function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)

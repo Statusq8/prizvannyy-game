@@ -1846,7 +1846,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },
     artifacts: [
       { id: 'blade',  name: 'Клинок первого призыва', icon: '🗡', kind: 'heroAuto', per: 0.1, cost: 2, growth: 1.25,
-        desc: 'Главный герой сам атакует раз в секунду. +10% урона героя за уровень' },
+        desc: 'Меч сам тапает: 1 тап/с за уровень (до 10), +10% урона героя за уровень. Свои тапы заряжают ульту' },
       { id: 'eye',    name: 'Око охотника',      icon: '👁', kind: 'critChance', per: 0.01, cost: 2, growth: 1.3, max: 70,
         desc: '+1% шанса крита за уровень' },
       { id: 'fang',   name: 'Клык бездны',       icon: '🦷', kind: 'critMult', per: 0.2, cost: 2, growth: 1.25,
@@ -2413,6 +2413,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { lvl: 1000, name: 'Сила духа',      kind: 'every', every: 1000, value: 10 },
     ],
     heroAutoInterval: 1,                 // фиксированная частота автоатаки героя (GDD §3)
+    // 0.132 (решение пользователя): меч-автотап — уровень «Клинка первого призыва» = тапов/с, до heroAutoMaxTps.
+    // Автотапы не заряжают ульту (её заряжают только свои тапы). Цена прокачки — решить позже (может, донат).
+    heroAutoMaxTps: 10,
+    // 0.132: титул за финального босса биома — +урон и +золото, только на этажах этого биома
+    biomeTitles: { dmg: 0.25, gold: 0.25 },
+    // 0.132: спец-моб после 30 этажа — редко вместо обычного врага, много HP, 30 с; убит — сундук, не успел — сбежал
+    special: { minFloor: 31, chance: 0.02, hpMult: 40, timeSec: 30, cooldownSec: 120, name: 'Посланник Башни',
+               chest: { goldKills: 20, shardBoss: 1, ticketChance: 0.3, tickets: 1 } },
     altar: {
       essence: { E: 1, D: 2, C: 4, B: 8, A: 16, S: 40, SS: 60, SSS: 80, GOD: 100 },
       ticketCost: 30,                                              // «Слеза портала»: эссенция → 1 билет
@@ -2996,7 +3004,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold'); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
+  // 0.132: титул биома действует только на этажах своего биома (вне режимов)
+  function biomeTitlePower(s, kind) { return !s.mode && s.biomeTitles && s.biomeTitles[biomeOf(s.floor).id] ? CONFIG.biomeTitles[kind] || 0 : 0; }
+  function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
@@ -3144,7 +3155,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
   function autoDps(s) {
     const allies = B.mul(CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0), permMult(s, 'ally'));
-    const hero = hasHeroAuto(s) ? B.div(B.mul(tapDamage(s), permMult(s, 'heroAuto')), CONFIG.heroAutoInterval) : 0;
+    const hero = hasHeroAuto(s) ? B.mul(B.mul(tapDamage(s), permMult(s, 'heroAuto')), heroAutoTps(s)) : 0;
     return B.add(B.add(allies, hero), petDps(s));
   }
   // Урон тапа с постоянными множителями (для показа)
@@ -3195,7 +3206,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       artifacts: {},                             // id → уровень (≥1 — найден)
       tree: {},                                  // дерево душ: id узла → уровень
       runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
-      totems: {},                                // id биома → уровень тотема
+      totems: {}, biomeTitles: {},                // biomeTitles (0.132): id биома → 1, титул за финального босса                                // id биома → уровень тотема
       pve: { day: '', used: {}, endlessBest: 0 },
       echo: { week: '', used: 0, won: false },   // 0.58: «Эхо Башни» — попытки недели и первая победа  // ежедневные попытки и рекорд бесконечного подземелья
       trial: { week: '', weekBest: 0, best: 0 },  // испытательная башня: рекорды недели и за всё время
@@ -3272,6 +3283,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                 phase: 1, vuln: 0, name: rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss) };
     s.bossTimeLeft = isBoss ? bossTime(s) : 0;
     s.respawn = 0;
+    const SP = CONFIG.special;                         // 0.132: спец-моб вместо обычного врага
+    if (!isBoss && !rare && !cm && s.floor >= SP.minFloor && !(s.specialCd > 0) && s.rng() < SP.chance) {
+      s.enemy.special = true; s.enemy.name = SP.name;
+      s.enemy.hp = s.enemy.maxHp = B.ceil(B.mul(hp, SP.hpMult)); s.bossTimeLeft = SP.timeSec;
+    }
   }
 
   // ==== src/core/06_combat.js — Бой: урон, криты, тап, тик, смерть врага, боссы, награды за убийство ====
@@ -3285,6 +3301,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
     if (s.enemy.isBoss) m *= bossDmgMult(s);
     m *= boneEnemyMult(s, source);
+    m *= 1 + biomeTitlePower(s, 'dmg');
     return m;
   }
 
@@ -3337,7 +3354,19 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       if (s.allies[id].level < 1) s.allies[id].level = 1;
       events.push({ type: 'freed', id });
     }
+    if (s.enemy.special) specialChest(s, events);
     rewardKill(s, isBoss, events, s.enemy.rare);
+  }
+  // 0.132: сундук спец-моба — золото как за N врагов, осколки как за босса, иногда билет
+  function specialChest(s, events) {
+    const C = CONFIG.special.chest, r = {};
+    r.gold = B.ceil(B.mul(killGold(s.floor, false), goldMult(s) * C.goldKills));
+    s.gold = B.add(s.gold, r.gold); earnGold(s, r.gold);
+    r.shard = Math.max(1, Math.ceil(shardsForBoss(s.floor) * C.shardBoss * shardMult(s)));
+    if (s.rng() < C.ticketChance) r.tickets = C.tickets;
+    grant(s, { shard: r.shard, tickets: r.tickets });
+    s.specialCd = CONFIG.special.cooldownSec; cnt(s, 'special');
+    events.push({ type: 'specialChest', reward: r });
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
   function rewardKill(s, isBoss, events, rareId, offline) {
@@ -3365,6 +3394,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 
     if (isBoss) {
       s.stats.bossKills++; cnt(s, 'boss');
+      if (isFinalBoss(s.floor) && !s.mode) { const tb = biomeOf(s.floor); if (!s.biomeTitles[tb.id]) { s.biomeTitles[tb.id] = 1; events.push({ type: 'biomeTitle', id: tb.id, name: tb.name }); } }   // 0.132: титул биома
       if (s.floor > (s.bestCleared | 0)) { s.bestCleared = s.floor; petsCatchUp(s, events); }
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
@@ -3479,11 +3509,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     }
     // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
     if (hasHeroAuto(s) && rule !== 'alliesOnly' && rule !== 'trial') {
-      s.heroAutoAcc += dt;
-      if (s.heroAutoAcc >= CONFIG.heroAutoInterval) {
-        s.heroAutoAcc -= CONFIG.heroAutoInterval;
+      s.heroAutoAcc += dt * heroAutoTps(s);   // 0.132: меч — 1…10 автотапов/с по уровню
+      while (s.heroAutoAcc >= 1) {
+        s.heroAutoAcc -= 1;
         dealDamage(s, tapDamage(s), 'heroAuto', events);
-        if (!s.enemy.alive) return events;
+        if (!s.enemy.alive) { s.heroAutoAcc = Math.min(s.heroAutoAcc, 1); return events; }
       }
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
@@ -3503,6 +3533,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       }
     }
     if (s.mode) { modeTimer(s, dt, events); return events; }
+    if (s.enemy.special) {                          // 0.132: спец-моб убегает по таймеру — следующий враг обычный
+      s.bossTimeLeft -= dt;
+      if (s.bossTimeLeft <= 0) { s.specialCd = CONFIG.special.cooldownSec; spawn(s); events.push({ type: 'specialEscape' }, { type: 'spawn' }); }
+      return events;
+    }
+    s.specialCd = Math.max(0, (s.specialCd || 0) - dt);
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
       if (s.bossTimeLeft <= 0) {
@@ -4907,7 +4943,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
-      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems },
+      runes: s.runes.map(r => ({ ...r })), runeSeq: s.runeSeq, totems: { ...s.totems }, biomeTitles: { ...(s.biomeTitles || {}) },
       pve: { day: s.pve.day, used: { ...s.pve.used }, endlessBest: s.pve.endlessBest }, trial: { ...s.trial },
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
@@ -5068,6 +5104,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    s.biomeTitles = {};
+    if (d.biomeTitles && typeof d.biomeTitles === 'object') { for (const b of CONFIG.biomes) if (d.biomeTitles[b.id]) s.biomeTitles[b.id] = 1; }
+    else for (let f = CONFIG.biomeFloors; f <= (+d.bestCleared | 0); f += CONFIG.biomeFloors) s.biomeTitles[biomeOf(f).id] = 1;   // старые сохранения: титулы за пройденных финальных боссов
     s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
     { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
       s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).filter(x => x.g !== 'potion' || potionDef(x.p)).slice(0, CONFIG.market.slots)
@@ -5263,7 +5302,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
-    soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
+    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, artLevel, artPower, tapHit, expectedDps,
     marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
@@ -8471,6 +8510,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
           else bigPlate('СТРАЖ', s.enemy.name, '#ff4a4a', { full: true, dur: 1.2 });
         } else if (e.type === 'bossFail') { bigPlate('ВРЕМЯ ВЫШЛО', 'Усилься и вызови босса снова', '#ff3a3a', { dur: 1.8 }); vib(60); }
         else if (e.type === 'ult') ultCut(e.id);
+        // 0.132: спец-моб, титул биома
+        else if (e.type === 'spawn' && s.enemy.special) { bigPlate('ПОСЛАННИК БАШНИ', 'Убей за ' + CFG.special.timeSec + ' секунд!', '#ffb02e', { full: true, dur: 1.6 }); vib(40); }
+        else if (e.type === 'specialEscape') bigPlate('СБЕЖАЛ', 'Посланник ушёл', '#9aa0b0', { dur: 1.4 });
+        else if (e.type === 'specialChest') { const r = e.reward; bigPlate('СУНДУК ПОСЛАННИКА', '+' + fmt(r.gold) + ' 🪙  +' + r.shard + ' осколков' + (r.tickets ? '  +' + r.tickets + ' 🎟' : ''), '#ffd36b', { dur: 2.2 }); }
+        else if (e.type === 'biomeTitle') setTimeout(() => toast('Титул «Покоритель: ' + e.name + '»<small>+' + Math.round(CFG.biomeTitles.dmg * 100) + '% урона и +' + Math.round(CFG.biomeTitles.gold * 100) + '% золота в этом биоме</small>'), 2000);
       }
     };
 
@@ -8506,10 +8550,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else trail.style.width = pct * 100 + '%';
       lastPct = pct; el.hpFill.style.width = pct * 100 + '%';
       // круглый таймер босса
-      const timed = s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss;
+      const timed = s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss || en.special;
       ring.classList.toggle('on', !!timed);
       if (timed) {
-        const p = Math.max(0, Math.min(1, s.bossTimeLeft / (s.mode ? s.mode.timeMax : C.bossTime(s))));
+        const p = Math.max(0, Math.min(1, s.bossTimeLeft / (s.mode ? s.mode.timeMax : en.special ? CFG.special.timeSec : C.bossTime(s))));
         ringFg.setAttribute('stroke-dashoffset', (87.96 * (1 - p)).toFixed(1)); ringT.textContent = Math.ceil(Math.max(0, s.bossTimeLeft));
         ring.classList.toggle('low', s.bossTimeLeft < 5);
       }
@@ -8895,7 +8939,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.130";
+    const VERSION = "0.132";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;

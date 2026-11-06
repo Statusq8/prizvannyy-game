@@ -31,7 +31,7 @@
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
   function autoDps(s) {
     const allies = B.mul(CONFIG.allies.reduce((sum, a) => B.add(sum, contribDps(s, a.id)), 0), permMult(s, 'ally'));
-    const hero = hasHeroAuto(s) ? B.div(B.mul(tapDamage(s), permMult(s, 'heroAuto')), CONFIG.heroAutoInterval) : 0;
+    const hero = hasHeroAuto(s) ? B.mul(B.mul(tapDamage(s), permMult(s, 'heroAuto')), heroAutoTps(s)) : 0;
     return B.add(B.add(allies, hero), petDps(s));
   }
   // Урон тапа с постоянными множителями (для показа)

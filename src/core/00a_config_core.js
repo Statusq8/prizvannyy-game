@@ -142,7 +142,7 @@
     artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },
     artifacts: [
       { id: 'blade',  name: 'Клинок первого призыва', icon: '🗡', kind: 'heroAuto', per: 0.1, cost: 2, growth: 1.25,
-        desc: 'Главный герой сам атакует раз в секунду. +10% урона героя за уровень' },
+        desc: 'Меч сам тапает: 1 тап/с за уровень (до 10), +10% урона героя за уровень. Свои тапы заряжают ульту' },
       { id: 'eye',    name: 'Око охотника',      icon: '👁', kind: 'critChance', per: 0.01, cost: 2, growth: 1.3, max: 70,
         desc: '+1% шанса крита за уровень' },
       { id: 'fang',   name: 'Клык бездны',       icon: '🦷', kind: 'critMult', per: 0.2, cost: 2, growth: 1.25,

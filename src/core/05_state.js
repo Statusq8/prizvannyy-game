@@ -33,7 +33,7 @@
       artifacts: {},                             // id → уровень (≥1 — найден)
       tree: {},                                  // дерево душ: id узла → уровень
       runes: [], runeSeq: 1,                     // руны: { id, type, tier (0 = E … 6 = GOD), lvl }
-      totems: {},                                // id биома → уровень тотема
+      totems: {}, biomeTitles: {},                // biomeTitles (0.132): id биома → 1, титул за финального босса                                // id биома → уровень тотема
       pve: { day: '', used: {}, endlessBest: 0 },
       echo: { week: '', used: 0, won: false },   // 0.58: «Эхо Башни» — попытки недели и первая победа  // ежедневные попытки и рекорд бесконечного подземелья
       trial: { week: '', weekBest: 0, best: 0 },  // испытательная башня: рекорды недели и за всё время
@@ -110,5 +110,10 @@
                 phase: 1, vuln: 0, name: rare ? rare.name : enemyName(s.floor, s.enemyIndex, isBoss) };
     s.bossTimeLeft = isBoss ? bossTime(s) : 0;
     s.respawn = 0;
+    const SP = CONFIG.special;                         // 0.132: спец-моб вместо обычного врага
+    if (!isBoss && !rare && !cm && s.floor >= SP.minFloor && !(s.specialCd > 0) && s.rng() < SP.chance) {
+      s.enemy.special = true; s.enemy.name = SP.name;
+      s.enemy.hp = s.enemy.maxHp = B.ceil(B.mul(hp, SP.hpMult)); s.bossTimeLeft = SP.timeSec;
+    }
   }
 

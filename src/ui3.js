@@ -150,6 +150,11 @@
           else bigPlate('СТРАЖ', s.enemy.name, '#ff4a4a', { full: true, dur: 1.2 });
         } else if (e.type === 'bossFail') { bigPlate('ВРЕМЯ ВЫШЛО', 'Усилься и вызови босса снова', '#ff3a3a', { dur: 1.8 }); vib(60); }
         else if (e.type === 'ult') ultCut(e.id);
+        // 0.132: спец-моб, титул биома
+        else if (e.type === 'spawn' && s.enemy.special) { bigPlate('ПОСЛАННИК БАШНИ', 'Убей за ' + CFG.special.timeSec + ' секунд!', '#ffb02e', { full: true, dur: 1.6 }); vib(40); }
+        else if (e.type === 'specialEscape') bigPlate('СБЕЖАЛ', 'Посланник ушёл', '#9aa0b0', { dur: 1.4 });
+        else if (e.type === 'specialChest') { const r = e.reward; bigPlate('СУНДУК ПОСЛАННИКА', '+' + fmt(r.gold) + ' 🪙  +' + r.shard + ' осколков' + (r.tickets ? '  +' + r.tickets + ' 🎟' : ''), '#ffd36b', { dur: 2.2 }); }
+        else if (e.type === 'biomeTitle') setTimeout(() => toast('Титул «Покоритель: ' + e.name + '»<small>+' + Math.round(CFG.biomeTitles.dmg * 100) + '% урона и +' + Math.round(CFG.biomeTitles.gold * 100) + '% золота в этом биоме</small>'), 2000);
       }
     };
 
@@ -185,10 +190,10 @@
       else trail.style.width = pct * 100 + '%';
       lastPct = pct; el.hpFill.style.width = pct * 100 + '%';
       // круглый таймер босса
-      const timed = s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss;
+      const timed = s.mode ? (s.mode.kind !== 'endless' || en.isBoss) : en.isBoss || en.special;
       ring.classList.toggle('on', !!timed);
       if (timed) {
-        const p = Math.max(0, Math.min(1, s.bossTimeLeft / (s.mode ? s.mode.timeMax : C.bossTime(s))));
+        const p = Math.max(0, Math.min(1, s.bossTimeLeft / (s.mode ? s.mode.timeMax : en.special ? CFG.special.timeSec : C.bossTime(s))));
         ringFg.setAttribute('stroke-dashoffset', (87.96 * (1 - p)).toFixed(1)); ringT.textContent = Math.ceil(Math.max(0, s.bossTimeLeft));
         ring.classList.toggle('low', s.bossTimeLeft < 5);
       }

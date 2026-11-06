@@ -9,6 +9,7 @@
     if (s.enemy.vuln > 0) m *= CONFIG.bossPhases.vulnMult;
     if (s.enemy.isBoss) m *= bossDmgMult(s);
     m *= boneEnemyMult(s, source);
+    m *= 1 + biomeTitlePower(s, 'dmg');
     return m;
   }
 
@@ -61,7 +62,19 @@
       if (s.allies[id].level < 1) s.allies[id].level = 1;
       events.push({ type: 'freed', id });
     }
+    if (s.enemy.special) specialChest(s, events);
     rewardKill(s, isBoss, events, s.enemy.rare);
+  }
+  // 0.132: сундук спец-моба — золото как за N врагов, осколки как за босса, иногда билет
+  function specialChest(s, events) {
+    const C = CONFIG.special.chest, r = {};
+    r.gold = B.ceil(B.mul(killGold(s.floor, false), goldMult(s) * C.goldKills));
+    s.gold = B.add(s.gold, r.gold); earnGold(s, r.gold);
+    r.shard = Math.max(1, Math.ceil(shardsForBoss(s.floor) * C.shardBoss * shardMult(s)));
+    if (s.rng() < C.ticketChance) r.tickets = C.tickets;
+    grant(s, { shard: r.shard, tickets: r.tickets });
+    s.specialCd = CONFIG.special.cooldownSec; cnt(s, 'special');
+    events.push({ type: 'specialChest', reward: r });
   }
   // Награды и переход к следующему врагу — общие для боя и офлайна
   function rewardKill(s, isBoss, events, rareId, offline) {
@@ -89,6 +102,7 @@
 
     if (isBoss) {
       s.stats.bossKills++; cnt(s, 'boss');
+      if (isFinalBoss(s.floor) && !s.mode) { const tb = biomeOf(s.floor); if (!s.biomeTitles[tb.id]) { s.biomeTitles[tb.id] = 1; events.push({ type: 'biomeTitle', id: tb.id, name: tb.name }); } }   // 0.132: титул биома
       if (s.floor > (s.bestCleared | 0)) { s.bestCleared = s.floor; petsCatchUp(s, events); }
       if (s.floor > s.highestCleared) {
         s.highestCleared = s.floor;
@@ -203,11 +217,11 @@
     }
     // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
     if (hasHeroAuto(s) && rule !== 'alliesOnly' && rule !== 'trial') {
-      s.heroAutoAcc += dt;
-      if (s.heroAutoAcc >= CONFIG.heroAutoInterval) {
-        s.heroAutoAcc -= CONFIG.heroAutoInterval;
+      s.heroAutoAcc += dt * heroAutoTps(s);   // 0.132: меч — 1…10 автотапов/с по уровню
+      while (s.heroAutoAcc >= 1) {
+        s.heroAutoAcc -= 1;
         dealDamage(s, tapDamage(s), 'heroAuto', events);
-        if (!s.enemy.alive) return events;
+        if (!s.enemy.alive) { s.heroAutoAcc = Math.min(s.heroAutoAcc, 1); return events; }
       }
     }
     // Резерв: доля DPS нанятых вне отряда, порциями раз в секунду
@@ -227,6 +241,12 @@
       }
     }
     if (s.mode) { modeTimer(s, dt, events); return events; }
+    if (s.enemy.special) {                          // 0.132: спец-моб убегает по таймеру — следующий враг обычный
+      s.bossTimeLeft -= dt;
+      if (s.bossTimeLeft <= 0) { s.specialCd = CONFIG.special.cooldownSec; spawn(s); events.push({ type: 'specialEscape' }, { type: 'spawn' }); }
+      return events;
+    }
+    s.specialCd = Math.max(0, (s.specialCd || 0) - dt);
     if (s.enemy.isBoss) {
       s.bossTimeLeft -= dt;
       if (s.bossTimeLeft <= 0) {
