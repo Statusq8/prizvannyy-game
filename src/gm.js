@@ -44,7 +44,7 @@
       s.maxFloor = Math.max(s.maxFloor | 0, n); s.bestFloor = Math.max(s.bestFloor | 0, n); s.highestCleared = Math.max(s.highestCleared | 0, n - 1);
       if (s.bestCleared != null) s.bestCleared = Math.max(s.bestCleared | 0, n - 1);
       if (s.floor !== n) C.goToFloor(s, n);
-      if (n > 3) s.cageFreed = true;
+      if (n > 3) { s.cageFreed = true; if (s.allies.shorokh && !(s.allies.shorokh.level > 0)) s.allies.shorokh.level = 1; }   // клетку пропустили — Шорох в отряде
       toast('Этаж ' + n);
     }
     pn.addEventListener('click', e => {

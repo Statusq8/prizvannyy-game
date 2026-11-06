@@ -170,8 +170,9 @@
       });
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
-        if (CFG.cage && !(lv > 0)) continue;
-        if (!hh.unlocked) continue;     // пакет: без карточек «Освободить героя» — новых героев приводит портал
+        // 0.87.1: призванные в портале видны сразу (с кнопкой «Нанять»); стартовые без найма — только если пришли из портала (ответ 7)
+        if (!hh.unlocked) continue;
+        if (CFG.cage && !(lv > 0) && a.starter && !(hh.copies > 0)) continue;
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
         h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
