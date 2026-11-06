@@ -30,3 +30,6 @@ Game icon sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) back
 ```
 Vertical 9:16 mobile game background, dark fantasy manhwa style: a night market on a floating rock islet — merchant stalls with violet tents, hanging lanterns, crates, potions and scrolls; in the distance floating islands with rope bridges and a dark castle under a full moon. At the bottom left a hooded smiling merchant leaning on a wooden counter with coins, scrolls and a potion bottle. The middle area calmer and darker for an item grid. No text, no UI.
 ```
+
+## Собрано — 0.103
+Листы нарезаны (tools/marketcut.py → assets/market), стили — src/market.js, разметка — marketHtml в src/ui2.js. Портрет героя в рамке icon_fr; если портрета нет — силуэт «?».
