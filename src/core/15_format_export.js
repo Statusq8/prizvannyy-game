@@ -45,7 +45,7 @@
 
   const Core = {
     B, Big, CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
-    buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
+    buyAlly, chainList, chainOwned, chainNext, buyChainHero, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,

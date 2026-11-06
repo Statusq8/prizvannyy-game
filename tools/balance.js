@@ -19,12 +19,14 @@ function bot({ tps = 5, seed = 7, fps = 10, farm = 60 } = {}) {
     for (let g = 0; g < 400; g++) {
       const opts = [];
       if (s.tapLevel < Core.tapCap(s)) opts.push({ k: 'tap', c: Core.upgradeCost(s.tapLevel, 1), g: B.mul(B.sub(Core.tapDamageAt(s.tapLevel + 1), Core.tapDamageAt(s.tapLevel)), tps) });
+      const nx = Core.chainNext(s);   // 0.99: следующий герой цепочки за золото
+      if (nx) opts.push({ k: 'chain', c: CFG.allies.find(a => a.id === nx).hireCost, g: Core.allyDpsAt(nx, 1) });
       for (const a of heroes()) { const lv = s.allies[a.id].level; if (lv < Core.allyCap(s, a.id)) opts.push({ k: a.id, c: Core.allyCost(s, a.id, 1), g: B.sub(Core.allyDpsAt(a.id, lv + 1), Core.allyDpsAt(a.id, lv)) }); }
       if (!opts.length) return;
       opts.sort((x, y) => ratio(y.g, y.c) - ratio(x.g, x.c));
       let o = opts[0];
       if (B.gt(o.c, s.gold)) { o = opts.find(x => B.lte(x.c, s.gold) && B.lt(x.c, B.mul(opts[0].c, 0.1))); if (!o) return; }
-      const ok = o.k === 'tap' ? Core.buyTap(s, 1) : Core.buyAlly(s, o.k, 1);
+      const ok = o.k === 'tap' ? Core.buyTap(s, 1) : o.k === 'chain' ? Core.buyChainHero(s) : Core.buyAlly(s, o.k, 1);
       if (!ok) return; st.buys++;
     }
   }

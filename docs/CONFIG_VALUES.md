@@ -94,6 +94,7 @@
 | `ritual.milestones` | `[{"n":1,"title":"Пробуждённый","bonus":{"kind":"allDmg","per":0.05},"reward":{"tickets":10,"essence":50}},{"n":10,"title":"Жрец Башни","bonus":{"kind":"gold"…` |
 | `artifactFind.cost` | `3` |
 | `artifactFind.growth` | `1.7` |
+| `goldHire.maxRarity` | `"B"` |
 | `artShop.slots` | `3` |
 | `artShop.refreshDiv` | `3` |
 | `artShop.blood` | `{"cost":30,"growth":2.2}` |

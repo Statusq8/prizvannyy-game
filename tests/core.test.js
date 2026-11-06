@@ -2703,3 +2703,26 @@ test('0.92 витрина артефактов: покупка пустит сл
   s.souls = 1e9; for (let k = 0; k < 20; k++) { const off = C.shopOffers(s, 'soul'); const i = off.findIndex(Boolean); if (i < 0) break; C.shopBuy(s, 'soul', i); }
   assert.strictEqual(C.shopBuyCost(s, 'soul'), null); assert.strictEqual(C.shopRefreshCost(s, 'soul'), null);
 });
+
+// ---------- 0.99: герои E–B за золото цепочкой (как в «Крушителях») ----------
+test('цепочка за золото: виден следующий по цене, покупка открывает и нанимает, A+ — только портал', () => {
+  const s = C.newState({ rng: () => 0 });
+  const L = C.chainList();
+  assert.ok(L.length > 10);
+  assert.ok(L.every(a => CFG.rarities.indexOf(a.rarity) <= CFG.rarities.indexOf(CFG.goldHire.maxRarity)), 'только до ранга goldHire.maxRarity');
+  if (CFG.cage) assert.ok(!L.some(a => a.id === CFG.cage.ally), 'герой из клетки — не в цепочке');
+  for (let i = 1; i < L.length; i++) assert.ok(L[i].hireCost >= L[i - 1].hireCost, 'по возрастанию цены');
+  const first = C.chainNext(s); assert.strictEqual(first, L[0].id);
+  s.gold = 0; assert.strictEqual(C.buyChainHero(s), null);
+  s.gold = L[0].hireCost; assert.strictEqual(C.buyChainHero(s), first);
+  assert.strictEqual(s.gold, 0); assert.ok(s.heroes[first].unlocked); assert.strictEqual(s.allies[first].level, 1);
+  assert.strictEqual(C.chainNext(s), L[1].id);
+  // герой из портала (копии) пропускается
+  s.heroes[L[1].id].copies = 1; s.heroes[L[1].id].unlocked = true;
+  assert.strictEqual(C.chainNext(s), L[2].id);
+  // покупка переживает сохранение; после сброса уровней (ритуал) цепочка не откатывается
+  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.goldHired, [first]);
+  t.allies[first].level = 0; assert.strictEqual(C.chainNext(t), L[2].id);
+  // вся цепочка куплена → null
+  s.gold = 1e30; let n = 0; while (C.buyChainHero(s) && n++ < 100); assert.strictEqual(C.chainNext(s), null);
+});

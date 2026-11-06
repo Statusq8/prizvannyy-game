@@ -172,11 +172,20 @@
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
         // 0.87.1: призванные в портале видны сразу (с кнопкой «Нанять»); стартовые без найма — только если пришли из портала (ответ 7)
         if (!hh.unlocked) continue;
-        if (CFG.cage && !(lv > 0) && a.starter && !(hh.copies > 0)) continue;
+        if (CFG.cage && !(lv > 0) && a.starter && !C.chainOwned(s, a.id)) continue;   // 0.99: стартовые — после покупки в цепочке
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
         h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
           '<div class="ln">Ур. <b>' + fmt(lv) + '</b></div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(dps) + '</b></div>', hqStars(hh.stars), btn(a.id, u.btn), !lv);
+      }
+      // 0.99: следующий герой цепочки за золото (как в «Крушителях»): один, по возрастанию цены; A+ — только Портал
+      const nx = C.chainNext(s);
+      if (nx) {
+        const a = CFG.allies.find(x => x.id === nx), cost = a.hireCost, can = B.gte(s.gold, cost);
+        const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], 0);
+        h += card(a.rarity, fig, '', a.name, HQ_FA[a.faction],
+          '<div class="ln">Новый герой</div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(C.allyDpsAt(a.id, 1)) + '</b></div>', '',
+          '<button class="hqBtn' + (can ? '' : ' off') + '" data-chain="1"' + (can ? '' : ' disabled') + '><img src="' + A[can ? 'btn_up' : 'btn_off'] + '" alt=""><b>Нанять</b><span>' + fmt(cost) + '</span></button>', true);
       }
       return h;
     }
@@ -407,6 +416,7 @@
       else if (d.sq) { click(); if (C.inSquad(s, d.sq)) C.squadRemove(s, d.sq); else if (!C.squadAdd(s, d.sq)) { toast('Отряд полон<small>в отряде ' + CFG.squadSize + ' героя — уберите одного</small>'); return; } save(); }
       else if (d.bestsq !== undefined) { click(); bestSquad(); save(); toast('Лучший отряд собран<small>самые сильные по DPS</small>'); }
       else if (d.free) { click(); openX('portal'); return; }
+      else if (d.chain) { const id = C.buyChainHero(s); if (id) { click(); toast('Новый герой!<small>' + CFG.allies.find(a => a.id === id).name + '</small>'); save(); } }
       else if (d.at) { click(); artTab = d.at; }
       else if (d.art) { click(); artSel = d.art; artN = 1; }
       else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }

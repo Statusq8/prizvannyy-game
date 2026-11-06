@@ -21,7 +21,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed, artShop: { soul: [...(s.artShop ? s.artShop.soul : [])], blood: [...(s.artShop ? s.artShop.blood : [])] },
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed, goldHired: [...(s.goldHired || [])], artShop: { soul: [...(s.artShop ? s.artShop.soul : [])], blood: [...(s.artShop ? s.artShop.blood : [])] },
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -279,6 +279,7 @@
     s.megaSoulsFloor = +d.megaSoulsFloor > 0 ? +d.megaSoulsFloor : 0;
     { const ok = id => id === null || !!(artDef(id) && !artDef(id).special); const sh = d.artShop || {};
       s.artShop = { soul: Array.isArray(sh.soul) ? sh.soul.filter(ok).slice(0, CONFIG.artShop.slots) : [], blood: Array.isArray(sh.blood) ? sh.blood.filter(ok).slice(0, CONFIG.artShop.slots) : [] }; }
+    s.goldHired = Array.isArray(d.goldHired) ? d.goldHired.filter(id => allyDef(id)) : [];
     s.cageFreed = d.cageFreed != null ? !!d.cageFreed : Math.max(+d.maxFloor || 0, +d.bestFloor || 0) > (CONFIG.cage ? CONFIG.cage.floor : 0);   // старые сохранения дальше 3 этажа — уже свободен
     s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }

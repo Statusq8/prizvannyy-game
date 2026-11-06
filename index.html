@@ -1801,6 +1801,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // уровни переживают ритуал. Действуют на главного героя, союзников и питомца.
     // Единственный источник постоянного роста критов (шанс не выше 50% от всех источников вместе).
     artifactFind: { cost: 3, growth: 1.7 },
+    // 0.99 (как в «Крушителях»): герои до этого ранга покупаются за золото цепочкой в Штабе — виден следующий по цене;
+    // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
+    goldHire: { maxRarity: 'B' },
     // 0.92 (как в Крушителях): витрина артефактов — N случайных ненайденных, купленный слот пустеет;
     // «Обновить» — новые предложения за треть цены следующей покупки; пустая витрина заполняется сама.
     artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },
@@ -3165,7 +3168,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
-      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false, artShop: { soul: [], blood: [] },           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
+      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false, goldHired: [], artShop: { soul: [], blood: [] },           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -4257,6 +4260,28 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     }
   }
 
+  // ---------- 0.99: цепочка героев за золото (как в «Крушителях») ----------
+  function chainList() {
+    const R = CONFIG.rarities, top = R.indexOf(CONFIG.goldHire.maxRarity), cage = CONFIG.cage && CONFIG.cage.ally;
+    return CONFIG.allies.filter(a => !a.hidden && !a.seasonal && a.id !== cage && R.indexOf(a.rarity) <= top)
+      .map((a, i) => ({ a, i })).sort((x, y) => x.a.hireCost - y.a.hireCost || x.i - y.i).map(x => x.a);
+  }
+  // Герой уже получен: куплен за золото, пришёл из Портала (копии) или открыт не как стартовый
+  function chainOwned(s, id) {
+    const h = s.heroes[id], a = allyDef(id);
+    return (s.goldHired || []).includes(id) || h.copies > 0 || (h.unlocked && !a.starter) || s.allies[id].level > 0;
+  }
+  function chainNext(s) { const a = chainList().find(x => !chainOwned(s, x.id)); return a ? a.id : null; }
+  function buyChainHero(s) {
+    const id = chainNext(s); if (!id) return null;
+    const cost = allyDef(id).hireCost;
+    if (B.gt(cost, s.gold)) return null;
+    s.gold = B.sub(s.gold, cost);
+    s.heroes[id].unlocked = true; s.allies[id].level = Math.max(1, s.allies[id].level);
+    if (!s.goldHired) s.goldHired = [];
+    if (!s.goldHired.includes(id)) s.goldHired.push(id);
+    return id;
+  }
   function buyAlly(s, id, n) {
     if (!allyDef(id) || !s.heroes[id].unlocked) return false;
     let count = n === 'max' ? allyMax(s, id) : n;
@@ -4778,7 +4803,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed, artShop: { soul: [...(s.artShop ? s.artShop.soul : [])], blood: [...(s.artShop ? s.artShop.blood : [])] },
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed, goldHired: [...(s.goldHired || [])], artShop: { soul: [...(s.artShop ? s.artShop.soul : [])], blood: [...(s.artShop ? s.artShop.blood : [])] },
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -5036,6 +5061,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.megaSoulsFloor = +d.megaSoulsFloor > 0 ? +d.megaSoulsFloor : 0;
     { const ok = id => id === null || !!(artDef(id) && !artDef(id).special); const sh = d.artShop || {};
       s.artShop = { soul: Array.isArray(sh.soul) ? sh.soul.filter(ok).slice(0, CONFIG.artShop.slots) : [], blood: Array.isArray(sh.blood) ? sh.blood.filter(ok).slice(0, CONFIG.artShop.slots) : [] }; }
+    s.goldHired = Array.isArray(d.goldHired) ? d.goldHired.filter(id => allyDef(id)) : [];
     s.cageFreed = d.cageFreed != null ? !!d.cageFreed : Math.max(+d.maxFloor || 0, +d.bestFloor || 0) > (CONFIG.cage ? CONFIG.cage.floor : 0);   // старые сохранения дальше 3 этажа — уже свободен
     s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
@@ -5119,7 +5145,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 
   const Core = {
     B, Big, CONFIG, newState, tap, tick, challengeBoss, goToFloor, buyTap,
-    buyAlly, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
+    buyAlly, chainList, chainOwned, chainNext, buyChainHero, allyDps, allyDpsAt, autoDps, allyCost, allyMax,
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
@@ -7299,11 +7325,20 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
         // 0.87.1: призванные в портале видны сразу (с кнопкой «Нанять»); стартовые без найма — только если пришли из портала (ответ 7)
         if (!hh.unlocked) continue;
-        if (CFG.cage && !(lv > 0) && a.starter && !(hh.copies > 0)) continue;
+        if (CFG.cage && !(lv > 0) && a.starter && !C.chainOwned(s, a.id)) continue;   // 0.99: стартовые — после покупки в цепочке
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
         h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
           '<div class="ln">Ур. <b>' + fmt(lv) + '</b></div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(dps) + '</b></div>', hqStars(hh.stars), btn(a.id, u.btn), !lv);
+      }
+      // 0.99: следующий герой цепочки за золото (как в «Крушителях»): один, по возрастанию цены; A+ — только Портал
+      const nx = C.chainNext(s);
+      if (nx) {
+        const a = CFG.allies.find(x => x.id === nx), cost = a.hireCost, can = B.gte(s.gold, cost);
+        const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], 0);
+        h += card(a.rarity, fig, '', a.name, HQ_FA[a.faction],
+          '<div class="ln">Новый герой</div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(C.allyDpsAt(a.id, 1)) + '</b></div>', '',
+          '<button class="hqBtn' + (can ? '' : ' off') + '" data-chain="1"' + (can ? '' : ' disabled') + '><img src="' + A[can ? 'btn_up' : 'btn_off'] + '" alt=""><b>Нанять</b><span>' + fmt(cost) + '</span></button>', true);
       }
       return h;
     }
@@ -7534,6 +7569,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else if (d.sq) { click(); if (C.inSquad(s, d.sq)) C.squadRemove(s, d.sq); else if (!C.squadAdd(s, d.sq)) { toast('Отряд полон<small>в отряде ' + CFG.squadSize + ' героя — уберите одного</small>'); return; } save(); }
       else if (d.bestsq !== undefined) { click(); bestSquad(); save(); toast('Лучший отряд собран<small>самые сильные по DPS</small>'); }
       else if (d.free) { click(); openX('portal'); return; }
+      else if (d.chain) { const id = C.buyChainHero(s); if (id) { click(); toast('Новый герой!<small>' + CFG.allies.find(a => a.id === id).name + '</small>'); save(); } }
       else if (d.at) { click(); artTab = d.at; }
       else if (d.art) { click(); artSel = d.art; artN = 1; }
       else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }
