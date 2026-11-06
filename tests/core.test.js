@@ -2726,3 +2726,14 @@ test('цепочка за золото: виден следующий по це�
   // вся цепочка куплена → null
   s.gold = 1e30; let n = 0; while (C.buyChainHero(s) && n++ < 100); assert.strictEqual(C.chainNext(s), null);
 });
+
+test('0.100: после ритуала все открытые герои остаются — их можно снова нанять за золото', () => {
+  const s = C.newState({ rng: () => 0 }); s.gold = 1e12; s.cageFreed = true;
+  if (CFG.cage) { s.heroes[CFG.cage.ally].unlocked = true; s.allies[CFG.cage.ally].level = 5; }
+  let n = 0; while (C.buyChainHero(s) && n++ < 6);
+  const got = [...s.goldHired];
+  s.maxFloor = s.bestFloor = s.floor = CFG.ritual.floor; C.ritual(s);
+  for (const id of got) { assert.ok(s.heroes[id].unlocked, id); assert.strictEqual(s.allies[id].level, 0); assert.ok(C.chainOwned(s, id)); }
+  if (CFG.cage) assert.ok(C.chainOwned(s, CFG.cage.ally), 'герой из клетки не пропадает после ритуала');
+  s.gold = 1e12; assert.ok(C.buyAlly(s, got[got.length - 1], 1), 'нанимается сразу любой, не по порядку');
+});

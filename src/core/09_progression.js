@@ -178,7 +178,8 @@
   // Герой уже получен: куплен за золото, пришёл из Портала (копии) или открыт не как стартовый
   function chainOwned(s, id) {
     const h = s.heroes[id], a = allyDef(id);
-    return (s.goldHired || []).includes(id) || h.copies > 0 || (h.unlocked && !a.starter) || s.allies[id].level > 0;
+    return (s.goldHired || []).includes(id) || h.copies > 0 || (h.unlocked && !a.starter) || s.allies[id].level > 0 ||
+      (!!CONFIG.cage && CONFIG.cage.ally === id && !!s.cageFreed);   // герой из клетки остаётся и после ритуала
   }
   function chainNext(s) { const a = chainList().find(x => !chainOwned(s, x.id)); return a ? a.id : null; }
   function buyChainHero(s) {
