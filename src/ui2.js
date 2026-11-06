@@ -462,10 +462,12 @@
     });
     function renderX() {
       const aux = $('xAux');
+      $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
       if (xKind === 'portal') {
         $('xTitle').textContent = showHist ? 'История призывов' : 'Портал призыва';
         aux.style.display = showHist ? 'none' : ''; aux.textContent = '📜 История';
-        setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
+        if (window.PT_ART) setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + '<div class="ptTk">' + fmt(s.tickets) + '</div>');
+        else setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
         setHtml('xBody', showHist ? histHtml() : portalHtml());
       } else if (xKind === 'souls') {
         $('xTitle').textContent = 'Души и ритуал'; aux.style.display = 'none';
@@ -485,6 +487,7 @@
     function histAdd(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.concat(histGet()).slice(0, 100))); } catch (e) {} }
     let oddsHtml = '';
     function portalHtml() {
+      if (window.PT_ART) return portalHtml3();
       const P = CFG.portal, b = C.bannerDef(ban), pity = C.bannerPity(s, ban), pS = b.pityS || P.pityS, pA = b.pityA || P.pityA;
       const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0;
       const open = RANKS.filter((r, i) => i >= base && C.rarityOpen(s, r) && CFG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal));
@@ -507,6 +510,35 @@
       h += '<label class="qk"><input type="checkbox" data-qk' + (setg.qsum === 'on' ? ' checked' : '') + '> Быстрый призыв</label>';
       h += '<div style="text-align:center"><button class="iBtn" data-odds>?</button> <span class="hint3">шансы призыва</span></div>';
       return h;
+    }
+    // 0.86: Портал по макету пользователя (docs/ui/PORTAL.md, references/portal_mockup_v1.png; детали — tools/portalcut.py → assets/portal, стили — src/portal.js)
+    let ptTab = 'sum';
+    function portalHtml3() {
+      const A = window.PT_ART, P = CFG.portal, b = C.bannerDef(ban), pity = C.bannerPity(s, ban), pS = b.pityS || P.pityS;
+      const base = b.minRarity ? RANKS.indexOf(b.minRarity) : 0;
+      const open = RANKS.filter((r, i) => i >= base && C.rarityOpen(s, r) && CFG.allies.some(a => a.rarity === r && !a.hidden && !a.seasonal));
+      const tot = open.reduce((x, r) => x + P.odds[r], 0);
+      let h = '<div class="ptTabs"><button data-ptab="sum" class="' + (ptTab === 'sum' ? 'on' : '') + '">Призыв</button><button data-ptab="rec" class="' + (ptTab === 'rec' ? 'on' : '') + '">Рецепты</button></div>';
+      if (ptTab === 'rec') {
+        return h + '<div class="ptRec"><b>Рецепты особых героев</b><p>Рецепт выпадает только с мега-босса — каждые 50 этажей. Рецепт = особый герой, которого нет в билетах. Собери части монстров из разных локаций и эссенцию — и герой выйдет из портала.</p><p class="soon">Скоро</p></div>';
+      }
+      oddsHtml = '<table class="oddsTbl">' + RANKS.slice(base).map(r => { const on = open.includes(r), g = CFG.rarityGates[r];
+        return '<tr style="' + (on ? '' : 'opacity:.4') + '"><td><b style="color:' + (RC[r] || '#888') + '">' + r + '</b></td><td style="text-align:right">' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : (g && !C.rarityOpen(s, r) ? 'с ' + g + ' эт.' : '—')) + '</td></tr>'; }).join('') +
+        '</table><p class="hint3">Гарантия: A и выше за ' + (b.pityA || P.pityA) + ' призывов, S и выше за ' + pS + '. После ' + P.softS + ' призывов без S шанс S растёт. Гарантии у баннеров раздельные. SS/SSS/GOD открываются рекордом этажа.</p>';
+      h += '<div class="ptOdds"><h4>Шансы призыва</h4>' + RANKS.slice(base).map(r => { const on = open.includes(r);
+        return '<div class="r' + (on ? '' : ' off') + '"><i style="' + rvar(r) + '">' + r + '</i><span>' + (on ? (P.odds[r] / tot * 100).toFixed(2) + '%' : '🔒') + '</span></div>'; }).join('') + '</div>';
+      h += '<div class="ptLow">';
+      h += '<div class="ptPT">Гарантированный ранг: <b>S</b> и выше</div>';
+      h += '<div class="ptPity"><button class="ptInfo" data-odds aria-label="Шансы"></button><div class="ptBar"><i style="--w:' + Math.min(100, pity.s / pS * 100) + '%"></i><b>' + pity.s + ' / ' + pS + '</b></div><div class="ptMedal">S</div></div>';
+      const c1 = C.canSummon(s, ban, 1), c10 = C.canSummon(s, ban, 10), cost = n => { const c = C.bannerCost(ban, n); return c.lanterns ? '🏮 ' + c.lanterns : '<img src="' + A.ticket + '" alt="">' + c.tickets; };
+      h += '<div class="ptPull"><button class="ptBtn blue" data-pull="1"' + (c1 ? '' : ' disabled') + '><b>Призвать ×1</b><span>' + cost(1) + '</span></button>' +
+        '<button class="ptBtn gold" data-pull="10"' + (c10 ? '' : ' disabled') + '><b>Призвать ×10</b><span>' + cost(10) + '</span></button></div>';
+      h += '<div class="ptNo' + (c1 ? ' hid' : '') + '"><i>!</i>Недостаточно ' + (ban === 'event' ? 'фонарей' : 'билетов') + '</div>';
+      const feat = b.featured ? C.featuredHeroes(s).map(id => CFG.allies.find(a => a.id === id)) : [];
+      const L = P.banners.filter(x => x.id !== 'event' || C.currentEvent(s));
+      h += '<div class="ptBan"><button class="ptArr l" data-banp="-1" aria-label="Назад"></button><div class="ptBanIn"><b>' + b.icon + ' ' + b.name + '</b><span>' + b.desc + (feat.length ? '. Герои недели: ' + feat.map(a => a.name + ' (' + a.rarity + ')').join(', ') : '') + '</span>' +
+        '<div class="ptDots">' + L.map(x => '<i class="' + (x.id === ban ? 'on' : '') + '"></i>').join('') + '</div></div><button class="ptArr r" data-banp="1" aria-label="Вперёд"></button></div>';
+      return h + '</div>';
     }
     function histHtml() {
       const L = histGet();
@@ -635,6 +667,8 @@
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       const d = b.dataset;
       if (d.ban) { click(); ban = d.ban; }
+      else if (d.ptab) { click(); ptTab = d.ptab; }
+      else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
       else if (d.rit !== undefined) { click(); doRitual(); return; }
