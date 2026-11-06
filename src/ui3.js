@@ -325,8 +325,11 @@
           '<div class="abs pName">' + esc(prof.name || 'Призванный') + '</div><button class="abs pPen" data-pa="name"></button><i class="abs pSep"></i>' +
           '<div class="abs pRib">' + (s.title ? esc(s.title) : 'Без титула') + '</div>' +
           '<button class="abs pB pB1" data-pa="name">' + im('p_pencil') + 'Сменить имя</button><button class="abs pB pB2" data-pa="ava">' + im('p_pic') + 'Сменить аватар</button></div>';
+        const heroAll = CFG.allies.filter(a => !a.hidden || s.heroes[a.id].unlocked), heroN = heroAll.filter(a => s.heroes[a.id].unlocked).length, starN = CFG.allies.reduce((t, a) => t + (s.heroes[a.id].stars | 0), 0),
+          artN = CFG.artifacts.filter(a => !a.special && (s.artifacts[a.id] | 0) > 0).length;
         const rec = [['p_tower', 'Максимальный этаж', fmt(s.bestFloor)], ['p_hour', 'Время в игре', playTimeTxt(st.playTime)], ['p_skull', 'Побеждено врагов', fmt(st.kills)], ['p_tap', 'Всего тапов', fmt(st.taps)],
-          ['p_boss', 'Побеждено боссов', fmt(st.bossKills)], ['p_vortex', 'Регрессий', fmt(s.rituals)], ['p_starl', 'Получено титулов', s.titles.length + ' / ' + C.allTitles().length], ['p_scroll', 'Очки достижений', fmt(C.achPoints(s))]];
+          ['p_boss', 'Побеждено боссов', fmt(st.bossKills)], ['p_vortex', 'Регрессий', fmt(s.rituals)], ['p_starl', 'Получено титулов', s.titles.length + ' / ' + C.allTitles().length], ['p_scroll', 'Очки достижений', fmt(C.achPoints(s))],
+          ['p_person', 'Героев открыто', heroN + ' / ' + heroAll.length], ['p_starl', 'Звёзд у героев', fmt(starN)], ['p_book', 'Артефактов', artN + ' / ' + CFG.artifacts.filter(a => !a.special).length], ['p_check', 'Тапов в секунду', fmt(st.maxTps)]];
         h += '<div class="pRec"><div class="pHdr">Рекорды</div><div class="pGrid">' + rec.map(([ic, l, v]) => '<div class="pSt">' + im(ic) + '<small>' + l + '</small><b>' + v + '</b></div>').join('') + '</div></div>';
       } else if (pTab === 'st') {
         const row = (ic, l, v) => '<div class="pRow">' + im(ic) + '<span>' + l + '</span><b>' + v + '</b></div>', auto = C.autoDps(s);
@@ -336,7 +339,9 @@
           row('p_coins', 'Золото в минуту', fmt(goldPerMin())) + row('p_soul', 'Души', fmt(s.souls)) + row('p_fast', 'Тапов в секунду (рекорд)', fmt(st.maxTps)) +
           '<div class="pH2"><span>' + im('p_bars') + 'Прогресс</span></div>' +
           row('p_skull', 'Побеждено врагов', fmt(st.kills)) + row('p_boss', 'Побеждено боссов', fmt(st.bossKills)) + row('p_tower', 'Лучший этаж', fmt(s.bestFloor)) +
-          row('p_vortex', 'Регрессий', fmt(s.rituals)) + row('p_hour', 'Время в игре', playTimeTxt(st.playTime)) + '</div>';
+          row('p_vortex', 'Регрессий', fmt(s.rituals)) + row('p_hour', 'Время в игре', playTimeTxt(st.playTime)) +
+          '<div class="pH2"><span>' + im('p_coins') + 'Ресурсы</span></div>' +
+          row('p_coins', 'Золото заработано', fmt(st.goldEarned)) + row('p_soul', 'Душ получено', fmt(st.soulsEarned)) + row('p_starl', 'Билеты', fmt(s.tickets)) + row('p_check', 'Осколки Башни', fmt(s.materials.shard)) + '</div>';
       } else if (pTab === 'tit') {
         h += '<div class="pNote">Бонусы всех полученных титулов действуют всегда. Выбранный — на ленте у портрета.</div><div class="pItems">' + C.allTitles().map(m => {
           const own = s.titles.includes(m.title), cur = s.title === m.title;
