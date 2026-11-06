@@ -16,3 +16,6 @@ Mobile game UI mockup, vertical 9:16 portrait, dark fantasy manhwa style, same s
 ```
 Use the attached mockup as the exact style reference — same ornaments, colors and shapes. Game UI asset sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 3x3 grid with wide spacing, each item separate, NO TEXT anywhere: 1) glowing violet eye emblem with spiky violet flames inside a rune circle (crest); 2) wide title plate with spiky violet-gold ends (empty); 3) big ornate window frame, dark violet with gold-violet spiky corners and gems (empty); 4) small wide window frame of the same style (empty); 5) dark text input field with a glowing gold-violet border (empty); 6) red glowing button with gold border (empty); 7) toast banner: horizontal ornate plate with a round frame on the left (both empty); 8) wide strip of a dark tower silhouette on a glowing violet landscape (decor); 9) small gold treasure chest icon.
 ```
+
+## Собрано — 0.129
+Лист → tools/systemcut.py → assets/system; стили — src/system.js (перекрывает ui3.css): глаз и плашка «СИСТЕМА» над окном, заголовок окна — золотой подзаголовок с линиями, силуэт Башни над кнопками, последняя кнопка — золотая (TT_ART.gbtn), красная — red, остальные — тёмные (TT_ART.vbtn); тост — плашка с сундуком слева.
