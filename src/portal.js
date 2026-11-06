@@ -90,6 +90,17 @@
       #sumFx.ptv .flip.dup.open .front { animation: none; filter: saturate(.5) brightness(.75); }
       #sumFx.ptv #sfAgain, #sumFx.ptv #sfOk { width: 150px !important; height: 58px; border: none !important; box-shadow: none !important; background: ${u('btn_blue')} center / 100% 100% no-repeat !important; font: 800 15px Georgia, serif; color: #f6e6c4; text-shadow: 0 1px 2px #000; }
       #sumFx.ptv #sfOk { background-image: ${u('btn_gold')} !important; }
+      /* 0.114: узкие (≤380) и низкие (≤760) экраны — заголовок не обрезается, шансы не заезжают на гарантию */
+      @media (max-width: 380px) {
+        #pgX.ptl #xAux { width: 40px !important; padding: 0 !important; font-size: 0 !important; color: transparent !important; }
+        #pgX.ptl #xTitle { font-size: 16px !important; }
+        .ptPT { text-align: left !important; padding-left: 6px; max-width: 58%; }
+      }
+      @media (max-height: 760px) {
+        .ptOdds { padding: 20px 12px 16px; width: 124px; }
+        .ptOdds .r { height: 16px; font-size: 11px; }
+        .ptOdds h4 { margin-bottom: 3px; }
+      }
     `;
     document.head.appendChild(css);
   })();

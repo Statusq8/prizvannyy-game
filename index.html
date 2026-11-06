@@ -9552,6 +9552,17 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #sumFx.ptv .flip.dup.open .front { animation: none; filter: saturate(.5) brightness(.75); }
       #sumFx.ptv #sfAgain, #sumFx.ptv #sfOk { width: 150px !important; height: 58px; border: none !important; box-shadow: none !important; background: ${u('btn_blue')} center / 100% 100% no-repeat !important; font: 800 15px Georgia, serif; color: #f6e6c4; text-shadow: 0 1px 2px #000; }
       #sumFx.ptv #sfOk { background-image: ${u('btn_gold')} !important; }
+      /* 0.114: узкие (≤380) и низкие (≤760) экраны — заголовок не обрезается, шансы не заезжают на гарантию */
+      @media (max-width: 380px) {
+        #pgX.ptl #xAux { width: 40px !important; padding: 0 !important; font-size: 0 !important; color: transparent !important; }
+        #pgX.ptl #xTitle { font-size: 16px !important; }
+        .ptPT { text-align: left !important; padding-left: 6px; max-width: 58%; }
+      }
+      @media (max-height: 760px) {
+        .ptOdds { padding: 20px 12px 16px; width: 124px; }
+        .ptOdds .r { height: 16px; font-size: 11px; }
+        .ptOdds h4 { margin-bottom: 3px; }
+      }
     `;
     document.head.appendChild(css);
   })();
@@ -9829,6 +9840,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #pgX.mkl .mkSold { top: 38%; }
       #pgX.mkl .mkPot { font-size: 10.43cqw; line-height: 1; filter: drop-shadow(0 0 0.95cqw #b060ff); }
       #pgX.mkl .mkIc { overflow: hidden; } #pgX.mkl .mkIc > img { max-height: 100%; } #pgX.mkl .mkIc > img.mkPotI { width: 78%; height: 78%; margin: 11%; }
+      /* 0.114: узкие экраны — колонки не растягиваются под длинную подпись */
+      #pgX.mkl .mkGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #pgX.mkl .mkCard { min-width: 0; }
+      #pgX.mkl .mkN, #pgX.mkl .mkNm { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
     `;
     document.head.appendChild(css);
   })();
@@ -9896,6 +9911,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       .fgPop .row button { flex: 1; height: 44px; border: none; background: ${u('buy')} center / 100% 100% no-repeat; font: 800 13px Georgia, serif; color: #fff; text-shadow: 0 1px 2px #000; }
       .fgPop .row button:disabled { background-image: ${u('buy_off')}; color: #ddd; }
       .fgPop .x { position: absolute; right: 8px; top: 6px; border: none; background: none; font-size: 22px; color: #cbbbe0; }
+      /* 0.114: узкие экраны — колонки не растягиваются под длинное имя */
+      .fgGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .fgOff { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .fgCard { min-width: 0; } .fgCard .nm { text-overflow: ellipsis; }
     `;
     document.head.appendChild(css);
   })();
