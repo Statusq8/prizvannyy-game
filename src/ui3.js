@@ -542,7 +542,25 @@
     function openSettings() { U.home(); U.show('pgSet'); renderSet(); }
     const tg = (k, nm, sub) => '<div><span>' + nm + (sub ? '<small>' + sub + '</small>' : '') + '</span><button class="tgl' + (setg[k] === 'on' ? ' on' : '') + '" data-tg="' + k + '" aria-label="' + nm + '"></button></div>';
     const sg = (k, nm, opts, sub) => '<div><span>' + nm + (sub ? '<small>' + sub + '</small>' : '') + '</span><span class="segm">' + opts.map(([v, t]) => '<button data-sg="' + k + ':' + v + '" class="' + (String(setg[k]) === String(v) ? 'on' : '') + '">' + t + '</button>').join('') + '</span></div>';
+    // 0.125: Настройки по макету пользователя (docs/ui/SETTINGS.md)
+    function renderSet2() {
+      const A = window.ST_ART; sp.classList.add('stl');
+      const im = n => '<img src="' + A[n] + '" alt="">';
+      const hd = (ic, t) => '<div class="sH"><span>' + im(ic) + t + '</span></div>';
+      const t2 = (ic, k, nm, sub) => '<div class="sR">' + im(ic) + '<span>' + nm + (sub ? '<small>' + sub + '</small>' : '') + '</span><button class="sTg' + (setg[k] === 'on' ? ' on' : '') + '" data-tg="' + k + '" aria-label="' + nm + '"></button></div>';
+      const s2 = (ic, k, nm, opts) => '<div class="sR">' + im(ic) + '<span>' + nm + '</span><span class="sSeg">' + opts.map(([v, t]) => '<button data-sg="' + k + ':' + v + '" class="' + (String(setg[k]) === String(v) ? 'on' : '') + '">' + t + '</button>').join('') + '</span></div>';
+      const go = (ic, a, nm, sub, cls) => '<button class="sR go' + (cls ? ' ' + cls : '') + '"' + (a ? ' data-sa="' + a + '"' : '') + '>' + im(ic) + '<span>' + nm + (sub ? '<small>' + sub + '</small>' : '') + '</span><i class="ar"></i></button>';
+      return '<div class="st"><div class="sPan">' +
+        hd('s_speaker', 'Звук') + t2('s_speaker', 'snd', 'Весь звук') + t2('s_music', 'mus', 'Музыка') + t2('s_swords', 'bsnd', 'Звуки боя') + t2('s_bell', 'uisnd', 'Звуки интерфейса') + t2('s_vibro', 'vibro', 'Вибрация') +
+        hd('s_monitor', 'Графика') + s2('s_pic', 'fx', 'Качество эффектов', [['full', 'Высокое'], ['less', 'Среднее'], ['off', 'Низкое']]) + s2('s_watch', 'fps', 'Частота кадров', [[30, '30'], [60, '60']]) +
+          t2('s_battery', 'eco', 'Экономия батареи', 'слабый телефон') + t2('s_knight', 'rig', 'Анимированные герои') +
+        hd('s_bars', 'Отображение') + t2('s_swords', 'allyNum', 'Числа урона союзников') + s2('s_123', 'num', 'Формат чисел', [['short', '1.5aa'], ['sci', '1.5e18']]) +
+        hd('s_cloud', 'Сохранение') + go('s_export', 'exp', 'Экспорт кодом', 'скопировать сохранение') + go('s_import', 'imp', 'Импорт кода') + go('s_backup', 'bak', 'Резервные копии') +
+          go('s_cloud', '', 'Облако', 'появится с сервером и аккаунтом', 'lk') + go('s_skull', 'reset', 'Сбросить прогресс', '', 'dg') +
+        '</div><div class="sVer">v' + VERSION + '</div></div>';
+    }
     function renderSet() {
+      if (window.ST_ART) { $('setBody').innerHTML = renderSet2(); return; }   // 0.125: по макету (src/settings.js)
       $('setBody').innerHTML =
         '<div class="grpT">ЗВУК</div><div class="rowList">' + tg('snd', 'Весь звук') + tg('mus', 'Музыка', 'своя для каждой локации — с артом') + tg('bsnd', 'Звуки боя') + tg('uisnd', 'Звуки интерфейса') + tg('vibro', 'Вибрация') + '</div>' +
         '<div class="grpT">ГРАФИКА</div><div class="rowList">' + tg('rig', 'Анимированные чиби-герои', 'пробник: пока заглушки, потом ваш арт') + tg('eco', 'Экономия батареи', 'слабый телефон: 30 кадров, без эффектов') + tg('shake', 'Тряска экрана') + tg('hitstop', 'Замирание при ударе') +
@@ -556,7 +574,7 @@
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = '0.74';
+    const VERSION = /*__VERSION__*/'0.74';
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;

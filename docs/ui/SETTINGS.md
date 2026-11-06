@@ -27,3 +27,6 @@ Use the attached mockup as the exact style reference. Game icon sheet, dark fant
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone chamber inside the Tower, a large violet stained glass window at the top center, big bronze gears and an old clock with violet face on the right, gears and candles on the left, chains, cracked stone floor at the bottom. Top part detailed, the middle calm and dark for a long UI panel. No text, no UI.
 ```
+
+## Собрано — 0.125
+Листы → tools/settingscut.py → assets/settings; стили — src/settings.js (#pgSet.stl, длинная панель — PF_ART.list); разметка — renderSet2 в ui3.js (data-tg/data-sg/data-sa — старые обработчики). Версия — из package.json (build.js подставляет /*__VERSION__*/). Убраны: фоторежим, обучение, уведомления PvE/событий, «Тряска/Замирание» (остались в коде настроек, на экране нет).
