@@ -20,7 +20,22 @@
     return m;
   }
   // Постоянная сила самого героя: звёзды × эволюция
-  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
+  // 0.135: возвышение
+  function heroRarity(s, id) { const R = CONFIG.rarities, a = allyDef(id), h = s.heroes[id]; return R[Math.min(R.length - 1, R.indexOf(a.rarity) + ((h && h.asc) | 0))]; }
+  function ascMult(s, id) { const h = s.heroes[id]; return Math.pow(CONFIG.ascend.dpsMult, (h && h.asc) | 0); }
+  function ascendCost(s, id) {
+    const R = CONFIG.rarities, h = s.heroes[id], cur = heroRarity(s, id), k = (h.asc | 0), A = CONFIG.ascend;
+    if (cur === R[R.length - 1]) return null;
+    return { copies: A.copies + k, shards: Math.ceil(A.shards * Math.pow(A.growth, k) * (CONFIG.evolution.rarityCost[cur] || 1)), stars: CONFIG.maxStars, to: R[R.indexOf(cur) + 1] };
+  }
+  function canAscend(s, id) { const h = s.heroes[id], c = h && h.unlocked && ascendCost(s, id); return !!c && h.stars >= c.stars && h.copies >= c.copies && s.materials.shard >= c.shards; }
+  function ascend(s, id) {
+    if (!canAscend(s, id)) return false;
+    const h = s.heroes[id], c = ascendCost(s, id);
+    h.copies -= c.copies; s.materials.shard -= c.shards; h.asc = (h.asc | 0) + 1; s._pv = null; cnt(s, 'ascend');
+    return true;
+  }
+  function heroMult(s, id) { return ascMult(s, id) * starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые

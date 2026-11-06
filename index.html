@@ -2418,6 +2418,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     heroAutoMaxTps: 10,
     // 0.134 (решение пользователя 07.11): пассивка каждого героя — на всю команду, пока герой открыт (даже не в отряде).
     // Сила = base[вид] × rarity[ранг] × (1 + звёзды + эволюция) × (1 + ⌊уровень / levelStep⌋). Звёзды — навсегда, уровень — до регрессии.
+    // 0.135 (решение 07.11): возвышение — герой поднимается на ранг выше (до GOD). Нужна макс. звезда; цена — копии этого героя
+    // (copies + шаг) и осколки (shards × growth^шаг × evolution.rarityCost текущего ранга). Каждая ступень — ×dpsMult к DPS героя;
+    // пассивка считается по новому рангу. Звёзды сохраняются. Настоящий GOD всё равно сильнее возвышенного E.
+    ascend: { copies: 5, shards: 500, growth: 3, dpsMult: 20 },
     passives: {
       levelStep: 50,
       base: { allDmg: 0.02, tapDmg: 0.03, allyDmg: 0.03, gold: 0.03, critChance: 0.0005, critMult: 0.02, bossDmg: 0.03, bossTime: 0.02, shards: 0.02 },
@@ -3073,7 +3077,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function passiveTier(s, id) { const h = s.heroes[id], a = s.allies[id]; if (!h || !h.unlocked) return 0; return (1 + (h.stars | 0) + (h.evo | 0)) * (1 + Math.floor(((a && a.level) | 0) / CONFIG.passives.levelStep)); }
   function heroPassive(s, id) {
     const P = CONFIG.passives, d = P.heroes[id], a = allyDef(id); if (!d || !a) return null;
-    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[a.rarity] || 1) * tier };
+    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[heroRarity(s, id)] || 1) * tier };
   }
   function passivePower(s, kind) {
     if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; } }
@@ -3216,7 +3220,22 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return m;
   }
   // Постоянная сила самого героя: звёзды × эволюция
-  function heroMult(s, id) { return starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
+  // 0.135: возвышение
+  function heroRarity(s, id) { const R = CONFIG.rarities, a = allyDef(id), h = s.heroes[id]; return R[Math.min(R.length - 1, R.indexOf(a.rarity) + ((h && h.asc) | 0))]; }
+  function ascMult(s, id) { const h = s.heroes[id]; return Math.pow(CONFIG.ascend.dpsMult, (h && h.asc) | 0); }
+  function ascendCost(s, id) {
+    const R = CONFIG.rarities, h = s.heroes[id], cur = heroRarity(s, id), k = (h.asc | 0), A = CONFIG.ascend;
+    if (cur === R[R.length - 1]) return null;
+    return { copies: A.copies + k, shards: Math.ceil(A.shards * Math.pow(A.growth, k) * (CONFIG.evolution.rarityCost[cur] || 1)), stars: CONFIG.maxStars, to: R[R.indexOf(cur) + 1] };
+  }
+  function canAscend(s, id) { const h = s.heroes[id], c = h && h.unlocked && ascendCost(s, id); return !!c && h.stars >= c.stars && h.copies >= c.copies && s.materials.shard >= c.shards; }
+  function ascend(s, id) {
+    if (!canAscend(s, id)) return false;
+    const h = s.heroes[id], c = ascendCost(s, id);
+    h.copies -= c.copies; s.materials.shard -= c.shards; h.asc = (h.asc | 0) + 1; s._pv = null; cnt(s, 'ascend');
+    return true;
+  }
+  function heroMult(s, id) { return ascMult(s, id) * starMult(s, id) * evoMult(s, id) * boosterMult(s, id) * boneMult(s, id); }
   // Индивидуальный DPS героя (со звёздами и эволюцией), как если бы он был в отряде
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые
@@ -3329,7 +3348,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   }
   function newHeroes() {
     const o = {};
-    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0 };
+    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0, asc: 0 };
     return o;
   }
   function newAllies() {
@@ -5008,7 +5027,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       gold: B.str(s.gold), tapLevel: s.tapLevel, stats: { ...s.stats, goldEarned: B.str(s.stats.goldEarned), soulsEarned: B.str(s.stats.soulsEarned) }, autoAdvance: s.autoAdvance,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
-      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
+      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank, asc: s.heroes[a.id].asc | 0 }])),
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       pets: { active: s.pets.active, forms: { ...s.pets.forms }, frags: { ...s.pets.frags }, lair: { ...s.pets.lair } }, bestCleared: s.bestCleared | 0,
@@ -5171,6 +5190,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars ||
           !int(h.evo, 0) || h.evo > CONFIG.evolution.stages.length || !int(h.rank, 0) || h.rank > maxSteps()) return null;
       s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars; s.heroes[a.id].evo = h.evo; s.heroes[a.id].rank = h.rank;
+      s.heroes[a.id].asc = Math.max(0, Math.min(CONFIG.rarities.length - 1, +h.asc | 0));
     }
     if (!Array.isArray(d.squad) || d.squad.length > CONFIG.squadSize) return null;
     s.squad = [];
@@ -5375,7 +5395,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
-    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, heroPassive, passivePower, artLevel, artPower, tapHit, expectedDps,
+    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, heroPassive, passivePower, heroRarity, ascendCost, canAscend, ascend, artLevel, artPower, tapHit, expectedDps,
     marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
@@ -8009,8 +8029,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         const a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {}, lk = !h.unlocked, lv = s.allies[id].level;
         const pic = Ar.avatar ? '<img src="' + Ar.avatar + '" alt="">' : '<span>' + (v.icon || '❔') + '</span>';
         const st = lk || !h.stars ? '' : h.stars <= 5 ? '<img src="' + H.star + '" alt="">'.repeat(h.stars) : '<img src="' + H.star + '" alt="">' + h.stars;
-        return '<button class="hsCard' + (lk ? ' hLock' : '') + '" data-hh="' + id + '" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '"><div class="hPt" style="' + (Ar.avatar || lk ? '' : 'background:' + (v.iconBg || '#1a1230')) + '">' + pic + '</div>' +
-          '<img class="hFr" src="' + (H['fr_' + a.rarity] || H.fr_lock) + '" alt=""><b class="hRk">' + a.rarity + '</b>' +
+        return '<button class="hsCard' + (lk ? ' hLock' : '') + '" data-hh="' + id + '" style="--rc:' + (HS_RC[C.heroRarity(s, id)] || '#fff') + '"><div class="hPt" style="' + (Ar.avatar || lk ? '' : 'background:' + (v.iconBg || '#1a1230')) + '">' + pic + '</div>' +
+          '<img class="hFr" src="' + (H['fr_' + C.heroRarity(s, id)] || H.fr_lock) + '" alt=""><b class="hRk">' + C.heroRarity(s, id) + '</b>' +
           (lk ? '<img class="hLk" src="' + H.i_lock + '" alt="">' : (lv ? '<span class="hLv">Lv.' + lv + '</span>' : '') + '<div class="hSt">' + st + '</div>' + (hsReady(id) ? '<i class="hDot"></i>' : '')) + '</button>';
       }).join('') : '<div class="hNone">Нет героев под этот фильтр</div>');
       set('.hwH', hsSel ? hsWin(hsSel) : '');
@@ -8021,7 +8041,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const P = CFG.passives, val = x => p.kind === 'bossTime' ? '+' + x.toFixed(1) + ' с' : '+' + (x * 100).toFixed(p.kind === 'critChance' ? 2 : 0) + '%';
       const one = P.base[p.kind] * (P.rarity[CFG.allies.find(a => a.id === id).rarity] || 1);
       return '<div class="hPas"><b>✦ ' + p.name + '</b> — ' + (p.tier ? val(p.value) : val(one)) + ' ' + P.names[p.kind] + ' всей команде' +
-        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small></div>';
+        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small>' + hsAscend(id) + '</div>';
+    }
+    // 0.135: возвышение — ранг выше, до GOD
+    function hsAscend(id) {
+      const h = s.heroes[id], c = h.unlocked && C.ascendCost(s, id); if (!c) return h.unlocked ? '<small class="hAsc">Ранг GOD — вершина возвышения</small>' : '';
+      const ok = C.canAscend(s, id), m = (have, want) => '<em class="' + (have >= want ? 'ok' : '') + '">' + fmt(have) + '/' + fmt(want) + '</em>';
+      return '<button class="hAscB" data-hs="asc"' + (ok ? '' : ' disabled') + '>Возвысить → ' + c.to + '</button>' +
+        '<small class="hAsc">★' + m(h.stars, c.stars) + ' · копии ' + m(h.copies, c.copies) + ' · осколки ' + m(s.materials.shard, c.shards) + '</small>';
     }
     function hsWin(id) {
       const H = window.HS_ART, M = window.MK_ART || {}, a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {};
@@ -8038,9 +8065,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const bEvo = !ec ? '<button class="hBt hGv" disabled>Эволюция<span>Макс.</span></button>'
         : '<button class="hBt hGv" data-hs="evo"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>Эволюция<span>' + shard + fmt(ec.shards) + '</span>' + (h.stars < ec.stars ? '<small>нужно ★' + ec.stars + '</small>' : '') + (C.canEvolve(s, id) ? '<i class="hRd"></i>' : '') + '</button>';
       let stars = ''; for (let i = 0; i < CFG.maxStars; i++) stars += '<img src="' + (i < h.stars ? H.star : H.star_off) + '" alt="">';
-      return '<div class="hWrap" data-hs="bg"><div class="hWin" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '">' +
+      return '<div class="hWrap" data-hs="bg"><div class="hWin" style="--rc:' + (HS_RC[C.heroRarity(s, id)] || '#fff') + '">' +
         '<div class="hArt"><img class="hRune" src="' + H.rune + '" alt="">' + art + '</div>' +
-        '<div class="hNm">' + a.name + '</div><div class="hShR">' + a.rarity + '</div><div class="hShF"><img src="' + H[HS_SIDE[a.side]] + '" alt=""></div><button class="hX" data-hs="close"></button>' +
+        '<div class="hNm">' + a.name + '</div><div class="hShR">' + C.heroRarity(s, id) + '</div><div class="hShF"><img src="' + H[HS_SIDE[a.side]] + '" alt=""></div><button class="hX" data-hs="close"></button>' +
         '<div class="hStars">' + stars + '</div>' +
         '<div class="hStl"><div class="hSp"><img src="' + H.i_dmg + '" alt=""><small>Урон</small><b>' + fmt(C.allyDps(s, id)) + '</b></div>' +
         '<div class="hSp"><img src="' + H.i_level + '" alt=""><small>Уровень</small><b>Lv.' + lv + '<i>/' + fmt(C.allyCap(s, id)) + '</i></b></div>' +
@@ -8386,6 +8413,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         else if (k === 'prev' || k === 'next') { const L = hsIds().filter(id => s.heroes[id].unlocked), i = L.indexOf(hsSel); if (L.length) { click(); hsSel = L[(i + (k === 'next' ? 1 : -1) + L.length) % L.length]; } }
         else if (k === 'star') { if (!C.starUp(s, hsSel)) return; click(); toast('Звезда!<small>' + CFG.allies.find(x => x.id === hsSel).name + ' ★' + s.heroes[hsSel].stars + '</small>'); save(); }
         else if (k === 'rank') { if (!C.rankUp(s, hsSel)) return; click(); save(); }
+        else if (k === 'asc') { if (!C.ascend(s, hsSel)) return; click(); toast('Возвышение!<small>' + CFG.allies.find(x => x.id === hsSel).name + ' — теперь ранг ' + C.heroRarity(s, hsSel) + '</small>'); save(); }
         else if (k === 'evo') { if (!C.evolve(s, hsSel)) return; click(); toast('Эволюция!<small>' + CFG.allies.find(x => x.id === hsSel).name + '</small>'); save(); } }
       else if (d.qt) { click(); qsTab = d.qt; $('xBody').scrollTop = 0; }
       else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
@@ -9020,7 +9048,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.134";
+    const VERSION = "0.135";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -10444,6 +10472,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         display: flex; flex-direction: column; overflow: hidden; }
       .hs .hWin .hPas { margin: 0 0 1.4cqw; padding: 1cqw 1.2cqw; border-radius: 1.2cqw; background: rgba(255, 200, 90, .12); border: 1px solid rgba(255, 210, 120, .35); font-size: 2.1cqw; line-height: 1.3; color: #f3e6c4; }
       .hs .hWin .hPas b { color: #ffd36b; } .hs .hWin .hPas small { display: block; margin-top: .4cqw; font-size: 1.7cqw; color: #bfae8a; }
+      .hs .hWin .hAscB { display: block; width: 100%; margin-top: .8cqw; padding: .8cqw 0; border: 0; border-radius: 1cqw; background: linear-gradient(#b46cff, #6a2bb8); color: #fff; font: 700 2cqw system-ui; }
+      .hs .hWin .hAscB:disabled { filter: grayscale(.8) brightness(.7); } .hs .hWin .hAsc em { font-style: normal; color: #ff8a8a; } .hs .hWin .hAsc em.ok { color: #9dff9d; }
       .hs .hWin .hBio h4 { margin: 0 0 1.4cqw; text-align: center; font-size: 2.6cqw; color: #f6dfa6; }
       .hs .hWin .hBio p { margin: 0; font-size: 1.95cqw; line-height: 1.22; color: #eadff4; overflow: hidden; }
       .hs .hWin .hBio q { display: block; margin-top: auto; padding-top: 1.2cqw; text-align: center; font-style: italic; font-size: 1.95cqw; color: #f0d8a0; }

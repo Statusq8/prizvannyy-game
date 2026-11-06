@@ -8,7 +8,7 @@
       gold: B.str(s.gold), tapLevel: s.tapLevel, stats: { ...s.stats, goldEarned: B.str(s.stats.goldEarned), soulsEarned: B.str(s.stats.soulsEarned) }, autoAdvance: s.autoAdvance,
       allies: Object.fromEntries(CONFIG.allies.map(a => [a.id, s.allies[a.id].level])),
       abilities: Object.fromEntries(CONFIG.abilities.map(a => [a.id, { cd: s.abilities[a.id].cd, auto: s.abilities[a.id].auto }])),
-      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank }])),
+      heroes: Object.fromEntries(CONFIG.allies.filter(a => s.heroes[a.id].unlocked).map(a => [a.id, { copies: s.heroes[a.id].copies, stars: s.heroes[a.id].stars, evo: s.heroes[a.id].evo, rank: s.heroes[a.id].rank, asc: s.heroes[a.id].asc | 0 }])),
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       pets: { active: s.pets.active, forms: { ...s.pets.forms }, frags: { ...s.pets.frags }, lair: { ...s.pets.lair } }, bestCleared: s.bestCleared | 0,
@@ -171,6 +171,7 @@
       if (!int(h.copies, 0) || !int(h.stars, 0) || h.stars > CONFIG.maxStars ||
           !int(h.evo, 0) || h.evo > CONFIG.evolution.stages.length || !int(h.rank, 0) || h.rank > maxSteps()) return null;
       s.heroes[a.id].copies = h.copies; s.heroes[a.id].stars = h.stars; s.heroes[a.id].evo = h.evo; s.heroes[a.id].rank = h.rank;
+      s.heroes[a.id].asc = Math.max(0, Math.min(CONFIG.rarities.length - 1, +h.asc | 0));
     }
     if (!Array.isArray(d.squad) || d.squad.length > CONFIG.squadSize) return null;
     s.squad = [];

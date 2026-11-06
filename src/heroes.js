@@ -80,6 +80,8 @@
         display: flex; flex-direction: column; overflow: hidden; }
       .hs .hWin .hPas { margin: 0 0 1.4cqw; padding: 1cqw 1.2cqw; border-radius: 1.2cqw; background: rgba(255, 200, 90, .12); border: 1px solid rgba(255, 210, 120, .35); font-size: 2.1cqw; line-height: 1.3; color: #f3e6c4; }
       .hs .hWin .hPas b { color: #ffd36b; } .hs .hWin .hPas small { display: block; margin-top: .4cqw; font-size: 1.7cqw; color: #bfae8a; }
+      .hs .hWin .hAscB { display: block; width: 100%; margin-top: .8cqw; padding: .8cqw 0; border: 0; border-radius: 1cqw; background: linear-gradient(#b46cff, #6a2bb8); color: #fff; font: 700 2cqw system-ui; }
+      .hs .hWin .hAscB:disabled { filter: grayscale(.8) brightness(.7); } .hs .hWin .hAsc em { font-style: normal; color: #ff8a8a; } .hs .hWin .hAsc em.ok { color: #9dff9d; }
       .hs .hWin .hBio h4 { margin: 0 0 1.4cqw; text-align: center; font-size: 2.6cqw; color: #f6dfa6; }
       .hs .hWin .hBio p { margin: 0; font-size: 1.95cqw; line-height: 1.22; color: #eadff4; overflow: hidden; }
       .hs .hWin .hBio q { display: block; margin-top: auto; padding-top: 1.2cqw; text-align: center; font-style: italic; font-size: 1.95cqw; color: #f0d8a0; }

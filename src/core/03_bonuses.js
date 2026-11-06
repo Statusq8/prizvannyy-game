@@ -277,7 +277,7 @@
   function passiveTier(s, id) { const h = s.heroes[id], a = s.allies[id]; if (!h || !h.unlocked) return 0; return (1 + (h.stars | 0) + (h.evo | 0)) * (1 + Math.floor(((a && a.level) | 0) / CONFIG.passives.levelStep)); }
   function heroPassive(s, id) {
     const P = CONFIG.passives, d = P.heroes[id], a = allyDef(id); if (!d || !a) return null;
-    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[a.rarity] || 1) * tier };
+    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[heroRarity(s, id)] || 1) * tier };
   }
   function passivePower(s, kind) {
     if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; } }

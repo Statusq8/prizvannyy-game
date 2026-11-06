@@ -84,7 +84,7 @@
   }
   function newHeroes() {
     const o = {};
-    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0 };
+    for (const a of CONFIG.allies) o[a.id] = { unlocked: !!a.starter, copies: 0, stars: 0, evo: 0, rank: 0, asc: 0 };
     return o;
   }
   function newAllies() {

@@ -223,6 +223,10 @@
 | `perks` | `[{"lvl":10,"name":"Закалка","kind":"own","value":1},{"lvl":25,"name":"Верное оружие","kind":"own","value":1},{"lvl":50,"name":"Мастерство","kind":"own","valu…` |
 | `heroAutoInterval` | `1` |
 | `heroAutoMaxTps` | `10` |
+| `ascend.copies` | `5` |
+| `ascend.shards` | `500` |
+| `ascend.growth` | `3` |
+| `ascend.dpsMult` | `20` |
 | `passives.levelStep` | `50` |
 | `passives.base` | `{"allDmg":0.02,"tapDmg":0.03,"allyDmg":0.03,"gold":0.03,"critChance":0.0005,"critMult":0.02,"bossDmg":0.03,"bossTime":0.02,"shards":0.02}` |
 | `passives.rarity` | `{"E":1,"D":1.1,"C":1.2,"B":1.35,"A":1.5,"S":1.75,"SS":2,"SSS":2.25,"GOD":2.5}` |

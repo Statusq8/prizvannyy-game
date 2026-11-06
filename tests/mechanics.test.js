@@ -64,3 +64,19 @@ test('пассивки: каждый герой даёт бонус всей к�
   s.allies[id].level = P.levelStep * 2; s._pv = null;
   assert.ok(Math.abs(C.passivePower(s, kind) / p2 - 3) < 1e-9, 'уровень: ×(1+⌊ур/шаг⌋)');
 });
+
+test('возвышение: E растёт до GOD за копии и осколки, нужна макс. звезда, DPS ×dpsMult', () => {
+  const A = CFG.ascend, R = CFG.rarities;
+  const s = C.newState(NOCRIT), id = 'irene', h = s.heroes[id];
+  h.unlocked = true; s.allies[id].level = 1;
+  h.copies = 1000; s.materials.shard = 1e15;
+  assert.ok(!C.canAscend(s, id), 'без макс. звезды нельзя');
+  h.stars = CFG.maxStars;
+  const d0 = C.allyDps(s, id);
+  assert.ok(C.ascend(s, id)); assert.strictEqual(C.heroRarity(s, id), 'D');
+  assert.ok(Math.abs(C.allyDps(s, id) / d0 - A.dpsMult) < 1e-6);
+  while (C.ascend(s, id));
+  assert.strictEqual(C.heroRarity(s, id), 'GOD'); assert.strictEqual(C.ascendCost(s, id), null, 'выше GOD нельзя');
+  assert.strictEqual(h.asc, R.length - 1);
+  const t = C.deserialize(C.serialize(s)); assert.strictEqual(t.heroes[id].asc, R.length - 1, 'сохраняется');
+});

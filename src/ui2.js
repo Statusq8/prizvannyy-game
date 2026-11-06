@@ -625,8 +625,8 @@
         const a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {}, lk = !h.unlocked, lv = s.allies[id].level;
         const pic = Ar.avatar ? '<img src="' + Ar.avatar + '" alt="">' : '<span>' + (v.icon || '❔') + '</span>';
         const st = lk || !h.stars ? '' : h.stars <= 5 ? '<img src="' + H.star + '" alt="">'.repeat(h.stars) : '<img src="' + H.star + '" alt="">' + h.stars;
-        return '<button class="hsCard' + (lk ? ' hLock' : '') + '" data-hh="' + id + '" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '"><div class="hPt" style="' + (Ar.avatar || lk ? '' : 'background:' + (v.iconBg || '#1a1230')) + '">' + pic + '</div>' +
-          '<img class="hFr" src="' + (H['fr_' + a.rarity] || H.fr_lock) + '" alt=""><b class="hRk">' + a.rarity + '</b>' +
+        return '<button class="hsCard' + (lk ? ' hLock' : '') + '" data-hh="' + id + '" style="--rc:' + (HS_RC[C.heroRarity(s, id)] || '#fff') + '"><div class="hPt" style="' + (Ar.avatar || lk ? '' : 'background:' + (v.iconBg || '#1a1230')) + '">' + pic + '</div>' +
+          '<img class="hFr" src="' + (H['fr_' + C.heroRarity(s, id)] || H.fr_lock) + '" alt=""><b class="hRk">' + C.heroRarity(s, id) + '</b>' +
           (lk ? '<img class="hLk" src="' + H.i_lock + '" alt="">' : (lv ? '<span class="hLv">Lv.' + lv + '</span>' : '') + '<div class="hSt">' + st + '</div>' + (hsReady(id) ? '<i class="hDot"></i>' : '')) + '</button>';
       }).join('') : '<div class="hNone">Нет героев под этот фильтр</div>');
       set('.hwH', hsSel ? hsWin(hsSel) : '');
@@ -637,7 +637,14 @@
       const P = CFG.passives, val = x => p.kind === 'bossTime' ? '+' + x.toFixed(1) + ' с' : '+' + (x * 100).toFixed(p.kind === 'critChance' ? 2 : 0) + '%';
       const one = P.base[p.kind] * (P.rarity[CFG.allies.find(a => a.id === id).rarity] || 1);
       return '<div class="hPas"><b>✦ ' + p.name + '</b> — ' + (p.tier ? val(p.value) : val(one)) + ' ' + P.names[p.kind] + ' всей команде' +
-        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small></div>';
+        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small>' + hsAscend(id) + '</div>';
+    }
+    // 0.135: возвышение — ранг выше, до GOD
+    function hsAscend(id) {
+      const h = s.heroes[id], c = h.unlocked && C.ascendCost(s, id); if (!c) return h.unlocked ? '<small class="hAsc">Ранг GOD — вершина возвышения</small>' : '';
+      const ok = C.canAscend(s, id), m = (have, want) => '<em class="' + (have >= want ? 'ok' : '') + '">' + fmt(have) + '/' + fmt(want) + '</em>';
+      return '<button class="hAscB" data-hs="asc"' + (ok ? '' : ' disabled') + '>Возвысить → ' + c.to + '</button>' +
+        '<small class="hAsc">★' + m(h.stars, c.stars) + ' · копии ' + m(h.copies, c.copies) + ' · осколки ' + m(s.materials.shard, c.shards) + '</small>';
     }
     function hsWin(id) {
       const H = window.HS_ART, M = window.MK_ART || {}, a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {};
@@ -654,9 +661,9 @@
       const bEvo = !ec ? '<button class="hBt hGv" disabled>Эволюция<span>Макс.</span></button>'
         : '<button class="hBt hGv" data-hs="evo"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>Эволюция<span>' + shard + fmt(ec.shards) + '</span>' + (h.stars < ec.stars ? '<small>нужно ★' + ec.stars + '</small>' : '') + (C.canEvolve(s, id) ? '<i class="hRd"></i>' : '') + '</button>';
       let stars = ''; for (let i = 0; i < CFG.maxStars; i++) stars += '<img src="' + (i < h.stars ? H.star : H.star_off) + '" alt="">';
-      return '<div class="hWrap" data-hs="bg"><div class="hWin" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '">' +
+      return '<div class="hWrap" data-hs="bg"><div class="hWin" style="--rc:' + (HS_RC[C.heroRarity(s, id)] || '#fff') + '">' +
         '<div class="hArt"><img class="hRune" src="' + H.rune + '" alt="">' + art + '</div>' +
-        '<div class="hNm">' + a.name + '</div><div class="hShR">' + a.rarity + '</div><div class="hShF"><img src="' + H[HS_SIDE[a.side]] + '" alt=""></div><button class="hX" data-hs="close"></button>' +
+        '<div class="hNm">' + a.name + '</div><div class="hShR">' + C.heroRarity(s, id) + '</div><div class="hShF"><img src="' + H[HS_SIDE[a.side]] + '" alt=""></div><button class="hX" data-hs="close"></button>' +
         '<div class="hStars">' + stars + '</div>' +
         '<div class="hStl"><div class="hSp"><img src="' + H.i_dmg + '" alt=""><small>Урон</small><b>' + fmt(C.allyDps(s, id)) + '</b></div>' +
         '<div class="hSp"><img src="' + H.i_level + '" alt=""><small>Уровень</small><b>Lv.' + lv + '<i>/' + fmt(C.allyCap(s, id)) + '</i></b></div>' +
@@ -1002,6 +1009,7 @@
         else if (k === 'prev' || k === 'next') { const L = hsIds().filter(id => s.heroes[id].unlocked), i = L.indexOf(hsSel); if (L.length) { click(); hsSel = L[(i + (k === 'next' ? 1 : -1) + L.length) % L.length]; } }
         else if (k === 'star') { if (!C.starUp(s, hsSel)) return; click(); toast('Звезда!<small>' + CFG.allies.find(x => x.id === hsSel).name + ' ★' + s.heroes[hsSel].stars + '</small>'); save(); }
         else if (k === 'rank') { if (!C.rankUp(s, hsSel)) return; click(); save(); }
+        else if (k === 'asc') { if (!C.ascend(s, hsSel)) return; click(); toast('Возвышение!<small>' + CFG.allies.find(x => x.id === hsSel).name + ' — теперь ранг ' + C.heroRarity(s, hsSel) + '</small>'); save(); }
         else if (k === 'evo') { if (!C.evolve(s, hsSel)) return; click(); toast('Эволюция!<small>' + CFG.allies.find(x => x.id === hsSel).name + '</small>'); save(); } }
       else if (d.qt) { click(); qsTab = d.qt; $('xBody').scrollTop = 0; }
       else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
