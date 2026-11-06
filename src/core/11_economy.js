@@ -62,6 +62,51 @@
     s.artifacts[a.id] = 1;
     return a.id;
   }
+  // ---------- 0.102: Рынок (как в Idle Heroes) ----------
+  function marketGood(id) { return CONFIG.market.goods.find(g => g.id === id); }
+  function marketRoll(s) {
+    const G = CONFIG.market.goods, tot = G.reduce((x, g) => x + g.w, 0), items = [];
+    for (let i = 0; i < CONFIG.market.slots; i++) {
+      let r = s.rng() * tot, g = G[0]; for (const x of G) { r -= x.w; if (r < 0) { g = x; break; } }
+      let hero = null;
+      if (g.kind === 'copy') { const pool = CONFIG.allies.filter(a => !a.hidden && !a.seasonal && g.ranks.includes(a.rarity)); hero = pool.length ? pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))].id : null; }
+      items.push({ g: g.id, hero, sold: false });
+    }
+    s.market.items = items;
+  }
+  // Сам обновляется раз в refreshSec (now — время в мс из интерфейса); возвращает мс до следующего обновления
+  function marketSync(s, now) {
+    if (!s.market) s.market = { items: [], next: 0 };
+    if (!s.market.items.length || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
+    return Math.max(0, s.market.next - now);
+  }
+  function marketAmount(s, g) {
+    const f = Math.max(1, s.bestFloor | 0);
+    if (g.kind === 'shard') return g.bosses * shardsForBoss(f);
+    if (g.kind === 'souls') { const M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))) * g.megas; }
+    return g.n || 1;
+  }
+  function marketPrice(s, g) { return g.cur === 'gold' ? B.mul(killGold(Math.max(1, s.bestFloor | 0), false), g.price) : g.price; }
+  function marketBuy(s, i) {
+    const it = s.market && s.market.items[i]; if (!it || it.sold) return null;
+    const g = marketGood(it.g), price = marketPrice(s, g);
+    if (g.cur === 'gold') { if (B.gt(price, s.gold)) return null; s.gold = B.sub(s.gold, price); }
+    else { if ((s.crystals | 0) < price) return null; s.crystals -= price; }
+    const n = marketAmount(s, g);
+    if (g.kind === 'tickets') s.tickets += n;
+    else if (g.kind === 'shard') s.materials.shard += n;
+    else if (g.kind === 'souls') { s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n); }
+    let isNew = false;   // как призыв: новый герой открывается, известный даёт копию на звёзды
+    if (g.kind === 'copy' && it.hero) { const h = s.heroes[it.hero]; isNew = !h.unlocked; if (isNew) h.unlocked = true; else h.copies++; }
+    it.sold = true;
+    return { g: g.id, n, hero: it.hero, isNew };
+  }
+  function marketRefresh(s) {
+    const c = CONFIG.market.refreshCost;
+    if ((s.crystals | 0) < c) return false;
+    s.crystals -= c; marketRoll(s); return true;   // таймер сам не сдвигается — как в Idle Heroes
+  }
+
   // ---------- 0.92: витрина артефактов (ветки 'soul' и 'blood') ----------
   function shopPool(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) === 0); }
   function shopFound(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) > 0).length; }

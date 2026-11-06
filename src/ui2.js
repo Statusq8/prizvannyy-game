@@ -491,6 +491,12 @@
       const aux = $('xAux');
       $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
       $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
+      if (xKind === 'market') {
+        $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
+        setHtml('xTop', cur('◆', fmt(s.gold)) + cur('💎', fmt(s.crystals | 0)));
+        setHtml('xBody', marketHtml());
+        return;
+      }
       if (xKind === 'forge') {
         $('xTitle').textContent = 'Кузница'; aux.style.display = 'none';
         setHtml('xTop', '<div class="fgCur"><i>' + (fgBr === 'blood' ? '🔹' : '👻') + '</i>' + fmt(fgBr === 'blood' ? s.materials.shard : s.souls) + '</div>');
@@ -514,6 +520,25 @@
       }
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- 0.102: Рынок как в Idle Heroes (временный вид до макета пользователя) ----------
+    const MK_IC = { tickets: '🎟', copy: '🧝', shard: '🔹', souls: '👻' };
+    setInterval(() => { if (page === 'x' && xKind === 'market' && !document.hidden) refresh(); }, 1000);   // таймер обновления идёт сам
+    function marketHtml() {
+      const left = C.marketSync(s, Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60, ss = Math.floor(left / 1000) % 60;
+      let h = '<div class="mkTime">Новые товары через <b>' + hh + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') + '</b></div><div class="mkGrid">';
+      s.market.items.forEach((it, i) => {
+        const g = C.marketGood(it.g), a = it.hero ? CFG.allies.find(x => x.id === it.hero) : null, price = C.marketPrice(s, g);
+        const can = !it.sold && (g.cur === 'gold' ? B.gte(s.gold, price) : (s.crystals | 0) >= price);
+        const ic = a ? (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], 0)) : '<b>' + MK_IC[g.kind] + '</b>';
+        h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
+          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? (s.heroes[a.id].unlocked ? 'копия' : 'новый герой') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
+          (it.sold ? '<div class="mkSold">Куплено</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + (g.cur === 'gold' ? '◆ ' : '💎 ') + fmt(price) + '</button>') + '</div>';
+      });
+      h += '</div><button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost + '</button>';
+      h += '<p class="hint3" style="text-align:center">💎 кристаллы — за первое прохождение мега-боссов; покупка за деньги появится в версии для телефона.</p>';
+      return h;
+    }
 
     // ---------- 0.93: Кузница по макету (docs/ui/FORGE.md): вкладки, сетка полученных артефактов, витрина «Души / Кровь» ----------
     let fgBr = 'soul', fgSel = null;
@@ -738,6 +763,9 @@
       else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
+      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero);
+        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
+      else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }
       else if (d.fgx !== undefined) { click(); fgSel = null; }

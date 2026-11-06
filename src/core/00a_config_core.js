@@ -88,7 +88,7 @@
     unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 150, forge: 50, ritual: 200, tree: 200,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
-    disabled: ['quests', 'login', 'shop', 'pve', 'runes', 'ritual', 'tree', 'events', 'season',
+    disabled: ['quests', 'login', 'pve', 'runes', 'ritual', 'tree', 'events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -118,6 +118,21 @@
     // 0.99 (как в «Крушителях»): герои до этого ранга покупаются за золото цепочкой в Штабе — виден следующий по цене;
     // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
     goldHire: { maxRarity: 'B' },
+    // 0.102: Рынок как в Idle Heroes — slots случайных товаров, сами обновляются раз в refreshSec, обновить сразу — за 💎.
+    // Цена в золоте растёт с прогрессом: price × золото за обычного врага рекордного этажа. Цена в 💎 постоянная.
+    // 💎 кристаллы — донат-валюта; бесплатно немного: за первое прохождение мега-босса (crystals.megaFirst).
+    market: {
+      slots: 8, refreshSec: 3 * 3600, refreshCost: 20,
+      goods: [
+        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
+        { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва ×5' },
+        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'gold', price: 600, w: 3, name: 'Копия героя' },
+        { id: 'copyA', kind: 'copy', ranks: ['A'], cur: 'crystal', price: 400, w: 1, name: 'Герой ранга A' },
+        { id: 'shard', kind: 'shard', bosses: 5, cur: 'gold', price: 250, w: 3, name: 'Осколки Башни' },
+        { id: 'souls', kind: 'souls', megas: 1, cur: 'crystal', price: 120, w: 1, name: 'Души' },
+      ],
+    },
+    crystals: { megaFirst: 20 },
     // 0.92 (как в Крушителях): витрина артефактов — N случайных ненайденных, купленный слот пустеет;
     // «Обновить» — новые предложения за треть цены следующей покупки; пустая витрина заполняется сама.
     artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },

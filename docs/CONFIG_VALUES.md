@@ -79,7 +79,7 @@
 | `unlocks.pets` | `1250` |
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
-| `disabled` | `["quests","login","shop","pve","runes","ritual","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","m…` |
+| `disabled` | `["quests","login","pve","runes","ritual","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","pr…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
@@ -95,6 +95,11 @@
 | `artifactFind.cost` | `3` |
 | `artifactFind.growth` | `1.7` |
 | `goldHire.maxRarity` | `"B"` |
+| `market.slots` | `8` |
+| `market.refreshSec` | `10800` |
+| `market.refreshCost` | `20` |
+| `market.goods` | `[{"id":"ticket1","kind":"tickets","n":1,"cur":"gold","price":300,"w":3,"name":"Билет призыва"},{"id":"ticket5","kind":"tickets","n":5,"cur":"crystal","price"…` |
+| `crystals.megaFirst` | `20` |
 | `artShop.slots` | `3` |
 | `artShop.refreshDiv` | `3` |
 | `artShop.blood` | `{"cost":30,"growth":2.2}` |

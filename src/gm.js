@@ -31,7 +31,7 @@
       pn.innerHTML = '<div class="box"><h3>ГМ-панель (тест)<button data-g="x">✕</button></h3>' +
         '<div class="st">Этаж ' + s.floor + ' · рекорд ' + best() + ' · золото ' + fmt(s.gold) + ' · билеты ' + fmt(s.tickets) + '</div>' +
         '<h4>Ресурсы</h4><div class="row">' + t('inf', '∞ Золото') + t('infT', '∞ Билеты') +
-        '<button data-g="gold">+1M золота</button><button data-g="goldx">Золото ×1000</button><button data-g="tk">+100 билетов</button>' +
+        '<button data-g="gold">+1M золота</button><button data-g="goldx">Золото ×1000</button><button data-g="tk">+100 билетов</button><button data-g="cr">+1000 💎</button>' +
         '<button data-g="sh">+1000 осколков</button><button data-g="so">+1000 душ</button><button data-g="es">+1000 эссенции</button><button data-g="ht">+100 сердец</button></div>' +
         '<h4>Этаж</h4><div class="row"><input id="gmFl" type="number" min="1" value="' + Math.max(25, best()) + '"><button data-g="fl">Перейти</button>' +
         [25, 50, 100, 200, 500, 1250, 2000].map(f => '<button data-g="f' + f + '">' + f + '</button>').join('') + '</div>' +
@@ -56,6 +56,7 @@
       else if (k === 'gold') s.gold = B.add(s.gold, 1e6);
       else if (k === 'goldx') s.gold = B.mul(B.add(s.gold, 1), 1000);
       else if (k === 'tk') s.tickets += 100;
+      else if (k === 'cr') { s.crystals = (s.crystals | 0) + 1000; toast('+1000 💎'); }
       else if (k === 'sh') s.materials.shard += 1000;
       else if (k === 'so') s.souls = B.add(s.souls, 1000);
       else if (k === 'es') s.essence = (s.essence || 0) + 1000;
