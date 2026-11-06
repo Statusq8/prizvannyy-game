@@ -80,7 +80,7 @@
 | `unlocks.pets` | `1250` |
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
-| `disabled` | `["pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","bag","tutorial"]` |
+| `disabled` | `["pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","bag","tutorial","…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |

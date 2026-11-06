@@ -1793,7 +1793,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     disabled: ['pve', 'runes', 'tree', 'events', 'season',
-               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
+               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial', 'bonds'],
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
     cage: { floor: 3, ally: 'shorokh', taps: 20, name: 'Клетка с Шорохом' },        // 0.74: души с мега-боссов и без регрессии (ответ 8) — base·per50^(этаж/50 − 1)
@@ -4710,10 +4710,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return k;
   }
   // ---------- связи героев (0.56) ----------
-  function bondActive(s, b) { return b.heroes.every(id => inSquad(s, id)); }   // 0.74: связи — по всем нанятым (ответ 67)
+  function bondActive(s, b) { if (CONFIG.disabled && CONFIG.disabled.includes('bonds')) return false; return b.heroes.every(id => inSquad(s, id)); }   // 0.74: связи — по всем нанятым (ответ 67)
   function activeBonds(s) { return CONFIG.bonds.filter(b => bondActive(s, b)); }
   function bondPower(s, kind) { return activeBonds(s).reduce((t, b) => t + (b.bonus.kind === kind ? b.bonus.per : 0), 0); }
-  function bondsOf(id) { return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
+  function bondsOf(id) { if (CONFIG.disabled && CONFIG.disabled.includes('bonds')) return []; return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
   // ---------- удобство (0.54) ----------
   function roleOf(a) { return CONFIG.roles[a.ult.kind] || 'Особая'; }
   function isFav(s, id) { return s.favs.includes(id); }
@@ -6148,7 +6148,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         (ec ? '<button class="hBtn' + (canEvo ? ' evo' : '') + '" data-evo="' + a.id + '"' + (canEvo ? '' : ' disabled') + '>⬆ ' + ROMAN[ec.stage] + '</button>' : '') +
         '</div></div>';
     }
-    html += bondsHtml();
+    if (C.unlockedAt(s, 'bonds')) html += bondsHtml();
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
   // ---------- статистика (0.32) ----------
