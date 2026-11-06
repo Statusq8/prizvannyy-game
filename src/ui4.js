@@ -52,18 +52,18 @@
     const STARTERS = CFG.allies.filter(a => a.starter).map(a => a.id);
     const unlockedHeroes = () => CFG.allies.filter(a => s.heroes[a.id].unlocked).length;
     const STORY = [
-      { t: 'Найми первого союзника', ok: () => STARTERS.some(hired), r: { tickets: 1 }, go: 'up' },
-      { t: 'Подними главного героя до 10 ур.', ok: () => s.tapLevel >= 10, r: { tickets: 1 }, go: 'up' },
-      { t: 'Дойди до 5 этажа', ok: () => best() >= 5, r: { tickets: 1 }, go: 'battle' },
-      { t: 'Найми всех четырёх союзников', ok: () => STARTERS.every(hired), r: { crystals: 10 }, go: 'up' },
-      { t: 'Победи первого стража (10 этаж)', ok: () => best() >= 11, r: { tickets: 2 }, go: 'battle' },
-      { t: 'Дойди до 25 этажа', ok: () => best() >= 25, r: { tickets: 5 }, go: 'battle' },
-      { t: 'Призови героя в портале', ok: () => unlockedHeroes() > STARTERS.length, r: { tickets: 3 }, go: 'portal' },
-      { t: 'Победи мега-босса (50 этаж)', ok: () => best() >= 51, r: { tickets: 5 }, go: 'battle' },
-      { t: 'Улучши артефакт', ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
-      { t: 'Дойди до 100 этажа', ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
-      { t: 'Дойди до 150 этажа', ok: () => best() >= 150, r: { tickets: 10, crystals: 20 }, go: 'battle' },
-      { t: 'Проведи первую регрессию', ok: () => s.rituals > 0, r: { tickets: 15, crystals: 30 }, go: 'ritual' },
+      { t: 'Найми первого союзника', p: () => [STARTERS.some(hired) ? 1 : 0, 1], ok: () => STARTERS.some(hired), r: { tickets: 1 }, go: 'up' },
+      { t: 'Подними главного героя до 10 ур.', p: () => [s.tapLevel, 10], ok: () => s.tapLevel >= 10, r: { tickets: 1 }, go: 'up' },
+      { t: 'Дойди до 5 этажа', p: () => [best(), 5], ok: () => best() >= 5, r: { tickets: 1 }, go: 'battle' },
+      { t: 'Найми всех четырёх союзников', p: () => [STARTERS.filter(hired).length, STARTERS.length], ok: () => STARTERS.every(hired), r: { crystals: 10 }, go: 'up' },
+      { t: 'Победи первого стража (10 этаж)', p: () => [best(), 11], ok: () => best() >= 11, r: { tickets: 2 }, go: 'battle' },
+      { t: 'Дойди до 25 этажа', p: () => [best(), 25], ok: () => best() >= 25, r: { tickets: 5 }, go: 'battle' },
+      { t: 'Призови героя в портале', p: () => [unlockedHeroes() > STARTERS.length ? 1 : 0, 1], ok: () => unlockedHeroes() > STARTERS.length, r: { tickets: 3 }, go: 'portal' },
+      { t: 'Победи мега-босса (50 этаж)', p: () => [best(), 51], ok: () => best() >= 51, r: { tickets: 5 }, go: 'battle' },
+      { t: 'Улучши артефакт', p: () => [CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2) ? 1 : 0, 1], ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
+      { t: 'Дойди до 100 этажа', p: () => [best(), 100], ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
+      { t: 'Дойди до 150 этажа', p: () => [best(), 150], ok: () => best() >= 150, r: { tickets: 10, crystals: 20 }, go: 'battle' },
+      { t: 'Проведи первую регрессию', p: () => [Math.min(1, s.rituals), 1], ok: () => s.rituals > 0, r: { tickets: 15, crystals: 30 }, go: 'ritual' },
     ];
     const NAMES = { ult: 'ульта героя', quests: 'задания', login: 'награда за вход', portal: 'портал призыва', shop: 'магазин', artifacts: 'артефакты', pve: 'PvE', runes: 'руны', forge: 'кузница',
       ritual: 'регрессия', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
@@ -82,7 +82,7 @@
       if (st.fold) h = '<button class="qFold" data-q="unfold">' + img('scroll_quest') + (q && q.ok() ? '<i class="qDot"></i>' : '') + '</button>';
       else {
         h = '<div class="qBox"><button class="qMin" data-q="fold" aria-label="Свернуть">–</button>';
-        if (q) { const done = q.ok(); h += '<div class="qT" data-q="go">КВЕСТ</div><div class="qTxt" data-q="go">' + q.t + '</div><div class="qR">' + (done ? '<button class="qClaim" data-q="claim">Забрать ' + rTxt(q.r) + '</button>' : 'Награда: ' + rTxt(q.r)) + '</div>'; }
+        if (q) { const done = q.ok(); h += '<div class="qT" data-q="go">КВЕСТ</div><div class="qTxt" data-q="go">' + q.t + '</div>' + (q.p ? (() => { const [a, b] = q.p(), v = Math.min(a, b); return '<div class="qBar"><i style="width:' + (v / b * 100).toFixed(1) + '%"></i><span>' + v + '/' + b + '</span></div>'; })() : '') + '<div class="qR">' + (done ? '<button class="qClaim" data-q="claim">Забрать ' + rTxt(q.r) + '</button>' : 'Награда: ' + rTxt(q.r)) + '</div>'; }
         if (nu) h += '<div class="qNext">' + nu.f + ' этаж: ' + nu.names.join(', ') + '</div>';
         h += '</div>';
       }
