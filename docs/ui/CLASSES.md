@@ -36,3 +36,6 @@ Use the attached mockup as the exact style reference. Game icon sheet, dark fant
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone hall inside the Tower with pillars, hanging chains and violet banners, violet flames in braziers on both sides, a giant glowing violet rune circle on the floor in the lower third, floating runes, dark mood. Top and middle calmer for UI. No text, no UI.
 ```
+
+## Собрано — 0.124
+Листы → tools/classescut.py → assets/classes; стили — src/classes.js; разметка — classesHtml в src/ui2.js (openX('classes'), пункт ☰ «Классы» в лагере, виден с unlockFloor). 2-й ярус в CONFIG.classes (`req`), проверка — classNodeOpen. Дерево тянется по высоте экрана (позиции — % коробки), фон прижат к низу (рунный круг под нижним ярусом).

@@ -505,6 +505,8 @@
       $('pgX').classList.toggle('rgl', !!window.RG_ART && xKind === 'regress');
       $('pgX').classList.toggle('qsl', !!window.QS_ART && xKind === 'quests');
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
+      $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
+      if (xKind === 'classes') { aux.style.display = 'none'; $('xTitle').textContent = 'Классы'; const CA = window.CL_ART || {}; setHtml('xTop', '<div class="resPill"><img src="' + CA.pt + '" alt=""><b>' + C.classFree(s) + ' / ' + C.classPoints(s) + '</b></div>'); setHtml('xBody', classesHtml()); return; }
       $('pgX').classList.toggle('hsw', !!window.HS_ART && xKind === 'heroes' && !!hsSel);
       if (xKind === 'heroes') { aux.style.display = 'none'; $('xTitle').textContent = 'Герои'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['crystal', fmt(s.crystals | 0)]])); hsRender(); return; }
       if (xKind === 'quests') { aux.style.display = 'none'; $('xTitle').textContent = 'Задания'; setHtml('xTop', resPills([['crystal', fmt(s.crystals | 0)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', questsHtml()); return; }
@@ -540,6 +542,36 @@
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
 
+    // ---------- 0.124: Классы — дерево навыков по макету; стили и картинки — src/classes.js ----------
+    let clView = null, clSel = null;
+    const CL_POS = [[21, 28.8], [50, 40], [79.3, 28.8], [21, 55.2], [50, 63.5], [79.3, 55.2]];   // b1 b2 b3 / b4 b5 b6 (центры в cqw внутри коробки дерева)
+    function classesHtml() {
+      const A = window.CL_ART, K = CFG.classes, dk = dayKey();
+      if (!C.classUnlocked(s)) return '<div class="cl"><div class="lockMsg">Классы откроются на ' + K.unlockFloor + '-м этаже (рекорд).</div></div>';
+      const view = C.classDef(clView) ? clView : (s.cls.id || K.list[0].id), k = C.classDef(view), mine = s.cls.id === view;
+      if (!k.nodes.some(n => n.id === clSel)) clSel = k.nodes[0].id;
+      const lv = n => mine ? (s.cls.spent[n.id] | 0) : 0, open = n => !n.req || (mine && lv(k.nodes.find(x => x.id === n.req)) >= k.nodes.find(x => x.id === n.req).max);
+      const free = C.classFree(s);
+      let h = '<div class="cl"><div class="cRow">' + K.list.map((c, i) => '<button class="abs cK' + (s.cls.id === c.id ? ' on' : '') + (view === c.id ? ' view' : '') + '" style="left:' + [18.8, 40.8, 61.7, 82.8][i] + 'cqw" data-clv="' + c.id + '"><div class="rg"><img src="' + A['c_' + c.id] + '" alt=""></div><div class="pl">' + c.name + '</div></button>').join('') + '</div>';
+      // линии дерева (координаты макета: коробка 1024×755)
+      const P = ['M425,175 L300,225 L238,262', 'M512,232 L512,312', 'M599,175 L724,225 L786,262', 'M215,402 L215,470', 'M512,520 L512,555', 'M812,402 L812,470'];
+      h += '<div class="tree"><div class="tBox"><svg viewBox="0 0 1024 755" preserveAspectRatio="none">' + k.nodes.map((n, i) => '<path class="' + (open(n) && (i < 3 ? mine : lv(n) > 0 || open(n)) ? 'lit' : '') + '" d="' + P[i] + '"/>').join('') + '</svg>' +
+        '<div class="abs big" style="top:calc(' + (11.7 / 73.7 * 100).toFixed(2) + '% - 11.95cqw)"><img src="' + A['c_' + k.id] + '" alt=""></div>' +
+        k.nodes.map((n, i) => { const [x, y] = CL_POS[i], o = open(n), l = lv(n), t2 = i >= 3, can = mine && o && free > 0 && l < n.max;
+          return '<button class="abs nd' + (t2 ? ' t2' : '') + (o ? '' : ' lk') + (clSel === n.id ? ' sel' : '') + '" style="left:' + x + 'cqw;top:' + (y / 73.7 * 100).toFixed(2) + '%" data-cln="' + n.id + '"><img class="ic" src="' + A[n.id] + '" alt="">' +
+            (o ? '<span class="lv' + (l >= n.max ? ' mx' : '') + '">' + l + '/' + n.max + '</span>' + (t2 ? '' : '<span class="np">' + n.name + '</span>') : '<img class="lkI" src="' + A.lock + '" alt="">') + (can ? '<i class="rd"></i>' : '') + '</button>'; }).join('') + '</div></div>';
+      const n = k.nodes.find(x => x.id === clSel), o = open(n), l = lv(n), par = n.req && k.nodes.find(x => x.id === n.req);
+      const bonus = n.kind === 'bossTime' ? '+' + l * n.per + ' с' : (n.kind === 'abilityCd' ? '−' : '+') + Math.round(l * n.per * 100) + '%';
+      const can = mine && o && free > 0 && l < n.max;
+      const chOk = !mine && C.canChangeClass(s, dk);
+      h += '<div class="inf"><div class="abs iRg' + (o ? '' : ' lk') + '"><img src="' + A[n.id] + '" alt=""></div><i class="abs iDv"></i><div class="abs iNm">' + n.name + '</div>' +
+        '<div class="abs iDs">' + n.desc + ' за каждый уровень' + (o ? '' : '. Откроется, когда «' + par.name + '» будет ' + par.max + '/' + par.max) + '.</div>' +
+        '<div class="abs iBn">Текущий бонус:<b>' + bonus + '</b></div>' +
+        '<button class="abs iUp" data-clup' + (can ? '' : ' disabled') + '>' + (l >= n.max ? 'Максимум' : 'Улучшить') + '<span><img src="' + A.pt + '" alt="">1</span></button><i class="abs iSp"></i>' +
+        '<button class="abs iCh" data-clch' + (chOk ? '' : ' disabled') + '>⟳ ' + (s.cls.id ? (mine ? 'Ваш класс' : 'Сменить класс') : 'Выбрать класс') + '</button>' +
+        '<div class="abs iNt">' + (!s.cls.id ? 'первый выбор бесплатно' : mine ? 'смена — 1 раз в сутки' : C.canChangeClass(s, dk) ? 'очки вернутся' : 'завтра') + '</div></div></div>';
+      return h;
+    }
     // ---------- 0.122: экран «Герои» по макетам пользователя — разметка; стили и картинки — src/heroes.js ----------
     let hsSel = null; const hsF = {};
     const HS_RC = { E: '#c8c8d8', D: '#e09050', C: '#5ae07a', B: '#5aa8ff', A: '#c070ff', S: '#ffc840', SS: '#ff5a5a', SSS: '#cfeaff', GOD: '#fff2a0' };
@@ -915,6 +947,12 @@
       else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
         toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.rgback !== undefined) { xBack.click(); return; }
+      else if (d.clv) { click(); clView = d.clv; clSel = null; }
+      else if (d.cln) { click(); clSel = d.cln; }
+      else if (d.clup !== undefined) { if (!C.buyClassNode(s, clSel)) return; click(); save(); }
+      else if (d.clch !== undefined) { const id = C.classDef(clView) ? clView : null; if (!id) return; const first = !s.cls.id;
+        const go = () => { if (C.chooseClass(s, id, dayKey())) { click(); toast((first ? 'Класс выбран' : 'Класс сменён') + '<small>' + C.classDef(id).name + '</small>'); save(); render(); } };
+        if (first || !window.U3) go(); else window.U3.sys({ title: 'СМЕНИТЬ КЛАСС?', text: 'Все очки вернутся, сменить снова можно будет только завтра.', btns: [{ t: 'Отмена' }, { t: 'Сменить', fn: go }] }); return; }
       else if (d.hf) { click(); if (d.hf === 'all') { delete hsF.rarity; delete hsF.side; } else { const [k, v] = d.hf.split(':'), f = k === 'r' ? 'rarity' : 'side'; hsF[f] = hsF[f] === v ? undefined : v; } }
       else if (d.hh) { if (!s.heroes[d.hh].unlocked) { const a = CFG.allies.find(x => x.id === d.hh); toast('Герой не открыт<small>' + (CFG.rarities.indexOf(a.rarity) <= CFG.rarities.indexOf(CFG.goldHire.maxRarity) ? 'Купите в Штабе за золото' : 'Выпадает в Портале') + '</small>'); return; } click(); hsSel = d.hh; }
       else if (d.hs) { const k = d.hs;

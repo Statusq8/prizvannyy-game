@@ -64,7 +64,7 @@
     petDef, petLevel, petForm, petPower, petShare, petBonus, petEvoCost, petFrags, canEvolvePet, evolvePet, grantPet, petsCatchUp, lairRank, lairPet, lairSync, keeperRoll, setPet, recallPet, petHit, petDps, squadRawDps,
     boneSlot, boneValue, equippedOn, bonePower, boneMult, rollBone, equipBone, unequipBone, boneUpCost, upgradeBone,
     gradeCost, gradeUpBone, setBoneLock, recycleValue, recycleBones,
-    classDef, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
+    classDef, classNodeOpen, classPower, classUnlocked, classPoints, classFree, canChangeClass, chooseClass, buyClassNode,
     boosterUnlocked, boosterMult, boosterWait, moveBooster,
     eventFor, eventReset, currentEvent, eventBuff, buyEventItem, shopLeft, eventDungeonReward, inboxAdd, claimInbox, claimInboxAll,
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
