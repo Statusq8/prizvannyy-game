@@ -6,7 +6,7 @@
     const u = n => 'url("' + A[n] + '")';
     const head = document.querySelector('#pgX .pgHead');
     const q = document.createElement('button'); q.id = 'ptQ'; q.setAttribute('aria-label', 'Справка'); head.appendChild(q);
-    q.addEventListener('click', () => { window.U2.click(); window.U3.sys({ title: 'ПОРТАЛ', text: 'Билеты дают случайного героя: билеты — за первое прохождение этажей. ×10 — десять призывов сразу. Полоса — гарантия S и выше. Внизу стрелками меняется баннер. Рецепты особых героев падают с мега-боссов (каждые 50 этажей).' }); });
+    q.addEventListener('click', () => { window.U2.click(); window.U3.sys({ title: 'ПОРТАЛ', text: 'Билеты дают случайного героя: билеты — за первое прохождение этажей. ×10 — десять призывов сразу. Полоса — гарантия S и выше. Внизу стрелками меняется баннер.' }); });
     const css = document.createElement('style');
     css.textContent = `
       #pgX.ptl { background: #120a24 ${u('bg')} center top / cover no-repeat !important; }
@@ -23,9 +23,6 @@
       #pgX.ptl #xAux { flex: none; width: 96px; height: 38px; padding: 0 8px 0 34px; border: none !important; box-shadow: none !important; border-radius: 0; background: ${u('hist')} center / 100% 100% no-repeat !important; font: 700 12px Georgia, serif !important; color: #e8dcf6 !important; }
       #pgX.ptl #xAux::first-letter { font-size: 0; }
       #pgX.ptl #xBody { display: flex; flex-direction: column; padding: 0 8px calc(env(safe-area-inset-bottom) + 8px) !important; position: relative; }
-      .ptTabs { display: flex; justify-content: center; gap: 6px; }
-      .ptTabs button { width: 130px; height: 44px; border: none; background: ${u('tab')} center / 100% 100% no-repeat; font: 800 15px Georgia, 'Times New Roman', serif; color: #cbbbe0; text-shadow: 0 1px 2px #000; }
-      .ptTabs button.on { background-image: ${u('tab_on')}; color: #ffe6a0; }
       .ptOdds { position: absolute; right: 6px; top: 56px; width: 138px; padding: 26px 14px 24px; background: ${u('panel')} center / 100% 100% no-repeat; box-sizing: border-box; }
       .ptOdds h4 { margin: 0 0 6px; text-align: center; font: 700 11px Georgia, serif; white-space: nowrap; color: #f3dcb0; }
       .ptOdds .r { display: flex; align-items: center; justify-content: space-between; height: 20px; font: 700 12px system-ui; color: #fff; text-shadow: 0 1px 2px #000; }
@@ -61,9 +58,6 @@
       .ptDots { display: flex; justify-content: center; gap: 6px; margin-top: 4px; }
       .ptDots i { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid #c9a0ff; }
       .ptDots i.on { background: #ffd86a; border-color: #ffd86a; }
-      .ptRec { margin-top: 30vh; padding: 16px; border-radius: 10px; background: #0a060ed8; border: 1px solid #6a4a8a; text-align: center; color: #e8dcf6; font: 500 14px/1.4 system-ui; }
-      .ptRec b { font: 800 17px Georgia, serif; color: #ffe6a0; }
-      .ptRec .soon { color: #ffd36b; font-weight: 800; }
       /* 0.89: переворот карт по макету пользователя (references/portal_reveal_mockup.png, лист docs/reference/portal/sheet_reveal.png) */
       #sumFx.ptv .sfBg { background: linear-gradient(#0008, #000c), ${u('bg')} center top / cover no-repeat; animation: none; }
       #sumFx.ptv .flipGrid { gap: 18px 8px; }
