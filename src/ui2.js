@@ -492,6 +492,8 @@
       $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
       $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
       $('pgX').classList.toggle('mkl', !!window.MK_ART && xKind === 'market');
+      $('pgX').classList.toggle('rgl', !!window.RG_ART && xKind === 'regress');
+      if (xKind === 'regress') { aux.style.display = 'none'; setHtml('xBody', regressHtml()); return; }
       if (xKind === 'market') {
         $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
         const MA = window.MK_ART;
@@ -523,6 +525,27 @@
       }
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- 0.113: экран Регрессии (ритуала) по макету пользователя — разметка; стили и картинки — src/regress.js ----------
+    function regressHtml() {
+      const A = window.RG_ART, R = CFG.ritual, ready = C.canRitual(s), souls = ready ? C.ritualSouls(s) : 0, after = { ...s, souls: B.add(s.souls, souls) };
+      const im = n => '<img src="' + A[n] + '" alt="">', row = (ic, t, sub, mk) => '<div class="row"><div class="ic">' + ic + '</div><div class="tx">' + t + (sub ? '<small>' + sub + '</small>' : '') + '</div><img class="mk" src="' + A[mk] + '" alt=""></div>';
+      const lightOk = ready && (s.crystals | 0) >= R.light.crystals;
+      return '<div class="rg"><div class="rgBg"></div><div class="top">' +
+        '<button class="abs img back" data-rgback aria-label="Назад"></button>' +
+        '<div class="abs pill p1">' + im('i_soul') + fmt(s.souls) + '</div><div class="abs pill p2">' + im('i_crystal') + fmt(s.crystals | 0) + '</div>' +
+        '<div class="abs img title">Регрессия</div>' +
+        '<div class="abs img panel"></div><div class="abs img hdr">Вы получите:</div>' +
+        '<div class="abs gain">' + im('i_soul') + '<b>+' + fmt(souls) + '</b><span>душ</span></div><div class="abs sep"></div>' +
+        '<div class="abs bon"><div class="t">Бонус к урону:</div><div class="v">' + pctUp(C.soulMult(s)) + '<i>→</i><em>' + pctUp(C.soulMult(after)) + '</em></div></div></div>' +
+        '<div class="bot"><div class="abs img box boxR"></div><div class="abs img box boxG"></div><div class="abs img hR">Будет сброшено:</div><div class="abs img hG">Сохранится:</div>' +
+        '<div class="abs rows rowsR">' + row(im('i_gold'), 'Золото', '', 'i_x') + row(im('i_hex') + '<b>EXP</b>', 'Уровни героев', '', 'i_x') + row(im('i_stairs'), 'Этаж Башни', '', 'i_x') + '</div>' +
+        '<div class="abs rows rowsG">' + row(im('i_heroes'), 'Герои', '(разблокировка)', 'i_check') + row(im('i_star'), 'Звёзды', '(1–15)', 'i_check') +
+          row(im('i_ring'), 'Артефакты', '(уровень и прогресс)', 'i_check') + row(im('i_soul'), 'Души', '(валюта и улучшения)', 'i_check') + '</div>' +
+        '<button class="abs img btn bD" data-rit' + (ready ? '' : ' disabled') + '><b>Тёмная регрессия</b><span>' + (ready ? 'Бесплатно' : 'Нужен этаж ' + R.floor) + '</span></button>' +
+        '<button class="abs img btn bL" data-ritl' + (lightOk ? '' : ' disabled') + '><b>Светлая регрессия</b><span>' + im('i_crystal') + fmt(R.light.crystals) + '</span></button>' +
+        '<div class="abs img badge">x' + R.light.mult + '</div></div></div>';
+    }
 
     // ---------- 0.102: Рынок как в Idle Heroes (временный вид до макета пользователя) ----------
     const MK_IC = { tickets: '🎟', copy: '🧝', shard: '🔹', souls: '👻' };
@@ -775,6 +798,7 @@
       else if (d.pull) { click(); pull2(+d.pull); }
       else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
         toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
+      else if (d.rgback !== undefined) { xBack.click(); return; }
       else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }

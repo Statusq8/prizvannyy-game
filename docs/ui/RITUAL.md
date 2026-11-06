@@ -28,3 +28,6 @@ Game icon sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) back
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone sanctuary inside the Tower with pillars and hanging chains and violet banners, in the middle a large ritual altar — a black jagged stone bowl full of swirling violet souls with glowing rune, a glowing rune circle on the floor around it, violet flames in braziers on both sides, ghostly souls flying up from the bowl. Top fifth and bottom half calmer and darker for UI panels. No text, no UI.
 ```
+
+## Собрано — 0.113
+Листы → tools/regresscut.py → assets/regress; стили — src/regress.js (замеры макета 1024×1536 в cqw, фон-алтарь посередине между «Вы получите» и панелями); разметка — regressHtml в src/ui2.js (openX('regress'), из меню ☰ лагеря). Цена светлой — подобрать позже.
