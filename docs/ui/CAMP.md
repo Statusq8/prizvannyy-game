@@ -58,7 +58,7 @@ Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 por
 Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 portrait, dark fantasy manhwa style, night sky with a violet moon and dark clouds, high top-down isometric camera (about 60 degrees, almost map view). Five SMALL separate floating rock islets scattered across the screen with clear empty sky between them, NOT connected, no bridges, not overlapping. Each islet holds exactly ONE building: center-bottom a slightly bigger islet with a dark stone headquarters hall with a banner; one islet with huge dark iron-and-stone double gates standing slightly ajar, bright violet light pouring out of the gap (the entrance to the Tower); one islet with a stone arch summoning portal filled with a swirling violet vortex; one islet with a blacksmith forge with orange fire and an anvil; one islet with a small dark market stall with tents, crates and potions. No farm, no windmill, no crops. No tower in the background, only sky, moon and clouds. Buildings big relative to their islet, readable at phone size. Dark stone, black wood, violet crystals, lanterns, faint mist under the islets, small floating rocks. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
 ```
 
-## Макет v4 — references/camp_v4.png (все правки учтены, ждёт подтверждения)
+## Макет v4 — references/camp_v4.png — УТВЕРЖДЁН, собран в игре (0.83)
 
 ## Ферма — убрана (6 ноября)
 Офлайн-награды (12 ч, отряд сам фармит этажи) показываются отчётом при входе в игру. Отдельной фермы нет, Рынок — свой островок.
