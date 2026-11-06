@@ -9,31 +9,35 @@
     css.textContent = `
       body.hqV1 #pgSec .tower { background: ${u('bg')} center / cover no-repeat !important; filter: brightness(.75); }
       body.hqV1 #pgSec .tower::before, body.hqV1 #pgSec .tower::after { display: none !important; }
-      /* валюты сверху */
-      body.hqV1 #sTop { justify-content: center; gap: 8px; }
-      body.hqV1 #sTop .cur { width: 150px; height: 34px; padding: 0 12px 0 40px; border: none !important; border-radius: 0; box-shadow: none !important; justify-content: flex-end;
-        background: ${u('res_crystal')} center / 100% 100% no-repeat !important; font: 800 15px system-ui; color: #fff; text-shadow: 0 1px 2px #000; }
-      body.hqV1 #sTop .cur.g { background-image: ${u('res_gold')} !important; color: #ffe2a0; }
-      body.hqV1 #sTop .cur i, body.hqV1 #sTop .cur .plus { display: none !important; }
-      /* вкладки — картинки пакета */
-      body.hqV1 #sTabs { justify-content: center; }
-      body.hqV1 #sTabs button { flex: 0 0 84px !important; height: 66px !important; border: none !important; box-shadow: none !important; background: center / contain no-repeat !important; border-radius: 0; }
+      /* верх как в Крушителях (референс пользователя 6 ноября): валюты полосой, «назад» + вкладки, полоса материалов, «Герои» + ×1 справа */
+      body.hqV1 #sTop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; padding: calc(env(safe-area-inset-top) + 6px) 6px 4px; min-height: 0; }
+      body.hqV1 #sTop .cur { position: relative; flex: 1; min-width: 0; height: 30px; padding: 0 10px 0 34px; border: none !important; border-radius: 4px; box-shadow: none !important; justify-content: flex-end;
+        background: #0a060ecc !important; font: 800 17px system-ui; color: #ffb43a; text-shadow: 0 1px 2px #000; }
+      body.hqV1 #sTop .cur i { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border: none !important; border-radius: 0; background: center / contain no-repeat !important; }
+      body.hqV1 #sTop .cur.d i { background-image: url("${(window.HUD_ART || {}).ic_dps || ''}") !important; }
+      body.hqV1 #sTop .cur.f i::before { content: "✊"; font-size: 19px; line-height: 26px; }
+      body.hqV1 #sTop .cur.g i { background-image: url("${(window.HUD_ART || {}).ic_coin || ''}") !important; }
+      body.hqV1 #sTop .cur .plus { display: none !important; }
+      body.hqV1 .hqMat { flex-basis: 100%; order: 9; display: flex; height: 22px; margin-top: 64px; background: #0a060ecc; border-radius: 3px; }
+      body.hqV1 .hqMat span { flex: 1; display: flex; align-items: center; gap: 4px; padding: 0 8px; font: 700 13px system-ui; color: #fff; border-right: 1px solid #2a2232; }
+      body.hqV1 .hqMat i { font-style: normal; }
+      .hqNav { position: absolute; left: 6px; right: 6px; top: calc(env(safe-area-inset-top) + 42px); height: 60px; display: flex; gap: 6px; align-items: center; z-index: 2; }
+      body.hqV1 #pgSec .hqNav .backBtn { flex: none; width: 70px; height: 56px; clip-path: none; border: none !important; box-shadow: none !important; background: ${u('nav_back')} center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; }
+      body.hqV1 #sTabs { flex: 1; display: flex !important; gap: 4px; padding: 0 !important; overflow: visible; height: 60px; }
+      body.hqV1 #sTabs button { flex: 0 0 72px !important; height: 58px !important; border: none !important; box-shadow: none !important; background: center / contain no-repeat !important; border-radius: 0; }
       body.hqV1 #sTabs button > * { display: none !important; }
       body.hqV1 #sTabs button[data-st="up"] { background-image: ${u('tab_upgrade_normal')} !important; } body.hqV1 #sTabs button[data-st="up"].on { background-image: ${u('tab_upgrade_selected')} !important; }
       body.hqV1 #sTabs button[data-st="art"] { background-image: ${u('tab_artifacts_normal')} !important; } body.hqV1 #sTabs button[data-st="art"].on { background-image: ${u('tab_artifacts_selected')} !important; }
       body.hqV1 #sTabs button[data-st="bag"] { background-image: ${u('tab_bag_normal')} !important; } body.hqV1 #sTabs button[data-st="bag"].on { background-image: ${u('tab_bag_selected')} !important; }
       body.hqV1 #sTabs button[data-st="pets"] { background-image: ${u('tab_pets_normal')} !important; } body.hqV1 #sTabs button[data-st="pets"].on { background-image: ${u('tab_pets_selected')} !important; }
-      /* назад и заголовок */
-      body.hqV1 #pgSec .pgHead { align-items: center; gap: 6px; padding: 2px 8px 6px; }
-      body.hqV1 #pgSec .backBtn { width: 56px; height: 34px; clip-path: none; border: none !important; box-shadow: none !important; background: ${u('nav_back')} center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; }
-      body.hqV1 #pgSec #sTitle { height: 40px; line-height: 38px; border: none !important; box-shadow: none !important; clip-path: none !important; background: ${u('nav_title')} center / contain no-repeat !important; color: transparent !important; text-shadow: none !important; }
+      body.hqV1 #pgSec .pgHead { display: grid !important; grid-template-columns: 84px 1fr 84px; align-items: center; gap: 6px; padding: 8px 8px 8px; }
+      body.hqV1 #pgSec #sTitle { grid-column: 2; height: 40px; border: none !important; box-shadow: none !important; clip-path: none !important; background: ${u('nav_title')} center / contain no-repeat !important; color: transparent !important; text-shadow: none !important; }
       body.hqV1 #pgSec #sTitle::before, body.hqV1 #pgSec #sTitle::after { display: none !important; }
       body.hqV1 #pgSec #secHelp { display: none; }
-      /* ×1 ×10 ×100 MAX */
-      .hqQty { position: relative; width: 210px; margin: 0 0 8px auto; }
-      .hqQty img { width: 100%; display: block; }
-      .hqQty button { position: absolute; top: 8%; bottom: 8%; width: 23.5%; background: none; border: none; border-radius: 4px; padding: 0; }
-      .hqQty button.on { box-shadow: inset 0 0 0 2px #ffe08a, 0 0 10px #ffd04a; background: #ffd04a22; }
+      #hqMult { grid-column: 3; height: 36px; display: flex; align-items: stretch; padding: 0; border-radius: 6px; overflow: hidden; border: 2px solid #c99a3a; box-shadow: 0 0 0 1px #000, 0 0 8px #d6a64066; background: linear-gradient(#2a1a10, #120a06); }
+      #hqMult b { flex: 1; display: grid; place-items: center; font: 800 16px Georgia, 'Times New Roman', serif; color: #ffd86a; text-shadow: 0 1px 2px #000; }
+      #hqMult i { width: 22px; display: grid; place-items: center; font-style: normal; font-size: 11px; color: #2a1a04; background: linear-gradient(#ffe08a, #c98a1a); }
+      #hqMult:active { transform: scale(.94); }
       /* карточки */
       .hqCard { position: relative; display: grid; grid-template-columns: 96px 1fr 128px; align-items: center; gap: 8px; min-height: 112px; margin-bottom: 10px; padding: 10px 12px 10px 14px; box-sizing: border-box;
         background: ${u('card')} center / 100% 100% no-repeat; }
@@ -63,4 +67,7 @@
       .hqBtn:not(.off):active { transform: scale(.94); }
     `;
     document.head.appendChild(css);
+    // «назад» — в одну строку с вкладками (как в Крушителях)
+    const pg = $('pgSec'), nav = document.createElement('div'); nav.className = 'hqNav';
+    nav.appendChild(pg.querySelector('.pgHead .backBtn')); nav.appendChild($('sTabs')); pg.appendChild(nav);
   })();
