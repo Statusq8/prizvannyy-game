@@ -1420,6 +1420,7 @@
       lines.push('<b>Золото:</b> +' + fmt(r.gold) + ' ◆ · врагов ' + fmt(r.kills));
       if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
       if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
+      if (r.crystals) lines.push('<b>Кристаллы:</b> +' + r.crystals + ' 💎');
     }
     // 0.55 (ответ 189): умный отчёт — что теперь можно купить или сделать
     const na = C.nowAffordable(s), nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, can = [];
@@ -2103,7 +2104,7 @@
   function rewardLine(r) {
     const M = CFG.materials, p = [];
     if (r.souls) p.push('👻 ' + fmt(r.souls));
-    if (r.tickets) p.push('🎟 ' + r.tickets); if (r.essence) p.push('✦ ' + r.essence);
+    if (r.tickets) p.push('🎟 ' + r.tickets); if (r.crystals) p.push('💎 ' + r.crystals); if (r.essence) p.push('✦ ' + r.essence);
     if (r.shard) p.push(M.shard.icon + ' ' + r.shard); if (r.heart) p.push(M.heart.icon + ' ' + r.heart);
     return p.join(' · ');
   }
@@ -2334,7 +2335,7 @@
   let seasonHtml = '';
   function seasonReward(r) {
     const M = CFG.materials, p = [];
-    if (r.tickets) p.push('🎟' + r.tickets); if (r.shard) p.push(M.shard.icon + r.shard); if (r.essence) p.push('✦' + r.essence);
+    if (r.tickets) p.push('🎟' + r.tickets); if (r.crystals) p.push('💎' + r.crystals); if (r.shard) p.push(M.shard.icon + r.shard); if (r.essence) p.push('✦' + r.essence);
     if (r.heart) p.push(M.heart.icon + r.heart); if (r.tokens) p.push('🎭' + r.tokens);
     return p.join(' ');
   }
@@ -2407,6 +2408,7 @@
   function rewardText(r) {
     const M = CFG.materials, parts = [];
     if (r.tickets) parts.push('🎟 ' + r.tickets);
+    if (r.crystals) parts.push('💎 ' + r.crystals);
     if (r.essence) parts.push('✦ ' + fmt(r.essence));
     if (r.gold) parts.push('◆ ' + fmt(r.gold));
     if (r.shard) parts.push(M.shard.icon + ' ' + fmt(r.shard));

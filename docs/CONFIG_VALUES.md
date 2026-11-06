@@ -80,7 +80,7 @@
 | `unlocks.pets` | `1250` |
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
-| `disabled` | `["quests","login","pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","…` |
+| `disabled` | `["pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","bag","tutorial"]` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
@@ -200,14 +200,13 @@
 | `season` | список, 18 ключей — см. src/core.js |
 | `events` | список, 9 ключей — см. src/core.js |
 | `dailyGift.tickets` | `1` |
-| `dailyGift.shard` | `20` |
-| `login.days` | `[{"tickets":1},{"shard":30},{"essence":10},{"tickets":1},{"shard":40},{"essence":15},{"tickets":3,"shard":40},{"shard":50},{"tickets":1},{"essence":20},{"sha…` |
+| `login.days` | `[{"tickets":1},{"crystals":5},{"tickets":1},{"tickets":1},{"crystals":10},{"tickets":2},{"tickets":5,"crystals":30},{"tickets":1},{"crystals":10},{"tickets":…` |
 | `login.big` | `[7,14,21,28,30]` |
 | `timeTravel.hours` | `4` |
 | `timeTravel.freePerDay` | `1` |
 | `timeTravel.ticketCost` | `3` |
 | `timeTravel.paidPerDay` | `2` |
-| `questChests` | `[{"need":1,"reward":{"essence":10}},{"need":3,"reward":{"tickets":1,"shard":30}},{"need":5,"reward":{"tickets":2,"essence":20}},{"need":6,"reward":{"tickets"…` |
+| `questChests` | `[{"need":1,"reward":{"crystals":5}},{"need":2,"reward":{"tickets":1}},{"need":4,"reward":{"tickets":2,"crystals":10}}]` |
 | `classes.unlockFloor` | `100` |
 | `classes.pointsPerFloors` | `25` |
 | `classes.pointsPerRitual` | `3` |

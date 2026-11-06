@@ -93,6 +93,7 @@
   function grant(s, r) {
     if (r.souls) { s.souls = B.add(s.souls, r.souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, r.souls); }
     if (r.tickets) s.tickets += r.tickets;
+    if (r.crystals) s.crystals = (s.crystals | 0) + r.crystals;   // 0.116: 💎 из заданий, входа, достижений
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
     if (r.heart) s.materials.shard += heartShards(r.heart);   // 0.51: сердца слиты в осколки
