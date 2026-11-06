@@ -17,6 +17,7 @@
     return { stars, rank, cost: X.essence * (CONFIG.rarities.indexOf(T.rarity) + 1) };
   }
   function transferProgress(s, from, to) {
+    if ((CONFIG.disabled || []).includes('transfer')) return null;
     const p = transferPreview(s, from, to);
     if (!p || s.essence < p.cost) return null;
     s.essence -= p.cost;

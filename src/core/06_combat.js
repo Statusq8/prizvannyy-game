@@ -24,6 +24,7 @@
   // Фазы босса: пороги HP, на каждом — короткая уязвимость
   function phaseThresholds(e) { const P = CONFIG.bossPhases; return e.final ? P.final : P.normal; }
   function checkPhase(s, events) {
+    if ((CONFIG.disabled || []).includes('phases')) return;   // выключено решением пользователя (нет в GDD)
     const e = s.enemy, th = phaseThresholds(e);
     while (e.phase <= th.length && B.toNum(B.div(e.hp, e.maxHp)) <= th[e.phase - 1]) {
       e.phase++; e.vuln = CONFIG.bossPhases.vulnSec + treePower(s, 'vulnSec');
