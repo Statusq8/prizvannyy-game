@@ -24,7 +24,7 @@
       #pgProf.pfl #pfRes { position: absolute; right: 8px; top: calc(env(safe-area-inset-top) + 8px); display: flex; gap: 8px; height: 32px; }
       #pfRes { display: none; }
       #pgProf.pfl #pfBody { position: absolute !important; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top) + max(108px, 26cqw)) !important; z-index: 1; padding: 0 0 calc(env(safe-area-inset-bottom) + 4cqw) !important; overflow-y: auto !important; overflow-x: hidden; }
-      .pf { color: #f3ead8; font-family: Georgia, 'Times New Roman', serif; text-shadow: 0 1px 2px #000; }
+      .pf { min-height: 100%; display: flex; flex-direction: column; color: #f3ead8; font-family: Georgia, 'Times New Roman', serif; text-shadow: 0 1px 2px #000; }
       .pf button { font-family: inherit; padding: 0; color: inherit; border: none; background: none; }
       .pf .abs { position: absolute; box-sizing: border-box; }
       /* вкладки: 35–988 × 280–375 */
@@ -47,26 +47,26 @@
       .pf .pB img { width: 3.6cqw; height: 3.6cqw; object-fit: contain; }
       .pf .pB1 { left: 34.6cqw; width: 24.4cqw; } .pf .pB2 { left: 60.8cqw; width: 26.1cqw; }
       /* «Рекорды»: заголовок 290–735 × 795–865, панель 20–1005 × 825–1400 */
-      .pf .pRec { position: relative; margin: 4.9cqw 1.9cqw 0 2cqw; box-sizing: border-box; border: 4.4cqw solid transparent; border-image: ${u('list')} 45 fill stretch; padding: 1.5cqw 0 1.4cqw; }
+      .pf .pRec { position: relative; margin: 4.9cqw 1.9cqw 0 2cqw; box-sizing: border-box; border: 4.4cqw solid transparent; border-image: ${u('list')} 45 fill stretch; padding: 1.5cqw 0 1.4cqw; flex: 1; display: flex; flex-direction: column; }
       .pf .pHdr { position: absolute; left: 22cqw; top: -7.3cqw; width: 43.5cqw; height: 6.8cqw; background: ${u('hdr')} center / 100% 100% no-repeat; display: grid; place-items: center; font-size: 3.9cqw; font-weight: 800; color: #f6d690; }
-      .pf .pGrid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 2.4cqw; row-gap: 1.9cqw; }
+      .pf .pGrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 2.4cqw; row-gap: 1.9cqw; align-content: space-evenly; }
       .pf .pSt { position: relative; ${hb('stat', 35, 126, 10.9)} display: flex; flex-direction: column; align-items: center; justify-content: center; padding-left: 7.4cqw !important; }
       .pf .pSt img { position: absolute; left: -1.4cqw; top: 50%; transform: translateY(-50%); width: 9.8cqw; height: 9.4cqw; object-fit: contain; }
       .pf .pSt small { font-size: 2.3cqw; color: #f0e4d0; white-space: nowrap; }
       .pf .pSt b { font-size: 4cqw; color: #f6d690; white-space: nowrap; }
       /* «Статы»: панель 20–1005 × 395–1355, строки по 59 px */
-      .pf .pList { position: relative; margin: 2cqw 1.9cqw 0 2cqw; box-sizing: border-box; border: 4.4cqw solid transparent; border-image: ${u('list')} 45 fill stretch; padding: 0 2.6cqw 1.5cqw; }
+      .pf .pList { position: relative; margin: 2cqw 1.9cqw 0 2cqw; box-sizing: border-box; border: 4.4cqw solid transparent; border-image: ${u('list')} 45 fill stretch; padding: 0 2.6cqw 1.5cqw; flex: 1; display: flex; flex-direction: column; }
       .pf .pH2 { position: relative; height: 7.4cqw; display: flex; align-items: center; justify-content: center; margin: 0.6cqw 0 0.4cqw; }
       .pf .pH2::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 0.25cqw; background: linear-gradient(90deg, #0000, #b070ff 30%, #b070ff 70%, #0000); }
       .pf .pH2 span { position: relative; width: 30.3cqw; height: 6.4cqw; background: ${u('hdr2')} center / 100% 100% no-repeat; display: flex; align-items: center; justify-content: center; gap: 1cqw; font-size: 3.4cqw; font-weight: 800; color: #f6d690; }
       .pf .pH2 img { width: 3.6cqw; height: 3.6cqw; object-fit: contain; }
-      .pf .pRow { display: flex; align-items: center; height: 5.8cqw; border-bottom: 0.2cqw solid; border-image: linear-gradient(90deg, #0000, #b08050 15%, #b08050 85%, #0000) 1; }
+      .pf .pRow { display: flex; align-items: center; flex: 1 0 5.8cqw; max-height: 9cqw; border-bottom: 0.2cqw solid; border-image: linear-gradient(90deg, #0000, #b08050 15%, #b08050 85%, #0000) 1; }
       .pf .pRow img { flex: none; width: 4.9cqw; height: 4.4cqw; object-fit: contain; margin: 0 3.3cqw 0 2.4cqw; }
       .pf .pRow span { flex: 1; font-size: 2.9cqw; color: #f0e4d0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .pf .pRow b { font-size: 3.6cqw; color: #f6d690; white-space: nowrap; padding-right: 1cqw; }
       /* Титулы, Облики, Хроника — те же плашки во всю ширину */
       .pf .pNote { margin: 2.4cqw 5cqw 0; font-size: 2.5cqw; color: #d8c8ee; text-align: center; }
-      .pf .pItems { display: flex; flex-direction: column; gap: 1.4cqw; margin: 2cqw 2.6cqw 0; }
+      .pf .pItems { flex: 1; display: flex; flex-direction: column; gap: 1.4cqw; margin: 2cqw 2.6cqw 0; }
       .pf .pIt { position: relative; ${hb('stat', 35, 126, 10.9)} display: flex; align-items: center; gap: 1.6cqw; padding-left: 8.6cqw !important; }
       .pf .pIt > img { position: absolute; left: -0.6cqw; top: 50%; transform: translateY(-50%); width: 8.6cqw; height: 8cqw; object-fit: contain; }
       .pf .pIt div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
