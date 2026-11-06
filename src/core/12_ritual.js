@@ -1,5 +1,5 @@
-  // ==== src/core/12_ritual.js — Ритуал: души, сброс забега ====
-  // ---------- ритуал ----------
+  // ==== src/core/12_ritual.js — Регрессия: души, сброс забега ====
+  // ---------- регрессию ----------
   function canRitual(s) { return s.maxFloor >= CONFIG.ritual.floor; }
   // Стартовый этаж следующего забега зависит только от артефакта «Врата восхождения»
   function ritualStartFloor(s) { return Math.min(CONFIG.ritual.floor - 1, 1 + Math.floor(artPower(s, 'startFloor'))); }
@@ -10,7 +10,7 @@
     const lb = Math.log10(R.soulsBase) + (Math.min(F, K) - R.floor) * Math.log10(R.soulsGrowth)
       + (F > K ? K * Math.log(R.soulsGrowth) * Math.log10(F / K) : 0);
     const base = lb >= LOGLIM ? B.fromLog10(lb) : Math.floor(Math.pow(10, lb) + 1e-9);
-    // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
+    // бонус только за этажи выше прежнего рекорда (и выше этажа регрессии)
     const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
     return B.floor(B.mul(B.add(base, record), 1 + treePower(s, 'ritualSouls')));
   }
@@ -30,7 +30,7 @@
     s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
     const ms = ritualMilestone(s, s.rituals);
-    // ритуальные задания начинаются заново
+    // регрессионные задания начинаются заново
     s.quests.runBase = { ...s.counters };
     for (const q of CONFIG.quests.ritual) delete s.quests.claimed[q.id];
     s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
@@ -46,13 +46,13 @@
     // сохраняется: дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
     return { souls, start, milestone: ms, light };
   }
-  // Награда за n-й ритуал (1/10/100): титул (и облик) сразу, ценности — в центр наград
+  // Награда за n-й регрессию (1/10/100): титул (и облик) сразу, ценности — в центр наград
   function ritualMilestone(s, n) {
     const m = CONFIG.ritual.milestones.find(x => x.n === n);
     if (!m) return null;
     if (!s.titles.includes(m.title)) s.titles.push(m.title);
     if (!s.title) s.title = m.title;
     if (m.skin && !s.skins.includes(m.skin)) s.skins.push(m.skin);
-    inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
+    inboxAdd(s, 'Регрессия №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }

@@ -63,9 +63,9 @@
         { id: 'i_rune',   key: 'rune',    goal: 1,   name: 'Создать руну',               reward: { shard: 30 },   go: 'runes' },
         { id: 'i_evo',    key: 'evolve',  goal: 1,   name: 'Эволюционировать героя',     reward: { shard: 100 },  go: 'heroes' },
         { id: 'i_f400',   value: 'floor', goal: 400, name: 'Дойти до 400-го этажа',      reward: { tickets: 10 }, go: 'arena' },
-        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первый ритуал',     reward: { heart: 3 },    go: 'souls' },
+        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первую регрессию',     reward: { heart: 3 },    go: 'souls' },
       ],
-      // Ритуальные (GDD §11): считаются с начала текущего забега, обновляются после каждого ритуала
+      // Регрессияьные (GDD §11): считаются с начала текущего забега, обновляются после каждого регрессии
       ritual: [
         { id: 'r_f100',  value: 'runFloor', goal: 100, name: 'Забег: дойти до 100-го этажа',  reward: { shard: 60 },   go: 'arena' },
         { id: 'r_f250',  value: 'runFloor', goal: 250, name: 'Забег: дойти до 250-го этажа',  reward: { tickets: 3 },  go: 'arena' },
@@ -87,7 +87,7 @@
           title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
         { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 },
           title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
-        { id: 'a_ritual', name: 'Жрец ритуала',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
+        { id: 'a_ritual', name: 'Жрец регрессии',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
           title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
         { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 },
           title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
@@ -135,7 +135,7 @@
       { id: 'dmg',   name: 'Зелье ярости',   icon: '⚗', kind: 'allDmg', mult: 2, sec: 900,  shardsPer: 25, essence: 20, desc: '×2 всего урона' },
       { id: 'shard', name: 'Зелье жатвы',    icon: '🫙', kind: 'shards', mult: 2, sec: 1800, shardsPer: 0,  essence: 40, desc: '×2 осколков' },
     ] },
-    // 0.61 (ответ 182): вехи Башни — большие разовые награды за рекорд этажа (навсегда, ритуал не сбрасывает).
+    // 0.61 (ответ 182): вехи Башни — большие разовые награды за рекорд этажа (навсегда, регрессию не сбрасывает).
     // hero — открыть героя (если уже есть — copies копий), pet — питомец (если есть — frags фрагментов), art — уровни особого
     // артефакта; reward — в центр наград. Дальше последней — каждые every этажей награда after. Числа временные.
     towerMs: { list: [
@@ -155,7 +155,7 @@
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
     secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
-    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, ритуал не сбрасывает).
+    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, регрессию не сбрасывает).
     // Опыт: xp — очки за единицу. Уровень L нужен base·L^power опыта всего. За каждый уровень — reward; каждые frameEvery — рамка.
     prestige: { base: 500, power: 1.5,
       xp: { floor: 1, ritual: 200, hero: 100, star: 20, ach: 50, trophy: 30, page: 150, title: 300, secret: 500 },

@@ -96,7 +96,7 @@
     { const P = claimPrestige(s); if (P) add({ count: P.levels, reward: P.reward }); }
     return n ? { count: n, reward: sum } : null;
   }
-  // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
+  // Все титулы игры: за регрессии и за последнюю ступень достижений. { title, bonus, src, n | ach }
   function allTitles() {
     return [...CONFIG.ritual.milestones.map(m => ({ title: m.title, bonus: m.bonus, src: 'ritual', n: m.n })),
             ...CONFIG.achievements.list.filter(a => a.title).map(a => ({ title: a.title.name, bonus: a.title.bonus, src: 'ach', ach: a }))];

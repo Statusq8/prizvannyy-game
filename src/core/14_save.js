@@ -95,7 +95,7 @@
       d.bestCleared = Math.max(d.highestCleared | 0, (d.bestFloor | 0) - 1, 0);
     }
     if (d.v === 22) { d.v = 23; d.trial = { week: '', weekBest: 0, best: 0 }; }   // 0.43 → 0.44: испытательная башня
-    if (d.v === 23) {                                      // 0.50 → 0.51: титулы за уже проведённые ритуалы (без повторной выдачи ценностей)
+    if (d.v === 23) {                                      // 0.50 → 0.51: титулы за уже проведённые регрессии (без повторной выдачи ценностей)
       d.v = 24; d.titles = []; d.skins = [];
       for (const m of CONFIG.ritual.milestones) if ((d.rituals | 0) >= m.n) { d.titles.push(m.title); if (m.skin) d.skins.push(m.skin); }
       d.title = d.titles[0] || null;

@@ -99,7 +99,7 @@
   // ---------- материалы и эволюция ----------
   function shardsForBoss(f) { const M = CONFIG.materials; return M.shardsPerBoss + Math.floor(f / M.shardsFloorStep); }
   function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
-  // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
+  // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после регрессии)
   function bossMaterials(s, f) {
     return { shard: Math.ceil(shardsForBoss(f) * shardMult(s)) + heartShards(f > s.heartFloor ? heartsForFloor(f) : 0), heart: 0, firstHeart: f > s.heartFloor && heartsForFloor(f) > 0 };
   }

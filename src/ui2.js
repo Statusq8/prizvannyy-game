@@ -6,7 +6,7 @@
     const RC = { E: '#9a96a6', D: '#c8783a', C: '#2fd07a', B: '#3a8cff', A: '#b04dff', S: '#ffb52e', SS: '#ff3a4a', SSS: '#9fe6ff', GOD: '#fff2a0' };  // 0.73: цвета рангов по референсу пользователя (сталь, бронза, изумруд, сапфир, аметист, золото, рубин, платина, спектр)
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
-    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
+    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и регрессия'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
       ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
@@ -85,7 +85,7 @@
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
       // 0.69: «Другие разделы» по группам
       const GR = [['Герои', [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['diary', '📖', 'Дневник']]],
-        ['Сила', [['@souls', '👻', 'Души и ритуал'], ['@tree', '✴', 'Дерево навыков'], ['altar', '🕯', 'Алтарь'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости']]],
+        ['Сила', [['@souls', '👻', 'Души и регрессия'], ['@tree', '✴', 'Дерево навыков'], ['altar', '🕯', 'Алтарь'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости']]],
         ['Награды', [['quests', '📜', 'Задания'], ['inbox', '📬', 'Почта'], ['@login', '📅', 'Вход 7/30'], ['season', '🎖', 'Сезон'], ['events', '🏮', 'События']]],
         ['Прочее', [['@shop', '🛒', 'Магазин'], ['@prof', '👤', 'Профиль'], ['@set', '⚙', 'Настройки'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Копии']]]];
       for (const [g, list] of GR) h += '<div class="grpT">' + g.toUpperCase() + '</div><div class="mMore">' +
@@ -163,7 +163,7 @@
         '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>', '', btn('hero', el.buyTap));
       // 0.101 (решение пользователя 06.11): список по возрастанию урона, как в «Крушителях» — сверху слабые, внизу сильные,
       // ниже всех — «Новый герой» из цепочки. Порядок по силе героя (урон на 1 уровне со звёздами и эволюцией), поэтому
-      // карточки не прыгают при прокачке; после ритуала все открытые на своих местах — листаешь вниз к сильнейшим.
+      // карточки не прыгают при прокачке; после регрессии все открытые на своих местах — листаешь вниз к сильнейшим.
       const pw = id => B.log10(B.max(B.mul(C.allyDpsAt(id, 1), C.starMult(s, id) * C.evoMult(s, id)), 1e-300));
       const list = CFG.allies.slice().sort((a, b) => pw(a.id) - pw(b.id));
       for (const a of list) {
@@ -321,11 +321,11 @@
     // Резервные копии: только прошедшие проверку; откат — с подтверждением, текущее состояние тоже сохраняется
     function popBackups() {
       const list = backupList();
-      const row = c => '<div class="bakRow"><b>' + (c.kind === 'ritual' ? '🕯 Перед ритуалом' : '💾 Автокопия') + ' · ' + new Date(c.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</b>' +
+      const row = c => '<div class="bakRow"><b>' + (c.kind === 'ritual' ? '🕯 Перед регрессией' : '💾 Автокопия') + ' · ' + new Date(c.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</b>' +
         '<p>Этаж ' + c.st.floor + ' (рекорд ' + c.st.bestFloor + ') · ◆ ' + fmt(c.st.gold) + ' · 👻 ' + fmt(c.st.souls) + '</p>' +
         '<button class="upBtn alt" style="width:100%;min-height:34px" data-rest="' + c.key + '">Вернуть эту копию</button></div>';
       $('ui2PopBox').style.cssText = '';
-      $('ui2PopBox').innerHTML = '<div class="big">💾</div><h3>Резервные копии</h3><p>Три копии обновляются по кругу раз в 5 минут, ещё одна делается перед каждым ритуалом. Если сохранение повредится, игра сама поднимется из последней целой копии.</p>' +
+      $('ui2PopBox').innerHTML = '<div class="big">💾</div><h3>Резервные копии</h3><p>Три копии обновляются по кругу раз в 5 минут, ещё одна делается перед каждой регрессией. Если сохранение повредится, игра сама поднимется из последней целой копии.</p>' +
         (list.length ? list.map(row).join('') : '<p>Копий пока нет — первая появится в течение 5 минут игры.</p>') +
         '<div class="row" style="margin-top:12px"><button class="upBtn" data-pclose>Закрыть</button></div>';
       $('ui2Pop').classList.add('show');
@@ -475,7 +475,7 @@
     });
 
 
-    // ===================== 0.45: Портал, Души и ритуал, PvE — новые страницы =====================
+    // ===================== 0.45: Портал, Души и регрессия, PvE — новые страницы =====================
     let xKind = 'portal', ban = 'normal', showHist = false;
     const xStack = [];
     function openX(k) { if (page === 'x' && xKind !== k) xStack.push(xKind); xKind = k; showHist = false; open('x'); $('xBody').scrollTop = 0; }
@@ -513,7 +513,7 @@
         else setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
         setHtml('xBody', showHist ? histHtml() : portalHtml());
       } else if (xKind === 'souls') {
-        $('xTitle').textContent = 'Души и ритуал'; aux.style.display = 'none';
+        $('xTitle').textContent = 'Души и регрессия'; aux.style.display = 'none';
         setHtml('xTop', cur('👻', fmt(s.souls)));
         setHtml('xBody', soulsHtml2());
       } else {
@@ -695,19 +695,19 @@
       ban = L[(i + (dx < 0 ? 1 : -1) + L.length) % L.length]; click(); lastHtml = {}; refresh();
     });
 
-    // ---------- Души и ритуал ----------
+    // ---------- Души и регрессия ----------
     function soulsHtml2() {
       const R = CFG.ritual, ready = C.canRitual(s);
       let h = '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Неизрасходованные души: ' + pctUp(C.soulMult(s)) + ' всего урона (+' + Math.round(CFG.souls.dpsPerSoul * 100) + '% за душу). Траты на артефакты и дерево уменьшают этот бонус — сравнивайте DPS до и после.</p></div>';
-      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Ритуал</h3>' +
-        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед ритуалом делается резервная копия.</p>'
-               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
-        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмный ритуал' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
-        (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлый ритуал<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
+      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Регрессия</h3>' +
+        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед регрессией делается резервная копия.</p>'
+               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', регрессий: ' + s.rituals : '') + '.</p>') +
+        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмная регрессия' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
+        (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлая регрессия<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
       h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
       for (const b of CFG.soulTree) {
         const opn = C.branchOpen(s, b);
-        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ритуал' + (b.rituals === 1 ? 'а' : 'ов') + '</small>') + '</div>';
+        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ' + (b.rituals === 1 ? 'регрессии' : 'регрессий') + '</small>') + '</div>';
         b.nodes.forEach((n, i) => {
           const lv = C.treeLevel(s, n.id), no = C.treeNodeOpen(s, n.id), c = C.treeCost(s, n.id), can = opn && no && c != null && B.gte(s.souls, c);
           const prev = c != null && no && opn ? C.previewSpend(s, 'tree', n.id, TPS_PREVIEW) : null;
@@ -723,13 +723,13 @@
       const light = kind === 'light';
       if (light && (s.crystals | 0) < CFG.ritual.light.crystals) return;
       const souls = light ? B.floor(B.mul(C.ritualSouls(s), CFG.ritual.light.mult)) : C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
-      ask('<b>' + (light ? 'Светлый ритуал · 💎 ' + CFG.ritual.light.crystals : 'Тёмный ритуал') + '</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+      ask('<b>' + (light ? 'Светлая регрессия · 💎 ' + CFG.ritual.light.crystals : 'Тёмная регрессия') + '</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
-        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести регрессию', () => {
         writeCopy(PRE_RIT);
         const r = C.ritual(s, light ? 'light' : 'dark'); if (!r) return;
         dmgLog.length = 0; restartAnim('spawn');
-        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        toast('Регрессия проведена<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
         if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>+' + Math.round(r.milestone.bonus.per * 100) + '% ' + (r.milestone.bonus.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · награды — в центре наград 📬</small>'), 2500);
         save(); render();
       });

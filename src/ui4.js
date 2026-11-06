@@ -1,4 +1,4 @@
-  // ===================== 0.74: лесенка открытий, книга, ритуал, кузница, квест справа (опрос docs/ui/ANSWERS_UNLOCKS.md) =====================
+  // ===================== 0.74: лесенка открытий, книга, регрессию, кузница, квест справа (опрос docs/ui/ANSWERS_UNLOCKS.md) =====================
   (function () {
     const U = window.U2, sys = window.U3.sys, UA = window.UI_ART || {};
     const on = k => C.unlockedAt(s, k), best = () => Math.max(s.bestFloor | 0, s.maxFloor | 0);
@@ -8,12 +8,12 @@
     // ---------- мечи → сразу «Прокачка» (вкладки сверху, ответ 32) ----------
     const om = $('cbMenu'), menuBtn = om.cloneNode(true); om.replaceWith(menuBtn);
     menuBtn.addEventListener('click', e => { e.stopPropagation(); U.press(menuBtn); U.sec('up'); });
-    // ---------- маленькие кнопки: книга (слева), ритуал и кузница (слева), портал (справа) ----------
+    // ---------- маленькие кнопки: книга (слева), регрессию и кузница (слева), портал (справа) ----------
     function sm(id, ico, art, label) {
       const b = mk('button', id, 'cBtn sm cbA', img(art) || '<span class="ico">' + ico + '</span>', host); b.setAttribute('aria-label', label); b.dataset.ua = 1; return b;
     }
     const book = sm('cbBook', '📕', 'st_book', 'Книга: задания, почта, события, магазин, дневник');
-    const rit = sm('cbRitual', '👻', 'md_ritual', 'Ритуал');
+    const rit = sm('cbRitual', '👻', 'md_ritual', 'Регрессия');
     const forge = sm('cbForge', '⚒', 'fg_anvil', 'Кузница');
     const list = mk('div', 'bookList', '', '', host);
     const BOOK = [['quests', 'ic_quests', 'Задания', 'quests'], ['inbox', 'q_gift', 'Почта', null], ['events', 'q_event', 'События', 'events'], ['season', 'pr_medal', 'Сезон', 'season'], ['@shop', 'sh_cart', 'Магазин', 'shop'], ['diary', 'st_book', 'Дневник', null]];
@@ -31,7 +31,7 @@
         btns: [{ t: 'Закрыть' }], onShow: w => w.querySelector('.rowList').addEventListener('click', ev => { const b = ev.target.closest('[data-fg]'); if (!b) return; $('sysOv').classList.remove('show'); U.home(); U.openOld(b.dataset.fg); }) }); });
     // ---------- «?» в разделах (ответ 52) ----------
     const HELP = { up: 'Прокачка: золотом повышайте уровень главного героя и союзников. Каждые несколько уровней — веха ×3 урона. Ранг (потолок уровня) — за осколки Башни. Звёзды — слиянием копий героя и «корма».',
-      art: 'Артефакты: вечные бонусы, переживают ритуал. Покупаются и улучшаются душами. Первый артефакт — за мега-босса 50 этажа.',
+      art: 'Артефакты: вечные бонусы, переживают регрессию. Покупаются и улучшаются душами. Первый артефакт — за мега-босса 50 этажа.',
       bag: 'Сумка: все предметы. Нажмите на предмет — описание, «Использовать», «Продать», «Где добыть». Кости можно продавать пачкой.',
       pets: 'Питомцы: сильно усиливают урон (×5 и больше с эволюцией). Уровень — за золото, эволюция — за фрагменты из Теневой башни.' };
     const qBtn = mk('button', 'secHelp', 'iBtn', '?'); $('sTitle').parentNode.appendChild(qBtn);
@@ -63,10 +63,10 @@
       { t: 'Улучши артефакт', ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
       { t: 'Дойди до 100 этажа', ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
       { t: 'Дойди до 200 этажа', ok: () => best() >= 200, r: { tickets: 10 }, go: 'battle' },
-      { t: 'Проведи первый ритуал', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
+      { t: 'Проведи первую регрессию', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
     ];
     const NAMES = { ult: 'ульта героя', quests: 'задания', login: 'награда за вход', portal: 'портал призыва', shop: 'магазин', artifacts: 'артефакты', pve: 'PvE', runes: 'руны', forge: 'кузница',
-      ritual: 'ритуал', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
+      ritual: 'регрессия', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
     function nextUnlock() {
       const b = best(); let f = Infinity; for (const k in CFG.unlocks) if (CFG.unlocks[k] > b) f = Math.min(f, CFG.unlocks[k]);
       if (f === Infinity) return null;

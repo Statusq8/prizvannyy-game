@@ -117,7 +117,7 @@
       }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       const bone = unlockedAt(s, 'bones') ? rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor) : null;
-      // 0.74 (ответы 8, 57): мега-босс даёт души и без ритуала; первый мега-босс (этаж 50) — первый артефакт даром
+      // 0.74 (ответы 8, 57): мега-босс даёт души и без регрессии; первый мега-босс (этаж 50) — первый артефакт даром
       if (isFinalBoss(s.floor) && !s.mode && s.floor >= (s.megaSoulsFloor | 0) + 1) {
         s.megaSoulsFloor = s.floor;
         const M = CONFIG.megaSouls, n = Math.ceil(M.base * Math.pow(M.per50, s.floor / 50 - 1));
