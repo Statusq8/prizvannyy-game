@@ -822,3 +822,6 @@
 
 ## 0.107 — Рынок: души вместо золота, 4 ряда, зелья
 - Решение пользователя: золото → души; не растягивать, а добавить ряд (16 товаров); новый товар — зелья. core: cur 'souls', mega × soulsPerMega, kind 'potion' (s.potions, предел CONFIG.alchemy.maxSec). Экран: души в плашке и на кнопках, зелья значками (промпт листа иконок — docs/ui/MARKET.md). Тест обновлён.
+
+## 0.108 — иконки зелий на Рынке
+- Лист пользователя docs/reference/market/sheet_c.png → tools/marketcut.py → assets/market/p_gold, p_dmg, p_shard.

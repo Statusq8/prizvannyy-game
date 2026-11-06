@@ -101,6 +101,7 @@
       #pgX.mkl .mkBuy { align-self: center; }
       #pgX.mkl .mkSold { top: 38%; }
       #pgX.mkl .mkPot { font-size: 10.43cqw; line-height: 1; filter: drop-shadow(0 0 0.95cqw #b060ff); }
+      #pgX.mkl .mkIc { overflow: hidden; } #pgX.mkl .mkIc > img { max-height: 100%; } #pgX.mkl .mkIc > img.mkPotI { width: 78%; height: 78%; margin: 11%; }
     `;
     document.head.appendChild(css);
   })();
