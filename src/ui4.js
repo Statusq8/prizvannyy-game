@@ -46,7 +46,8 @@
     }
     // ---------- квест справа: задача с наградой + следующая функция (ответы 35–38) ----------
     const QK = 'prizvannyy_story';
-    let st = { i: 0, fold: false }; try { Object.assign(st, JSON.parse(localStorage.getItem(QK) || '{}')); } catch (e) {}
+    let st = { i: 0, fold: true }; try { Object.assign(st, JSON.parse(localStorage.getItem(QK) || '{}')); } catch (e) {}
+    if (st.fv !== 1) { st.fv = 1; st.fold = true; }   // 0.130: по умолчанию свиток свёрнут (решение пользователя)
     const saveQ = () => { try { localStorage.setItem(QK, JSON.stringify(st)); } catch (e) {} };
     const hired = id => s.allies[id] && s.allies[id].level > 0;
     const STARTERS = CFG.allies.filter(a => a.starter).map(a => a.id);
@@ -94,7 +95,7 @@
       if (k === 'fold') st.fold = true; else if (k === 'unfold') st.fold = false;
       else if (k === 'claim' && q && q.ok()) {
         if (q.r.gold) s.gold = B.add(s.gold, q.r.gold); if (q.r.tickets) s.tickets += q.r.tickets; if (q.r.crystals) s.crystals = (s.crystals | 0) + q.r.crystals; if (q.r.shard) s.materials.shard += q.r.shard;
-        toast('Квест выполнен<small>' + rTxt(q.r) + '</small>'); st.i++; save(); render();
+        toast('Квест выполнен<small>' + rTxt(q.r) + '</small>'); st.i++; st.fold = true; save(); render();
       } else if (k === 'go' && q) {
         U.home();
         if (q.go === 'up' || q.go === 'art') U.sec(q.go); else if (q.go === 'portal') U.openX('portal'); else if (q.go === 'ritual') U.openX(window.RG_ART ? 'regress' : 'souls'); else U.show(null);
