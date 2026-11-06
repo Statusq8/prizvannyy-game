@@ -72,3 +72,15 @@ save(load('stat_attack'), 'ic_attack', 64)
 save(blank(load('upgrade_normal'), 192, 792, 70, 236, 186, 798), 'btn_up', 360)
 save(blank(load('upgrade_disabled'), 110, 715, 58, 208, 92, 726), 'btn_off', 360)
 Image.open(SRC + 'upgrade_tower_background_9x16.png').convert('RGB').resize((720, 1279), Image.LANCZOS).save(OUT + 'bg.webp', 'WEBP', quality=80, method=6)
+
+
+# 0.84.2: квадратные вкладки как в Крушителях — значок из вкладки пакета (без плашки и подписи)
+def tab_icon(t, y1):
+    a = load('tab_' + t + '_normal'); h, w = a.shape[:2]
+    a = a[:int(h * y1), int(w * .25):int(w * .75)].copy()
+    rgb = a[..., :3].astype(float) / 255; mx, mn = rgb.max(-1), rgb.min(-1); sat = (mx - mn) / (mx + 1e-6)
+    a[..., 3] = np.where((sat > .38) & (mx > .3), a[..., 3], 0)
+    a = big(a, 2, 40); save(a, 'ti_' + t, 140)
+
+
+for t, y1 in [('upgrade', .54), ('artifacts', .56), ('bag', .56), ('pets', .52)]: tab_icon(t, y1)

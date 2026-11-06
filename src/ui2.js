@@ -107,7 +107,8 @@
     function renderSec() {
       const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : id === 'bag' ? C.unlockedAt(s, 'bag') : true);
       if (!SECS_ON.some(x => x[0] === sec)) sec = 'up';
-      setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
+      const TB = { up: !el.buyTap.disabled || CFG.allies.some(a => s.allies[a.id].level > 0 && allyUi[a.id] && !allyUi[a.id].btn.disabled), art: navBang.souls, pets: CFG.pets.list.some(p => C.canEvolvePet(s, p.id)) };
+      setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + (window.HQ_ART && TB[id] ? '<i class="hqBang">!</i>' : '') + '</button>').join(''));
       const top = sec === 'up' && window.HQ_ART ? '<div class="cur d"><i></i>' + (($('tbDps') || {}).textContent || '0') + '</div><div class="cur f"><i></i>' + fmt(C.tapHit(s)) + '</div><div class="cur g"><i></i>' + fmt(s.gold) + '</div>' +
           '<div class="hqMat"><span><i>' + M.shard.icon + '</i>' + fmt(s.materials.shard) + '</span><span><i>🎟</i>' + fmt(s.tickets) + '</span></div>'
         : sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
@@ -149,8 +150,8 @@
       const QM = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
       let h = '';
       let mb = $('hqMult'); if (!mb) { mb = document.createElement('button'); mb.id = 'hqMult'; $('sTitle').parentNode.appendChild(mb);
-        mb.addEventListener('click', () => { click(); const i = (QM.findIndex(x => x[0] === mult) + 1) % QM.length; mult = QM[i][0]; const m = MULTS.find(x => x[0] === mult); if (m) $('multCycle').textContent = m[1]; lastHtml = {}; refresh(); }); }
-      mb.innerHTML = '<b>' + ((QM.find(x => x[0] === mult) || QM[0])[1]) + '</b><i>▼</i>'; mb.style.display = sec === 'up' ? '' : 'none';
+        mb.addEventListener('click', () => { click(); $('multCycle').click(); lastHtml = {}; refresh(); }); }
+      mb.innerHTML = '<b>' + ((MULTS.find(x => x[0] === mult) || MULTS[0])[1]).replace('×', 'x') + '</b>'; mb.style.display = sec === 'up' ? '' : 'none';
       const btn = (key, src) => {
         const t = src.innerHTML, m = /^(.*?)<span>(.*)<\/span>$/.exec(t) || [0, t, ''];
         return '<button class="hqBtn' + (src.disabled ? ' off' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '><img src="' + A[src.disabled ? 'btn_off' : 'btn_up'] + '" alt=""><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
