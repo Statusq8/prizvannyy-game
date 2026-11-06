@@ -16,3 +16,6 @@ Mobile game battle screen fragment, vertical 9:16 portrait, dark fantasy manhwa 
 ```
 Use the attached mockup as the exact style reference — same ornaments, colors and shapes. Game UI asset sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 2x2 grid with wide spacing, each item separate, NO TEXT anywhere: 1) tall open parchment scroll with dark wood and gold rollers on top and bottom, a violet ribbon in the top left corner and a violet wax seal with a tower emblem and ribbons hanging from the bottom roller (empty parchment); 2) small dark header plate with gold-violet border (empty); 3) small square dark button with a gold minus sign; 4) small rolled-up parchment scroll with a violet wax seal and violet ribbons (collapsed icon).
 ```
+
+## Собрано — 0.130
+Лист → tools/scrollcut.py → assets/scroll; стили — src/scroll.js (перекрывает #questPanel из ui3.css), разметка прежняя (ui4.js).
