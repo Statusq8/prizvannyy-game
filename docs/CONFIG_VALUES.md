@@ -12,8 +12,9 @@
 | `maxTapsPerSec` | `15` |
 | `enemyBaseHp` | `10` |
 | `enemyHpGrowth` | `1.24` |
-| `floorCurve.knee` | `1000` |
+| `floorCurve.knee` | `100` |
 | `floorCurve.slope` | `0.99` |
+| `floorCurve.late` | `0.6` |
 | `bossHpMult` | `6` |
 | `bossTimeSec` | `30` |
 | `goldBase` | `0.25` |
@@ -79,7 +80,7 @@
 | `unlocks.pets` | `1250` |
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
-| `disabled` | `["quests","login","pve","runes","ritual","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","pr…` |
+| `disabled` | `["quests","login","pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
@@ -87,8 +88,9 @@
 | `cage.taps` | `20` |
 | `cage.name` | `"Клетка с Шорохом"` |
 | `ritual.floor` | `200` |
-| `ritual.soulsBase` | `50` |
-| `ritual.soulsGrowth` | `1.04` |
+| `ritual.soulsBase` | `500` |
+| `ritual.soulsGrowth` | `1.08` |
+| `ritual.light` | `{"crystals":100,"mult":2}` |
 | `ritual.soulsKnee` | `1000` |
 | `ritual.recordBonus` | `1` |
 | `ritual.milestones` | `[{"n":1,"title":"Пробуждённый","bonus":{"kind":"allDmg","per":0.05},"reward":{"tickets":10,"essence":50}},{"n":10,"title":"Жрец Башни","bonus":{"kind":"gold"…` |

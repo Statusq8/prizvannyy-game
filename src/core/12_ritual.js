@@ -19,10 +19,14 @@
   // (иначе высокий стартовый этаж с нулём золота и уровнями 0 мог запереть забег навсегда)
   function gateStartGold(s) { let g = 0; for (let f = 1; f < ritualStartFloor(s); f++) g = B.add(g, firstClearGold(f)); return g; }
   function ritualStartGold(s) { return B.ceil(B.add(B.mul(treePower(s, 'startGold'), killGold(ritualStartFloor(s), true)), gateStartGold(s))); }
-  function ritual(s) {
+  // kind: 'dark' — бесплатно; 'light' — за 💎 (CONFIG.ritual.light), души ×mult (как в «Крушителях»)
+  function ritual(s, kind) {
     if (!canRitual(s)) return null;
+    const L = CONFIG.ritual.light, light = kind === 'light';
+    if (light && (s.crystals | 0) < L.crystals) return null;
     if (s.mode) exitMode(s);
-    const souls = ritualSouls(s);
+    if (light) s.crystals -= L.crystals;
+    const souls = light ? B.floor(B.mul(ritualSouls(s), L.mult)) : ritualSouls(s);
     s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
     const ms = ritualMilestone(s, s.rituals);
@@ -40,7 +44,7 @@
     s.enemyIndex = 1; s.farming = false; s.reserveAcc = 0; s.heroAutoAcc = 0;
     spawn(s);
     // сохраняется: дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
-    return { souls, start, milestone: ms };
+    return { souls, start, milestone: ms, light };
   }
   // Награда за n-й ритуал (1/10/100): титул (и облик) сразу, ценности — в центр наград
   function ritualMilestone(s, n) {
