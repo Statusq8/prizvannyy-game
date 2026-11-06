@@ -125,7 +125,7 @@
       slots: 8, refreshSec: 3 * 3600, refreshCost: 20,
       goods: [
         { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
-        { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва ×5' },
+        { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва' },
         { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'gold', price: 600, w: 3, name: 'Копия героя' },
         { id: 'copyA', kind: 'copy', ranks: ['A'], cur: 'crystal', price: 400, w: 1, name: 'Герой ранга A' },
         { id: 'shard', kind: 'shard', bosses: 5, cur: 'gold', price: 250, w: 3, name: 'Осколки Башни' },
