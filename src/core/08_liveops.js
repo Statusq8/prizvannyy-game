@@ -44,7 +44,8 @@
   function modeRule(s) { if (s.mode) return s.mode.rule || null; const cm = curseMod(s); return cm && cm.rule || null; }
 
   // ---------- центр наград ----------
-  function inboxAdd(s, title, reward) { s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
+  // 0.121: почта выключена — награда выдаётся сразу (иначе застревала в невидимой почте)
+  function inboxAdd(s, title, reward) { if ((CONFIG.disabled || []).includes('mail')) { grant(s, reward); return; } s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
   function claimInbox(s, id) {
     const i = s.inbox.findIndex(x => x.id === id);
     if (i < 0) return null;
