@@ -35,3 +35,18 @@ for i, nm in enumerate(B):
     save(rgba[round(r * H / 2):round((r + 1) * H / 2), round(c * W / 4):round((c + 1) * W / 4)].copy(), nm, 200)
 
 bg = Image.open(R + 'bg.png').convert('RGB'); bg.resize((720, round(bg.height * 720 / bg.width)), Image.LANCZOS).save(OUT + 'bg.webp', 'WEBP', quality=80, method=6)
+
+# 0.104: «точь-в-точь как макет» — фон делится на верх (шатры) и низ (торговец); между ними — ровный тёмный цвет фона.
+# Экран телефона выше макета: верх прижимается к верху, низ — к низу, лишняя высота уходит в тёмную середину.
+full = Image.open(R + 'bg.png').convert('RGB'); FW, FH = full.size
+top = full.crop((0, 0, FW, 600)); bot = full.crop((0, 880, FW, FH))
+from PIL import ImageDraw
+def fade(im, down):
+    a = Image.new('L', im.size, 255); d = ImageDraw.Draw(a); h = im.size[1]
+    for i in range(80):
+        y = h - 80 + i if down else 79 - i
+        d.line([(0, y), (im.size[0], y)], fill=int(255 * (1 - i / 80)))
+    out = im.convert('RGBA'); out.putalpha(a); return out
+fade(top, True).resize((720, round(600 * 720 / FW)), Image.LANCZOS).save(OUT + 'bg_top.webp', 'WEBP', quality=82, method=6)
+fade(bot, False).resize((720, round((FH - 880) * 720 / FW)), Image.LANCZOS).save(OUT + 'bg_bot.webp', 'WEBP', quality=82, method=6)
+print('bg_top / bg_bot')
