@@ -1,0 +1,290 @@
+[
+  {
+    "file": "card_icons_reference_sheet.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "alpha_min": 255,
+    "alpha_max": 255
+  },
+  {
+    "file": "hero_card_universal.png",
+    "size": [
+      2172,
+      724
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "nav_back.png",
+    "size": [
+      331,
+      243
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "nav_heroes_title.png",
+    "size": [
+      1245,
+      338
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "nav_quantity_dropdown.png",
+    "size": [
+      485,
+      208
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "nav_quantity_expanded.png",
+    "size": [
+      1252,
+      251
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "navigation_components_source_sheet.png",
+    "size": [
+      2172,
+      724
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_A.png",
+    "size": [
+      435,
+      345
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_B.png",
+    "size": [
+      425,
+      345
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_C.png",
+    "size": [
+      460,
+      340
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_D.png",
+    "size": [
+      435,
+      340
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_E.png",
+    "size": [
+      425,
+      340
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_GOD.png",
+    "size": [
+      460,
+      349
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_S.png",
+    "size": [
+      460,
+      345
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_SS.png",
+    "size": [
+      425,
+      349
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "portrait_frame_SSS.png",
+    "size": [
+      435,
+      349
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "resource_crystal.png",
+    "size": [
+      722,
+      677
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "resource_fist.png",
+    "size": [
+      722,
+      682
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "resource_gold.png",
+    "size": [
+      712,
+      673
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_artifacts_normal.png",
+    "size": [
+      543,
+      311
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_artifacts_selected.png",
+    "size": [
+      543,
+      376
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_bag_normal.png",
+    "size": [
+      543,
+      309
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_bag_selected.png",
+    "size": [
+      543,
+      376
+    ],
+    "alpha_min": 0,
+    "alpha_max": 254
+  },
+  {
+    "file": "tab_pets_normal.png",
+    "size": [
+      513,
+      313
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_pets_selected.png",
+    "size": [
+      540,
+      370
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_upgrade_normal.png",
+    "size": [
+      516,
+      299
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "tab_upgrade_selected.png",
+    "size": [
+      543,
+      394
+    ],
+    "alpha_min": 0,
+    "alpha_max": 253
+  },
+  {
+    "file": "upgrade_disabled.png",
+    "size": [
+      900,
+      300
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "upgrade_glow.png",
+    "size": [
+      900,
+      300
+    ],
+    "alpha_min": 0,
+    "alpha_max": 254
+  },
+  {
+    "file": "upgrade_normal.png",
+    "size": [
+      900,
+      300
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "upgrade_pressed.png",
+    "size": [
+      900,
+      300
+    ],
+    "alpha_min": 0,
+    "alpha_max": 255
+  },
+  {
+    "file": "upgrade_tower_background_9x16.png",
+    "size": [
+      941,
+      1672
+    ],
+    "alpha_min": 255,
+    "alpha_max": 255
+  }
+]

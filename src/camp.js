@@ -64,6 +64,9 @@
       sc.scrollTop = sc.scrollHeight; sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
     }
     function close() { ov.classList.remove('show'); }
+    // пришли в раздел из лагеря — «назад» возвращает в лагерь (как в Idle Heroes)
+    let fromCamp = false;
+    document.addEventListener('click', e => { if (fromCamp && e.target.closest('.pg [data-back], .pg .backBtn, #oldBack')) { fromCamp = false; setTimeout(open, 0); } }, true);
     window.U3.camp = open;
     addEventListener('resize', () => { if (ov.classList.contains('show')) size(); });
     // мышью — перетаскивание (на телефоне листается пальцем само)
@@ -74,7 +77,7 @@
     map.addEventListener('click', e => {
       const b = e.target.closest('.cIsl'); if (!b || moved) { moved = false; return; }
       const o = ISL.find(x => x.id === b.dataset.id); U.press(b);
-      setTimeout(() => { if (o.id !== 'gates') close(); o.go(); }, 120);
+      setTimeout(() => { if (o.id !== 'gates') { close(); fromCamp = true; } o.go(); }, 120);
     });
     $('campBack').addEventListener('click', () => { U.click(); close(); });
     $('campAll').addEventListener('click', e => { U.click(); all = !all; e.currentTarget.classList.toggle('on', all); refresh(); });
