@@ -10484,7 +10484,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       .st .sPan { flex: 1; margin: 0 1.9cqw 0 1.8cqw; box-sizing: border-box; border: 4.4cqw solid transparent; border-image: ${u('list')} 45 fill stretch; padding: 0 2.6cqw 1cqw; display: flex; flex-direction: column; }
       .st .sH { position: relative; flex: none; height: 8.6cqw; display: grid; place-items: center; margin: 0.4cqw 0; }
       .st .sH::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 0.25cqw; background: linear-gradient(90deg, #0000, #b070ff 25%, #e0b0ff 50%, #b070ff 75%, #0000); }
-      .st .sH span { position: relative; width: 41.8cqw; height: 8.6cqw; background: ${u('hdr')} center / 100% 100% no-repeat; display: flex; align-items: center; justify-content: center; gap: 1.2cqw; font-size: 3.5cqw; font-weight: 800; color: #f6d690; }
+      .st .sH span { position: relative; height: 8.6cqw; box-sizing: border-box; padding: 0 0.6cqw; white-space: nowrap; border-style: solid; border-width: 0 ${190 * 8.6 / 126}cqw; border-image: ${u('hdr')} 0 190 fill stretch; display: flex; align-items: center; justify-content: center; gap: 1.2cqw; font-size: 3.5cqw; font-weight: 800; color: #f6d690; }
       .st .sH img { width: 4.2cqw; height: 4cqw; object-fit: contain; }
       .st .sR { width: 100%; display: flex; align-items: center; flex: 1 0 5.4cqw; max-height: 8cqw; border-bottom: 0.2cqw solid; border-image: linear-gradient(90deg, #0000, #b08050 12%, #b08050 88%, #0000) 1; }
       .st .sR > img { flex: none; width: 5.2cqw; height: 4.6cqw; object-fit: contain; margin: 0 3.3cqw 0 2.4cqw; }
@@ -10498,7 +10498,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       .st .sR.go { cursor: pointer; }
       .st .sR .ar { flex: none; width: 2.4cqw; height: 3.4cqw; margin-right: 2.4cqw; background: ${u('arrow')} center / contain no-repeat; }
       .st .sR.lk { opacity: .5; }
-      .st .sR.dg { background: ${u('danger')} center / 100% 100% no-repeat; border-bottom-color: transparent; }
+      .st .sR.dg { background: linear-gradient(90deg, #0000, #5a0808 12%, #7a1010 50%, #5a0808 88%, #0000); box-shadow: inset 0 0.3cqw 0 -0.1cqw #ff4a3a80, inset 0 -0.3cqw 0 -0.1cqw #ff4a3a80; border-image: none; border-bottom: none; }
       .st .sR.dg > span { color: #ff9a8a; }
       .st .sVer { flex: none; align-self: center; margin-top: 2.4cqw; width: 23cqw; height: 6.2cqw; background: ${u('ver')} center / 100% 100% no-repeat; display: grid; place-items: center; font-size: 2.9cqw; font-weight: 800; color: #f6d690; }
     `;
