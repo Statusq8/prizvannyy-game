@@ -52,18 +52,18 @@
     const STARTERS = CFG.allies.filter(a => a.starter).map(a => a.id);
     const unlockedHeroes = () => CFG.allies.filter(a => s.heroes[a.id].unlocked).length;
     const STORY = [
-      { t: 'Найми первого союзника', ok: () => STARTERS.some(hired), r: { gold: 50 }, go: 'up' },
-      { t: 'Подними главного героя до 10 ур.', ok: () => s.tapLevel >= 10, r: { gold: 200 }, go: 'up' },
+      { t: 'Найми первого союзника', ok: () => STARTERS.some(hired), r: { tickets: 1 }, go: 'up' },
+      { t: 'Подними главного героя до 10 ур.', ok: () => s.tapLevel >= 10, r: { tickets: 1 }, go: 'up' },
       { t: 'Дойди до 5 этажа', ok: () => best() >= 5, r: { tickets: 1 }, go: 'battle' },
-      { t: 'Найми всех четырёх союзников', ok: () => STARTERS.every(hired), r: { shard: 20 }, go: 'up' },
+      { t: 'Найми всех четырёх союзников', ok: () => STARTERS.every(hired), r: { crystals: 10 }, go: 'up' },
       { t: 'Победи первого стража (10 этаж)', ok: () => best() >= 11, r: { tickets: 2 }, go: 'battle' },
       { t: 'Дойди до 25 этажа', ok: () => best() >= 25, r: { tickets: 5 }, go: 'battle' },
       { t: 'Призови героя в портале', ok: () => unlockedHeroes() > STARTERS.length, r: { tickets: 3 }, go: 'portal' },
       { t: 'Победи мега-босса (50 этаж)', ok: () => best() >= 51, r: { tickets: 5 }, go: 'battle' },
       { t: 'Улучши артефакт', ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
       { t: 'Дойди до 100 этажа', ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
-      { t: 'Дойди до 200 этажа', ok: () => best() >= 200, r: { tickets: 10 }, go: 'battle' },
-      { t: 'Проведи первую регрессию', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
+      { t: 'Дойди до 150 этажа', ok: () => best() >= 150, r: { tickets: 10, crystals: 20 }, go: 'battle' },
+      { t: 'Проведи первую регрессию', ok: () => s.rituals > 0, r: { tickets: 15, crystals: 30 }, go: 'ritual' },
     ];
     const NAMES = { ult: 'ульта героя', quests: 'задания', login: 'награда за вход', portal: 'портал призыва', shop: 'магазин', artifacts: 'артефакты', pve: 'PvE', runes: 'руны', forge: 'кузница',
       ritual: 'регрессия', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
@@ -93,7 +93,7 @@
       const k = b.dataset.q, q = STORY[st.i];
       if (k === 'fold') st.fold = true; else if (k === 'unfold') st.fold = false;
       else if (k === 'claim' && q && q.ok()) {
-        if (q.r.gold) s.gold = B.add(s.gold, q.r.gold); if (q.r.tickets) s.tickets += q.r.tickets; if (q.r.shard) s.materials.shard += q.r.shard;
+        if (q.r.gold) s.gold = B.add(s.gold, q.r.gold); if (q.r.tickets) s.tickets += q.r.tickets; if (q.r.crystals) s.crystals = (s.crystals | 0) + q.r.crystals; if (q.r.shard) s.materials.shard += q.r.shard;
         toast('Квест выполнен<small>' + rTxt(q.r) + '</small>'); st.i++; save(); render();
       } else if (k === 'go' && q) {
         U.home();
