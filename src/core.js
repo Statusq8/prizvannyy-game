@@ -164,8 +164,9 @@
     biomes: [
       // 0.79 (docs/START.md, ответы 9–10): первая локация — Зал призыва, слабые монстры; арт — assets/enemies
       { id: 'crypt',  name: 'Зал призыва',       bg: [0, 1, 1], hp: 1.00, gold: 1.0, rare: 0.03, sky: ['#1e1329', '#0d0a12'], hue: 0,
-        enemies: ['Слайм призыва', 'Рунная крыса', 'Летучая мышь', 'Каменный жук'],
-        bosses: ['Король слаймов', 'Король слаймов'], final: 'Хранитель Врат' },   // второй страж — когда будет арт
+        enemies: ['Слайм призыва', 'Рунная крыса', 'Летучая мышь', 'Каменный жук', 'Павший призванный', 'Каменная горгулья', 'Рунный бес', 'Теневой волк'],
+        early: 4,   // этажи 1–10 — только первые четыре (слабые); дальше все вперемешку
+        bosses: ['Король слаймов', 'Каменный страж'], final: 'Хранитель Врат' },
       { id: 'ash',    name: 'Пепельные шахты',   bg: [105, 1.1, 0.95], hp: 1.05, gold: 1.1, rare: 0.03, sky: ['#2e1a14', '#120a08'], hue: 330,
         enemies: ['Пепельный волк', 'Ржавый механоид', 'Каменный голем', 'Угольный бес'],
         bosses: ['Мастер плавильни', 'Железный Тиран'], final: 'Владыка Пепла' },
@@ -1301,7 +1302,8 @@
   function enemyName(floor, index, isBoss) {
     const b = biomeOf(floor);
     if (isBoss) return isFinalBoss(floor) ? b.final : b.bosses[(floor - 1) % b.bosses.length];
-    return b.enemies[(floor * 7 + index * 3) % b.enemies.length];
+    const pool = b.early && (floor - 1) % CONFIG.biomeFloors < 10 ? b.enemies.slice(0, b.early) : b.enemies;
+    return pool[(floor * 7 + index * 3) % pool.length];
   }
   // Детерминированный «случайный» выбор редкого врага: не тратит s.rng (тесты и гача не сбиваются)
   function hash01(a, b, c) {

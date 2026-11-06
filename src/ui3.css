@@ -399,3 +399,5 @@
 #bgHall::after { background: linear-gradient(180deg, #0d0a12c8 0%, #0d0a1250 11%, transparent 24%, transparent 78%, #0d0a1270 100%) !important; }
 body.clean #hero { bottom: 2.5% !important; height: min(27%, 185px) !important; }
 body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%; }
+#enemy .eSpr.fade { animation: eFade .35s ease-in forwards; }
+@keyframes eFade { to { opacity: 0; filter: brightness(2.5) blur(3px); transform: translateX(-50%) scale(.85); } }

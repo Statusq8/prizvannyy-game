@@ -2,13 +2,14 @@
   // Ленты кадров — assets/enemies/<id>.webp (tools/enemycut.py). Враг без ленты остаётся прежней заглушкой.
   (function () {
     const SPR = /*__ENEMY_SPR__*/{};
-    const BY_NAME = { 'Слайм призыва': 'slime', 'Рунная крыса': 'rat', 'Летучая мышь': 'bat', 'Каменный жук': 'beetle', 'Король слаймов': 'slime_king' };
+    const BY_NAME = { 'Слайм призыва': 'slime', 'Рунная крыса': 'rat', 'Летучая мышь': 'bat', 'Каменный жук': 'beetle', 'Король слаймов': 'slime_king',
+      'Павший призванный': 'fallen', 'Каменная горгулья': 'gargoyle', 'Рунный бес': 'imp', 'Теневой волк': 'wolf', 'Каменный страж': 'stone_guard', 'Хранитель Врат': 'warden' };
     const ROW = { idle: [0, 1, 2, 3], hit: [4, 5, 6, 7], die: [8, 9, 10, 11] };
     const FPS = { idle: 6, hit: 20, die: 13 };
     const box = document.createElement('div'); box.className = 'eSpr'; el.enemy.appendChild(box);
     let cur = '', anim = 'idle', f = 0, acc = 0, last = performance.now(), wasAlive = true, shown = -1;
     function use(id) {
-      cur = id; anim = 'idle'; f = 0; acc = 0; shown = -1;
+      cur = id; anim = 'idle'; f = 0; acc = 0; shown = -1; box.classList.remove('fade');
       el.enemy.classList.toggle('spr', !!id);
       if (!id) { box.style.backgroundImage = ''; return; }
       const S = SPR[id];
@@ -47,7 +48,7 @@
       h0(events, x, y);
       if (!cur) return;
       for (const e of events) {
-        if (e.type === 'kill') play('die');
+        if (e.type === 'kill') { if (SPR[cur].dieFade) { play('hit'); box.classList.add('fade'); } else play('die'); }
         else if (e.type === 'hit' && !e.blocked && anim !== 'die' && (anim !== 'hit' || f >= 2)) play('hit');
       }
     };
