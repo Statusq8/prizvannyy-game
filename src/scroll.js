@@ -7,12 +7,15 @@
     const css = document.createElement('style');
     css.textContent = `
       #questPanel { width: 108px !important; right: 2px !important; top: calc(env(safe-area-inset-top) + 92px) !important; }
-      #questPanel .qBox { position: relative; width: 108px; min-height: 140px; box-sizing: border-box; padding: 24px 15px 42px 17px !important; border: none !important; border-radius: 0 !important; box-shadow: none !important;
+      #questPanel .qBox { position: relative; width: 108px; min-height: 150px; box-sizing: border-box; padding: 24px 15px 50px 17px !important; border: none !important; border-radius: 0 !important; box-shadow: none !important;
         background: url("${A.scroll}") center top / 100% 100% no-repeat !important; font-family: Georgia, 'Times New Roman', serif; }
       #questPanel .qT { position: absolute; left: 24px; top: 18px; width: 54px; height: 16px; display: grid; place-items: center; background: url("${A.hdr}") center / 100% 100% no-repeat;
         font: 800 9px Georgia, serif !important; letter-spacing: 0 !important; color: #f6d690 !important; text-shadow: 0 1px 2px #000; }
       #questPanel .qMin { left: auto !important; right: 9px !important; top: 18px !important; width: 16px !important; height: 16px !important; background: url("${A.minus}") center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; z-index: 2; }
       #questPanel .qTxt { margin: 14px 0 4px !important; text-align: center; font: 700 9.5px/1.15 Georgia, serif !important; color: #2a1608 !important; text-shadow: none; }
+      #questPanel .qBar { position: relative; height: 11px; margin: 0 0 5px; box-sizing: border-box; border-style: solid; border-width: 0 6px; border-image: url("${Q.bar || ''}") 0 20 fill stretch; }
+      #questPanel .qBar i { position: absolute; left: -4px; top: 1px; bottom: 1px; max-width: calc(100% + 8px); min-width: 6px; box-sizing: border-box; border-style: solid; border-width: 0 5px; border-image: url("${Q.bar_fill || ''}") 0 20 fill stretch; }
+      #questPanel .qBar span { position: absolute; inset: 0; display: grid; place-items: center; font: 700 8px Georgia, serif; color: #fff; text-shadow: 0 1px 1px #000; }
       #questPanel .qR { text-align: center; font: 600 8px Georgia, serif !important; color: #5a3a1a !important; }
       #questPanel .qClaim { width: 100% !important; height: 22px !important; border: none !important; border-radius: 0 !important; background: url("${T.gbtn || ''}") center / 100% 100% no-repeat !important;
         font: 800 9px Georgia, serif !important; color: #3a1e00 !important; text-shadow: 0 1px 0 #ffe7a0; }
