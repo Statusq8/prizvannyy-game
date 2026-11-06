@@ -482,6 +482,13 @@
     function renderX() {
       const aux = $('xAux');
       $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
+      $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
+      if (xKind === 'forge') {
+        $('xTitle').textContent = 'Кузница'; aux.style.display = 'none';
+        setHtml('xTop', '<div class="fgCur"><i>' + (fgBr === 'blood' ? '🔹' : '👻') + '</i>' + fmt(fgBr === 'blood' ? s.materials.shard : s.souls) + '</div>');
+        setHtml('xBody', forgeHtml());
+        return;
+      }
       if (xKind === 'portal') {
         $('xTitle').textContent = showHist ? 'История призывов' : 'Портал призыва';
         aux.style.display = showHist ? 'none' : ''; aux.textContent = '📜 История';
@@ -499,6 +506,38 @@
       }
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- 0.93: Кузница по макету (docs/ui/FORGE.md): вкладки, сетка полученных артефактов, витрина «Души / Кровь» ----------
+    let fgBr = 'soul', fgSel = null;
+    function forgeHtml() {
+      const FA = window.FG_ART || {}, ic = a => FA['i_' + a.id] ? '<img src="' + FA['i_' + a.id] + '" alt="">' : '<b style="font-size:34px">' + a.icon + '</b>';
+      const TABS = [['art', 'artifacts', FA.i_crown ? '<img src="' + FA.i_crown + '" alt="">' : '<b>⚒</b>', 'Артефакты'], ['runes', 'runes', '<b>ᚦ</b>', 'Руны'], ['altar', 'altar', '<b>🕯</b>', 'Алтарь'], ['bones', 'bones', '<b>🦴</b>', 'Кости']];
+      let h = '<div class="fgTabs">' + TABS.filter(x => C.unlockedAt(s, x[1])).map(([id, , i, nm]) => '<button data-fgt="' + id + '" class="' + (id === 'art' ? 'on' : '') + '">' + i + nm + '</button>').join('') + '</div>';
+      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || (y.special ? 1 : 0) - (x.special ? 1 : 0));
+      h += '<div class="fgGrid">' + (got.length ? got.map(a => { const c = C.upgradeArtCost(s, a.id);
+        return '<button class="fgCell" data-fgs="' + a.id + '">' + ic(a) + '<span class="lv">Ур. ' + C.artLevel(s, a.id) + '</span>' + (c != null && artCan(a, c) ? '<i class="bang2">!</i>' : '') + '</button>'; }).join('')
+        : '<div class="fgEmpty">Пока ни одного артефакта. Купи первый на витрине ниже — за души с мега-боссов.</div>') + '</div>';
+      const cur = fgBr === 'blood' ? '🔹' : '👻', have = fgBr === 'blood' ? s.materials.shard : s.souls;
+      const bc = C.shopBuyCost(s, fgBr), rc = C.shopRefreshCost(s, fgBr);
+      h += '<div class="fgLow"><div class="fgBr"><button class="s' + (fgBr === 'soul' ? ' on' : '') + '" data-fgb="soul">Ветвь Душ</button><button class="b' + (fgBr === 'blood' ? ' on' : '') + '" data-fgb="blood">Ветвь Крови</button></div>';
+      if (bc == null) h += '<div class="fgAll">Все артефакты этой ветви найдены</div>';
+      else {
+        h += '<div class="fgOff">' + C.shopOffers(s, fgBr).map((id, i) => {
+          if (!id) return '<div class="fgCard sold"><b>Куплено</b></div>';
+          const a = CFG.artifacts.find(x => x.id === id);
+          return '<div class="fgCard">' + ic(a) + '<div class="nm">' + a.name + '</div><div class="ds">' + a.desc + '</div><button class="buy" data-sbuy="' + fgBr + ':' + i + '"' + (B.gte(have, bc) ? '' : ' disabled') + '>' + cur + ' ' + fmt(bc) + '</button></div>';
+        }).join('') + '</div>';
+        h += '<button class="fgRef" data-sref="' + fgBr + '"' + (B.gte(have, rc) ? '' : ' disabled') + '>Обновить  ' + cur + ' ' + fmt(rc) + '</button>';
+      }
+      h += '</div>';
+      if (fgSel) {
+        const a = CFG.artifacts.find(x => x.id === fgSel), lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), ok = c != null && artCan(a, c);
+        h += '<div class="fgPop"><div class="box' + (a.blood ? ' blood' : '') + '"><button class="x" data-fgx>✕</button>' + ic(a) + '<h3>' + a.name + '</h3><div class="lvl">Ур. ' + lv + (a.max ? ' / ' + a.max : '') + '</div><p>' + a.desc + '</p>' +
+          (c == null ? '<div class="row"><button disabled>Максимум</button></div>'
+            : '<div class="row"><button data-fgu="1"' + (ok ? '' : ' disabled') + '>Улучшить<br>' + (a.blood ? '🔹 ' : '👻 ') + fmt(c) + '</button><button data-fgu="max"' + (ok ? '' : ' disabled') + '>MAX</button></div>') + '</div></div>';
+      }
+      return h;
+    }
 
     // ---------- Портал (этап 8): один общий портал, ×1 и ×10, шансы, история, шкала гарантии ----------
     const HIST_KEY = 'prizvannyy_v2_hist';
@@ -691,6 +730,13 @@
       else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
+      else if (d.fgb) { click(); fgBr = d.fgb; }
+      else if (d.fgs) { click(); fgSel = d.fgs; }
+      else if (d.fgx !== undefined) { click(); fgSel = null; }
+      else if (d.fgu) { let k = 0; const n = d.fgu === 'max' ? 1e4 : 1; while (k < n && C.upgradeArtifact(s, fgSel)) k++; if (k) { click(); save(); } }
+      else if (d.fgt) { click(); if (d.fgt !== 'art') { openOld(d.fgt); return; } }
+      else if (d.sbuy) { const [br, i] = d.sbuy.split(':'); const id = C.shopBuy(s, br, +i); if (!id) return; click(); const a = CFG.artifacts.find(x => x.id === id); toast('Артефакт куплен!<small>' + a.icon + ' ' + a.name + '</small>'); save(); }
+      else if (d.sref) { if (!C.shopRefresh(s, d.sref)) return; click(); save(); }
       else if (d.rit !== undefined) { click(); doRitual(); return; }
       else if (d.tree) { click(); if (C.buyTreeNode(s, d.tree)) save(); }
       else if (d.t2) { click(); const [id, dl] = d.t2.split(':'); tier2[id] = (tier2[id] || 1) + +dl; }
