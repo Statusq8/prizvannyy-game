@@ -4,7 +4,7 @@
   (function () {
     const A = /*__CAMP__*/{};
     if (!A.sky) return;
-    const U = window.U2, on = k => C.unlockedAt(s, k);
+    const U = window.U2, on = k => k === 'classes' ? C.classUnlocked(s) : C.unlockedAt(s, k);
     const SK = 'prizvannyy_camp';
     let seen = {}, all = false; try { seen = JSON.parse(localStorage.getItem(SK) || '{}'); } catch (e) {}
     const saveSeen = () => { try { localStorage.setItem(SK, JSON.stringify(seen)); } catch (e) {} };
@@ -85,7 +85,7 @@
     // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
     const MORE = [
       ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
-      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')],
     ];
     function renderMore() {
       const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');

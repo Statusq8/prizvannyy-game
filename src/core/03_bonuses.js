@@ -51,10 +51,12 @@
     s.cls.id = id; s.cls.spent = {};
     return true;
   }
+  // 2-й ярус открыт, когда навык над ним (req) на максимуме
+  function classNodeOpen(s, nid) { const n = classNode(s, nid); if (!n) return false; if (!n.req) return true; const p = classNode(s, n.req); return !!p && (s.cls.spent[p.id] | 0) >= p.max; }
   function classNode(s, nid) { const k = classDef(s.cls.id); return k && k.nodes.find(n => n.id === nid); }
   function buyClassNode(s, nid) {
     const n = classNode(s, nid);
-    if (!n || classFree(s) < 1 || (s.cls.spent[nid] | 0) >= n.max) return false;
+    if (!n || classFree(s) < 1 || (s.cls.spent[nid] | 0) >= n.max || !classNodeOpen(s, nid)) return false;
     s.cls.spent[nid] = (s.cls.spent[nid] | 0) + 1;
     return true;
   }
