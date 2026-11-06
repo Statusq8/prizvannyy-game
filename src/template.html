@@ -1746,7 +1746,7 @@
         (ec ? '<button class="hBtn' + (canEvo ? ' evo' : '') + '" data-evo="' + a.id + '"' + (canEvo ? '' : ' disabled') + '>⬆ ' + ROMAN[ec.stage] + '</button>' : '') +
         '</div></div>';
     }
-    html += bondsHtml();
+    if (C.unlockedAt(s, 'bonds')) html += bondsHtml();
     if (html !== heroesHtml) { $('heroesTab').innerHTML = html; heroesHtml = html; }   // без лишних перерисовок
   }
   // ---------- статистика (0.32) ----------

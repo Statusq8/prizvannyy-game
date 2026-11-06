@@ -3,7 +3,8 @@
 ## Решения пользователя (6 ноября)
 - Список — сетка портретов, как в Idle Heroes (ранг, звёзды); тап — окно героя.
 - **Отряда нет** (GDD §2: все нанятые бьют невидимо, ульта только у главного героя) — без слотов отряда, пресетов и кнопки «В отряд». Остатки отряда в коде (`s.squad`) на экране не показываем.
-- Окно героя — большой арт в рост: урон, звёзды, ранг, эволюция, копии, связи; кнопки ★ и Эволюция.
+- Окно героя — большой арт в рост: урон, звёзды, ранг, эволюция, копии; кнопки ★ и Эволюция.
+- **Связей нет** (не в GDD) — выключены: `CONFIG.disabled` += 'bonds' (0.119).
 - Фильтры по редкости и стороне — ряд кнопок над сеткой.
 
 ## Шаг 1 — макет экрана списка (референс)
@@ -13,5 +14,5 @@ Mobile game heroes collection screen, vertical 9:16 portrait, dark fantasy manhw
 
 ## Шаг 2 — макет окна героя (референс)
 ```
-Same style, hero detail window over the heroes screen: a big full-body anime fantasy hero art in the center on a violet glowing rune circle, name plate with the rarity badge and faction emblem on top, a row of 15 small stars (some gold, some empty) under the name, on the left a column of small stat plates (damage, rank, evolution stage, copies), on the right a short biography plate with a quote, under the art a row of bond plates with small hero portraits, and at the bottom two big buttons: "Star up" with a shard price and "Evolve" with a material price. Left and right arrows on the sides to switch heroes. Readable at phone size.
+Same style, hero detail window over the heroes screen: a big full-body anime fantasy hero art in the center on a violet glowing rune circle, name plate with the rarity badge and faction emblem on top, a row of 15 small stars (some gold, some empty) under the name, on the left a column of small stat plates (damage, rank, evolution stage, copies), on the right a short biography plate with a quote, and at the bottom two big buttons: "Star up" with a shard price and "Evolve" with a material price. Left and right arrows on the sides to switch heroes. Readable at phone size.
 ```

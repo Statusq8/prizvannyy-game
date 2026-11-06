@@ -13,10 +13,10 @@
     return k;
   }
   // ---------- связи героев (0.56) ----------
-  function bondActive(s, b) { return b.heroes.every(id => inSquad(s, id)); }   // 0.74: связи — по всем нанятым (ответ 67)
+  function bondActive(s, b) { if (CONFIG.disabled && CONFIG.disabled.includes('bonds')) return false; return b.heroes.every(id => inSquad(s, id)); }   // 0.74: связи — по всем нанятым (ответ 67)
   function activeBonds(s) { return CONFIG.bonds.filter(b => bondActive(s, b)); }
   function bondPower(s, kind) { return activeBonds(s).reduce((t, b) => t + (b.bonus.kind === kind ? b.bonus.per : 0), 0); }
-  function bondsOf(id) { return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
+  function bondsOf(id) { if (CONFIG.disabled && CONFIG.disabled.includes('bonds')) return []; return CONFIG.bonds.filter(b => b.heroes.includes(id)); }
   // ---------- удобство (0.54) ----------
   function roleOf(a) { return CONFIG.roles[a.ult.kind] || 'Особая'; }
   function isFav(s, id) { return s.favs.includes(id); }
