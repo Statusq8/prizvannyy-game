@@ -50,7 +50,7 @@
       #campAll { position: absolute; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 22px); padding: 4px 8px; border-radius: 8px; border: 1px dashed #8a6ab0; background: #12081c99; color: #a890c8; font: 600 11px system-ui; z-index: 2; opacity: .6; }
       #campAll.on { opacity: 1; color: #ffe2a0; }
       /* 0.88: «слишком много кнопок» — боковые кнопки старых функций убраны с экрана боя; пока у функции нет своего островка — маленькая кнопка в лагере */
-      body.hudV3 #cbPve, body.hudV3 #cbMap, body.hudV3 #cbPortal, body.hudV3 #cbBook, body.hudV3 #cbRitual, body.hudV3 #cbForge, body.hudV3 #cbEvent, body.hudV3 #questPanel, body.hudV3 #bookList, body.hudV3 #tbMail { display: none !important; }
+      body.hudV3 #cbPve, body.hudV3 #cbMap, body.hudV3 #cbPortal, body.hudV3 #cbBook, body.hudV3 #cbRitual, body.hudV3 #cbForge, body.hudV3 #cbEvent, body.hudV3 #bookList, body.hudV3 #tbMail { display: none !important; }
       #campMoreB { position: absolute; left: 12px; bottom: calc(env(safe-area-inset-bottom) + 14px); width: 46px; height: 46px; border-radius: 10px; border: 2px solid #8a6ab0; background: #12081ce0; color: #e8dcf6; font: 800 22px system-ui; z-index: 2; display: none; }
       #campMoreB.has { display: block; }
       #campMore { position: absolute; left: 12px; bottom: calc(env(safe-area-inset-bottom) + 68px); display: none; flex-direction: column; gap: 6px; z-index: 3; }
