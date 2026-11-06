@@ -1408,6 +1408,8 @@
   function applyOffline(seconds) { showReport(C.offlineProgress(s, seconds), 'Пока вас не было'); }
   function showReport(r, title) {
     if (!r) return;
+    if (!window.TT_REPORT && !showReport.waited) { showReport.waited = 1; setTimeout(() => showReport(r, title), 0); return; }   // окно отчёта ещё не подключено (офлайн при запуске)
+    if (window.TT_REPORT) { dmgLog.length = 0; window.TT_REPORT(r, title === 'Пока вас не было' ? 'Пока вас не было' : title.replace(/^⏳ /, '')); save(); render(); return; }   // 0.128: окно по макету (src/timetravel.js)
     dmgLog.length = 0;
     $('awayTitle').textContent = title; $('awayOk').textContent = 'Забрать';
     $('awayTime').textContent = dur(r.seconds) + (r.capped ? ' (больше 12 ч не считается)' : '');
