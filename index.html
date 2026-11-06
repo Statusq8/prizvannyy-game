@@ -1813,9 +1813,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       // плюс билеты и эссенция в центр наград. 0.53 (решение пользователя, вместо ответа 104 «только для красоты»):
       // каждый полученный титул навсегда даёт небольшой бонус; бонусы всех титулов складываются. Числа временные.
       milestones: [
-        { n: 1,   title: 'Пробуждённый',      bonus: { kind: 'allDmg', per: 0.05 }, reward: { tickets: 10, essence: 50 } },
-        { n: 10,  title: 'Жрец Башни',        bonus: { kind: 'gold',   per: 0.05 }, reward: { tickets: 30, essence: 200 } },
-        { n: 100, title: 'Вечный призванный', bonus: { kind: 'allDmg', per: 0.10 }, skin: 'eternal', reward: { tickets: 100, essence: 1000 } },
+        { n: 1,   title: 'Пробуждённый',      bonus: { kind: 'allDmg', per: 0.05 }, reward: { tickets: 10, crystals: 20 } },
+        { n: 10,  title: 'Жрец Башни',        bonus: { kind: 'gold',   per: 0.05 }, reward: { tickets: 30, crystals: 50 } },
+        { n: 100, title: 'Вечный призванный', bonus: { kind: 'allDmg', per: 0.10 }, skin: 'eternal', reward: { tickets: 100, crystals: 200 } },
       ],
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
@@ -3870,7 +3870,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function modeRule(s) { if (s.mode) return s.mode.rule || null; const cm = curseMod(s); return cm && cm.rule || null; }
 
   // ---------- центр наград ----------
-  function inboxAdd(s, title, reward) { s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
+  // 0.121: почта выключена — награда выдаётся сразу (иначе застревала в невидимой почте)
+  function inboxAdd(s, title, reward) { if ((CONFIG.disabled || []).includes('mail')) { grant(s, reward); return; } s.inbox.push({ id: s.inboxSeq++, title, reward: { ...reward } }); }
   function claimInbox(s, id) {
     const i = s.inbox.findIndex(x => x.id === id);
     if (i < 0) return null;
@@ -5191,6 +5192,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
     s.savedAt = typeof d.savedAt === 'number' && isFinite(d.savedAt) ? d.savedAt : null;
+    if ((CONFIG.disabled || []).includes('mail') && s.inbox.length) { for (const it of s.inbox) grant(s, it.reward); s.inbox = []; }   // 0.121: застрявшая почта — сразу игроку
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }

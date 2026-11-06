@@ -109,9 +109,9 @@
       // плюс билеты и эссенция в центр наград. 0.53 (решение пользователя, вместо ответа 104 «только для красоты»):
       // каждый полученный титул навсегда даёт небольшой бонус; бонусы всех титулов складываются. Числа временные.
       milestones: [
-        { n: 1,   title: 'Пробуждённый',      bonus: { kind: 'allDmg', per: 0.05 }, reward: { tickets: 10, essence: 50 } },
-        { n: 10,  title: 'Жрец Башни',        bonus: { kind: 'gold',   per: 0.05 }, reward: { tickets: 30, essence: 200 } },
-        { n: 100, title: 'Вечный призванный', bonus: { kind: 'allDmg', per: 0.10 }, skin: 'eternal', reward: { tickets: 100, essence: 1000 } },
+        { n: 1,   title: 'Пробуждённый',      bonus: { kind: 'allDmg', per: 0.05 }, reward: { tickets: 10, crystals: 20 } },
+        { n: 10,  title: 'Жрец Башни',        bonus: { kind: 'gold',   per: 0.05 }, reward: { tickets: 30, crystals: 50 } },
+        { n: 100, title: 'Вечный призванный', bonus: { kind: 'allDmg', per: 0.10 }, skin: 'eternal', reward: { tickets: 100, crystals: 200 } },
       ],
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,

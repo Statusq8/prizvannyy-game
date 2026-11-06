@@ -316,6 +316,7 @@
     for (const id of d.discovered) if (allyDef(id)) s.discovered[id] = true;
     for (const a of CONFIG.allies) if (!s.heroes[a.id].unlocked) s.allies[a.id].level = 0;   // нанять можно только открытых
     s.savedAt = typeof d.savedAt === 'number' && isFinite(d.savedAt) ? d.savedAt : null;
+    if ((CONFIG.disabled || []).includes('mail') && s.inbox.length) { for (const it of s.inbox) grant(s, it.reward); s.inbox = []; }   // 0.121: застрявшая почта — сразу игроку
     spawn(s);                                     // враг появляется с полным HP
     return s;
   }
