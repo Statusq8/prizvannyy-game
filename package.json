@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node build.js",
+    "docs": "node tools/configdoc.js",
     "test": "node --test tests/*.test.js",
     "sim": "node tools/sim.js 6 30",
     "godsim": "node tools/godsim.js 10 200 10000"
