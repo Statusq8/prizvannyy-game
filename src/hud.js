@@ -2,6 +2,7 @@
   (function () {
     const H = /*__HUD__*/{};
     if (!Object.keys(H).length) return;
+    window.HUD_ART = H;
     const u = n => 'url("' + H[n] + '")';
     const game = $('game');
     // рамка аватара поверх портрета, знак уровня — в шестиугольнике рамки
