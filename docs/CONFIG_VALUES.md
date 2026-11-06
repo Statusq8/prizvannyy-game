@@ -67,7 +67,7 @@
 | `unlocks.pve` | `100` |
 | `unlocks.runes` | `150` |
 | `unlocks.forge` | `50` |
-| `unlocks.ritual` | `200` |
+| `unlocks.ritual` | `150` |
 | `unlocks.tree` | `200` |
 | `unlocks.events` | `250` |
 | `unlocks.season` | `250` |
@@ -87,7 +87,7 @@
 | `cage.ally` | `"shorokh"` |
 | `cage.taps` | `20` |
 | `cage.name` | `"Клетка с Шорохом"` |
-| `ritual.floor` | `200` |
+| `ritual.floor` | `150` |
 | `ritual.soulsBase` | `500` |
 | `ritual.soulsGrowth` | `1.08` |
 | `ritual.light` | `{"crystals":100,"mult":2}` |
