@@ -12,7 +12,7 @@
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       pets: { active: s.pets.active, forms: { ...s.pets.forms }, frags: { ...s.pets.frags }, lair: { ...s.pets.lair } }, bestCleared: s.bestCleared | 0,
-      squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
+      squad: s.squad.slice(), tickets: s.tickets, crystals: s.crystals | 0, crystalFloor: s.crystalFloor | 0, market: { items: (s.market ? s.market.items : []).map(x => ({ ...x })), next: s.market ? s.market.next : 0 }, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
@@ -177,6 +177,9 @@
     for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
+    { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
+      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).slice(0, CONFIG.market.slots).map(x => ({ g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
     s.materials = { shard: m.shard + heartShards(m.heart), heart: 0, dust: m.dust }; s.heartFloor = d.heartFloor;   // 0.51: сердца → осколки

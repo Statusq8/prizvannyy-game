@@ -13,7 +13,7 @@
       { id: 'hq', name: 'Штаб', x: 50, y: 88, w: 48, open: () => true, go: () => U.sec('up') },
       { id: 'portal', name: 'Портал', x: 28, y: 73, w: 33, open: () => on('portal'), go: () => U.openX('portal') },
       { id: 'forge', name: 'Кузница', x: 72, y: 73, w: 33, open: () => on('forge'), go: () => U.openX('forge') },
-      { id: 'market', name: 'Рынок', x: 50, y: 59, w: 33, open: () => on('shop'), go: () => window.U3.menuAct('shop') },
+      { id: 'market', name: 'Рынок', x: 50, y: 59, w: 33, open: () => on('shop'), go: () => U.openX('market') },
     ];
     const ov = document.createElement('div'); ov.id = 'camp';
     ov.innerHTML = '<div id="campSc"><div id="campMap">' + ISL.map((o, i) =>

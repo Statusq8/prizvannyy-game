@@ -1047,6 +1047,24 @@
   .shopCard small { font-size: 10px; color: #cbbbe0; line-height: 1.2; flex: 1; }
   .shopCard .upBtn { width: 100%; padding: 3px 2px; font-size: 11px; }
   .shopCard.sold { opacity: .45; justify-content: center; }
+  /* 0.102: Рынок (временный вид до макета) */
+  .mkTime { text-align: center; margin: 4px 0 8px; font: 600 13px system-ui; color: #cbbbe0; } .mkTime b { color: #ffe6a0; }
+  .mkGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .mkCard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 3px; border-radius: 8px; text-align: center;
+    background: linear-gradient(#2a1c36, #120c18); border: 1px solid #7a5a9a; color: #fff; min-height: 150px; }
+  .mkCard.cr { border-color: #4ad0ff; box-shadow: 0 0 8px #4ad0ff55 inset; }
+  .mkCard.sold { opacity: .45; }
+  .mkIc { position: relative; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 8px; background: #0a060e; border: 1.5px solid var(--rc, #6a4a8a); overflow: hidden; }
+  .mkIc b { font-size: 30px; } .mkIc img, .mkIc svg { width: 100%; height: 100%; object-fit: cover; }
+  .mkIc .rk { position: absolute; right: 2px; bottom: 1px; font: 800 10px Georgia, serif; color: var(--rc, #fff); text-shadow: 0 1px 2px #000; }
+  .mkNm { font: 800 10.5px Georgia, serif; color: #ffe6a0; line-height: 1.15; min-height: 24px; display: grid; place-items: center; }
+  .mkN { font: 600 10px system-ui; color: #d8c8ec; flex: 1; }
+  .mkBuy { width: 100%; padding: 4px 2px; border: none; border-radius: 6px; background: linear-gradient(#ffb43a, #c06a10); color: #fff; font: 800 11px system-ui; text-shadow: 0 1px 2px #000; }
+  .mkCard.cr .mkBuy { background: linear-gradient(#4ad0ff, #1a6ab0); }
+  .mkBuy:disabled { filter: grayscale(.8) brightness(.7); }
+  .mkSold { font: 800 11px Georgia, serif; color: #9a8aa8; padding: 4px 0; }
+  .mkRef { display: block; margin: 10px auto 4px; padding: 8px 18px; border: 1px solid #4ad0ff; border-radius: 8px; background: #0e1a2a; color: #fff; font: 800 14px system-ui; }
+  .mkRef:disabled { opacity: .5; }
 
   /* ===================== UI 3 (0.69) — по опросу docs/ui/ANSWERS_UI.md =====================
      Экран боя, профиль, настройки, окна Системы. Подключается после ui2.css. */
@@ -1774,7 +1792,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 150, forge: 50, ritual: 200, tree: 200,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
-    disabled: ['quests', 'login', 'shop', 'pve', 'runes', 'ritual', 'tree', 'events', 'season',
+    disabled: ['quests', 'login', 'pve', 'runes', 'ritual', 'tree', 'events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -1804,6 +1822,21 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // 0.99 (как в «Крушителях»): герои до этого ранга покупаются за золото цепочкой в Штабе — виден следующий по цене;
     // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
     goldHire: { maxRarity: 'B' },
+    // 0.102: Рынок как в Idle Heroes — slots случайных товаров, сами обновляются раз в refreshSec, обновить сразу — за 💎.
+    // Цена в золоте растёт с прогрессом: price × золото за обычного врага рекордного этажа. Цена в 💎 постоянная.
+    // 💎 кристаллы — донат-валюта; бесплатно немного: за первое прохождение мега-босса (crystals.megaFirst).
+    market: {
+      slots: 8, refreshSec: 3 * 3600, refreshCost: 20,
+      goods: [
+        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
+        { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва ×5' },
+        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'gold', price: 600, w: 3, name: 'Копия героя' },
+        { id: 'copyA', kind: 'copy', ranks: ['A'], cur: 'crystal', price: 400, w: 1, name: 'Герой ранга A' },
+        { id: 'shard', kind: 'shard', bosses: 5, cur: 'gold', price: 250, w: 3, name: 'Осколки Башни' },
+        { id: 'souls', kind: 'souls', megas: 1, cur: 'crystal', price: 120, w: 1, name: 'Души' },
+      ],
+    },
+    crystals: { megaFirst: 20 },
     // 0.92 (как в Крушителях): витрина артефактов — N случайных ненайденных, купленный слот пустеет;
     // «Обновить» — новые предложения за треть цены следующей покупки; пустая витрина заполняется сама.
     artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },
@@ -3132,7 +3165,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       // постоянное (переживёт ритуал): коллекция, билеты, гарантии, отряд
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
-      tickets: 0,
+      tickets: 0, crystals: 0, crystalFloor: 0, market: { items: [], next: 0 },
       heroRank: 0,                               // ступень ранга главного героя (0…100) — поднимает потолок удара
       materials: { shard: 0, heart: 0, dust: 0 },   // dust — костяная пыль
       bones: [], boneSeq: 1,                     // кости: { id, slot, tier, lvl, grade, on (кто носит), lock }
@@ -3351,6 +3384,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         const M = CONFIG.megaSouls, n = Math.ceil(M.base * Math.pow(M.per50, s.floor / 50 - 1));
         s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n);
         events.push({ type: 'megaSouls', n });
+        if (CONFIG.crystals.megaFirst && s.floor > (s.crystalFloor | 0)) { s.crystalFloor = s.floor; s.crystals = (s.crystals | 0) + CONFIG.crystals.megaFirst; events.push({ type: 'crystals', n: CONFIG.crystals.megaFirst }); }
         if (!foundCount(s) && unlockedAt(s, 'artifacts')) {
           const pool = CONFIG.artifacts.filter(a => !a.special && !a.blood && artLevel(s, a.id) === 0);
           if (pool.length) { const a = pool[Math.floor(s.rng() * pool.length) % pool.length]; s.artifacts[a.id] = 1; events.push({ type: 'freeArtifact', id: a.id, name: a.name }); }
@@ -4493,6 +4527,51 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.artifacts[a.id] = 1;
     return a.id;
   }
+  // ---------- 0.102: Рынок (как в Idle Heroes) ----------
+  function marketGood(id) { return CONFIG.market.goods.find(g => g.id === id); }
+  function marketRoll(s) {
+    const G = CONFIG.market.goods, tot = G.reduce((x, g) => x + g.w, 0), items = [];
+    for (let i = 0; i < CONFIG.market.slots; i++) {
+      let r = s.rng() * tot, g = G[0]; for (const x of G) { r -= x.w; if (r < 0) { g = x; break; } }
+      let hero = null;
+      if (g.kind === 'copy') { const pool = CONFIG.allies.filter(a => !a.hidden && !a.seasonal && g.ranks.includes(a.rarity)); hero = pool.length ? pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))].id : null; }
+      items.push({ g: g.id, hero, sold: false });
+    }
+    s.market.items = items;
+  }
+  // Сам обновляется раз в refreshSec (now — время в мс из интерфейса); возвращает мс до следующего обновления
+  function marketSync(s, now) {
+    if (!s.market) s.market = { items: [], next: 0 };
+    if (!s.market.items.length || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
+    return Math.max(0, s.market.next - now);
+  }
+  function marketAmount(s, g) {
+    const f = Math.max(1, s.bestFloor | 0);
+    if (g.kind === 'shard') return g.bosses * shardsForBoss(f);
+    if (g.kind === 'souls') { const M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))) * g.megas; }
+    return g.n || 1;
+  }
+  function marketPrice(s, g) { return g.cur === 'gold' ? B.mul(killGold(Math.max(1, s.bestFloor | 0), false), g.price) : g.price; }
+  function marketBuy(s, i) {
+    const it = s.market && s.market.items[i]; if (!it || it.sold) return null;
+    const g = marketGood(it.g), price = marketPrice(s, g);
+    if (g.cur === 'gold') { if (B.gt(price, s.gold)) return null; s.gold = B.sub(s.gold, price); }
+    else { if ((s.crystals | 0) < price) return null; s.crystals -= price; }
+    const n = marketAmount(s, g);
+    if (g.kind === 'tickets') s.tickets += n;
+    else if (g.kind === 'shard') s.materials.shard += n;
+    else if (g.kind === 'souls') { s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n); }
+    let isNew = false;   // как призыв: новый герой открывается, известный даёт копию на звёзды
+    if (g.kind === 'copy' && it.hero) { const h = s.heroes[it.hero]; isNew = !h.unlocked; if (isNew) h.unlocked = true; else h.copies++; }
+    it.sold = true;
+    return { g: g.id, n, hero: it.hero, isNew };
+  }
+  function marketRefresh(s) {
+    const c = CONFIG.market.refreshCost;
+    if ((s.crystals | 0) < c) return false;
+    s.crystals -= c; marketRoll(s); return true;   // таймер сам не сдвигается — как в Idle Heroes
+  }
+
   // ---------- 0.92: витрина артефактов (ветки 'soul' и 'blood') ----------
   function shopPool(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) === 0); }
   function shopFound(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) > 0).length; }
@@ -4795,7 +4874,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       materials: { shard: s.materials.shard, heart: s.materials.heart, dust: s.materials.dust | 0 }, heartFloor: s.heartFloor, heroRank: s.heroRank,
       bones: s.bones.map(b => ({ ...b })), boneSeq: s.boneSeq,
       pets: { active: s.pets.active, forms: { ...s.pets.forms }, frags: { ...s.pets.frags }, lair: { ...s.pets.lair } }, bestCleared: s.bestCleared | 0,
-      squad: s.squad.slice(), tickets: s.tickets, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
+      squad: s.squad.slice(), tickets: s.tickets, crystals: s.crystals | 0, crystalFloor: s.crystalFloor | 0, market: { items: (s.market ? s.market.items : []).map(x => ({ ...x })), next: s.market ? s.market.next : 0 }, ticketFloor: s.ticketFloor, pity: { a: s.pity.a, s: s.pity.s },
       bpity: JSON.parse(JSON.stringify(s.bpity)),
       essence: s.essence, locks: Object.keys(s.locks), discovered: Object.keys(s.discovered),
       souls: B.str(s.souls), artifacts: { ...s.artifacts }, tree: { ...s.tree },
@@ -4960,6 +5039,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     for (const id of d.squad) if (allyDef(id) && s.heroes[id].unlocked && !s.squad.includes(id)) s.squad.push(id);
     if (!int(d.tickets, 0) || !int(d.ticketFloor, 0)) return null;
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
+    s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
+    { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
+      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).slice(0, CONFIG.market.slots).map(x => ({ g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
     s.materials = { shard: m.shard + heartShards(m.heart), heart: 0, dust: m.dust }; s.heartFloor = d.heartFloor;   // 0.51: сердца → осколки
@@ -5151,6 +5233,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
+    marketGood, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
     runeKind, runeValue, bestRune, runePower, createRune, runeUpCost, upgradeRune, mergeable, mergeRunes,
@@ -7645,6 +7728,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const aux = $('xAux');
       $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
       $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
+      if (xKind === 'market') {
+        $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
+        setHtml('xTop', cur('◆', fmt(s.gold)) + cur('💎', fmt(s.crystals | 0)));
+        setHtml('xBody', marketHtml());
+        return;
+      }
       if (xKind === 'forge') {
         $('xTitle').textContent = 'Кузница'; aux.style.display = 'none';
         setHtml('xTop', '<div class="fgCur"><i>' + (fgBr === 'blood' ? '🔹' : '👻') + '</i>' + fmt(fgBr === 'blood' ? s.materials.shard : s.souls) + '</div>');
@@ -7668,6 +7757,25 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       }
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
+
+    // ---------- 0.102: Рынок как в Idle Heroes (временный вид до макета пользователя) ----------
+    const MK_IC = { tickets: '🎟', copy: '🧝', shard: '🔹', souls: '👻' };
+    setInterval(() => { if (page === 'x' && xKind === 'market' && !document.hidden) refresh(); }, 1000);   // таймер обновления идёт сам
+    function marketHtml() {
+      const left = C.marketSync(s, Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60, ss = Math.floor(left / 1000) % 60;
+      let h = '<div class="mkTime">Новые товары через <b>' + hh + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') + '</b></div><div class="mkGrid">';
+      s.market.items.forEach((it, i) => {
+        const g = C.marketGood(it.g), a = it.hero ? CFG.allies.find(x => x.id === it.hero) : null, price = C.marketPrice(s, g);
+        const can = !it.sold && (g.cur === 'gold' ? B.gte(s.gold, price) : (s.crystals | 0) >= price);
+        const ic = a ? (ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], 0)) : '<b>' + MK_IC[g.kind] + '</b>';
+        h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
+          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? (s.heroes[a.id].unlocked ? 'копия' : 'новый герой') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
+          (it.sold ? '<div class="mkSold">Куплено</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + (g.cur === 'gold' ? '◆ ' : '💎 ') + fmt(price) + '</button>') + '</div>';
+      });
+      h += '</div><button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost + '</button>';
+      h += '<p class="hint3" style="text-align:center">💎 кристаллы — за первое прохождение мега-боссов; покупка за деньги появится в версии для телефона.</p>';
+      return h;
+    }
 
     // ---------- 0.93: Кузница по макету (docs/ui/FORGE.md): вкладки, сетка полученных артефактов, витрина «Души / Кровь» ----------
     let fgBr = 'soul', fgSel = null;
@@ -7892,6 +8000,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
+      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero);
+        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
+      else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }
       else if (d.fgx !== undefined) { click(); fgSel = null; }
@@ -9669,7 +9780,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { id: 'hq', name: 'Штаб', x: 50, y: 88, w: 48, open: () => true, go: () => U.sec('up') },
       { id: 'portal', name: 'Портал', x: 28, y: 73, w: 33, open: () => on('portal'), go: () => U.openX('portal') },
       { id: 'forge', name: 'Кузница', x: 72, y: 73, w: 33, open: () => on('forge'), go: () => U.openX('forge') },
-      { id: 'market', name: 'Рынок', x: 50, y: 59, w: 33, open: () => on('shop'), go: () => window.U3.menuAct('shop') },
+      { id: 'market', name: 'Рынок', x: 50, y: 59, w: 33, open: () => on('shop'), go: () => U.openX('market') },
     ];
     const ov = document.createElement('div'); ov.id = 'camp';
     ov.innerHTML = '<div id="campSc"><div id="campMap">' + ISL.map((o, i) =>
@@ -9815,7 +9926,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       pn.innerHTML = '<div class="box"><h3>ГМ-панель (тест)<button data-g="x">✕</button></h3>' +
         '<div class="st">Этаж ' + s.floor + ' · рекорд ' + best() + ' · золото ' + fmt(s.gold) + ' · билеты ' + fmt(s.tickets) + '</div>' +
         '<h4>Ресурсы</h4><div class="row">' + t('inf', '∞ Золото') + t('infT', '∞ Билеты') +
-        '<button data-g="gold">+1M золота</button><button data-g="goldx">Золото ×1000</button><button data-g="tk">+100 билетов</button>' +
+        '<button data-g="gold">+1M золота</button><button data-g="goldx">Золото ×1000</button><button data-g="tk">+100 билетов</button><button data-g="cr">+1000 💎</button>' +
         '<button data-g="sh">+1000 осколков</button><button data-g="so">+1000 душ</button><button data-g="es">+1000 эссенции</button><button data-g="ht">+100 сердец</button></div>' +
         '<h4>Этаж</h4><div class="row"><input id="gmFl" type="number" min="1" value="' + Math.max(25, best()) + '"><button data-g="fl">Перейти</button>' +
         [25, 50, 100, 200, 500, 1250, 2000].map(f => '<button data-g="f' + f + '">' + f + '</button>').join('') + '</div>' +
@@ -9840,6 +9951,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else if (k === 'gold') s.gold = B.add(s.gold, 1e6);
       else if (k === 'goldx') s.gold = B.mul(B.add(s.gold, 1), 1000);
       else if (k === 'tk') s.tickets += 100;
+      else if (k === 'cr') { s.crystals = (s.crystals | 0) + 1000; toast('+1000 💎'); }
       else if (k === 'sh') s.materials.shard += 1000;
       else if (k === 'so') s.souls = B.add(s.souls, 1000);
       else if (k === 'es') s.essence = (s.essence || 0) + 1000;

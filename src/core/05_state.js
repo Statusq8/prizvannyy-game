@@ -18,7 +18,7 @@
       // постоянное (переживёт ритуал): коллекция, билеты, гарантии, отряд
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
-      tickets: 0,
+      tickets: 0, crystals: 0, crystalFloor: 0, market: { items: [], next: 0 },
       heroRank: 0,                               // ступень ранга главного героя (0…100) — поднимает потолок удара
       materials: { shard: 0, heart: 0, dust: 0 },   // dust — костяная пыль
       bones: [], boneSeq: 1,                     // кости: { id, slot, tier, lvl, grade, on (кто носит), lock }

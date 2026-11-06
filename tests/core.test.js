@@ -2737,3 +2737,37 @@ test('0.100: после ритуала все открытые герои ост
   if (CFG.cage) assert.ok(C.chainOwned(s, CFG.cage.ally), 'герой из клетки не пропадает после ритуала');
   s.gold = 1e12; assert.ok(C.buyAlly(s, got[got.length - 1], 1), 'нанимается сразу любой, не по порядку');
 });
+
+// ---------- 0.102: Рынок (как в Idle Heroes) и кристаллы ----------
+test('Рынок: 8 товаров, сам обновляется раз в 3 часа, обновление за 💎, цены в золоте растут с рекордом', () => {
+  let r = 0; const s = C.newState({ rng: () => (r = (r * 9301 + 49297) % 233280) / 233280 });
+  const M = CFG.market, t0 = 1e12;
+  const left = C.marketSync(s, t0);
+  assert.strictEqual(s.market.items.length, M.slots); assert.strictEqual(left, M.refreshSec * 1000);
+  const before = JSON.stringify(s.market.items);
+  C.marketSync(s, t0 + 1000); assert.strictEqual(JSON.stringify(s.market.items), before, 'до таймера не меняется');
+  C.marketSync(s, t0 + M.refreshSec * 1000); assert.strictEqual(s.market.next, t0 + 2 * M.refreshSec * 1000, 'по таймеру — новые товары');
+  // покупка за золото
+  const gi = s.market.items.findIndex(x => C.marketGood(x.g).cur === 'gold');
+  const g = C.marketGood(s.market.items[gi].g);
+  s.gold = 0; assert.strictEqual(C.marketBuy(s, gi), null);
+  s.gold = 1e9; const res = C.marketBuy(s, gi); assert.ok(res); assert.ok(s.market.items[gi].sold);
+  assert.strictEqual(C.marketBuy(s, gi), null, 'купленное второй раз не купить');
+  const p1 = B.toNum(C.marketPrice(s, g)); s.bestFloor = 100; assert.ok(B.toNum(C.marketPrice(s, g)) > p1, 'цена в золоте растёт с рекордом');
+  // кристаллы: товар и обновление
+  assert.strictEqual(C.marketRefresh(s), false);
+  s.crystals = M.refreshCost; assert.ok(C.marketRefresh(s)); assert.strictEqual(s.crystals, 0);
+  // билеты за 💎
+  s.market.items[0] = { g: 'ticket5', hero: null, sold: false }; s.crystals = 1000; const tk = s.tickets;
+  assert.ok(C.marketBuy(s, 0)); assert.strictEqual(s.tickets, tk + 5); assert.strictEqual(s.crystals, 1000 - C.marketGood('ticket5').price);
+  // копия героя: новый открывается, известный даёт копию
+  const a = CFG.allies.find(x => x.rarity === 'C'); s.market.items[1] = { g: 'copyLow', hero: a.id, sold: false };
+  assert.strictEqual(C.marketBuy(s, 1).isNew, true); assert.ok(s.heroes[a.id].unlocked);
+  s.market.items[1] = { g: 'copyLow', hero: a.id, sold: false }; C.marketBuy(s, 1); assert.strictEqual(s.heroes[a.id].copies, 1);
+  // сохранение
+  const t = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t.market, s.market); assert.strictEqual(t.crystals, s.crystals);
+});
+test('кристаллы: бесплатно немного — за первое прохождение мега-босса', () => {
+  const s = C.newState({ rng: () => 0.5 });
+  assert.strictEqual(s.crystals, 0); assert.ok(CFG.crystals.megaFirst > 0);
+});

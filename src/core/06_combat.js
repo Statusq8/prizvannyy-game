@@ -123,6 +123,7 @@
         const M = CONFIG.megaSouls, n = Math.ceil(M.base * Math.pow(M.per50, s.floor / 50 - 1));
         s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n);
         events.push({ type: 'megaSouls', n });
+        if (CONFIG.crystals.megaFirst && s.floor > (s.crystalFloor | 0)) { s.crystalFloor = s.floor; s.crystals = (s.crystals | 0) + CONFIG.crystals.megaFirst; events.push({ type: 'crystals', n: CONFIG.crystals.megaFirst }); }
         if (!foundCount(s) && unlockedAt(s, 'artifacts')) {
           const pool = CONFIG.artifacts.filter(a => !a.special && !a.blood && artLevel(s, a.id) === 0);
           if (pool.length) { const a = pool[Math.floor(s.rng() * pool.length) % pool.length]; s.artifacts[a.id] = 1; events.push({ type: 'freeArtifact', id: a.id, name: a.name }); }
