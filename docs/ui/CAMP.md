@@ -50,6 +50,14 @@ references/camp_v2_rejected.png — слишком светло (наш стил
 Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 portrait, dark fantasy manhwa style, night sky with violet moonlight and dark clouds, high top-down isometric camera (about 60 degrees, almost map view). Several SMALL separate floating rock islets scattered across the screen with clear empty sky between them, NOT connected, no bridges, not overlapping. Each islet holds exactly ONE building: center-bottom a slightly bigger islet with a dark stone headquarters hall with a banner; one islet with a dark gate glowing violet leading to the tower; one islet with a summoning portal circle and stone pillars; one islet with a blacksmith forge with orange fire; one islet with a small dark market stall with tents and crates. Buildings big relative to their islet, readable at phone size. Dark stone, black wood, violet crystals, lanterns, faint mist under the islets, small floating rocks. The dark tower only partly visible at the far right edge. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
 ```
 
+## Макет v3 — почти (references/camp_v3_almost.png)
+Стиль и раскладка островков — ОК. Правки: убрать Башню с фона; призыв = светящийся портал-арка; вход в Башню = огромные тёмные приоткрытые ворота со светом из щели; фермы/мельницы нет.
+
+## Макет v4
+```
+Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 portrait, dark fantasy manhwa style, night sky with a violet moon and dark clouds, high top-down isometric camera (about 60 degrees, almost map view). Five SMALL separate floating rock islets scattered across the screen with clear empty sky between them, NOT connected, no bridges, not overlapping. Each islet holds exactly ONE building: center-bottom a slightly bigger islet with a dark stone headquarters hall with a banner; one islet with huge dark iron-and-stone double gates standing slightly ajar, bright violet light pouring out of the gap (the entrance to the Tower); one islet with a stone arch summoning portal filled with a swirling violet vortex; one islet with a blacksmith forge with orange fire and an anvil; one islet with a small dark market stall with tents, crates and potions. No farm, no windmill, no crops. No tower in the background, only sky, moon and clouds. Buildings big relative to their islet, readable at phone size. Dark stone, black wood, violet crystals, lanterns, faint mist under the islets, small floating rocks. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
+```
+
 ## Ферма — убрана (6 ноября)
 Офлайн-награды (12 ч, отряд сам фармит этажи) показываются отчётом при входе в игру. Отдельной фермы нет, Рынок — свой островок.
 
