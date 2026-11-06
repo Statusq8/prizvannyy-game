@@ -94,6 +94,19 @@
       body.clean.hudV3 #hero { bottom: calc(env(safe-area-inset-bottom) + 84px) !important; height: min(25%, 170px) !important; }
       body.hudV3 #farmBar { top: calc(env(safe-area-inset-top) + 102px) !important; }
       body.hudV3 #farmBar .plate { display: none; }
+      /* 0.85 (пользователь 6 ноября): имя и HP врага — сверху, обычная полоса HP; этаж и волна — внизу; профиль и настройки — в лагере */
+      body.hudV3 #tbProf, body.hudV3 #cbSet { display: none !important; }
+      body.hudV3 #nameRow { top: calc(env(safe-area-inset-top) + 40px) !important; bottom: auto !important; }
+      body.hudV3 #hpRow { top: calc(env(safe-area-inset-top) + 68px) !important; bottom: auto !important; display: flex !important; align-items: center; gap: 6px; }
+      body.hudV3 #hpBar { width: min(72vw, 300px) !important; height: 18px !important; position: relative; background: #1a0610 !important; border: 1px solid #000 !important; border-radius: 9px !important; box-shadow: 0 0 0 1px #6a4a5a, 0 2px 6px #000a !important; overflow: hidden !important; }
+      body.hudV3 #hpBar::before, body.hudV3 #hpBar::after { display: none !important; }
+      body.hudV3 #hpFill, body.hudV3 #hpTrail { top: 0 !important; bottom: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; }
+      body.hudV3 #hpFill { background: linear-gradient(#ff6a5a, #d0202a 55%, #8a0a14) !important; }
+      body.hudV3 #hpText { top: 0 !important; bottom: 0 !important; font: 800 11px system-ui !important; }
+      body.hudV3 #floorRow { top: auto !important; bottom: calc(env(safe-area-inset-bottom) + 12px) !important; transform: translateX(-104%) !important; }
+      body.hudV3 #waveLbl { top: auto !important; bottom: calc(env(safe-area-inset-bottom) + 13px) !important; transform: translateX(4%) !important; }
+      body.clean.hudV3 #hero { bottom: calc(env(safe-area-inset-bottom) + 46px) !important; }
+      body.hudV3 #farmBar { top: calc(env(safe-area-inset-top) + 96px) !important; }
     `;
     document.head.appendChild(css);
     // значок босса у имени; заряд ульты → высота заливки кристалла
