@@ -706,9 +706,9 @@ test('бонус DPS линеен по неизрасходованным душ
   assert.ok(Math.abs((C.soulMult(s) - 1) - 2 * (1 + 10 * CFG.souls.dpsPerSoul - 1)) < 1e-9);
 });
 
-test('ритуал доступен только с этажа ритуала (0.74: 200)', () => {
+test('ритуал доступен только с этажа ритуала (0.111: 150)', () => {
   const s = C.newState(NOCRIT);
-  assert.strictEqual(CFG.ritual.floor, 200);
+  assert.strictEqual(CFG.ritual.floor, 150);
   reach(s, CFG.ritual.floor - 1);
   assert.strictEqual(C.canRitual(s), false);
   assert.strictEqual(C.ritual(s), null);
@@ -2646,7 +2646,7 @@ test('0.74: лесенка открытий — системы закрыты д
   const U = UNLOCKS, s = C.newState(NOCRIT);
   CFG.unlocks = U;
   try {
-    assert.strictEqual(U.portal, 25); assert.strictEqual(U.artifacts, 50); assert.strictEqual(U.ritual, 200); assert.strictEqual(U.pets, 1250); assert.strictEqual(U.bones, 2000);
+    assert.strictEqual(U.portal, 25); assert.strictEqual(U.artifacts, 50); assert.strictEqual(U.ritual, 150); assert.strictEqual(U.pets, 1250); assert.strictEqual(U.bones, 2000);
     assert.strictEqual(C.unlockedAt(s, 'portal'), false);
     s.bestFloor = 25; assert.strictEqual(C.unlockedAt(s, 'portal'), true); assert.strictEqual(C.unlockedAt(s, 'pets'), false);
     s.floor = 600; s.bestCleared = 599; assert.strictEqual(C.secretFind(s, 750, []), null);   // скрытые комнаты — с 750
