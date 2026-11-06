@@ -15,8 +15,8 @@
   function treeDef(id) { return TREE.find(n => n.id === id); }
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
-  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
-  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')) * potionMult(s, 'shards'); }
+  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + passivePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + passivePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')) * potionMult(s, 'shards'); }
   // ---------- алхимия (0.60) ----------
   function potionDef(id) { return CONFIG.alchemy.potions.find(p => p.id === id); }
   function potionMult(s, kind) { let m = 1; for (const p of CONFIG.alchemy.potions) if (p.kind === kind && (s.potions[p.id] || 0) > 0) m *= p.mult; return m; }
@@ -270,17 +270,27 @@
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + passivePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
   // 0.132: титул биома действует только на этажах своего биома (вне режимов)
   function biomeTitlePower(s, kind) { return !s.mode && s.biomeTitles && s.biomeTitles[biomeOf(s.floor).id] ? CONFIG.biomeTitles[kind] || 0 : 0; }
+  // 0.134: пассивки героев (кэш на тик: s._pv сбрасывает tick)
+  function passiveTier(s, id) { const h = s.heroes[id], a = s.allies[id]; if (!h || !h.unlocked) return 0; return (1 + (h.stars | 0) + (h.evo | 0)) * (1 + Math.floor(((a && a.level) | 0) / CONFIG.passives.levelStep)); }
+  function heroPassive(s, id) {
+    const P = CONFIG.passives, d = P.heroes[id], a = allyDef(id); if (!d || !a) return null;
+    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[a.rarity] || 1) * tier };
+  }
+  function passivePower(s, kind) {
+    if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; } }
+    return s._pv[kind] || 0;
+  }
   function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
-  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime') + passivePower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + passivePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + passivePower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + passivePower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
   }
 
@@ -330,12 +340,12 @@
   // Временный бонус критов от ультимейта (GDD §3: допустим) — не прокачивается, общий предел шанса 50% остаётся
   function critBuffOn(s) { return s.critBuff && s.critBuff.t > 0 ? s.critBuff : null; }
   function critChance(s) {
-    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance');
+    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance') + passivePower(s, 'critChance');
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
     const cb = critBuffOn(s); if (cb) ch += cb.ch;
     return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + (cb ? cb.dmg : 0); }
+  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + passivePower(s, 'critMult') + (cb ? cb.dmg : 0); }
   function softcap(m, start) { const P = CONFIG.softcap; return m <= start ? m : start * Math.pow(m / start, P.power); }
   function enemyName(floor, index, isBoss) {
     const b = biomeOf(floor);

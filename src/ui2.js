@@ -631,6 +631,14 @@
       }).join('') : '<div class="hNone">Нет героев под этот фильтр</div>');
       set('.hwH', hsSel ? hsWin(hsSel) : '');
     }
+    // 0.134: пассивка героя — на всю команду, растёт от звёзд и уровня
+    function hsPassive(id) {
+      const p = C.heroPassive(s, id); if (!p) return '';
+      const P = CFG.passives, val = x => p.kind === 'bossTime' ? '+' + x.toFixed(1) + ' с' : '+' + (x * 100).toFixed(p.kind === 'critChance' ? 2 : 0) + '%';
+      const one = P.base[p.kind] * (P.rarity[CFG.allies.find(a => a.id === id).rarity] || 1);
+      return '<div class="hPas"><b>✦ ' + p.name + '</b> — ' + (p.tier ? val(p.value) : val(one)) + ' ' + P.names[p.kind] + ' всей команде' +
+        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small></div>';
+    }
     function hsWin(id) {
       const H = window.HS_ART, M = window.MK_ART || {}, a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {};
       const lv = s.allies[id].level, rl = C.rankLabel(h.rank), RNn = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'], E = CFG.evolution.stages;
@@ -654,7 +662,7 @@
         '<div class="hSp"><img src="' + H.i_level + '" alt=""><small>Уровень</small><b>Lv.' + lv + '<i>/' + fmt(C.allyCap(s, id)) + '</i></b></div>' +
         '<div class="hSp"><span class="hRkb">' + RNn[rl.rank] + '</span><small>Ранг</small><b>' + RNn[rl.rank] + (rl.max ? ' макс.' : ' · ' + rl.sub + '/' + CFG.ranks.subs) + '</b></div>' +
         '<div class="hSp"><img src="' + H.i_evo + '" alt=""><small>Эволюция</small><b>' + (h.evo ? E[h.evo - 1].name : 'Этап ' + h.evo + '/' + E.length) + '</b></div></div>' +
-        '<div class="hBio"><h4>Биография</h4><p>' + story + '</p>' + (a.quote ? '<q>' + a.quote + '</q>' : '') + '</div>' +
+        '<div class="hBio">' + hsPassive(id) + '<h4>Биография</h4><p>' + story + '</p>' + (a.quote ? '<q>' + a.quote + '</q>' : '') + '</div>' +
         '<button class="hAr hArL" data-hs="prev"></button><button class="hAr hArR" data-hs="next"></button>' +
         '<div class="hBts">' + bStar + bRank + bEvo + '</div></div></div>';
     }

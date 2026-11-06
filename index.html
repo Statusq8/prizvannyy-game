@@ -2416,6 +2416,68 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // 0.132 (решение пользователя): меч-автотап — уровень «Клинка первого призыва» = тапов/с, до heroAutoMaxTps.
     // Автотапы не заряжают ульту (её заряжают только свои тапы). Цена прокачки — решить позже (может, донат).
     heroAutoMaxTps: 10,
+    // 0.134 (решение пользователя 07.11): пассивка каждого героя — на всю команду, пока герой открыт (даже не в отряде).
+    // Сила = base[вид] × rarity[ранг] × (1 + звёзды + эволюция) × (1 + ⌊уровень / levelStep⌋). Звёзды — навсегда, уровень — до регрессии.
+    passives: {
+      levelStep: 50,
+      base: { allDmg: 0.02, tapDmg: 0.03, allyDmg: 0.03, gold: 0.03, critChance: 0.0005, critMult: 0.02, bossDmg: 0.03, bossTime: 0.02, shards: 0.02 },
+      rarity: { E: 1, D: 1.1, C: 1.2, B: 1.35, A: 1.5, S: 1.75, SS: 2, SSS: 2.25, GOD: 2.5 },
+      names: { allDmg: 'урон всех', tapDmg: 'урон тапа', allyDmg: 'урон героев', gold: 'золото', critChance: 'шанс крита', critMult: 'сила крита', bossDmg: 'урон по боссам', bossTime: 'время на босса', shards: 'осколки' },
+      heroes: {
+      shorokh: ['gold', 'Ловкие пальцы'],
+      kostik: ['bossTime', 'Держать строй'],
+      shmyg: ['critMult', 'Бум!'],
+      lumi: ['tapDmg', 'Неугасимый фонарь'],
+      irene: ['critChance', 'Меткий глаз'],
+      zlatokryl: ['allyDmg', 'Клич бури'],
+      morgul: ['shards', 'Копатель'],
+      krag: ['bossDmg', 'Первая кровь'],
+      borg: ['allDmg', 'Заточка'],
+      nokt: ['critChance', 'Удар в спину'],
+      saya: ['critMult', 'Отравленная сталь'],
+      auron: ['tapDmg', 'Дисциплина'],
+      grim: ['shards', 'Костяная жатва'],
+      gnar: ['gold', 'Дары леса'],
+      drake: ['bossDmg', 'Слава скальдов'],
+      morrak: ['critMult', 'Жажда'],
+      seraphim: ['bossTime', 'Благословение стража'],
+      kristalis: ['allyDmg', 'Холодная ярость'],
+      vorgat: ['bossDmg', 'Приговор'],
+      nekris: ['critChance', 'Предвестие'],
+      brum: ['shards', 'Болотные зелья'],
+      skrit: ['gold', 'Награда за голову'],
+      veil: ['critMult', 'Обман'],
+      zerik: ['allDmg', 'Шёпот Бездны'],
+      eliria: ['allyDmg', 'Молитва'],
+      solarion: ['allDmg', 'Знамя короля'],
+      malgora: ['critMult', 'Пламя страсти'],
+      rotgar: ['bossDmg', 'Клятва смерти'],
+      velma: ['shards', 'Кровавая десятина'],
+      morra: ['gold', 'Цена крови'],
+      urgash: ['allyDmg', 'Боевой клич'],
+      taurok: ['bossTime', 'Выносливость арены'],
+      kaeron: ['tapDmg', 'Клинок Бездны'],
+      noktar: ['critChance', 'Видение'],
+      yuki: ['bossTime', 'Застывшее время'],
+      seiren: ['tapDmg', 'Сердце грома'],
+      valtar: ['bossDmg', 'Кара небес'],
+      beltraks: ['critMult', 'Четыре клинка'],
+      carna: ['gold', 'Дары фей'],
+      fenra: ['allyDmg', 'Гнев леса'],
+      vargos: ['allDmg', 'Легион'],
+      astrael: ['tapDmg', 'Буря крыльев'],
+      kassian: ['critMult', 'Чёрное солнце'],
+      azragor: ['shards', 'Филактерия'],
+      gromtar: ['bossTime', 'Терпение гор'],
+      umbragor: ['allDmg', 'Голод Бездны'],
+      nyx: ['critChance', 'Вечная ночь'],
+      eon: ['allDmg', 'Рассвет'],
+      azrael: ['gold', 'Первый свет'],
+      abadron: ['bossDmg', 'Последняя сделка'],
+      ignisar: ['allyDmg', 'Бог войны'],
+      erebor: ['allDmg', 'Изначальная тьма']
+      },
+    },
     // 0.132: титул за финального босса биома — +урон и +золото, только на этажах этого биома
     biomeTitles: { dmg: 0.25, gold: 0.25 },
     // 0.132: спец-моб после 30 этажа — редко вместо обычного врага, много HP, 30 с; убит — сундук, не успел — сбежал
@@ -2749,8 +2811,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function treeDef(id) { return TREE.find(n => n.id === id); }
   function treeLevel(s, id) { return (s.tree && s.tree[id]) | 0; }
   function eventBuff(s, kind) { const e = s.event && CONFIG.events.list.find(x => x.id === s.event.id); return (e && e.buff[kind]) || 0; }
-  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
-  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')) * potionMult(s, 'shards'); }
+  function bossDmgMult(s) { return (1 + treePower(s, 'bossDmg')) * (1 + passivePower(s, 'bossDmg')) * (1 + runePower(s, 'bossDmg')) * (1 + eventBuff(s, 'bossDmg')) * (1 + petBonus(s, 'boss')); }
+  function shardMult(s) { return (1 + treePower(s, 'shards')) * (1 + passivePower(s, 'shards')) * (1 + runePower(s, 'shards')) * (1 + eventBuff(s, 'shards')) * (1 + bonePower(s, 'shards')) * potionMult(s, 'shards'); }
   // ---------- алхимия (0.60) ----------
   function potionDef(id) { return CONFIG.alchemy.potions.find(p => p.id === id); }
   function potionMult(s, kind) { let m = 1; for (const p of CONFIG.alchemy.potions) if (p.kind === kind && (s.potions[p.id] || 0) > 0) m *= p.mult; return m; }
@@ -3004,17 +3066,27 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const sets = T.collection.filter(n => totemCount(s) >= n).length;
     return (1 + T.dpsPerLevel * lv) * Math.pow(T.collectionMult, sets);
   }
-  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
+  function goldMult(s) { return softcap((1 + artPower(s, 'gold')) * (1 + treePower(s, 'gold')) * (1 + runePower(s, 'gold')) * (1 + eventBuff(s, 'gold')) * (1 + bonePower(s, 'gold')) * (1 + petBonus(s, 'gold')) * (1 + titlePower(s, 'gold')) * (1 + passivePower(s, 'gold')) * (1 + bondPower(s, 'gold')) * (1 + trophyPower(s, 'gold')), CONFIG.softcap.goldStart) * potionMult(s, 'gold') * (1 + biomeTitlePower(s, 'gold')); }
   // 0.132: титул биома действует только на этажах своего биома (вне режимов)
   function biomeTitlePower(s, kind) { return !s.mode && s.biomeTitles && s.biomeTitles[biomeOf(s.floor).id] ? CONFIG.biomeTitles[kind] || 0 : 0; }
+  // 0.134: пассивки героев (кэш на тик: s._pv сбрасывает tick)
+  function passiveTier(s, id) { const h = s.heroes[id], a = s.allies[id]; if (!h || !h.unlocked) return 0; return (1 + (h.stars | 0) + (h.evo | 0)) * (1 + Math.floor(((a && a.level) | 0) / CONFIG.passives.levelStep)); }
+  function heroPassive(s, id) {
+    const P = CONFIG.passives, d = P.heroes[id], a = allyDef(id); if (!d || !a) return null;
+    const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[a.rarity] || 1) * tier };
+  }
+  function passivePower(s, kind) {
+    if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; } }
+    return s._pv[kind] || 0;
+  }
   function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
-  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime') + passivePower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
-    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
+    let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + passivePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + passivePower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + passivePower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
   }
 
@@ -3064,12 +3136,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   // Временный бонус критов от ультимейта (GDD §3: допустим) — не прокачивается, общий предел шанса 50% остаётся
   function critBuffOn(s) { return s.critBuff && s.critBuff.t > 0 ? s.critBuff : null; }
   function critChance(s) {
-    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance');
+    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance') + passivePower(s, 'critChance');
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
     const cb = critBuffOn(s); if (cb) ch += cb.ch;
     return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + (cb ? cb.dmg : 0); }
+  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + passivePower(s, 'critMult') + (cb ? cb.dmg : 0); }
   function softcap(m, start) { const P = CONFIG.softcap; return m <= start ? m : start * Math.pow(m / start, P.power); }
   function enemyName(floor, index, isBoss) {
     const b = biomeOf(floor);
@@ -3468,6 +3540,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   // Фиксированный шаг симуляции
   function tick(s, dt) {
     const events = [];
+    s._pv = null;   // 0.134: пересчёт пассивок
     s.stats.playTime += dt;
     const w = s.tpsWin; w.t += dt;
     if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
@@ -5302,7 +5375,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
-    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, artLevel, artPower, tapHit, expectedDps,
+    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, heroPassive, passivePower, artLevel, artPower, tapHit, expectedDps,
     marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
@@ -7942,6 +8015,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       }).join('') : '<div class="hNone">Нет героев под этот фильтр</div>');
       set('.hwH', hsSel ? hsWin(hsSel) : '');
     }
+    // 0.134: пассивка героя — на всю команду, растёт от звёзд и уровня
+    function hsPassive(id) {
+      const p = C.heroPassive(s, id); if (!p) return '';
+      const P = CFG.passives, val = x => p.kind === 'bossTime' ? '+' + x.toFixed(1) + ' с' : '+' + (x * 100).toFixed(p.kind === 'critChance' ? 2 : 0) + '%';
+      const one = P.base[p.kind] * (P.rarity[CFG.allies.find(a => a.id === id).rarity] || 1);
+      return '<div class="hPas"><b>✦ ' + p.name + '</b> — ' + (p.tier ? val(p.value) : val(one)) + ' ' + P.names[p.kind] + ' всей команде' +
+        '<small>' + (p.tier ? 'растёт от звёзд и каждые ' + P.levelStep + ' уровней' : 'откроется, когда получишь героя') + '</small></div>';
+    }
     function hsWin(id) {
       const H = window.HS_ART, M = window.MK_ART || {}, a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {};
       const lv = s.allies[id].level, rl = C.rankLabel(h.rank), RNn = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'], E = CFG.evolution.stages;
@@ -7965,7 +8046,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="hSp"><img src="' + H.i_level + '" alt=""><small>Уровень</small><b>Lv.' + lv + '<i>/' + fmt(C.allyCap(s, id)) + '</i></b></div>' +
         '<div class="hSp"><span class="hRkb">' + RNn[rl.rank] + '</span><small>Ранг</small><b>' + RNn[rl.rank] + (rl.max ? ' макс.' : ' · ' + rl.sub + '/' + CFG.ranks.subs) + '</b></div>' +
         '<div class="hSp"><img src="' + H.i_evo + '" alt=""><small>Эволюция</small><b>' + (h.evo ? E[h.evo - 1].name : 'Этап ' + h.evo + '/' + E.length) + '</b></div></div>' +
-        '<div class="hBio"><h4>Биография</h4><p>' + story + '</p>' + (a.quote ? '<q>' + a.quote + '</q>' : '') + '</div>' +
+        '<div class="hBio">' + hsPassive(id) + '<h4>Биография</h4><p>' + story + '</p>' + (a.quote ? '<q>' + a.quote + '</q>' : '') + '</div>' +
         '<button class="hAr hArL" data-hs="prev"></button><button class="hAr hArR" data-hs="next"></button>' +
         '<div class="hBts">' + bStar + bRank + bEvo + '</div></div></div>';
     }
@@ -8939,7 +9020,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.133";
+    const VERSION = "0.134";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -10361,6 +10442,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       .hs .hWin .hSp b i { font-style: normal; font-size: 2.1cqw; color: #d8c8a8; }
       .hs .hWin .hBio { position: absolute; right: 0.4cqw; top: 17cqw; width: 22.3cqw; height: 42.7cqw; box-sizing: border-box; padding: 2.4cqw 2cqw; background: ${u('bio')} center / 100% 100% no-repeat; z-index: 1;
         display: flex; flex-direction: column; overflow: hidden; }
+      .hs .hWin .hPas { margin: 0 0 1.4cqw; padding: 1cqw 1.2cqw; border-radius: 1.2cqw; background: rgba(255, 200, 90, .12); border: 1px solid rgba(255, 210, 120, .35); font-size: 2.1cqw; line-height: 1.3; color: #f3e6c4; }
+      .hs .hWin .hPas b { color: #ffd36b; } .hs .hWin .hPas small { display: block; margin-top: .4cqw; font-size: 1.7cqw; color: #bfae8a; }
       .hs .hWin .hBio h4 { margin: 0 0 1.4cqw; text-align: center; font-size: 2.6cqw; color: #f6dfa6; }
       .hs .hWin .hBio p { margin: 0; font-size: 1.95cqw; line-height: 1.22; color: #eadff4; overflow: hidden; }
       .hs .hWin .hBio q { display: block; margin-top: auto; padding-top: 1.2cqw; text-align: center; font-style: italic; font-size: 1.95cqw; color: #f0d8a0; }

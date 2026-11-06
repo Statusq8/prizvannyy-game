@@ -49,7 +49,7 @@
     tapDamageAt, milestoneMultAt, milestonesReached, nextMilestone,
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
-    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, artLevel, artPower, tapHit, expectedDps,
+    soulMult, permMult, goldMult, bossTime, spawn, hasHeroAuto, heroAutoTps, biomeTitlePower, heroPassive, passivePower, artLevel, artPower, tapHit, expectedDps,
     marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,

@@ -50,3 +50,17 @@ test('спец-моб: после 30 этажа, 30 секунд, сбегает
   assert.ok(ch && ch.reward.shard > 0 && ch.reward.gold, 'сундук');
   assert.ok(s.materials.shard > shard0);
 });
+
+test('пассивки: каждый герой даёт бонус всей команде, растёт от звёзд и уровня', () => {
+  const P = CFG.passives;
+  assert.strictEqual(Object.keys(P.heroes).length, CFG.allies.length, 'у каждого героя есть пассивка');
+  const s = C.newState(NOCRIT); const id = 'irene', kind = P.heroes[id][0];
+  for (const k in s.heroes) s.heroes[k].unlocked = false;
+  s._pv = null; assert.strictEqual(C.passivePower(s, kind), 0, 'закрытый герой не даёт');
+  s.heroes[id].unlocked = true; s.allies[id].level = 0; s._pv = null;
+  const p1 = C.passivePower(s, kind); assert.ok(p1 > 0, 'открытый даёт даже без найма');
+  s.heroes[id].stars = 5; s._pv = null; const p2 = C.passivePower(s, kind);
+  assert.ok(Math.abs(p2 / p1 - 6) < 1e-9, 'звёзды: ×(1+звёзды)');
+  s.allies[id].level = P.levelStep * 2; s._pv = null;
+  assert.ok(Math.abs(C.passivePower(s, kind) / p2 - 3) < 1e-9, 'уровень: ×(1+⌊ур/шаг⌋)');
+});

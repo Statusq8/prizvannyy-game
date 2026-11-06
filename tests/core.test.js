@@ -4,6 +4,7 @@ const assert = require('node:assert');
 const C = require('../src/core.js');
 const CFG = C.CONFIG;
 const TAP_CAP = CFG.maxTapsPerSec; CFG.maxTapsPerSec = Infinity;   // тесты бьют много раз за кадр; предел проверяется отдельно
+CFG.passives.heroes = {};   // 0.134: пассивки героев проверяются в mechanics.test.js — здесь точные числа без них
 const UNLOCKS = CFG.unlocks; CFG.unlocks = {}; CFG.disabled = []; CFG.allyUlts = true; const CAGE = CFG.cage; CFG.cage = null;   // 0.74: лесенка открытий — в тестах всё открыто, проверяется отдельно
 const NOCRIT = { rng: () => 1 };   // без случайных критов, чтобы проверять точный урон
 

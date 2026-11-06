@@ -78,6 +78,8 @@
       .hs .hWin .hSp b i { font-style: normal; font-size: 2.1cqw; color: #d8c8a8; }
       .hs .hWin .hBio { position: absolute; right: 0.4cqw; top: 17cqw; width: 22.3cqw; height: 42.7cqw; box-sizing: border-box; padding: 2.4cqw 2cqw; background: ${u('bio')} center / 100% 100% no-repeat; z-index: 1;
         display: flex; flex-direction: column; overflow: hidden; }
+      .hs .hWin .hPas { margin: 0 0 1.4cqw; padding: 1cqw 1.2cqw; border-radius: 1.2cqw; background: rgba(255, 200, 90, .12); border: 1px solid rgba(255, 210, 120, .35); font-size: 2.1cqw; line-height: 1.3; color: #f3e6c4; }
+      .hs .hWin .hPas b { color: #ffd36b; } .hs .hWin .hPas small { display: block; margin-top: .4cqw; font-size: 1.7cqw; color: #bfae8a; }
       .hs .hWin .hBio h4 { margin: 0 0 1.4cqw; text-align: center; font-size: 2.6cqw; color: #f6dfa6; }
       .hs .hWin .hBio p { margin: 0; font-size: 1.95cqw; line-height: 1.22; color: #eadff4; overflow: hidden; }
       .hs .hWin .hBio q { display: block; margin-top: auto; padding-top: 1.2cqw; text-align: center; font-style: italic; font-size: 1.95cqw; color: #f0d8a0; }

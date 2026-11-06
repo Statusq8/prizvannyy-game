@@ -176,6 +176,7 @@
   // Фиксированный шаг симуляции
   function tick(s, dt) {
     const events = [];
+    s._pv = null;   // 0.134: пересчёт пассивок
     s.stats.playTime += dt;
     const w = s.tpsWin; w.t += dt;
     if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
