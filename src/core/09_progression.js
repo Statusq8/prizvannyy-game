@@ -169,6 +169,28 @@
     }
   }
 
+  // ---------- 0.99: цепочка героев за золото (как в «Крушителях») ----------
+  function chainList() {
+    const R = CONFIG.rarities, top = R.indexOf(CONFIG.goldHire.maxRarity), cage = CONFIG.cage && CONFIG.cage.ally;
+    return CONFIG.allies.filter(a => !a.hidden && !a.seasonal && a.id !== cage && R.indexOf(a.rarity) <= top)
+      .map((a, i) => ({ a, i })).sort((x, y) => x.a.hireCost - y.a.hireCost || x.i - y.i).map(x => x.a);
+  }
+  // Герой уже получен: куплен за золото, пришёл из Портала (копии) или открыт не как стартовый
+  function chainOwned(s, id) {
+    const h = s.heroes[id], a = allyDef(id);
+    return (s.goldHired || []).includes(id) || h.copies > 0 || (h.unlocked && !a.starter) || s.allies[id].level > 0;
+  }
+  function chainNext(s) { const a = chainList().find(x => !chainOwned(s, x.id)); return a ? a.id : null; }
+  function buyChainHero(s) {
+    const id = chainNext(s); if (!id) return null;
+    const cost = allyDef(id).hireCost;
+    if (B.gt(cost, s.gold)) return null;
+    s.gold = B.sub(s.gold, cost);
+    s.heroes[id].unlocked = true; s.allies[id].level = Math.max(1, s.allies[id].level);
+    if (!s.goldHired) s.goldHired = [];
+    if (!s.goldHired.includes(id)) s.goldHired.push(id);
+    return id;
+  }
   function buyAlly(s, id, n) {
     if (!allyDef(id) || !s.heroes[id].unlocked) return false;
     let count = n === 'max' ? allyMax(s, id) : n;

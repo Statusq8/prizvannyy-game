@@ -54,7 +54,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
-      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false, artShop: { soul: [], blood: [] },           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
+      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false, goldHired: [], artShop: { soul: [], blood: [] },           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
