@@ -42,6 +42,7 @@
       vis($('cbPortal'), 'portal'); vis($('cbPve'), 'pve'); vis(rit, 'ritual'); vis(forge, 'forge');
       book.style.display = on('quests') ? '' : 'none';
       vis($('tbMail'), 'mail'); vis($('cbMap'), 'map'); vis($('questPanel'), 'quests');
+      menuBtn.style.display = s.stats.kills >= 1 ? '' : 'none';   // ответ 7: «Улучшить» — после первого врага
     }
     // ---------- квест справа: задача с наградой + следующая функция (ответы 35–38) ----------
     const QK = 'prizvannyy_story';
