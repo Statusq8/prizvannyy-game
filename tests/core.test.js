@@ -2287,10 +2287,10 @@ test('обычные мобы иногда роняют осколки (≈8%, 3
   assert.ok(got >= n);
 });
 
-test('кривая дальних этажей: до 1000 — как раньше (×1.18), выше — медленнее, но растёт всегда', () => {
-  const l = f => B.log10(C.enemyMaxHp(f, false));
-  assert.ok(Math.abs(l(500) - l(499) - Math.log10(1.18)) < 1e-9);
-  assert.ok(l(2000) - l(1999) < Math.log10(1.18));
+test('кривая дальних этажей: до колена — ×enemyHpGrowth, выше — медленнее, но растёт всегда', () => {
+  const l = f => B.log10(C.enemyMaxHp(f, false)), g = Math.log10(CFG.enemyHpGrowth);
+  assert.ok(Math.abs(l(500) - l(499) - g) < 1e-9);
+  assert.ok(l(2000) - l(1999) < g);
   assert.ok(l(100000) - l(99999) < l(2000) - l(1999));
   assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000));
 });
