@@ -58,7 +58,8 @@
     // старые вкладки — внутри полноэкранной страницы
     function openOld(t) {
       click();
-      if (t === 'quests' && window.QS_ART) { openQuests(); return; }   // 0.118: новый экран Заданий
+      if (t === 'quests' && window.QS_ART) { openQuests(); return; }
+      if (t === 'heroes' && window.HS_ART) { stack.length = 0; page = null; hsSel = null; openX('heroes'); return; }   // 0.122: новый экран Героев   // 0.118: новый экран Заданий
       tab = t; setCollapsed(false);
       document.body.classList.add('oldOpen');
       $('oldTitle').textContent = TAB_NAMES[t] || '';
@@ -503,6 +504,9 @@
       $('pgX').classList.toggle('mkl', !!window.MK_ART && xKind === 'market');
       $('pgX').classList.toggle('rgl', !!window.RG_ART && xKind === 'regress');
       $('pgX').classList.toggle('qsl', !!window.QS_ART && xKind === 'quests');
+      $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
+      $('pgX').classList.toggle('hsw', !!window.HS_ART && xKind === 'heroes' && !!hsSel);
+      if (xKind === 'heroes') { aux.style.display = 'none'; $('xTitle').textContent = 'Герои'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['crystal', fmt(s.crystals | 0)]])); hsRender(); return; }
       if (xKind === 'quests') { aux.style.display = 'none'; $('xTitle').textContent = 'Задания'; setHtml('xTop', resPills([['crystal', fmt(s.crystals | 0)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', questsHtml()); return; }
       if (xKind === 'regress') { aux.style.display = 'none'; $('xTitle').textContent = ''; setHtml('xTop', resPills([['soul', fmt(s.souls)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', regressHtml()); return; }
       if (xKind === 'market') {
@@ -536,6 +540,61 @@
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
 
+    // ---------- 0.122: экран «Герои» по макетам пользователя — разметка; стили и картинки — src/heroes.js ----------
+    let hsSel = null; const hsF = {};
+    const HS_RC = { E: '#c8c8d8', D: '#e09050', C: '#5ae07a', B: '#5aa8ff', A: '#c070ff', S: '#ffc840', SS: '#ff5a5a', SSS: '#cfeaff', GOD: '#fff2a0' };
+    const HS_SIDE = { 'Свет': 's_light', 'Тьма': 's_dark', 'Дикие': 's_wild', 'Тени': 's_shadow' };
+    function hsIds() { return C.heroList(s, { rarity: hsF.rarity, side: hsF.side }); }
+    function hsReady(id) { return C.canStar(s, id) || C.canRankUp(s, id) || C.canEvolve(s, id); }
+    function hsRender() {
+      // сетка листается сама — перерисовываем только содержимое, не трогая прокрутку
+      const body = $('xBody');
+      let root = body.querySelector('.hs');
+      if (!root) { body.innerHTML = '<div class="hs"><div class="hPan"></div><div class="hFlt"></div><div class="hGrid"></div><div class="hwH"></div></div>'; root = body.querySelector('.hs'); lastHtml.xBody = null; }
+      const H = window.HS_ART, set = (sel, h) => { const e = root.querySelector(sel); if (e.__h !== h) { e.innerHTML = h; e.__h = h; } };
+      const all = CFG.allies.filter(a => !a.hidden || s.heroes[a.id].unlocked), own = all.filter(a => s.heroes[a.id].unlocked).length;
+      set('.hPan', '<div class="hDmg"><img src="' + H.i_dmg + '" alt="">' + fmt(C.autoDps(s)) + '</div><i class="hDv"></i><div class="hCnt"><img src="' + H.i_heroes + '" alt="">Герои ' + own + '/' + all.length + '</div>');
+      set('.hFlt', '<button class="hFb' + (!hsF.rarity && !hsF.side ? ' hOn' : '') + '" data-hf="all">Все</button>' +
+        ['E', 'D', 'C', 'B', 'A', 'S'].map(r => '<button class="hFb' + (hsF.rarity === r ? ' hOn' : '') + '" data-hf="r:' + r + '" style="color:' + HS_RC[r] + '">' + r + '</button>').join('') + '<i class="hSep"></i>' +
+        Object.keys(HS_SIDE).map(sd => '<button class="hFb hSd' + (hsF.side === sd ? ' hOn' : '') + '" data-hf="s:' + sd + '" style="background-image:url(' + H[HS_SIDE[sd]] + ')" title="' + sd + '"></button>').join(''));
+      const ids = hsIds();
+      set('.hGrid', ids.length ? ids.map(id => {
+        const a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {}, lk = !h.unlocked, lv = s.allies[id].level;
+        const pic = Ar.avatar ? '<img src="' + Ar.avatar + '" alt="">' : '<span>' + (v.icon || '❔') + '</span>';
+        const st = lk || !h.stars ? '' : h.stars <= 5 ? '<img src="' + H.star + '" alt="">'.repeat(h.stars) : '<img src="' + H.star + '" alt="">' + h.stars;
+        return '<button class="hsCard' + (lk ? ' hLock' : '') + '" data-hh="' + id + '" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '"><div class="hPt" style="' + (Ar.avatar || lk ? '' : 'background:' + (v.iconBg || '#1a1230')) + '">' + pic + '</div>' +
+          '<img class="hFr" src="' + (H['fr_' + a.rarity] || H.fr_lock) + '" alt=""><b class="hRk">' + a.rarity + '</b>' +
+          (lk ? '<img class="hLk" src="' + H.i_lock + '" alt="">' : (lv ? '<span class="hLv">Lv.' + lv + '</span>' : '') + '<div class="hSt">' + st + '</div>' + (hsReady(id) ? '<i class="hDot"></i>' : '')) + '</button>';
+      }).join('') : '<div class="hNone">Нет героев под этот фильтр</div>');
+      set('.hwH', hsSel ? hsWin(hsSel) : '');
+    }
+    function hsWin(id) {
+      const H = window.HS_ART, M = window.MK_ART || {}, a = CFG.allies.find(x => x.id === id), h = s.heroes[id], Ar = HERO_ART[id] || {}, v = ALLY_VIS[id] || {};
+      const lv = s.allies[id].level, rl = C.rankLabel(h.rank), RNn = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'], E = CFG.evolution.stages;
+      const art = Ar.side || Ar.avatar ? '<img src="' + (Ar.side || Ar.avatar) + '" alt="">' : '<span class="hEmo">' + (v.icon || '❔') + '</span>';
+      const story = String(a.story || '').split(/\s*Ульта:/)[0];
+      const need = C.starCost(s, id), fod = C.starFodder ? C.starFodder(s, id) : 0, rc = C.rankCost(s, id), ec = C.evoCost(s, id);
+      const shard = M.i_shard ? '<img src="' + M.i_shard + '" alt="">' : '🔹';
+      const num = (have, want) => '<em class="' + (have >= want ? 'ok' : '') + '">' + fmt(have) + '</em>/' + fmt(want);
+      const bStar = need == null ? '<button class="hBt" disabled>Звёзды<span>Макс.</span></button>'
+        : '<button class="hBt" data-hs="star"' + (C.canStar(s, id) ? '' : ' disabled') + '>Повысить ★<span>' + (Ar.avatar ? '<img src="' + Ar.avatar + '" alt="">' : '') + num(h.copies, need) + '</span>' + (fod ? '<small>+ корм: ' + fod + ' копий других</small>' : '') + (C.canStar(s, id) ? '<i class="hRd"></i>' : '') + '</button>';
+      const bRank = !rc ? '<button class="hBt hV" disabled>Ранг<span>Макс.</span></button>'
+        : '<button class="hBt hV" data-hs="rank"' + (C.canRankUp(s, id) ? '' : ' disabled') + '>Повысить ранг<span>' + shard + fmt(rc.shards) + '</span>' + (rc.needEvo && h.evo < rc.needEvo ? '<small>нужна эволюция ' + RNn[rc.needEvo] + '</small>' : '') + (C.canRankUp(s, id) ? '<i class="hRd"></i>' : '') + '</button>';
+      const bEvo = !ec ? '<button class="hBt hGv" disabled>Эволюция<span>Макс.</span></button>'
+        : '<button class="hBt hGv" data-hs="evo"' + (C.canEvolve(s, id) ? '' : ' disabled') + '>Эволюция<span>' + shard + fmt(ec.shards) + '</span>' + (h.stars < ec.stars ? '<small>нужно ★' + ec.stars + '</small>' : '') + (C.canEvolve(s, id) ? '<i class="hRd"></i>' : '') + '</button>';
+      let stars = ''; for (let i = 0; i < CFG.maxStars; i++) stars += '<img src="' + (i < h.stars ? H.star : H.star_off) + '" alt="">';
+      return '<div class="hWrap" data-hs="bg"><div class="hWin" style="--rc:' + (HS_RC[a.rarity] || '#fff') + '">' +
+        '<div class="hArt"><img class="hRune" src="' + H.rune + '" alt="">' + art + '</div>' +
+        '<div class="hNm">' + a.name + '</div><div class="hShR">' + a.rarity + '</div><div class="hShF"><img src="' + H[HS_SIDE[a.side]] + '" alt=""></div><button class="hX" data-hs="close"></button>' +
+        '<div class="hStars">' + stars + '</div>' +
+        '<div class="hStl"><div class="hSp"><img src="' + H.i_dmg + '" alt=""><small>Урон</small><b>' + fmt(C.allyDps(s, id)) + '</b></div>' +
+        '<div class="hSp"><img src="' + H.i_level + '" alt=""><small>Уровень</small><b>Lv.' + lv + '<i>/' + fmt(C.allyCap(s, id)) + '</i></b></div>' +
+        '<div class="hSp"><span class="hRkb">' + RNn[rl.rank] + '</span><small>Ранг</small><b>' + RNn[rl.rank] + (rl.max ? ' макс.' : ' · ' + rl.sub + '/' + CFG.ranks.subs) + '</b></div>' +
+        '<div class="hSp"><img src="' + H.i_evo + '" alt=""><small>Эволюция</small><b>' + (h.evo ? E[h.evo - 1].name : 'Этап ' + h.evo + '/' + E.length) + '</b></div></div>' +
+        '<div class="hBio"><h4>Биография</h4><p>' + story + '</p>' + (a.quote ? '<q>' + a.quote + '</q>' : '') + '</div>' +
+        '<button class="hAr hArL" data-hs="prev"></button><button class="hAr hArR" data-hs="next"></button>' +
+        '<div class="hBts">' + bStar + bRank + bEvo + '</div></div></div>';
+    }
     // ---------- 0.118: экран Заданий по макету пользователя — разметка; стили и картинки — src/quests.js ----------
     let qsTab = 'daily';
     function openQuests(t) { if (t) qsTab = t; stack.length = 0; page = null; openX('quests'); }
@@ -846,6 +905,7 @@
     function goMode(kind, opts) { const before = s.mode; startMode(kind, opts); if (!before && s.mode) { stack.length = 0; page = null; show(null); } }
 
     $('xBody').addEventListener('click', e => {
+      if (e.target.classList && e.target.classList.contains('hWrap')) { click(); hsSel = null; render(); return; }   // тап мимо окна героя — закрыть
       const b = e.target.closest('button'); if (!b || b.disabled) return;
       const d = b.dataset;
       if (d.ban) { click(); ban = d.ban; }
@@ -855,6 +915,15 @@
       else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
         toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.rgback !== undefined) { xBack.click(); return; }
+      else if (d.hf) { click(); if (d.hf === 'all') { delete hsF.rarity; delete hsF.side; } else { const [k, v] = d.hf.split(':'), f = k === 'r' ? 'rarity' : 'side'; hsF[f] = hsF[f] === v ? undefined : v; } }
+      else if (d.hh) { if (!s.heroes[d.hh].unlocked) { const a = CFG.allies.find(x => x.id === d.hh); toast('Герой не открыт<small>' + (CFG.rarities.indexOf(a.rarity) <= CFG.rarities.indexOf(CFG.goldHire.maxRarity) ? 'Купите в Штабе за золото' : 'Выпадает в Портале') + '</small>'); return; } click(); hsSel = d.hh; }
+      else if (d.hs) { const k = d.hs;
+        if (k === 'bg') { if (e.target === b) { click(); hsSel = null; } else return; }
+        else if (k === 'close') { click(); hsSel = null; }
+        else if (k === 'prev' || k === 'next') { const L = hsIds().filter(id => s.heroes[id].unlocked), i = L.indexOf(hsSel); if (L.length) { click(); hsSel = L[(i + (k === 'next' ? 1 : -1) + L.length) % L.length]; } }
+        else if (k === 'star') { if (!C.starUp(s, hsSel)) return; click(); toast('Звезда!<small>' + CFG.allies.find(x => x.id === hsSel).name + ' ★' + s.heroes[hsSel].stars + '</small>'); save(); }
+        else if (k === 'rank') { if (!C.rankUp(s, hsSel)) return; click(); save(); }
+        else if (k === 'evo') { if (!C.evolve(s, hsSel)) return; click(); toast('Эволюция!<small>' + CFG.allies.find(x => x.id === hsSel).name + '</small>'); save(); } }
       else if (d.qt) { click(); qsTab = d.qt; $('xBody').scrollTop = 0; }
       else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
       else if (d.qa) { const r = C.claimAch(s, d.qa); if (!r) return; click(); toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); save(); }

@@ -41,3 +41,6 @@ Game UI asset sheet, same style, flat solid pure green (#00FF00) background, 5x2
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone barracks hall inside the Tower with gothic arches and hanging chains, weapon racks with spears and swords on the left, a dark knight armor stand on the right, violet banners with a trident emblem, violet flames in braziers on both sides, cracked stone floor at the bottom. Top part detailed, the middle calmer and darker for a grid of cards. No text, no UI.
 ```
+
+## Собрано — 0.122
+Листы → tools/heroescut.py → assets/heroes_ui (рамки: тёмная середина вырезана, зелёная рамка C — отдельный ключ); стили — src/heroes.js (классы с префиксом h*, чтобы не пересекаться со старыми .hCard/.rk); разметка — hsRender/hsWin в src/ui2.js (openX('heroes'); openOld('heroes') ведёт сюда). Сетка листается сама, окно героя — поверх экрана; ‹ › — по открытым героям текущего фильтра. Закрытые — силуэт (аватар или значок) с замком, тап — подсказка, где взять.
