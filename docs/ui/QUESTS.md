@@ -29,3 +29,6 @@ Game icon sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) back
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone hall inside the Tower with gothic arched violet windows and hanging chains, in the upper third a large quest board of old dark wood and iron with pinned parchment scrolls and a violet banner, violet candles, a quill and old books on the sides, violet flames in braziers on the left and right edges, cracked stone floor at the bottom. Top and the area under the board calmer and darker for UI panels. No text, no UI.
 ```
+
+## Собрано — 0.118
+Листы → tools/questcut.py → assets/quests (у карточки нарисованный разделитель стёрт — рисуется CSS); стили — src/quests.js (замеры макета в cqw, плашки тянутся по ширине через border-image); разметка — questsHtml в src/ui2.js (openX('quests'); старые входы openOld('quests') ведут сюда). Вкладки: Ежедневные (сундуки 1/2/4 + таймер до полуночи), Недельные (+ задания регрессии, таймер до понедельника), Достижения (+ первые шаги), Вход (30 дней; автопоказ при входе открывает эту вкладку).
