@@ -20,3 +20,22 @@ Mobile game summon screen, vertical 9:16 portrait, dark fantasy manhwa style, in
 ```
 Mobile game summon result screen, vertical 9:16 portrait, dark fantasy manhwa style. Dark violet background with a glowing portal vortex behind. Ten tall cards in two rows of five, face down, ornate dark card backs with a violet tower emblem; two of the cards glow strongly (one gold, one rainbow) before flipping. Bottom: two empty ornate buttons. No text, no characters.
 ```
+
+## Макет пользователя — references/portal_mockup_v1.png (принят как основа)
+Сверху: «назад», «Портал призыва», «История», «?», билеты. Портал в центре, справа «Шансы призыва». Полоса гарантии (S и выше, 78/100). Кнопки «Призвать ×1» (синяя) и «×10» (золотая) с ценой в билетах. Внизу — лента баннеров.
+Правки при сборке: шансы и гарантия — из игры (там есть и SSS); лента внизу = переключение баннеров (обычный, редкий, тематический, событийный); добавить вкладки «Призыв / Рецепты» под заголовком.
+
+## Лист деталей Портала A
+```
+Game UI asset sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 3x3 grid with wide spacing, each item separate, NO TEXT anywhere: 1) big ornate blue-violet button with glowing frame (empty, wide); 2) big ornate gold-magenta button with glowing frame (empty, wide); 3) small dark pill plate with a violet summon ticket icon on the left (empty right part); 4) long dark progress bar frame with gold-violet ornate ends (empty inside); 5) violet glowing bar fill strip; 6) round gold spiked medallion with an empty dark center; 7) tall dark panel frame with violet glowing border (empty); 8) wide ornate title plate with violet glow and spiky metal ends (empty); 9) violet summon ticket icon alone.
+```
+
+## Лист деталей Портала B
+```
+Game UI asset sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 3x3 grid with wide spacing, each item separate, NO TEXT anywhere: 1) square back button with a left arrow, violet-metal frame; 2) small dark plate with a scroll icon on the left (empty right part); 3) round button with a question mark; 4) round small info button with letter i; 5) wide dark tab plate normal; 6) the same tab plate selected, glowing gold-violet; 7) wide banner frame for a hero carousel, ornate violet border, empty dark inside; 8) gold left arrow; 9) gold right arrow.
+```
+
+## Фон Портала (без интерфейса)
+```
+Vertical 9:16 mobile game background, dark fantasy manhwa style: a huge stone arch portal with a swirling violet vortex at the top of wide stone stairs, a dark gothic tower behind it with a glowing halo, two hooded chained statues at the sides holding violet crystals, banners, chains, violet lightning, night sky with violet clouds. Bottom third calmer and darker for buttons. No text, no UI, no characters except the statues.
+```
