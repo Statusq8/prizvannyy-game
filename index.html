@@ -7202,8 +7202,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       });
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
-        if (CFG.cage && !(lv > 0)) continue;
-        if (!hh.unlocked) continue;     // пакет: без карточек «Освободить героя» — новых героев приводит портал
+        // 0.87.1: призванные в портале видны сразу (с кнопкой «Нанять»); стартовые без найма — только если пришли из портала (ответ 7)
+        if (!hh.unlocked) continue;
+        if (CFG.cage && !(lv > 0) && a.starter && !(hh.copies > 0)) continue;
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
         h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
@@ -9416,7 +9417,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       s.maxFloor = Math.max(s.maxFloor | 0, n); s.bestFloor = Math.max(s.bestFloor | 0, n); s.highestCleared = Math.max(s.highestCleared | 0, n - 1);
       if (s.bestCleared != null) s.bestCleared = Math.max(s.bestCleared | 0, n - 1);
       if (s.floor !== n) C.goToFloor(s, n);
-      if (n > 3) s.cageFreed = true;
+      if (n > 3) { s.cageFreed = true; if (s.allies.shorokh && !(s.allies.shorokh.level > 0)) s.allies.shorokh.level = 1; }   // клетку пропустили — Шорох в отряде
       toast('Этаж ' + n);
     }
     pn.addEventListener('click', e => {
