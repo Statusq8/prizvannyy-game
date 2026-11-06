@@ -1684,6 +1684,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 </div>
 
 <script>
+// ==== src/core/00a_config_core.js — CONFIG: базовые числа боя, экономики, портала, ритуала, артефактов, материалов, офлайна ====
 // Ядро игры: только логика, без интерфейса. Работает в браузере и в Node (тесты).
 (function (root) {
   'use strict';
@@ -1863,6 +1864,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // У биома свои враги, оттенок фона-зала (bg: поворот оттенка°, насыщенность, яркость), сложность, награды
     // и финальный босс на последнем этаже. Числа TBD.
     biomeFloors: 50,
+  // ==== src/core/00b_config_world.js — CONFIG: биомы, залы, редкие враги, фазы боссов, дерево душ, руны, тотемы ====
     biomes: [
       // 0.79 (docs/START.md, ответы 9–10): первая локация — Зал призыва, слабые монстры; арт — assets/enemies
       { id: 'crypt',  name: 'Зал призыва',       bg: [0, 1, 1], hp: 1.00, gold: 1.0, rare: 0.03, sky: ['#1e1329', '#0d0a12'], hue: 0,
@@ -1996,6 +1998,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
               upShards: 50, upGrowth: 1.4, heartEvery: 5 },   // каждый 5-й уровень требует ещё 1 сердце
     // Доп. PvE (GDD §10). Режимы используют тот же бой (тапы, союзники, ульты, способности), но свои враги и таймеры.
     // Попытка тратится при входе. Ежедневные попытки обновляются в полночь по времени устройства. Числа TBD.
+  // ==== src/core/00c_config_modes.js — CONFIG: PvE, задания, достижения, фракции, связи, пресеты, проклятия, алхимия ====
     pve: {
       // Ежедневные подземелья: 5 врагов + страж за общий таймер, фиксированная награда по уровню сложности
       dungeons: [
@@ -2185,6 +2188,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       extra: [] },
     // Сезоны и боевой пропуск (GDD §11). Сезон — 28 дней, считается по дате устройства от epoch (понедельник).
     // Сезонный герой чередуется по номеру сезона. Тропа сезона — линейные задания. Числа TBD.
+  // ==== src/core/00d_config_late.js — CONFIG: сезон, события, вход, классы, кости, питомцы, коллекция ====
     season: {
       epoch: '2026-11-02', days: 28,
       names: ['Пепельный карнавал', 'Вечная зима'],
@@ -2370,6 +2374,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // hidden — не выпадает в портале, открывается скрытым рецептом Алтаря (повторяемый бесплатный путь).
     // 0.67: ростер из docs/HEROES.md — 52 героя, 4 стороны (side) × 10 народов (faction). Стартовые 4 и прежние слоты
     // (Ирэн ← Гаррет, Вейл ← Ноа, Ротгар ← Рагнар) — с прежними статами; остальные — по базе редкости ×(1 + 0,12·номер). Числа TBD.
+  // ==== src/core/00e_config_heroes.js — CONFIG: каталог героев (allies), Алтарь; закрывает объект CONFIG ====
     allies: [
       { id: 'shorokh', name: 'Шорох', role: 'Теневая тварь', rarity: 'E', side: 'Тени', faction: 'Тени', starter: true, baseDps: 4, attackInterval: 0.8, hireCost: 25, costGrowth: 1.05, ult: { name: 'Теневой шквал', kind: 'nuke', charge: 12, power: 20 } },
       { id: 'kostik', name: 'Костик', role: 'Скелет-боец', rarity: 'E', side: 'Тьма', faction: 'Нежить', starter: true, baseDps: 120, attackInterval: 1.6, hireCost: 400, costGrowth: 1.05, ult: { name: 'Костяной клич', kind: 'teamBuff', charge: 20, power: 2, duration: 6 } },
@@ -2435,6 +2440,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 
   // 0.67: прежние id → новые (по слотам и статам): стартовые Ирэн/Борг/Лиа/Каэль → Шорох/Костик/Шмыг/Люми, Гаррет → Ирэн, Ноа → Вейл, Рагнар → Ротгар
   const HERO_MIGRATE = { irene: 'shorokh', borg: 'kostik', lia: 'shmyg', kael: 'lumi', garret: 'irene', noa: 'veil', ragnar: 'rotgar' };
+  // ==== src/core/01_hero_info.js — Герои: описания для экрана героя (раса, класс, цитата) ====
   // ---------- описание героев (экран героя): раса, класс, цитата. Тексты временные, можно менять ----------
   const LORE = {
     shorokh: { race: 'Теневая тварь', cls: 'Метка', quote: '…ш-ш-ш…',
@@ -2563,6 +2569,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     }));
   }
 
+  // ==== src/core/02_numbers.js — Числа: биомы и залы по этажу, большие числа (B), формулы HP и золота ====
   // ---------- биомы ----------
   const ROMAN = ['', '', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X'];
   function biomeIndex(floor) { return Math.floor((floor - 1) / CONFIG.biomeFloors); }
@@ -2668,6 +2675,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const hp = CONFIG.enemyBaseHp * Math.pow(CONFIG.enemyHpGrowth, floorSteps(floor)) * biomeOf(floor).hp;
     return Math.ceil(isBoss ? hp * bm : hp);
   }
+  // ==== src/core/03_bonuses.js — Бонусы: души, дерево, алхимия, классы, кости, питомцы, усилитель, руны, тотемы, криты ====
   // ---------- души и артефакты ----------
   function artDef(id) { return CONFIG.artifacts.find(a => a.id === id); }
   function artLevel(s, id) { return s.artifacts[id] | 0; }
@@ -3052,6 +3060,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return seriesMax(CONFIG.tapUpgradeBaseCost, CONFIG.tapUpgradeCostGrowth, level - 1, gold);
   }
 
+  // ==== src/core/04_allies.js — Герои: DPS союзников, найм, уровни ====
   // ---------- союзники ----------
   function allyDef(id) { return CONFIG.allies.find(a => a.id === id); }
   // Множитель навыков героя на этом уровне
@@ -3100,6 +3109,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function allyCost(s, id, n) { const a = allyDef(id); return seriesCost(a.hireCost, a.costGrowth, s.allies[id].level, n); }
   function allyMax(s, id) { const a = allyDef(id); return seriesMax(a.hireCost, a.costGrowth, s.allies[id].level, s.gold); }
 
+  // ==== src/core/05_state.js — Сохранения/состояние: newState — структура состояния игры ====
   // ---------- состояние ----------
   function newState(opts) {
     const s = {
@@ -3213,6 +3223,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.respawn = 0;
   }
 
+  // ==== src/core/06_combat.js — Бой: урон, криты, тап, тик, смерть врага, боссы, награды за убийство ====
   // ---------- действия ----------
   // Множители от ультимейтов: Ярость — весь урон отряда, Разрез — тапы, Метка — урон по врагу
   function damageMult(s, source) {
@@ -3455,6 +3466,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return events;
   }
 
+  // ==== src/core/07_meta.js — Прогрессия: перенос прокачки, престиж, тайные комнаты, дневник, вехи, проклятия, доп. PvE ====
   // ---------- перенос прокачки (0.65) ----------
   function rankCapForEvo(evo) {
     const R = CONFIG.ranks; let cap = maxSteps();
@@ -3773,6 +3785,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     spawn(s);
   }
 
+  // ==== src/core/08_liveops.js — Лайв: эхо, события, центр наград, задания, вход, путешествие во времени, сезон, достижения, коллекция ====
   // ---------- «Эхо Башни» (0.58) ----------
   // Неделя — по ключу недели события (s.event.week). Биом — один из пройденных, модификатор — по номеру недели.
   function echoSync(s) { const wk = (s.event && s.event.week) || ''; if (s.echo.week !== wk) s.echo = { week: wk, used: 0, won: false }; }
@@ -4073,6 +4086,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 
   function claimableCount(s) { return QUESTS.filter(q => questClaimable(s, q.id)).length; }
 
+  // ==== src/core/09_progression.js — Прогрессия: офлайн, ранги и потолки уровней, способности главного героя ====
   // ---------- офлайн ----------
   // Средний авто-урон без тапов, ультимейтов и способностей, с учётом критов
   function offlineDps(s) { return B.mul(autoDps(s), (1 + critChance({ ...s, abilities: newAbilities() }) * (critMult(s) - 1)) * (1 + treePower(s, 'offlineDmg'))); }
@@ -4255,6 +4269,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return true;
   }
 
+  // ==== src/core/10_summon.js — Призыв: портал, баннеры, гарантии, звёзды, материалы и эволюция ====
   // ---------- портал, звёзды, отряд ----------
   function ticketsForFloor(f) {
     const p = CONFIG.portal;
@@ -4388,6 +4403,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return true;
   }
 
+  // ==== src/core/11_economy.js — Экономика: руны, тотемы, артефакты и витрина Кузницы ====
   // ---------- руны: создание, улучшение, слияние ----------
   function createRune(s) {
     const R = CONFIG.runes;
@@ -4511,6 +4527,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return { before, after: expectedDps(t, tps) };
   }
 
+  // ==== src/core/12_ritual.js — Ритуал: души, сброс забега ====
   // ---------- ритуал ----------
   function canRitual(s) { return s.maxFloor >= CONFIG.ritual.floor; }
   // Стартовый этаж следующего забега зависит только от артефакта «Врата восхождения»
@@ -4564,6 +4581,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
+  // ==== src/core/13_altar_misc.js — Разное: трофеи, связи, удобство, Алтарь ====
   // ---------- трофеи боссов (0.57) ----------
   function trophyKey(floor) { const b = biomeOf(floor); return b.id + ':' + (isFinalBoss(floor) ? 'f' : (floor - 1) % b.bosses.length); }
   function trophyName(key) { const [id, k] = key.split(':'), b = CONFIG.biomes.find(x => x.id === id); return k === 'f' ? b.final : b.bosses[+k]; }
@@ -4737,6 +4755,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return true;
   }
 
+  // ==== src/core/14_save.js — Сохранения: serialize / deserialize, проверка и миграции ====
   // ---------- сохранение ----------
   function serialize(s) {
     return JSON.stringify({
@@ -5053,6 +5072,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return s;
   }
 
+  // ==== src/core/15_format_export.js — Форматирование чисел и экспорт API ядра (Core) ====
   // ---------- форматирование чисел ----------
   // Большие числа: K, M, B, T, дальше буквы aa, ab … az, ba … (решение пользователя).
   // Три значащие цифры, отбрасываем лишнее вниз, чтобы не показывать больше, чем есть.

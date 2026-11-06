@@ -1,7 +1,7 @@
-// Сборка: вставляет src/core.js в src/template.html → index.html (один файл, работает без интернета)
+// Сборка: вставляет ядро (src/core/*.js по src/core/ORDER) в src/template.html → index.html (один файл, работает без интернета)
 const fs = require('fs'), path = require('path');
 const dir = __dirname;
-const core = fs.readFileSync(path.join(dir, 'src/core.js'), 'utf8');
+const core = require('./src/core/assemble.js')();
 const tpl = fs.readFileSync(path.join(dir, 'src/template.html'), 'utf8');
 if (!tpl.includes('/*__CORE__*/')) throw new Error('В шаблоне нет метки /*__CORE__*/');
 // фон-зал встраивается в файл (игра работает без интернета)
@@ -33,7 +33,7 @@ if (fs.existsSync(path.join(dir, 'assets/anim'))) for (const f of fs.readdirSync
 }
 const uiArt = {}, uiDir = path.join(dir, 'assets/ui');
 // 0.87: в сборку — только картинки assets/ui, на которые есть ссылка в src (страница тестовой ссылки — не больше 16 МБ)
-const srcAll = fs.readdirSync(path.join(dir, 'src')).map(f => fs.readFileSync(path.join(dir, 'src', f), 'utf8')).join('\n');
+const srcAll = fs.readdirSync(path.join(dir, 'src')).filter(f => fs.statSync(path.join(dir, 'src', f)).isFile()).map(f => fs.readFileSync(path.join(dir, 'src', f), 'utf8')).join('\n') + '\n' + core;
 const uiUsed = n => n.startsWith('rar_') || new RegExp('\\b' + n + '\\b').test(srcAll);
 if (fs.existsSync(uiDir)) for (const f of fs.readdirSync(uiDir)) if (f.endsWith('.webp') && uiUsed(f.slice(0, -5))) uiArt[f.slice(0, -5)] = 'data:image/webp;base64,' + fs.readFileSync(path.join(uiDir, f)).toString('base64');
 uiArt._bg_menu = 'data:image/webp;base64,' + fs.readFileSync(path.join(dir, 'assets/ui_bg_menu.webp')).toString('base64');
