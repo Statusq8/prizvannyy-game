@@ -2186,7 +2186,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     ], every: 50000, after: { tickets: 100, essence: 500 } },
     // 0.62 (ответ 174): «Дневник призванного» — бестиарий (каждый вид врага: первая встреча, 100 и 1000 побед) и лор героев
     // (история открывается звёздами). Маленькие награды: за страницу биома (все враги и боссы встречены) и за знатока вида.
-    diary: { page: { tickets: 2, essence: 20 }, master: 1000, masterReward: { essence: 5 }, loreStars: [0, 3, 8] },
+    diary: { page: { tickets: 2, crystals: 5 }, master: 1000, masterReward: { crystals: 2 }, loreStars: [0, 3, 8] },
     // 0.63 (ответ 183): скрытые комнаты — в каждом отрезке every этажей один тайный этаж (по номеру отрезка).
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
@@ -8860,7 +8860,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.125";
+    const VERSION = "0.126";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
