@@ -7,7 +7,7 @@ Idle/tap RPG для Android (вертикальный экран), первая 
 ## Как продолжить работу (в том числе с другого аккаунта)
 
 1. Подключи репозиторий `Statusq8/prizvannyy-game`.
-2. Скажи Claude: «Продолжаем игру, прочитай `README.md`, `PROGRESS.md` и `docs/GDD.md`».
+2. Скажи Claude: «Продолжаем игру, прочитай `CLAUDE.md`, `README.md` и `PROGRESS.md`» (`docs/GDD.md` — только нужные разделы).
 3. Claude продолжает со следующего шага из `PROGRESS.md`.
 
 ## Правила работы
@@ -28,7 +28,8 @@ Idle/tap RPG для Android (вертикальный экран), первая 
 - `tests/` — автотесты ядра, `tools/sim.js` — симуляция баланса, `tools/artifact.js` — копия для тестовой ссылки.
 - `docs/GDD.md` — дизайн-документ 2.0 (правила; старый 1.2 — `docs/archive/`), `docs/CONFIG_VALUES.md` — текущие числа (генерируется). `docs/ART_PROMPTS.md` — промпты и имена файлов для всех картинок. `docs/reference/` — исходные материалы автора: концепт 40 героев, макет боя, лист зон, арт Каэрона и Призванного (`art/`).
 - `android/` — обёртка WebView для APK, `.github/workflows/android.yml` — сборка APK по команде.
-- `PROGRESS.md` — что сделано и что дальше.
+- `CLAUDE.md` — правила для Claude, как тратить меньше лимита.
+- `PROGRESS.md` — что сделано и что дальше (коротко; старая история — `docs/archive/PROGRESS_0.1-0.95.md`).
 
 Старая версия игры (0.10–0.12, папки `legacy/`, `work/`, `releases/`) удалена 2026-11-04; она сохранена в ветке `archive/old-version-0.12`.
 
