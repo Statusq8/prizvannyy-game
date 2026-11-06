@@ -13,7 +13,7 @@
       { id: 'hq', name: 'Штаб', x: 50, y: 88, w: 48, open: () => true, go: () => U.sec('up') },
       { id: 'gates', name: 'Врата Башни', x: 70, y: 74, w: 33, open: () => true, go: () => close() },
       { id: 'portal', name: 'Портал', x: 30, y: 74, w: 33, open: () => on('portal'), go: () => U.openX('portal') },
-      { id: 'forge', name: 'Кузница', x: 30, y: 60, w: 33, open: () => on('artifacts') || on('forge'), go: () => { const f = $('cbForge'); if (f) f.click(); } },
+      { id: 'forge', name: 'Кузница', x: 30, y: 60, w: 33, open: () => on('forge'), go: () => { const f = $('cbForge'); if (f) f.click(); } },
       { id: 'market', name: 'Рынок', x: 70, y: 60, w: 33, open: () => on('shop'), go: () => window.U3.menuAct('shop') },
     ];
     const ov = document.createElement('div'); ov.id = 'camp';
