@@ -32,7 +32,10 @@ if (fs.existsSync(path.join(dir, 'assets/anim'))) for (const f of fs.readdirSync
   anims[n] = { meta: JSON.parse(fs.readFileSync(path.join(dir, 'assets/anim', f), 'utf8')), src: 'data:image/webp;base64,' + fs.readFileSync(img).toString('base64') };
 }
 const uiArt = {}, uiDir = path.join(dir, 'assets/ui');
-if (fs.existsSync(uiDir)) for (const f of fs.readdirSync(uiDir)) if (f.endsWith('.webp')) uiArt[f.slice(0, -5)] = 'data:image/webp;base64,' + fs.readFileSync(path.join(uiDir, f)).toString('base64');
+// 0.87: в сборку — только картинки assets/ui, на которые есть ссылка в src (страница тестовой ссылки — не больше 16 МБ)
+const srcAll = fs.readdirSync(path.join(dir, 'src')).map(f => fs.readFileSync(path.join(dir, 'src', f), 'utf8')).join('\n');
+const uiUsed = n => n.startsWith('rar_') || new RegExp('\\b' + n + '\\b').test(srcAll);
+if (fs.existsSync(uiDir)) for (const f of fs.readdirSync(uiDir)) if (f.endsWith('.webp') && uiUsed(f.slice(0, -5))) uiArt[f.slice(0, -5)] = 'data:image/webp;base64,' + fs.readFileSync(path.join(uiDir, f)).toString('base64');
 uiArt._bg_menu = 'data:image/webp;base64,' + fs.readFileSync(path.join(dir, 'assets/ui_bg_menu.webp')).toString('base64');
 const extra = () => fs.readFileSync(path.join(dir, 'src/uiart.js'), 'utf8').replace('/*__UI_ART__*/{}', () => JSON.stringify(uiArt)) + '\n' + fs.readFileSync(path.join(dir, 'src/anim.js'), 'utf8').replace('/*__ANIM__*/{}', () => JSON.stringify(anims)) + '\n' + fs.readFileSync(path.join(dir, 'src/ambient.js'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'src/rig.js'), 'utf8').replace('/*__RIG_ART__*/{}', () => JSON.stringify(rigArt));
 const ui2 = n => fs.readFileSync(path.join(dir, 'src/ui2.' + n), 'utf8');
