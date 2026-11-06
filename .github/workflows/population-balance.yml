@@ -1,0 +1,109 @@
+name: Population balance simulation
+
+on:
+  workflow_dispatch:
+    inputs:
+      players:
+        description: "Players: 1000 or 100000"
+        type: choice
+        options:
+          - "1000"
+          - "100000"
+        default: "1000"
+      days:
+        description: "Simulated days per player (1-7 recommended; 30 may exceed job limit)"
+        type: choice
+        options:
+          - "1"
+          - "7"
+          - "30"
+        default: "7"
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.make.outputs.matrix }}
+    steps:
+      - id: make
+        env:
+          PLAYERS: ${{ inputs.players }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          count=int(os.environ["PLAYERS"])//1000
+          print("matrix="+json.dumps({"shard":list(range(count))},separators=(",",":")))
+          PY
+
+  simulate:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test game core
+        if: matrix.shard == 0
+        run: npm test
+      - name: Run 1000 independent players
+        env:
+          SHARD: ${{ matrix.shard }}
+          DAYS: ${{ inputs.days }}
+          PLAYERS: ${{ inputs.players }}
+        run: |
+          mkdir -p results
+          START=$((SHARD * 1000))
+          END=$((START + 1000))
+          node tools/population.js "results/shard-${SHARD}.jsonl" "$DAYS" "$START" "$END" "$PLAYERS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: population-${{ matrix.shard }}
+          path: results/*.jsonl
+          retention-days: 14
+
+  report:
+    needs: simulate
+    if: always() && needs.simulate.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: population-*
+          path: results
+          merge-multiple: true
+      - name: Build population report
+        run: |
+          node tools/population_report.js results/*.jsonl | tee population-summary.txt
+          cp docs/POPULATION_REPORT.md population-report.md
+          python3 - <<'PY'
+          import glob,json
+          paths=glob.glob("results/*.jsonl")
+          people=[json.loads(line) for p in paths for line in open(p) if line.strip()]
+          floors=[400,1000,2500,4000,10000]
+          days=len(people[0]["daily"]) if people else 0
+          out={"players":len(people),"days":days,"thresholds":{}}
+          for f in floors:
+              reached=[next((d["d"] for d in p["daily"] if d["best"]>=f),None) for p in people]
+              vals=sorted(x for x in reached if x is not None)
+              out["thresholds"][str(f)]={"reached":len(vals),"percent":round(100*len(vals)/len(people),2) if people else 0,"median_day_among_reached":vals[len(vals)//2] if vals else None}
+          with open("thresholds.json","w") as fh: json.dump(out,fh,ensure_ascii=False,indent=2)
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: population-report
+          path: |
+            population-report.md
+            population-summary.txt
+            thresholds.json
+          retention-days: 30
