@@ -1823,17 +1823,18 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
     goldHire: { maxRarity: 'B' },
     // 0.102: Рынок как в Idle Heroes — slots случайных товаров, сами обновляются раз в refreshSec, обновить сразу — за 💎.
-    // Цена в золоте растёт с прогрессом: price × золото за обычного врага рекордного этажа. Цена в 💎 постоянная.
-    // 💎 кристаллы — донат-валюта; бесплатно немного: за первое прохождение мега-босса (crystals.megaFirst).
+    // 0.107 (решение пользователя): вместо золота — души. Цена в душах = mega × «души за мега-босса» на рекордном этаже
+    // (растёт с прогрессом, не меньше 1). Цена в 💎 постоянная. 💎 кристаллы — донат-валюта.
     market: {
-      slots: 12, refreshSec: 3 * 3600, refreshCost: 20,   // 0.105: 12 = 3 ряда по 4 (решение пользователя — заполнить экран)
+      slots: 16, refreshSec: 3 * 3600, refreshCost: 20,   // 16 = 4 ряда по 4 (решение пользователя)
       goods: [
-        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
+        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'souls', mega: 0.3, w: 3, name: 'Билет призыва' },
         { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва' },
-        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'gold', price: 600, w: 3, name: 'Копия героя' },
+        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'souls', mega: 0.6, w: 3, name: 'Копия героя' },
         { id: 'copyA', kind: 'copy', ranks: ['A'], cur: 'crystal', price: 400, w: 1, name: 'Герой ранга A' },
-        { id: 'shard', kind: 'shard', bosses: 5, cur: 'gold', price: 250, w: 3, name: 'Осколки Башни' },
+        { id: 'shard', kind: 'shard', bosses: 5, cur: 'souls', mega: 0.25, w: 3, name: 'Осколки Башни' },
         { id: 'souls', kind: 'souls', megas: 1, cur: 'crystal', price: 120, w: 1, name: 'Души' },
+        { id: 'potion', kind: 'potion', cur: 'souls', mega: 0.4, w: 3, name: 'Зелье' },   // 0.107: зелье из CONFIG.alchemy.potions
       ],
     },
     crystals: { megaFirst: 20 },
@@ -4533,9 +4534,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const G = CONFIG.market.goods, tot = G.reduce((x, g) => x + g.w, 0), items = [];
     for (let i = 0; i < CONFIG.market.slots; i++) {
       let r = s.rng() * tot, g = G[0]; for (const x of G) { r -= x.w; if (r < 0) { g = x; break; } }
-      let hero = null;
+      let hero = null, p = null;
       if (g.kind === 'copy') { const pool = CONFIG.allies.filter(a => !a.hidden && !a.seasonal && g.ranks.includes(a.rarity)); hero = pool.length ? pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))].id : null; }
-      items.push({ g: g.id, hero, sold: false });
+      if (g.kind === 'potion') { const P = CONFIG.alchemy.potions; p = P[Math.min(P.length - 1, Math.floor(s.rng() * P.length))].id; }
+      items.push(p ? { g: g.id, hero, p, sold: false } : { g: g.id, hero, sold: false });
     }
     s.market.items = items;
   }
@@ -4545,26 +4547,30 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     if (s.market.items.length !== CONFIG.market.slots || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
     return Math.max(0, s.market.next - now);
   }
+  // Души за одного мега-босса на рекордном этаже — мера цены в душах
+  function soulsPerMega(s) { const f = Math.max(1, s.bestFloor | 0), M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))); }
   function marketAmount(s, g) {
     const f = Math.max(1, s.bestFloor | 0);
     if (g.kind === 'shard') return g.bosses * shardsForBoss(f);
-    if (g.kind === 'souls') { const M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))) * g.megas; }
+    if (g.kind === 'souls') return soulsPerMega(s) * g.megas;
     return g.n || 1;
   }
-  function marketPrice(s, g) { return g.cur === 'gold' ? B.mul(killGold(Math.max(1, s.bestFloor | 0), false), g.price) : g.price; }
+  function marketPrice(s, g) { return g.cur === 'souls' ? Math.max(1, Math.ceil(g.mega * soulsPerMega(s))) : g.price; }
   function marketBuy(s, i) {
     const it = s.market && s.market.items[i]; if (!it || it.sold) return null;
     const g = marketGood(it.g), price = marketPrice(s, g);
-    if (g.cur === 'gold') { if (B.gt(price, s.gold)) return null; s.gold = B.sub(s.gold, price); }
+    if (g.kind === 'potion') { const pd = potionDef(it.p); if (!pd || (s.potions[pd.id] || 0) + pd.sec > CONFIG.alchemy.maxSec) return null; }
+    if (g.cur === 'souls') { if (B.lt(s.souls, price)) return null; s.souls = B.sub(s.souls, price); }
     else { if ((s.crystals | 0) < price) return null; s.crystals -= price; }
     const n = marketAmount(s, g);
     if (g.kind === 'tickets') s.tickets += n;
     else if (g.kind === 'shard') s.materials.shard += n;
     else if (g.kind === 'souls') { s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n); }
+    else if (g.kind === 'potion') { const pd = potionDef(it.p); s.potions[pd.id] = (s.potions[pd.id] || 0) + pd.sec; }
     let isNew = false;   // как призыв: новый герой открывается, известный даёт копию на звёзды
     if (g.kind === 'copy' && it.hero) { const h = s.heroes[it.hero]; isNew = !h.unlocked; if (isNew) h.unlocked = true; else h.copies++; }
     it.sold = true;
-    return { g: g.id, n, hero: it.hero, isNew };
+    return { g: g.id, n, hero: it.hero, p: it.p || null, isNew };
   }
   function marketRefresh(s) {
     const c = CONFIG.market.refreshCost;
@@ -5041,7 +5047,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
     { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
-      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).slice(0, CONFIG.market.slots).map(x => ({ g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
+      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).filter(x => x.g !== 'potion' || potionDef(x.p)).slice(0, CONFIG.market.slots)
+        .map(x => (x.p ? { g: x.g, hero: x.hero || null, p: x.p, sold: !!x.sold } : { g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
     s.materials = { shard: m.shard + heartShards(m.heart), heart: 0, dust: m.dust }; s.heartFloor = d.heartFloor;   // 0.51: сердца → осколки
@@ -5233,7 +5240,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
-    marketGood, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
+    marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
     runeKind, runeValue, bestRune, runePower, createRune, runeUpCost, upgradeRune, mergeable, mergeRunes,
@@ -7732,8 +7739,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       if (xKind === 'market') {
         $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
         const MA = window.MK_ART;
-        setHtml('xTop', MA ? '<div class="mkPill"><img src="' + MA.i_coin + '" alt="">' + fmt(s.gold) + '</div><div class="mkPill"><img src="' + MA.i_crystal + '" alt="">' + fmt(s.crystals | 0) + '</div>'
-          : cur('◆', fmt(s.gold)) + cur('💎', fmt(s.crystals | 0)));
+        setHtml('xTop', MA ? '<div class="mkPill"><img src="' + MA.i_soul + '" alt="">' + fmt(s.souls) + '</div><div class="mkPill"><img src="' + MA.i_crystal + '" alt="">' + fmt(s.crystals | 0) + '</div>'
+          : cur('👻', fmt(s.souls)) + cur('💎', fmt(s.crystals | 0)));
         setHtml('xBody', marketHtml());
         return;
       }
@@ -7767,15 +7774,16 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     function marketHtml() {
       const left = C.marketSync(s, Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60, ss = Math.floor(left / 1000) % 60;
       const MA = window.MK_ART, MKI = { tickets: 'i_ticket', shard: 'i_shard', souls: 'i_soul' };
-      const curI = g => MA ? '<img src="' + MA[g.cur === 'gold' ? 'i_coin' : 'i_crystal'] + '" alt="">' : (g.cur === 'gold' ? '◆ ' : '💎 ');
+      const curI = g => MA ? '<img src="' + MA[g.cur === 'souls' ? 'i_soul' : 'i_crystal'] + '" alt="">' : (g.cur === 'souls' ? '👻 ' : '💎 ');
       let h = '<div class="mkTime">' + (MA ? 'Обновление через: ' : 'Новые товары через ') + '<b>' + hh + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') + '</b></div><div class="mkGrid">';
       s.market.items.forEach((it, i) => {
         const g = C.marketGood(it.g), a = it.hero ? CFG.allies.find(x => x.id === it.hero) : null, price = C.marketPrice(s, g);
-        const can = !it.sold && (g.cur === 'gold' ? B.gte(s.gold, price) : (s.crystals | 0) >= price);
+        const pd = it.p ? CFG.alchemy.potions.find(x => x.id === it.p) : null;
+        const can = !it.sold && (g.cur === 'souls' ? B.gte(s.souls, price) : (s.crystals | 0) >= price) && !(pd && (s.potions[pd.id] || 0) + pd.sec > CFG.alchemy.maxSec);
         const art = MA && (g.kind === 'tickets' ? (g.n > 1 ? 'i_tickets5' : 'i_ticket') : MKI[g.kind]);
-        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
+        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : pd ? '<b class="mkPot">' + pd.icon + '</b>' : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
         h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc' + (a ? ' hero' : '') + '">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
-          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
+          '<div class="mkNm">' + (a ? a.name : pd ? pd.name : g.name) + '</div><div class="mkN">' + (pd ? pd.desc + ' · ' + Math.round(pd.sec / 60) + ' мин' : a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
           (it.sold ? '<div class="mkSold">' + (MA ? 'Продано' : 'Куплено') + '</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + curI(g) + fmt(price) + '</button>') + '</div>';
       });
       h += '</div>' + (MA ? '<div class="mkRefWrap">' : '') + '<button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>' + (MA ? 'Обновить ' + curI({ cur: 'crystal' }) + CFG.market.refreshCost : '⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost) + '</button>' + (MA ? '</div>' : '');
@@ -8006,8 +8014,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
-      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero);
-        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
+      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
+        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }
@@ -9706,19 +9714,20 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #pgX.mkl #xTitle { display: block !important; line-height: 1 !important; overflow: visible !important; text-align: center; padding: 8.34cqw 0 0 !important; white-space: nowrap; }
       #pgX.mkl #xTitle { position: absolute !important; left: 27.68cqw !important; width: 44.55cqw !important; top: -0.76cqw !important; height: 18.20cqw !important; min-height: 0 !important; max-height: none !important; }
       #pgX.mkl .mkIc .rk, #pgX.mkl .mkIc i { display: none !important; }   /* на макете у карточек нет значков ранга — ранг в строке под иконкой */
-      /* 0.106: ряды растягиваются на всю высоту между таймером и «Обновить» (пустоты нет на любом телефоне);
-         рамка карточки — border-image: узоры по краям и линия под названием не искажаются, тянется середина */
+      /* 0.107: 4 ряда по 4 без растягивания (решение пользователя): карточки в пропорциях макета, ряды распределены
+         по высоте между таймером и «Обновить»; рамка карточки — border-image (узоры не искажаются) */
       #pgX.mkl #xBody { overflow: hidden !important; }
-      #pgX.mkl .mkGrid { position: absolute; left: 3.13cqw; right: 3.13cqw; top: 9.86cqw; bottom: calc(env(safe-area-inset-bottom) + 34.98cqw);
-        margin: 0; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.99cqw 1.71cqw; }
-      #pgX.mkl .mkCard { aspect-ratio: auto; height: 100%; background: none !important; border-style: solid !important; border-width: 5.88cqw 1.52cqw 1.71cqw !important;
+      #pgX.mkl .mkGrid { position: absolute; left: 3.13cqw; right: 3.13cqw; top: 8.91cqw; bottom: calc(env(safe-area-inset-bottom) + 33.84cqw);
+        margin: 0; grid-auto-rows: max-content; align-content: space-evenly; gap: 1.33cqw 1.71cqw; }
+      #pgX.mkl .mkCard { aspect-ratio: 234 / 340; height: auto; background: none !important; border-style: solid !important; border-width: 5.88cqw 1.52cqw 1.71cqw !important;
         border-image: url("${A.card}") 84 22 24 fill stretch; padding: 0 0 0.38cqw; justify-content: space-between; }
       #pgX.mkl .mkCard.sold { border-image-source: url("${A.card_sold}"); }
       #pgX.mkl .mkNm { position: absolute; top: -5.31cqw; left: 0; right: 0; height: 4.55cqw; }
-      #pgX.mkl .mkIc { flex: 1 1 auto; width: auto; max-width: 18.01cqw; aspect-ratio: 1; min-height: 0; margin: 0.95cqw auto 0; }
-      #pgX.mkl .mkN { flex: none; height: 3.79cqw; }
+      #pgX.mkl .mkIc { flex: 1 1 auto; width: auto; max-width: 16.11cqw; aspect-ratio: 1; min-height: 0; margin: 0.57cqw auto 0; }
+      #pgX.mkl .mkN { flex: none; height: 3.41cqw; font-size: 2.27cqw; white-space: nowrap; overflow: hidden; }
       #pgX.mkl .mkBuy { align-self: center; }
       #pgX.mkl .mkSold { top: 38%; }
+      #pgX.mkl .mkPot { font-size: 10.43cqw; line-height: 1; filter: drop-shadow(0 0 0.95cqw #b060ff); }
     `;
     document.head.appendChild(css);
   })();

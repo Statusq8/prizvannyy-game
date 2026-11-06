@@ -33,3 +33,13 @@ Vertical 9:16 mobile game background, dark fantasy manhwa style: a night market 
 
 ## Собрано — 0.103
 Листы нарезаны (tools/marketcut.py → assets/market), стили — src/market.js, разметка — marketHtml в src/ui2.js. Портрет героя в рамке icon_fr; если портрета нет — силуэт «?».
+
+## 0.107 — изменения пользователя
+- **Золото → души:** всё, что шло за золото, теперь за души (цена = `mega` × души за мега-босса на рекорде, не меньше 1). Сверху — души и 💎.
+- **4 ряда по 4 (16 товаров), карточки не растягиваются** — ряды распределены по высоте экрана.
+- **Новый товар — зелья** (×2 золота / ×2 урона / ×2 осколков, из CONFIG.alchemy.potions), за души; сверх предела времени зелья не купить.
+
+## Лист C — иконки зелий (по желанию, сейчас — значки)
+```
+Game icon sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 3x1 grid with wide spacing, each icon separate, square, no frames, no text: 1) round glass potion flask with glowing golden liquid and a gold coin symbol, cork stopper (potion of greed); 2) round glass potion flask with glowing red liquid and a sword symbol, cork stopper (potion of rage); 3) round glass potion flask with glowing blue liquid with tiny crystal shards inside, cork stopper (potion of harvest).
+```

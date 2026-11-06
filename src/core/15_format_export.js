@@ -50,7 +50,7 @@
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
-    marketGood, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
+    marketGood, soulsPerMega, marketSync, marketAmount, marketPrice, marketBuy, marketRefresh,
     findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
     runeKind, runeValue, bestRune, runePower, createRune, runeUpCost, upgradeRune, mergeable, mergeRunes,

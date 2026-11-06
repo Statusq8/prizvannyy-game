@@ -87,19 +87,20 @@
       #pgX.mkl #xTitle { display: block !important; line-height: 1 !important; overflow: visible !important; text-align: center; padding: 8.34cqw 0 0 !important; white-space: nowrap; }
       #pgX.mkl #xTitle { position: absolute !important; left: 27.68cqw !important; width: 44.55cqw !important; top: -0.76cqw !important; height: 18.20cqw !important; min-height: 0 !important; max-height: none !important; }
       #pgX.mkl .mkIc .rk, #pgX.mkl .mkIc i { display: none !important; }   /* на макете у карточек нет значков ранга — ранг в строке под иконкой */
-      /* 0.106: ряды растягиваются на всю высоту между таймером и «Обновить» (пустоты нет на любом телефоне);
-         рамка карточки — border-image: узоры по краям и линия под названием не искажаются, тянется середина */
+      /* 0.107: 4 ряда по 4 без растягивания (решение пользователя): карточки в пропорциях макета, ряды распределены
+         по высоте между таймером и «Обновить»; рамка карточки — border-image (узоры не искажаются) */
       #pgX.mkl #xBody { overflow: hidden !important; }
-      #pgX.mkl .mkGrid { position: absolute; left: 3.13cqw; right: 3.13cqw; top: 9.86cqw; bottom: calc(env(safe-area-inset-bottom) + 34.98cqw);
-        margin: 0; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1.99cqw 1.71cqw; }
-      #pgX.mkl .mkCard { aspect-ratio: auto; height: 100%; background: none !important; border-style: solid !important; border-width: 5.88cqw 1.52cqw 1.71cqw !important;
+      #pgX.mkl .mkGrid { position: absolute; left: 3.13cqw; right: 3.13cqw; top: 8.91cqw; bottom: calc(env(safe-area-inset-bottom) + 33.84cqw);
+        margin: 0; grid-auto-rows: max-content; align-content: space-evenly; gap: 1.33cqw 1.71cqw; }
+      #pgX.mkl .mkCard { aspect-ratio: 234 / 340; height: auto; background: none !important; border-style: solid !important; border-width: 5.88cqw 1.52cqw 1.71cqw !important;
         border-image: url("${A.card}") 84 22 24 fill stretch; padding: 0 0 0.38cqw; justify-content: space-between; }
       #pgX.mkl .mkCard.sold { border-image-source: url("${A.card_sold}"); }
       #pgX.mkl .mkNm { position: absolute; top: -5.31cqw; left: 0; right: 0; height: 4.55cqw; }
-      #pgX.mkl .mkIc { flex: 1 1 auto; width: auto; max-width: 18.01cqw; aspect-ratio: 1; min-height: 0; margin: 0.95cqw auto 0; }
-      #pgX.mkl .mkN { flex: none; height: 3.79cqw; }
+      #pgX.mkl .mkIc { flex: 1 1 auto; width: auto; max-width: 16.11cqw; aspect-ratio: 1; min-height: 0; margin: 0.57cqw auto 0; }
+      #pgX.mkl .mkN { flex: none; height: 3.41cqw; font-size: 2.27cqw; white-space: nowrap; overflow: hidden; }
       #pgX.mkl .mkBuy { align-self: center; }
       #pgX.mkl .mkSold { top: 38%; }
+      #pgX.mkl .mkPot { font-size: 10.43cqw; line-height: 1; filter: drop-shadow(0 0 0.95cqw #b060ff); }
     `;
     document.head.appendChild(css);
   })();

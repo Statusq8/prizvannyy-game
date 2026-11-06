@@ -495,8 +495,8 @@
       if (xKind === 'market') {
         $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
         const MA = window.MK_ART;
-        setHtml('xTop', MA ? '<div class="mkPill"><img src="' + MA.i_coin + '" alt="">' + fmt(s.gold) + '</div><div class="mkPill"><img src="' + MA.i_crystal + '" alt="">' + fmt(s.crystals | 0) + '</div>'
-          : cur('◆', fmt(s.gold)) + cur('💎', fmt(s.crystals | 0)));
+        setHtml('xTop', MA ? '<div class="mkPill"><img src="' + MA.i_soul + '" alt="">' + fmt(s.souls) + '</div><div class="mkPill"><img src="' + MA.i_crystal + '" alt="">' + fmt(s.crystals | 0) + '</div>'
+          : cur('👻', fmt(s.souls)) + cur('💎', fmt(s.crystals | 0)));
         setHtml('xBody', marketHtml());
         return;
       }
@@ -530,15 +530,16 @@
     function marketHtml() {
       const left = C.marketSync(s, Date.now()), hh = Math.floor(left / 3600000), mm = Math.floor(left / 60000) % 60, ss = Math.floor(left / 1000) % 60;
       const MA = window.MK_ART, MKI = { tickets: 'i_ticket', shard: 'i_shard', souls: 'i_soul' };
-      const curI = g => MA ? '<img src="' + MA[g.cur === 'gold' ? 'i_coin' : 'i_crystal'] + '" alt="">' : (g.cur === 'gold' ? '◆ ' : '💎 ');
+      const curI = g => MA ? '<img src="' + MA[g.cur === 'souls' ? 'i_soul' : 'i_crystal'] + '" alt="">' : (g.cur === 'souls' ? '👻 ' : '💎 ');
       let h = '<div class="mkTime">' + (MA ? 'Обновление через: ' : 'Новые товары через ') + '<b>' + hh + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') + '</b></div><div class="mkGrid">';
       s.market.items.forEach((it, i) => {
         const g = C.marketGood(it.g), a = it.hero ? CFG.allies.find(x => x.id === it.hero) : null, price = C.marketPrice(s, g);
-        const can = !it.sold && (g.cur === 'gold' ? B.gte(s.gold, price) : (s.crystals | 0) >= price);
+        const pd = it.p ? CFG.alchemy.potions.find(x => x.id === it.p) : null;
+        const can = !it.sold && (g.cur === 'souls' ? B.gte(s.souls, price) : (s.crystals | 0) >= price) && !(pd && (s.potions[pd.id] || 0) + pd.sec > CFG.alchemy.maxSec);
         const art = MA && (g.kind === 'tickets' ? (g.n > 1 ? 'i_tickets5' : 'i_ticket') : MKI[g.kind]);
-        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
+        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : pd ? '<b class="mkPot">' + pd.icon + '</b>' : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
         h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc' + (a ? ' hero' : '') + '">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
-          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
+          '<div class="mkNm">' + (a ? a.name : pd ? pd.name : g.name) + '</div><div class="mkN">' + (pd ? pd.desc + ' · ' + Math.round(pd.sec / 60) + ' мин' : a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
           (it.sold ? '<div class="mkSold">' + (MA ? 'Продано' : 'Куплено') + '</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + curI(g) + fmt(price) + '</button>') + '</div>';
       });
       h += '</div>' + (MA ? '<div class="mkRefWrap">' : '') + '<button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>' + (MA ? 'Обновить ' + curI({ cur: 'crystal' }) + CFG.market.refreshCost : '⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost) + '</button>' + (MA ? '</div>' : '');
@@ -769,8 +770,8 @@
       else if (d.banp) { click(); const L = CFG.portal.banners.filter(x => x.id !== 'event' || C.currentEvent(s)).map(x => x.id), i = L.indexOf(ban); ban = L[(i + +d.banp + L.length) % L.length]; }
       else if (d.odds !== undefined) { click(); if (window.U3) window.U3.sys({ title: 'ШАНСЫ ПРИЗЫВА', html: oddsHtml }); return; }
       else if (d.pull) { click(); pull2(+d.pull); }
-      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero);
-        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
+      else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
+        toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }

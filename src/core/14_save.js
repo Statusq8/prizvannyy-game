@@ -179,7 +179,8 @@
     s.tickets = d.tickets; s.ticketFloor = d.ticketFloor;
     s.crystals = Math.max(0, +d.crystals | 0); s.crystalFloor = Math.max(0, +d.crystalFloor | 0);
     { const M = d.market || {}, ok = x => x && CONFIG.market.goods.some(g => g.id === x.g) && (!x.hero || allyDef(x.hero));
-      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).slice(0, CONFIG.market.slots).map(x => ({ g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
+      s.market = { items: Array.isArray(M.items) ? M.items.filter(ok).filter(x => x.g !== 'potion' || potionDef(x.p)).slice(0, CONFIG.market.slots)
+        .map(x => (x.p ? { g: x.g, hero: x.hero || null, p: x.p, sold: !!x.sold } : { g: x.g, hero: x.hero || null, sold: !!x.sold })) : [], next: +M.next > 0 ? +M.next : 0 }; }
     const m = d.materials;
     if (!m || typeof m !== 'object' || !int(m.shard, 0) || !int(m.heart, 0) || !int(m.dust, 0) || !int(d.heartFloor, 0)) return null;
     s.materials = { shard: m.shard + heartShards(m.heart), heart: 0, dust: m.dust }; s.heartFloor = d.heartFloor;   // 0.51: сердца → осколки
