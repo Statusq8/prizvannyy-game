@@ -22,7 +22,7 @@
       #questPanel .qNext { margin-top: 4px !important; padding-top: 3px !important; border-top: 1px solid #7a5a3a !important; text-align: center; font: 700 8px/1.15 Georgia, serif !important; color: #3a2416 !important; }
       #questPanel .qFold { width: 32px !important; height: 60px !important; background: url("${A.rolled}") center / contain no-repeat !important; }
       #questPanel .qFold img { display: none; }
-      #questPanel .qDot { right: -2px !important; top: 2px !important; background: radial-gradient(circle at 35% 30%, #ff9a9a, #e01020 55%, #700) !important; box-shadow: 0 0 0 2px #c89a5a; }
+      #questPanel .qDot { right: auto !important; left: -3px !important; top: 2px !important; z-index: 2; background: radial-gradient(circle at 35% 30%, #ff9a9a, #e01020 55%, #700) !important; box-shadow: 0 0 0 2px #c89a5a; }
     `;
     document.head.appendChild(css);
   })();
