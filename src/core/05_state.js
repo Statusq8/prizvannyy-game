@@ -15,7 +15,7 @@
       allies: newAllies(),
       buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
       abilities: newAbilities(),
-      // постоянное (переживёт ритуал): коллекция, билеты, гарантии, отряд
+      // постоянное (переживёт регрессию): коллекция, билеты, гарантии, отряд
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
       tickets: 0, crystals: 0, crystalFloor: 0, market: { items: [], next: 0 },
@@ -46,7 +46,7 @@
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
-      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов и достижений)
+      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды регрессий и достижений)
       favs: [],                                  // 0.54: избранные герои (ответ 199)
       trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
       curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа

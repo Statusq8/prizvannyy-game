@@ -233,7 +233,7 @@
   /* выход из режима PvE в чистом экране — над питомцем, по центру */
   body.clean #modeBar { top: auto; bottom: calc(env(safe-area-inset-bottom) + 18px); z-index: 7; width: min(52%, 220px); }
 
-  /* ===================== 0.45: Портал, Души и ритуал, PvE в новом стиле ===================== */
+  /* ===================== 0.45: Портал, Души и регрессия, PvE в новом стиле ===================== */
   /* Портал призыва (этап 8): каменные врата Башни с фиолетовым разломом */
   .gate { position: relative; width: 78%; max-width: 300px; aspect-ratio: .78; margin: 4px auto 10px; }
   .gate .arch { position: absolute; inset: 0; border-radius: 48% 48% 6px 6px / 38% 38% 6px 6px;
@@ -288,7 +288,7 @@
   .sfDone { margin-top: 14px; text-align: center; }
   .hist { margin-top: 6px; }
   .hist div { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #2a2232; font: 600 12px system-ui; color: #d8d0e2; }
-  /* Души и ритуал */
+  /* Души и регрессия */
   .soulBig { text-align: center; padding: 12px; border-radius: 8px; background: linear-gradient(#241a30ee, #120e18ee); border: 2px solid #8fe6ff; box-shadow: 0 0 14px #8fe6ff55; }
   .soulBig .n { font: 400 30px 'Russo One', system-ui; color: #dff8ff; text-shadow: 0 0 10px #8fe6ff; }
   .soulBig p { font: 600 12px system-ui; color: #b9b1c3; margin-top: 4px; }

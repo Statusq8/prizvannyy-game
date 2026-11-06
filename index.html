@@ -930,7 +930,7 @@
   /* выход из режима PvE в чистом экране — над питомцем, по центру */
   body.clean #modeBar { top: auto; bottom: calc(env(safe-area-inset-bottom) + 18px); z-index: 7; width: min(52%, 220px); }
 
-  /* ===================== 0.45: Портал, Души и ритуал, PvE в новом стиле ===================== */
+  /* ===================== 0.45: Портал, Души и регрессия, PvE в новом стиле ===================== */
   /* Портал призыва (этап 8): каменные врата Башни с фиолетовым разломом */
   .gate { position: relative; width: 78%; max-width: 300px; aspect-ratio: .78; margin: 4px auto 10px; }
   .gate .arch { position: absolute; inset: 0; border-radius: 48% 48% 6px 6px / 38% 38% 6px 6px;
@@ -985,7 +985,7 @@
   .sfDone { margin-top: 14px; text-align: center; }
   .hist { margin-top: 6px; }
   .hist div { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #2a2232; font: 600 12px system-ui; color: #d8d0e2; }
-  /* Души и ритуал */
+  /* Души и регрессия */
   .soulBig { text-align: center; padding: 12px; border-radius: 8px; background: linear-gradient(#241a30ee, #120e18ee); border: 2px solid #8fe6ff; box-shadow: 0 0 14px #8fe6ff55; }
   .soulBig .n { font: 400 30px 'Russo One', system-ui; color: #dff8ff; text-shadow: 0 0 10px #8fe6ff; }
   .soulBig p { font: 600 12px system-ui; color: #b9b1c3; margin-top: 4px; }
@@ -1369,7 +1369,7 @@
   body.animOn:not(.rigOn) #heroAnim { display: block; }
   body.animOn:not(.rigOn) #hero .fig { opacity: 0 !important; }
 
-  /* ===== 0.74: только ГГ на экране боя, книга, ритуал, кузница, квест справа ===== */
+  /* ===== 0.74: только ГГ на экране боя, книга, регрессию, кузница, квест справа ===== */
   body.clean .ally { display: none !important; }
   body.clean #cbPve { top: calc(env(safe-area-inset-top) + 220px); }
   body.clean #cbBook { left: 17px; top: calc(env(safe-area-inset-top) + 274px); }
@@ -1702,7 +1702,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
 </div>
 
 <script>
-// ==== src/core/00a_config_core.js — CONFIG: базовые числа боя, экономики, портала, ритуала, артефактов, материалов, офлайна ====
+// ==== src/core/00a_config_core.js — CONFIG: базовые числа боя, экономики, портала, регрессии, артефактов, материалов, офлайна ====
 // Ядро игры: только логика, без интерфейса. Работает в браузере и в Node (тесты).
 (function (root) {
   'use strict';
@@ -1720,7 +1720,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // (наклон на knee — slope от прежнего). 0.51: slope подобран бот-годом (tools/yearsim.js, 1 ч/день + 12 ч офлайна)
     // под ⅓ Башни ≈ 33 000 этажей за год; души выше 1000 растут степенно, иначе разгон был бесконечным. То же — золото.
     // (Запасной вариант для подбора: late — постоянный рост ×1.18^late за этаж выше knee.)
-    floorCurve: { knee: 100, slope: 0.99, late: 0.6 },   // 0.109 (тест баланса): после 100 этажа HP растёт мягче (×1.24^0.6 ≈ ×1.14 за этаж), иначе Ритуал (200) недостижим
+    floorCurve: { knee: 100, slope: 0.99, late: 0.6 },   // 0.109 (тест баланса): после 100 этажа HP растёт мягче (×1.24^0.6 ≈ ×1.14 за этаж), иначе Регрессия (200) недостижим
     bossHpMult: 6,
     bossTimeSec: 30,              // таймер босса (TBD)
     goldBase: 0.25,               // 0.98 (тест баланса): было 1 — цель: Портал ~10 мин, Кузница ~30 мин
@@ -1787,7 +1787,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // Души (GDD §6–7): постоянный ресурс. Бонус DPS строго линеен по НЕИЗРАСХОДОВАННЫМ душам.
     // Все числа временные (TBD по GDD §16).
     souls: { dpsPerSoul: 0.1 },
-    // Ритуал (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
+    // Регрессия (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
     // 0.74: лесенка открытий функций по рекорду этажа (опрос docs/ui/ANSWERS_UNLOCKS.md, ответ 18). До открытия кнопка скрыта.
     unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 150, forge: 50, ritual: 150, tree: 200,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
@@ -1796,19 +1796,19 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
-    cage: { floor: 3, ally: 'shorokh', taps: 20, name: 'Клетка с Шорохом' },        // 0.74: души с мега-боссов и без ритуала (ответ 8) — base·per50^(этаж/50 − 1)
+    cage: { floor: 3, ally: 'shorokh', taps: 20, name: 'Клетка с Шорохом' },        // 0.74: души с мега-боссов и без регрессии (ответ 8) — base·per50^(этаж/50 − 1)
     ritual: {
-      floor: 150,   // 0.111: было 200 — тест 1000 игроков: стена перед Ритуалом у казуалов и средних (решение пользователя: «Ритуал раньше»)
+      floor: 150,   // 0.111: было 200 — тест 1000 игроков: стена перед Регрессияом у казуалов и средних (решение пользователя: «Регрессия раньше»)
       // старт нового забега: этаж 1 + бонус артефакта «Врата восхождения», строго ниже 400
-      // (решение пользователя: заменяет прежнее правило 1 + 20·число ритуалов)
-      soulsBase: 500, soulsGrowth: 1.08,   // 0.109: Ритуал — главный источник душ; подбор ботом: Ритуал раз в 1–1,5 дня (было 50 и 1.04)
-      light: { crystals: 100, mult: 2 },   // 0.109: светлый ритуал (как в «Крушителях») — за 💎, души ×mult; тёмный — бесплатно
+      // (решение пользователя: заменяет прежнее правило 1 + 20·число регрессий)
+      soulsBase: 500, soulsGrowth: 1.08,   // 0.109: Регрессия — главный источник душ; подбор ботом: Регрессия раз в 1–1,5 дня (было 50 и 1.04)
+      light: { crystals: 100, mult: 2 },   // 0.109: светлая регрессия (как в «Крушителях») — за 💎, души ×mult; тёмный — бесплатно
        // души за забег: 50 · 1.04^(этаж − 400) до soulsKnee
       // 0.51: выше soulsKnee — степенной рост (без предела, ответ 8) с тем же наклоном на изломе: S(knee)·(этаж/knee)^(knee·ln 1.04).
       // Экспонента душ при бесконечной Башне обгоняла HP и давала бесконечный разгон.
       soulsKnee: 1000,
       recordBonus: 1,                    // + душа за каждый новый рекордный этаж
-      // 0.51 (ответы 8, 67): разовые награды за 1-й, 10-й и 100-й ритуал — титул, на 100-м ещё облик Призванного;
+      // 0.51 (ответы 8, 67): разовые награды за 1-й, 10-й и 100-й регрессию — титул, на 100-м ещё облик Призванного;
       // плюс билеты и эссенция в центр наград. 0.53 (решение пользователя, вместо ответа 104 «только для красоты»):
       // каждый полученный титул навсегда даёт небольшой бонус; бонусы всех титулов складываются. Числа временные.
       milestones: [
@@ -1818,11 +1818,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       ],
     },
     // Артефакты (GDD §8): все найденные активны одновременно, без слотов; находятся и улучшаются ТОЛЬКО за души,
-    // уровни переживают ритуал. Действуют на главного героя, союзников и питомца.
+    // уровни переживают регрессию. Действуют на главного героя, союзников и питомца.
     // Единственный источник постоянного роста критов (шанс не выше 50% от всех источников вместе).
     artifactFind: { cost: 3, growth: 1.7 },
     // 0.99 (как в «Крушителях»): герои до этого ранга покупаются за золото цепочкой в Штабе — виден следующий по цене;
-    // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
+    // старше — только Портал. Купленный герой открыт навсегда; после регрессии его снова нанимают за золото.
     goldHire: { maxRarity: 'B' },
     // 0.102: Рынок как в Idle Heroes — slots случайных товаров, сами обновляются раз в refreshSec, обновить сразу — за 💎.
     // 0.107 (решение пользователя): вместо золота — души. Цена в душах = mega × «души за мега-босса» на рекордном этаже
@@ -1875,9 +1875,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { id: 'bdoll',  name: 'Кровавая кукла',   icon: '🪆', kind: 'allDmg',  per: 0.3, cost: 30, growth: 1.3, blood: true,
         desc: '+30% всего урона за уровень' },
       { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 148,
-        desc: 'После ритуала новый забег начинается на 1 этаж выше за уровень (всегда ниже этажа ритуала)' },
+        desc: 'После регрессии новый забег начинается на 1 этаж выше за уровень (всегда ниже этажа регрессии)' },
     ],
-    // Материалы (GDD §6): от боссов, переживают ритуал. Гарантированная альтернатива — рецепт Алтаря (TBD)
+    // Материалы (GDD §6): от боссов, переживают регрессию. Гарантированная альтернатива — рецепт Алтаря (TBD)
     materials: {
       shard: { name: 'Осколок Башни', icon: '🔹' },   // за каждого побеждённого босса, в т. ч. повторно (фарм)
       heart: { name: 'Сердце стража', icon: '🔥' },   // за первое в игре прохождение босса каждого heartEvery-го этажа
@@ -1992,7 +1992,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // Фазы боссов: при падении HP ниже порога — новая фаза и короткая уязвимость (урон по боссу ×vulnMult).
     // Урона по героям нет (GDD §2).
     bossPhases: { normal: [0.5], final: [0.66, 0.33], vulnSec: 3, vulnMult: 1.5 },
-    // Дерево душ (GDD §8): боевая, экономическая и особая ветви, открываются числом ритуалов. Без критов.
+    // Дерево душ (GDD §8): боевая, экономическая и особая ветви, открываются числом регрессий. Без критов.
     // Узел ветви открывается, когда у предыдущего есть хотя бы 1 уровень. Покупка за души уменьшает бонус душ. Числа TBD.
     soulTree: [
       { id: 'war', name: 'Боевая ветвь', rituals: 1, nodes: [
@@ -2008,7 +2008,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         { id: 'legacy', name: 'Наследие',           icon: '💰', kind: 'startGold', per: 50,  cost: 6, growth: 1.4, max: 10, desc: 'Новый забег начинается с запасом золота' },
       ] },
       { id: 'mystic', name: 'Тайная ветвь', rituals: 3, nodes: [
-        { id: 'echo',   name: 'Отголосок ритуала',  icon: '👻', kind: 'ritualSouls', per: 0.1, cost: 6, growth: 1.4, max: 20, desc: '+10% душ за ритуал' },
+        { id: 'echo',   name: 'Отголосок регрессии',  icon: '👻', kind: 'ritualSouls', per: 0.1, cost: 6, growth: 1.4, max: 20, desc: '+10% душ за регрессию' },
         { id: 'dream',  name: 'Сон наяву',          icon: '🌙', kind: 'offlineDmg',  per: 0.2, cost: 5, growth: 1.35, max: 10, desc: '+20% урона отряда офлайн' },
         { id: 'haste',  name: 'Порыв',              icon: '⏱', kind: 'abilityCd',   per: 0.05, cost: 6, growth: 1.4, max: 10, desc: '−5% перезарядки способностей героя' },
       ] },
@@ -2102,9 +2102,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         { id: 'i_rune',   key: 'rune',    goal: 1,   name: 'Создать руну',               reward: { shard: 30 },   go: 'runes' },
         { id: 'i_evo',    key: 'evolve',  goal: 1,   name: 'Эволюционировать героя',     reward: { shard: 100 },  go: 'heroes' },
         { id: 'i_f400',   value: 'floor', goal: 400, name: 'Дойти до 400-го этажа',      reward: { tickets: 10 }, go: 'arena' },
-        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первый ритуал',     reward: { heart: 3 },    go: 'souls' },
+        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первую регрессию',     reward: { heart: 3 },    go: 'souls' },
       ],
-      // Ритуальные (GDD §11): считаются с начала текущего забега, обновляются после каждого ритуала
+      // Регрессияьные (GDD §11): считаются с начала текущего забега, обновляются после каждого регрессии
       ritual: [
         { id: 'r_f100',  value: 'runFloor', goal: 100, name: 'Забег: дойти до 100-го этажа',  reward: { shard: 60 },   go: 'arena' },
         { id: 'r_f250',  value: 'runFloor', goal: 250, name: 'Забег: дойти до 250-го этажа',  reward: { tickets: 3 },  go: 'arena' },
@@ -2126,7 +2126,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
           title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
         { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 },
           title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
-        { id: 'a_ritual', name: 'Жрец ритуала',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
+        { id: 'a_ritual', name: 'Жрец регрессии',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
           title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
         { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 },
           title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
@@ -2174,7 +2174,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { id: 'dmg',   name: 'Зелье ярости',   icon: '⚗', kind: 'allDmg', mult: 2, sec: 900,  shardsPer: 25, essence: 20, desc: '×2 всего урона' },
       { id: 'shard', name: 'Зелье жатвы',    icon: '🫙', kind: 'shards', mult: 2, sec: 1800, shardsPer: 0,  essence: 40, desc: '×2 осколков' },
     ] },
-    // 0.61 (ответ 182): вехи Башни — большие разовые награды за рекорд этажа (навсегда, ритуал не сбрасывает).
+    // 0.61 (ответ 182): вехи Башни — большие разовые награды за рекорд этажа (навсегда, регрессию не сбрасывает).
     // hero — открыть героя (если уже есть — copies копий), pet — питомец (если есть — frags фрагментов), art — уровни особого
     // артефакта; reward — в центр наград. Дальше последней — каждые every этажей награда after. Числа временные.
     towerMs: { list: [
@@ -2194,7 +2194,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
     secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
-    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, ритуал не сбрасывает).
+    // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, регрессию не сбрасывает).
     // Опыт: xp — очки за единицу. Уровень L нужен base·L^power опыта всего. За каждый уровень — reward; каждые frameEvery — рамка.
     prestige: { base: 500, power: 1.5,
       xp: { floor: 1, ritual: 200, hero: 100, star: 20, ach: 50, trophy: 30, page: 150, title: 300, secret: 500 },
@@ -2301,7 +2301,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { need: 6, reward: { tickets: 3, heart: 1 } },
     ],
     // Классы главного героя (GDD §4): только у него. Открываются на этаже unlockFloor (рекорд).
-    // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за ритуал. Узел — 1 очко за уровень.
+    // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за регрессию. Узел — 1 очко за уровень.
     // Сменить класс можно раз в день, очки возвращаются. Без критов. Числа TBD.
     classes: {
       unlockFloor: 100, pointsPerFloors: 25, pointsPerRitual: 3,
@@ -2324,7 +2324,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         { id: 'alch', name: 'Алхимик', icon: '⚗', desc: 'Золото, осколки и души', nodes: [
           { id: 'a1', name: 'Философский камень', kind: 'gold',    per: 0.20, max: 10, desc: '+20% золота' },
           { id: 'a2', name: 'Дробление',       kind: 'shards',    per: 0.10, max: 10, desc: '+10% осколков' },
-          { id: 'a3', name: 'Эфир',            kind: 'ritualSouls', per: 0.05, max: 10, desc: '+5% душ за ритуал' },
+          { id: 'a3', name: 'Эфир',            kind: 'ritualSouls', per: 0.05, max: 10, desc: '+5% душ за регрессию' },
         ] },
       ],
     },
@@ -2333,7 +2333,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     booster: { name: 'Печать силы', power: 3, unlockFloor: 150, cooldownH: 8 },
     // Кости монстров (GDD §9, этап 6): ровно 6 слотов на героя (и у главного героя): голова, 2 руки, 2 ноги, нагрудник
     // (решение пользователя, заменяет «череп, рёбра, позвоночник, когти…»). У кости: редкость E–GOD, уровень и грейд G1, G2… без предела.
-    // Эффекты — рабочая гипотеза GDD, без критов. Комплекты 2/4/6 не утверждены — не делаем. Всё сохраняется после ритуала.
+    // Эффекты — рабочая гипотеза GDD, без критов. Комплекты 2/4/6 не утверждены — не делаем. Всё сохраняется после регрессии.
     bones: {
       slots: [
         { id: 'head',  name: 'Голова',       icon: '💀', kind: 'bossDmg',  base: 0.10, desc: 'урона по боссам' },
@@ -2357,7 +2357,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     },
     // Призванное существо — питомец (GDD §3): 1 в бою, автоатака с собственной частотой, тот же потолок критов,
     // бонусы артефактов действуют. Удар = доля (share) от DPS отряда × интервал, поэтому питомец не устаревает.
-    // Уровень (за осколки) увеличивает долю; уровни постоянные, переживают ритуал. Числа TBD.
+    // Уровень (за осколки) увеличивает долю; уровни постоянные, переживают регрессию. Числа TBD.
     // Питомцы 2.0 (GDD §3, решение пользователя 2026-11-04): 27 питомцев, по 3 на ранг E…GOD. В бою один: бьёт сам
     // (доля DPS отряда) и даёт бонус своего типа. 2 питомца ранга — за первую победу над боссом этажа, 3-й — в событии
     // «Логово». 3 формы; эволюция за фрагменты, которые роняют мобы-«Хранители» (у каждого питомца свой биом). Числа TBD.
@@ -3165,7 +3165,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       allies: newAllies(),
       buffs: { team: 0, tap: 0, teamPower: 1, tapPower: 1 },  // время и сила баффов (не сохраняется)
       abilities: newAbilities(),
-      // постоянное (переживёт ритуал): коллекция, билеты, гарантии, отряд
+      // постоянное (переживёт регрессию): коллекция, билеты, гарантии, отряд
       heroes: newHeroes(),
       squad: CONFIG.allies.filter(a => a.starter).map(a => a.id).slice(0, CONFIG.squadSize),
       tickets: 0, crystals: 0, crystalFloor: 0, market: { items: [], next: 0 },
@@ -3196,7 +3196,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       season: newSeason(0),                      // текущий сезон (0 — ещё не начат)
       event: newEventState('', null),            // событие недели
       inbox: [], inboxSeq: 1,                    // центр наград
-      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды ритуалов и достижений)
+      titles: [], title: null, skins: [],        // 0.51: титулы и облики (награды регрессий и достижений)
       favs: [],                                  // 0.54: избранные герои (ответ 199)
       trophies: [],                              // 0.57: ключи трофеев 'biome:0' | 'biome:1' | 'biome:f'
       curse: null,                               // 0.59: { floor, mod, on } — предложенное/принятое проклятие этажа
@@ -3381,7 +3381,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       }
       events.push({ type: 'materials', shard: mat.shard, heart: mat.heart });
       const bone = unlockedAt(s, 'bones') ? rollBone(s, isFinalBoss(s.floor) ? CONFIG.bones.dropFinal : CONFIG.bones.dropBoss, s.floor) : null;
-      // 0.74 (ответы 8, 57): мега-босс даёт души и без ритуала; первый мега-босс (этаж 50) — первый артефакт даром
+      // 0.74 (ответы 8, 57): мега-босс даёт души и без регрессии; первый мега-босс (этаж 50) — первый артефакт даром
       if (isFinalBoss(s.floor) && !s.mode && s.floor >= (s.megaSoulsFloor | 0) + 1) {
         s.megaSoulsFloor = s.floor;
         const M = CONFIG.megaSouls, n = Math.ceil(M.base * Math.pow(M.per50, s.floor / 50 - 1));
@@ -4307,7 +4307,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function chainOwned(s, id) {
     const h = s.heroes[id], a = allyDef(id);
     return (s.goldHired || []).includes(id) || h.copies > 0 || (h.unlocked && !a.starter) || s.allies[id].level > 0 ||
-      (!!CONFIG.cage && CONFIG.cage.ally === id && !!s.cageFreed);   // герой из клетки остаётся и после ритуала
+      (!!CONFIG.cage && CONFIG.cage.ally === id && !!s.cageFreed);   // герой из клетки остаётся и после регрессии
   }
   function chainNext(s) { const a = chainList().find(x => !chainOwned(s, x.id)); return a ? a.id : null; }
   function buyChainHero(s) {
@@ -4433,7 +4433,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   // ---------- материалы и эволюция ----------
   function shardsForBoss(f) { const M = CONFIG.materials; return M.shardsPerBoss + Math.floor(f / M.shardsFloorStep); }
   function heartsForFloor(f) { return f % CONFIG.materials.heartEvery === 0 ? 1 : 0; }
-  // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после ритуала)
+  // Осколки — за любого босса; сердце — только за первое в игре прохождение (не повторяется после регрессии)
   function bossMaterials(s, f) {
     return { shard: Math.ceil(shardsForBoss(f) * shardMult(s)) + heartShards(f > s.heartFloor ? heartsForFloor(f) : 0), heart: 0, firstHeart: f > s.heartFloor && heartsForFloor(f) > 0 };
   }
@@ -4640,8 +4640,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return { before, after: expectedDps(t, tps) };
   }
 
-  // ==== src/core/12_ritual.js — Ритуал: души, сброс забега ====
-  // ---------- ритуал ----------
+  // ==== src/core/12_ritual.js — Регрессия: души, сброс забега ====
+  // ---------- регрессию ----------
   function canRitual(s) { return s.maxFloor >= CONFIG.ritual.floor; }
   // Стартовый этаж следующего забега зависит только от артефакта «Врата восхождения»
   function ritualStartFloor(s) { return Math.min(CONFIG.ritual.floor - 1, 1 + Math.floor(artPower(s, 'startFloor'))); }
@@ -4652,7 +4652,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const lb = Math.log10(R.soulsBase) + (Math.min(F, K) - R.floor) * Math.log10(R.soulsGrowth)
       + (F > K ? K * Math.log(R.soulsGrowth) * Math.log10(F / K) : 0);
     const base = lb >= LOGLIM ? B.fromLog10(lb) : Math.floor(Math.pow(10, lb) + 1e-9);
-    // бонус только за этажи выше прежнего рекорда (и выше этажа ритуала)
+    // бонус только за этажи выше прежнего рекорда (и выше этажа регрессии)
     const record = Math.max(0, s.maxFloor - Math.max(s.bestRecordAtRunStart, R.floor)) * R.recordBonus;
     return B.floor(B.mul(B.add(base, record), 1 + treePower(s, 'ritualSouls')));
   }
@@ -4672,7 +4672,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.souls = B.add(s.souls, souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, souls);
     s.rituals++; cnt(s, 'ritual');
     const ms = ritualMilestone(s, s.rituals);
-    // ритуальные задания начинаются заново
+    // регрессионные задания начинаются заново
     s.quests.runBase = { ...s.counters };
     for (const q of CONFIG.quests.ritual) delete s.quests.claimed[q.id];
     s.bestFloor = Math.max(s.bestFloor, s.maxFloor);
@@ -4688,14 +4688,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // сохраняется: дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, гарантии, эссенция, артефакты, души, способности, рекорды
     return { souls, start, milestone: ms, light };
   }
-  // Награда за n-й ритуал (1/10/100): титул (и облик) сразу, ценности — в центр наград
+  // Награда за n-й регрессию (1/10/100): титул (и облик) сразу, ценности — в центр наград
   function ritualMilestone(s, n) {
     const m = CONFIG.ritual.milestones.find(x => x.n === n);
     if (!m) return null;
     if (!s.titles.includes(m.title)) s.titles.push(m.title);
     if (!s.title) s.title = m.title;
     if (m.skin && !s.skins.includes(m.skin)) s.skins.push(m.skin);
-    inboxAdd(s, 'Ритуал №' + n + ': титул «' + m.title + '»', m.reward);
+    inboxAdd(s, 'Регрессия №' + n + ': титул «' + m.title + '»', m.reward);
     return m;
   }
   // ==== src/core/13_altar_misc.js — Разное: трофеи, связи, удобство, Алтарь ====
@@ -4796,7 +4796,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     { const P = claimPrestige(s); if (P) add({ count: P.levels, reward: P.reward }); }
     return n ? { count: n, reward: sum } : null;
   }
-  // Все титулы игры: за ритуалы и за последнюю ступень достижений. { title, bonus, src, n | ach }
+  // Все титулы игры: за регрессии и за последнюю ступень достижений. { title, bonus, src, n | ach }
   function allTitles() {
     return [...CONFIG.ritual.milestones.map(m => ({ title: m.title, bonus: m.bonus, src: 'ritual', n: m.n })),
             ...CONFIG.achievements.list.filter(a => a.title).map(a => ({ title: a.title.name, bonus: a.title.bonus, src: 'ach', ach: a }))];
@@ -4969,7 +4969,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       d.bestCleared = Math.max(d.highestCleared | 0, (d.bestFloor | 0) - 1, 0);
     }
     if (d.v === 22) { d.v = 23; d.trial = { week: '', weekBest: 0, best: 0 }; }   // 0.43 → 0.44: испытательная башня
-    if (d.v === 23) {                                      // 0.50 → 0.51: титулы за уже проведённые ритуалы (без повторной выдачи ценностей)
+    if (d.v === 23) {                                      // 0.50 → 0.51: титулы за уже проведённые регрессии (без повторной выдачи ценностей)
       d.v = 24; d.titles = []; d.skins = [];
       for (const m of CONFIG.ritual.milestones) if ((d.rituals | 0) >= m.n) { d.titles.push(m.title); if (m.skin) d.skins.push(m.skin); }
       d.title = d.titles[0] || null;
@@ -5420,7 +5420,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   };
 
   // ---------- сохранение ----------
-  // ---------- страховка сохранений (GDD §17, 0.42): 3 циклические копии раз в 5 минут + снимок перед ритуалом ----------
+  // ---------- страховка сохранений (GDD §17, 0.42): 3 циклические копии раз в 5 минут + снимок перед регрессией ----------
   // Основное сохранение не удаляется никогда: если оно повреждено, его копия кладётся в «_broken», игра поднимается
   // из последней целой резервной копии. Ручной откат — только к копии, которая прошла проверку (deserialize).
   const BAK_N = 3, BAK_EVERY = 5 * 60 * 1000, BAK_KEY = i => SAVE_KEY + '_bak' + i, PRE_RIT = SAVE_KEY + '_preRitual';
@@ -5828,7 +5828,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     }
     // 0.55 (ответ 189): умный отчёт — что теперь можно купить или сделать
     const na = C.nowAffordable(s), nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, can = [];
-    if (na.ritual) can.push('провести <b>ритуал</b>');
+    if (na.ritual) can.push('провести <b>регрессию</b>');
     if (na.tap > 0) can.push('удар героя +' + fmt(na.tap) + ' ур.');
     for (const x of na.allies) can.push(nm(x.id) + ' +' + fmt(x.n) + ' ур.');
     if (na.ranks.length) can.push('ранг: ' + na.ranks.map(nm).join(', '));
@@ -6181,12 +6181,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       ['Душ получено', fmt(st.soulsEarned)], ['Тапов', fmt(st.taps)],
       ['Макс. тапов в секунду', fmt(st.maxTps)], ['Врагов побеждено', fmt(st.kills)],
       ['Боссов побеждено', fmt(st.bossKills)], ['Рекорд этажа', fmt(s.bestFloor)],
-      ['Ритуалов', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
+      ['Регрессий', fmt(s.rituals)], ['Время в игре', playTimeTxt(st.playTime)],
     ];
     $('statsTab').innerHTML = prestigeHtml() + '<div class="hint2">Золото в минуту — по последней минуте игры. Время в игре считается только при открытой игре.</div><div class="stGrid">' +
       cells.map(c => '<div class="stCell"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>').join('') + '</div>' + titlesHtml() + trophiesHtml() + towerMsHtml();
   }
-  // Титулы за 1-й/10-й/100-й ритуал: каждый полученный даёт небольшой постоянный бонус (0.53), выбранный — для профиля
+  // Титулы за 1-й/10-й/100-й регрессию: каждый полученный даёт небольшой постоянный бонус (0.53), выбранный — для профиля
   function titleBonusTxt(m) { return '+' + Math.round(m.bonus.per * 100) + '% ' + (m.bonus.kind === 'gold' ? 'золота' : 'урона'); }
   // 0.64: профиль и престиж аккаунта
   const FRAME_COL = { 'Бронзовая': '#c9864a', 'Серебряная': '#cfd6e0', 'Золотая': '#ffd36b', 'Платиновая': '#9fe8ff', 'Изумрудная': '#5fe39a', 'Алмазная': '#b8f4ff', 'Кровавая': '#ff4a5a', 'Теневая': '#b98cff', 'Звёздная': '#fff6a0', 'Божественная': '#ffffff' };
@@ -6198,7 +6198,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       '<div class="hSub">' + (s.frame ? 'Рамка: ' + s.frame + ' · ' : '') + 'опыт ' + fmt(xp) + ' / ' + fmt(b) + ' · рекорд ' + s.bestFloor.toLocaleString('ru-RU') + '</div>' +
       '<div class="qBar"><i style="width:' + Math.min(100, (xp - a) / Math.max(1, b - a) * 100) + '%"></i></div></div>' +
       (un > 0 ? '<button class="hBtn go" data-prest="1">Забрать ×' + un + '</button>' : '') + '</div>' +
-      '<div class="hint2">Престиж — за всё сделанное: рекорд, ритуалы, героев и звёзды, достижения, трофеи, дневник, титулы, тайники. Каждый уровень — 🎟 ' + P.reward.tickets + ', ✦ ' + P.reward.essence + '; каждые ' + P.frameEvery + ' — новая рамка профиля.</div>';
+      '<div class="hint2">Престиж — за всё сделанное: рекорд, регрессии, героев и звёзды, достижения, трофеи, дневник, титулы, тайники. Каждый уровень — 🎟 ' + P.reward.tickets + ', ✦ ' + P.reward.essence + '; каждые ' + P.frameEvery + ' — новая рамка профиля.</div>';
     if (fr.length) h += '<div class="spare" style="gap:6px;flex-wrap:wrap;height:auto;margin-bottom:8px">' + fr.map(f => '<button class="hBtn' + (s.frame === f ? ' go' : '') + '" data-frame="' + f + '" style="border-color:' + FRAME_COL[f] + '"' + (s.frame === f ? ' disabled' : '') + '>' + f + '</button>').join('') + '</div>';
     return h;
   }
@@ -6230,7 +6230,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     for (const m of all) {
       const own = s.titles.includes(m.title), cur = s.title === m.title;
       h += own ? '<button class="hBtn' + (cur ? ' go' : '') + '" data-title="' + m.title + '"' + (cur ? ' disabled' : '') + '>' + (cur ? '✦ ' : '') + m.title + ' · ' + titleBonusTxt(m) + '</button>'
-               : '<span class="badge rs">🔒 ' + m.title + ' · ' + titleBonusTxt(m) + ' — ' + (m.src === 'ritual' ? 'ритуал №' + m.n : 'достижение «' + m.ach.name + '»') + '</span>';
+               : '<span class="badge rs">🔒 ' + m.title + ' · ' + titleBonusTxt(m) + ' — ' + (m.src === 'ritual' ? 'регрессия №' + m.n : 'достижение «' + m.ach.name + '»') + '</span>';
     }
     if (s.skins.includes('eternal')) h += '<span class="badge sq">облик «Вечный призванный» открыт</span>';
     return h + '</div>';
@@ -6362,7 +6362,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     let html = '<div class="secTitle">ГЛАВНЫЙ ГЕРОЙ · КЛАСС</div>';
     if (!C.classUnlocked(s)) html += '<div class="hRow locked" style="--r:#3a2a4a"><div class="artIcon">?</div><div class="hInfo"><div class="hName">Классы</div><div class="hSub">Откроются на этаже ' + K.unlockFloor + ' (рекорд ' + s.bestFloor + ')</div></div></div>';
     else if (!s.cls.id || classPick) {
-      html += '<div class="hint2">' + (s.cls.id ? 'Смена класса возвращает все очки. Доступна раз в день.' : 'Выберите класс — его можно сменить раз в день. Очки класса: за каждые ' + K.pointsPerFloors + ' этажей рекорда и ' + K.pointsPerRitual + ' за ритуал.') + '</div>';
+      html += '<div class="hint2">' + (s.cls.id ? 'Смена класса возвращает все очки. Доступна раз в день.' : 'Выберите класс — его можно сменить раз в день. Очки класса: за каждые ' + K.pointsPerFloors + ' этажей рекорда и ' + K.pointsPerRitual + ' за регрессию.') + '</div>';
       for (const k of K.list) {
         const cur = s.cls.id === k.id, can = !cur && C.canChangeClass(s, dk);
         html += '<div class="hRow" style="--r:' + (cur ? 'var(--gold)' : '#b98cff') + '"><div class="artIcon">' + k.icon + '</div><div class="hInfo"><div class="hName">' + k.name + (cur ? ' <span class="badge sq">сейчас</span>' : '') + '</div>' +
@@ -6538,7 +6538,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     html += '<div class="secTitle">ЕЖЕНЕДЕЛЬНЫЕ · обновятся в понедельник</div>' + questRows(Q.weekly);
     const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), doneN = Q.intro.length - intro.length;
     html += '<div class="secTitle">ВВОДНЫЕ · выполнено ' + doneN + '/' + Q.intro.length + '</div>' + (intro.length ? questRows(intro) : '<div class="hint2">Все вводные задания выполнены.</div>');
-    html += '<div class="secTitle">РИТУАЛЬНЫЕ · текущий забег, обновятся после ритуала</div>' + questRows(Q.ritual);
+    html += '<div class="secTitle">РЕГРЕССИЯ · текущий забег, обновятся после регрессии</div>' + questRows(Q.ritual);
     const A = CFG.achievements, pts = C.achPoints(s);
     html += '<div class="secTitle">ДОСТИЖЕНИЯ · очков ' + pts + ' · +' + Math.round(pts * A.dmgPerPoint * 100) + '% всего урона навсегда</div>';
     for (const a of A.list) {
@@ -6580,7 +6580,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     if (!who.includes(boneWho)) boneWho = 'hero';
     const nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name;
     let html = '<div class="matHead"><span>🦴 <b>' + fmt(s.materials.dust) + '</b> пыли</span><span>' + M.shard.icon + ' <b>' + fmt(s.materials.shard) + '</b> осколков</span><span>кости: <b>' + s.bones.length + '</b></span></div>' +
-      '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после ритуала.</div>';
+      '<div class="hint2">6 слотов у каждого героя. Кости падают с боссов (финальный — всегда), личных боссов и контрольных боссов бесконечного подземелья. Уровень — за пыль, на 10-м — грейд (G без предела). Без критов. Всё сохраняется после регрессии.</div>';
     html += '<button class="claimAll" data-bbest="1"' + (s.bones.length ? '' : ' disabled') + '>Надеть лучшие — всем героям</button>';
     html += '<div class="spare" style="margin-bottom:6px">' + who.map(id => '<button class="hBtn' + (id === boneWho ? ' go' : '') + '" data-bwho="' + id + '">' + nm(id) + ' · ' + C.equippedOn(s, id).length + '/6</button>').join('') + '</div>';
     html += '<div class="secTitle">СЛОТЫ · ' + nm(boneWho).toUpperCase() + '</div>';
@@ -6640,7 +6640,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     gold:    { title: '◆ Золото', list: [['Побеждать врагов и боссов Башни', 'arena'], ['Сокровищница — ежедневное подземелье', 'pve'], ['Перо феникса, руна богатства, Алхимик', 'souls']] },
     tickets: { title: '🎟 Билеты', list: [['Первое прохождение боссов 5-го и 10-го этажей', 'arena'], ['Задания и достижения', 'quests'], ['Слеза портала в Алтаре', 'altar'], ['Боевой пропуск', 'season'], ['Обмен фонарей события', 'events']] },
     shards:  { title: '🔹 Осколки', list: [['Каждый босс Башни (больше на высоких этажах)', 'arena'], ['Шахта осколков — ежедневное подземелье', 'pve'], ['Личные боссы', 'pve'], ['Задания и пропуск', 'quests']] },
-    souls:   { title: '👻 Души', list: [['Ритуал на 400-м этаже', 'souls'], ['Ритуальные задания', 'quests'], ['Достижение «Жрец ритуала»', 'quests']] },
+    souls:   { title: '👻 Души', list: [['Регрессия на 150-м этаже', 'souls'], ['Задания регрессии', 'quests'], ['Достижение «Жрец регрессии»', 'quests']] },
   };
   function showSources(key) {
     const S = SOURCES[key];
@@ -6970,7 +6970,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     render();
   });
 
-  // ---------- души, артефакты, ритуал ----------
+  // ---------- души, артефакты, регрессию ----------
   const TPS_PREVIEW = 5;                       // для сравнения «до / после» — ожидаемый DPS при 5 тапах в секунду
   let soulsHtml = '';
   const pctUp = m => '+' + fmt(B.floor(B.mul(B.sub(m, 1), 100))) + '%';
@@ -6985,14 +6985,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       '<div class="soulBonus">' + pctUp(C.soulMult(s)) + ' урона</div></div>' +
       '<div class="hint2">Неизрасходованные души усиливают весь урон: +' + Math.round(CFG.souls.dpsPerSoul * 100) +
       '% за каждую. Трата на артефакты уменьшает этот бонус — смотрите DPS до и после.</div>';
-    // ритуал
+    // регрессию
     const ready = C.canRitual(s);
-    html += '<div class="ritualBox' + (ready ? ' ready' : '') + '"><b>Ритуал</b>' +
+    html += '<div class="ritualBox' + (ready ? ' ready' : '') + '"><b>Регрессия</b>' +
       (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) +
                '. Чем выше этаж, тем больше душ.</p>'
              : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor +
-               (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
-      '<button class="ritBtn" data-act="ritual"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести ритуал' : 'Нужен этаж ' + R.floor) + '</button></div>';
+               (s.rituals ? ', регрессий: ' + s.rituals : '') + '.</p>') +
+      '<button class="ritBtn" data-act="ritual"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести регрессию' : 'Нужен этаж ' + R.floor) + '</button></div>';
     // поиск артефакта
     const fc = C.findCost(s);
     html += '<div class="secTitle">АРТЕФАКТЫ · найдено ' + C.foundCount(s) + '/' + CFG.artifacts.length + ' · все действуют сразу</div>';
@@ -7017,10 +7017,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                    : '<button class="hBtn' + (B.gte(s.souls, c) ? ' go' : '') + '" data-up="' + a.id + '"' + (B.gte(s.souls, c) ? '' : ' disabled') + '>👻 ' + fmt(c) + '</button>') + '</div>';
     }
     // дерево душ
-    html += '<div class="secTitle">ДЕРЕВО ДУШ · ветви открываются ритуалами · без критов</div>';
+    html += '<div class="secTitle">ДЕРЕВО ДУШ · ветви открываются регрессиями · без критов</div>';
     for (const b of CFG.soulTree) {
       const open = C.branchOpen(s, b);
-      html += '<div class="secTitle branchHead">' + b.name.toUpperCase() + (open ? '' : '<small>🔒 после ' + b.rituals + ' ритуал' + (b.rituals === 1 ? 'а' : 'ов') + '</small>') + '</div>';
+      html += '<div class="secTitle branchHead">' + b.name.toUpperCase() + (open ? '' : '<small>🔒 после ' + b.rituals + ' ' + (b.rituals === 1 ? 'регрессии' : 'регрессий') + '</small>') + '</div>';
       html += '<div class="branch' + (open ? '' : ' closed') + '">';
       b.nodes.forEach((n, i) => {
         const lv = C.treeLevel(s, n.id), nodeOpen = C.treeNodeOpen(s, n.id), c = C.treeCost(s, n.id);
@@ -7050,17 +7050,17 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       if (!C.canRitual(s)) return;
       const souls = C.ritualSouls(s), start = C.ritualStartFloor(s);
       const after = { ...s, souls: B.add(s.souls, souls) };
-      ask('<b>Ритуал</b><span class="askList">' +
+      ask('<b>Регрессия</b><span class="askList">' +
         '<b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start +
         (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
-        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
-        writeCopy(PRE_RIT);                                  // защищённый снимок перед ритуалом
+        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, материалы, копии, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести регрессию', () => {
+        writeCopy(PRE_RIT);                                  // защищённый снимок перед регрессией
         const r = C.ritual(s);
         if (!r) return;
         dmgLog.length = 0;
         restartAnim('spawn');
-        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        toast('Регрессия проведена<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
         if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>' + titleBonusTxt(r.milestone) + ' навсегда · награды — в центре наград 📬</small>'), 2500);
         save(); render();
       });
@@ -7256,7 +7256,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const RC = { E: '#9a96a6', D: '#c8783a', C: '#2fd07a', B: '#3a8cff', A: '#b04dff', S: '#ffb52e', SS: '#ff3a4a', SSS: '#9fe6ff', GOD: '#fff2a0' };  // 0.73: цвета рангов по референсу пользователя (сталь, бронза, изумруд, сапфир, аметист, золото, рубин, платина, спектр)
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
-    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и ритуал'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
+    const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и регрессия'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
       ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
@@ -7335,7 +7335,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         (bang[id] ? '<i class="bang2">!</i>' : '') + '</button>').join('');
       // 0.69: «Другие разделы» по группам
       const GR = [['Герои', [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['diary', '📖', 'Дневник']]],
-        ['Сила', [['@souls', '👻', 'Души и ритуал'], ['@tree', '✴', 'Дерево навыков'], ['altar', '🕯', 'Алтарь'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости']]],
+        ['Сила', [['@souls', '👻', 'Души и регрессия'], ['@tree', '✴', 'Дерево навыков'], ['altar', '🕯', 'Алтарь'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости']]],
         ['Награды', [['quests', '📜', 'Задания'], ['inbox', '📬', 'Почта'], ['@login', '📅', 'Вход 7/30'], ['season', '🎖', 'Сезон'], ['events', '🏮', 'События']]],
         ['Прочее', [['@shop', '🛒', 'Магазин'], ['@prof', '👤', 'Профиль'], ['@set', '⚙', 'Настройки'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Копии']]]];
       for (const [g, list] of GR) h += '<div class="grpT">' + g.toUpperCase() + '</div><div class="mMore">' +
@@ -7413,7 +7413,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>', '', btn('hero', el.buyTap));
       // 0.101 (решение пользователя 06.11): список по возрастанию урона, как в «Крушителях» — сверху слабые, внизу сильные,
       // ниже всех — «Новый герой» из цепочки. Порядок по силе героя (урон на 1 уровне со звёздами и эволюцией), поэтому
-      // карточки не прыгают при прокачке; после ритуала все открытые на своих местах — листаешь вниз к сильнейшим.
+      // карточки не прыгают при прокачке; после регрессии все открытые на своих местах — листаешь вниз к сильнейшим.
       const pw = id => B.log10(B.max(B.mul(C.allyDpsAt(id, 1), C.starMult(s, id) * C.evoMult(s, id)), 1e-300));
       const list = CFG.allies.slice().sort((a, b) => pw(a.id) - pw(b.id));
       for (const a of list) {
@@ -7571,11 +7571,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // Резервные копии: только прошедшие проверку; откат — с подтверждением, текущее состояние тоже сохраняется
     function popBackups() {
       const list = backupList();
-      const row = c => '<div class="bakRow"><b>' + (c.kind === 'ritual' ? '🕯 Перед ритуалом' : '💾 Автокопия') + ' · ' + new Date(c.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</b>' +
+      const row = c => '<div class="bakRow"><b>' + (c.kind === 'ritual' ? '🕯 Перед регрессией' : '💾 Автокопия') + ' · ' + new Date(c.t).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</b>' +
         '<p>Этаж ' + c.st.floor + ' (рекорд ' + c.st.bestFloor + ') · ◆ ' + fmt(c.st.gold) + ' · 👻 ' + fmt(c.st.souls) + '</p>' +
         '<button class="upBtn alt" style="width:100%;min-height:34px" data-rest="' + c.key + '">Вернуть эту копию</button></div>';
       $('ui2PopBox').style.cssText = '';
-      $('ui2PopBox').innerHTML = '<div class="big">💾</div><h3>Резервные копии</h3><p>Три копии обновляются по кругу раз в 5 минут, ещё одна делается перед каждым ритуалом. Если сохранение повредится, игра сама поднимется из последней целой копии.</p>' +
+      $('ui2PopBox').innerHTML = '<div class="big">💾</div><h3>Резервные копии</h3><p>Три копии обновляются по кругу раз в 5 минут, ещё одна делается перед каждой регрессией. Если сохранение повредится, игра сама поднимется из последней целой копии.</p>' +
         (list.length ? list.map(row).join('') : '<p>Копий пока нет — первая появится в течение 5 минут игры.</p>') +
         '<div class="row" style="margin-top:12px"><button class="upBtn" data-pclose>Закрыть</button></div>';
       $('ui2Pop').classList.add('show');
@@ -7725,7 +7725,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     });
 
 
-    // ===================== 0.45: Портал, Души и ритуал, PvE — новые страницы =====================
+    // ===================== 0.45: Портал, Души и регрессия, PvE — новые страницы =====================
     let xKind = 'portal', ban = 'normal', showHist = false;
     const xStack = [];
     function openX(k) { if (page === 'x' && xKind !== k) xStack.push(xKind); xKind = k; showHist = false; open('x'); $('xBody').scrollTop = 0; }
@@ -7763,7 +7763,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         else setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
         setHtml('xBody', showHist ? histHtml() : portalHtml());
       } else if (xKind === 'souls') {
-        $('xTitle').textContent = 'Души и ритуал'; aux.style.display = 'none';
+        $('xTitle').textContent = 'Души и регрессия'; aux.style.display = 'none';
         setHtml('xTop', cur('👻', fmt(s.souls)));
         setHtml('xBody', soulsHtml2());
       } else {
@@ -7945,19 +7945,19 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       ban = L[(i + (dx < 0 ? 1 : -1) + L.length) % L.length]; click(); lastHtml = {}; refresh();
     });
 
-    // ---------- Души и ритуал ----------
+    // ---------- Души и регрессия ----------
     function soulsHtml2() {
       const R = CFG.ritual, ready = C.canRitual(s);
       let h = '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Неизрасходованные души: ' + pctUp(C.soulMult(s)) + ' всего урона (+' + Math.round(CFG.souls.dpsPerSoul * 100) + '% за душу). Траты на артефакты и дерево уменьшают этот бонус — сравнивайте DPS до и после.</p></div>';
-      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Ритуал</h3>' +
-        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед ритуалом делается резервная копия.</p>'
-               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
-        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмный ритуал' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
-        (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлый ритуал<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
+      h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Регрессия</h3>' +
+        (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед регрессией делается резервная копия.</p>'
+               : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', регрессий: ' + s.rituals : '') + '.</p>') +
+        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмная регрессия' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
+        (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлая регрессия<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
       h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
       for (const b of CFG.soulTree) {
         const opn = C.branchOpen(s, b);
-        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ритуал' + (b.rituals === 1 ? 'а' : 'ов') + '</small>') + '</div>';
+        h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ' + (b.rituals === 1 ? 'регрессии' : 'регрессий') + '</small>') + '</div>';
         b.nodes.forEach((n, i) => {
           const lv = C.treeLevel(s, n.id), no = C.treeNodeOpen(s, n.id), c = C.treeCost(s, n.id), can = opn && no && c != null && B.gte(s.souls, c);
           const prev = c != null && no && opn ? C.previewSpend(s, 'tree', n.id, TPS_PREVIEW) : null;
@@ -7973,13 +7973,13 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const light = kind === 'light';
       if (light && (s.crystals | 0) < CFG.ritual.light.crystals) return;
       const souls = light ? B.floor(B.mul(C.ritualSouls(s), CFG.ritual.light.mult)) : C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
-      ask('<b>' + (light ? 'Светлый ритуал · 💎 ' + CFG.ritual.light.crystals : 'Тёмный ритуал') + '</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+      ask('<b>' + (light ? 'Светлая регрессия · 💎 ' + CFG.ritual.light.crystals : 'Тёмная регрессия') + '</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
-        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
+        '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести регрессию', () => {
         writeCopy(PRE_RIT);
         const r = C.ritual(s, light ? 'light' : 'dark'); if (!r) return;
         dmgLog.length = 0; restartAnim('spawn');
-        toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
+        toast('Регрессия проведена<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
         if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>+' + Math.round(r.milestone.bonus.per * 100) + '% ' + (r.milestone.bonus.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · награды — в центре наград 📬</small>'), 2500);
         save(); render();
       });
@@ -8330,7 +8330,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // хроника — сцены из docs/CUTSCENES.md (первый цикл); открываются рекордом этажа
     const CHR = [[0, 'Пролог — «Приглашение»'], [1, 'Гнилые катакомбы — «Голодная»'], [50, 'Хранитель Врат'], [51, 'Пепельные шахты — «Пепел миров»'], [101, 'Лес теней — «Тот, кто не ушёл»'],
       [151, 'Ледяная цитадель — «Спасение»'], [201, 'Затопленный храм — «Молитва»'], [251, 'Кровавая арена — «Другие призванные»'], [301, 'Пустотные врата — «Трещина»'],
-      [351, 'Престол Башни — «Трон»'], [400, 'Первый Призыватель'], [-1, 'Первый ритуал — «Жертва»'], [401, 'Ржавые механизмы — «Часовщик»'], [451, 'Небесный сад — «Рай»'],
+      [351, 'Престол Башни — «Трон»'], [400, 'Первый Призыватель'], [-1, 'Первая регрессия — «Жертва»'], [401, 'Ржавые механизмы — «Часовщик»'], [451, 'Небесный сад — «Рай»'],
       [501, 'Склеп королей — «Мой король»'], [551, 'Грибные гроты — «Корни»'], [601, 'Обсидиановая кузня — «Союз»'], [651, 'Зеркальный лабиринт — «Двойник»'],
       [701, 'Чумные палаты — «Переваривание»'], [751, 'Песчаный некрополь — «Доеденный мир»'], [801, 'Грозовой шпиль — «Столкновение»'], [851, 'Сады плоти — «Новое тело»'],
       [901, 'Звёздная обсерватория — «Карта»'], [951, 'Сердце Башни — «Пульс»']];
@@ -8348,7 +8348,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
           '<button data-pa="ava"><span>🖼 Сменить портрет<small>любой открытый герой</small></span><b>›</b></button></div>';
         h += '<div class="grpT">РЕКОРДЫ</div><div class="statGrid">' +
           [['Рекорд этажа', fmt(s.bestFloor)], ['Время в игре', playTimeTxt(st.playTime)], ['Врагов побеждено', fmt(st.kills)], ['Тапов', fmt(st.taps)],
-           ['Боссов побеждено', fmt(st.bossKills)], ['Ритуалов', fmt(s.rituals)], ['Трофеев боссов', s.trophies.length + ' / ' + C.allTrophies().length], ['Титулов', s.titles.length + ' / ' + C.allTitles().length]]
+           ['Боссов побеждено', fmt(st.bossKills)], ['Регрессий', fmt(s.rituals)], ['Трофеев боссов', s.trophies.length + ' / ' + C.allTrophies().length], ['Титулов', s.titles.length + ' / ' + C.allTitles().length]]
             .map(c => '<div>' + c[0] + '<b>' + c[1] + '</b></div>').join('') + '</div>';
         if (s.trophies.length) h += '<div class="grpT">ТРОФЕИ БОССОВ</div><div class="rowList">' + s.trophies.slice(-12).reverse().map(k => '<div><span>' + (k.endsWith(':f') ? '👑 ' : '🏆 ') + C.trophyName(k) + '</span></div>').join('') + '</div>';
       } else if (pTab === 'tit') {
@@ -8356,7 +8356,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         for (const m of C.allTitles()) {
           const own = s.titles.includes(m.title), cur = s.title === m.title;
           h += own ? '<button data-ti="' + esc(m.title) + '" class="' + (cur ? 'on' : '') + '"><span>' + (cur ? '✦ ' : '') + m.title + '<small>' + titleBonusTxt(m) + '</small></span><b>' + (cur ? 'выбран' : 'выбрать') + '</b></button>'
-            : '<div class="lock"><span>🔒 ' + m.title + '<small>' + titleBonusTxt(m) + ' · ' + (m.src === 'ritual' ? 'ритуал №' + m.n : 'достижение «' + m.ach.name + '»') + '</small></span></div>';
+            : '<div class="lock"><span>🔒 ' + m.title + '<small>' + titleBonusTxt(m) + ' · ' + (m.src === 'ritual' ? 'регрессия №' + m.n : 'достижение «' + m.ach.name + '»') + '</small></span></div>';
         }
         const fr = C.prestigeFrames(s);
         h += '</div><div class="grpT">РАМКИ ПОРТРЕТА</div><div class="hint3">Новая рамка — каждые ' + CFG.prestige.frameEvery + ' уровней престижа.</div><div class="rowList">' +
@@ -8366,7 +8366,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       } else if (pTab === 'skin') {
         h += '<div class="hint3">Облик главного героя меняется с прогрессом сам. Открытые облики можно посмотреть здесь.</div><div class="rowList">' +
           '<div class="on"><span>⚔ Призванный · тёмная сталь<small>начальный облик</small></span><b>сейчас</b></div>' +
-          (s.skins.includes('eternal') ? '<div><span>✦ Вечный призванный<small>открыт ритуалами</small></span><b>открыт</b></div>' : '<div class="lock"><span>🔒 Вечный призванный<small>награда за ритуалы</small></span></div>') +
+          (s.skins.includes('eternal') ? '<div><span>✦ Вечный призванный<small>открыт регрессиями</small></span><b>открыт</b></div>' : '<div class="lock"><span>🔒 Вечный призванный<small>награда за регрессии</small></span></div>') +
           '<div class="lock"><span>🔒 Новые облики<small>появятся вместе с артом героя</small></span></div></div>';
       } else if (pTab === 'st') {
         renderStats(); const g = $('statsTab').querySelector('.stGrid');
@@ -8375,7 +8375,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         const best = s.bestFloor;
         h += '<div class="hint3">Пересмотр катсцен. Картинки появятся после генерации арта — пока текст сцены.</div><div class="rowList">' +
           CHR.map(([f, nm], i) => { const open = f === -1 ? s.rituals > 0 : best >= Math.max(1, f);
-            return open ? '<button data-chr="' + i + '"><span>▶ ' + nm + '</span><b>смотреть</b></button>' : '<div class="lock"><span>🔒 ' + nm + '<small>' + (f === -1 ? 'после первого ритуала' : 'этаж ' + f) + '</small></span></div>'; }).join('') + '</div>';
+            return open ? '<button data-chr="' + i + '"><span>▶ ' + nm + '</span><b>смотреть</b></button>' : '<div class="lock"><span>🔒 ' + nm + '<small>' + (f === -1 ? 'после первой регрессии' : 'этаж ' + f) + '</small></span></div>'; }).join('') + '</div>';
       }
       $('pfBody').innerHTML = h;
     }
@@ -9140,7 +9140,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     window.U3 = window.U3 || {}; window.U3.rigPlay = (k, v) => heroRig && play(heroRig, k, v);
   })();
 
-  // ===================== 0.74: лесенка открытий, книга, ритуал, кузница, квест справа (опрос docs/ui/ANSWERS_UNLOCKS.md) =====================
+  // ===================== 0.74: лесенка открытий, книга, регрессию, кузница, квест справа (опрос docs/ui/ANSWERS_UNLOCKS.md) =====================
   (function () {
     const U = window.U2, sys = window.U3.sys, UA = window.UI_ART || {};
     const on = k => C.unlockedAt(s, k), best = () => Math.max(s.bestFloor | 0, s.maxFloor | 0);
@@ -9150,12 +9150,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // ---------- мечи → сразу «Прокачка» (вкладки сверху, ответ 32) ----------
     const om = $('cbMenu'), menuBtn = om.cloneNode(true); om.replaceWith(menuBtn);
     menuBtn.addEventListener('click', e => { e.stopPropagation(); U.press(menuBtn); U.sec('up'); });
-    // ---------- маленькие кнопки: книга (слева), ритуал и кузница (слева), портал (справа) ----------
+    // ---------- маленькие кнопки: книга (слева), регрессию и кузница (слева), портал (справа) ----------
     function sm(id, ico, art, label) {
       const b = mk('button', id, 'cBtn sm cbA', img(art) || '<span class="ico">' + ico + '</span>', host); b.setAttribute('aria-label', label); b.dataset.ua = 1; return b;
     }
     const book = sm('cbBook', '📕', 'st_book', 'Книга: задания, почта, события, магазин, дневник');
-    const rit = sm('cbRitual', '👻', 'md_ritual', 'Ритуал');
+    const rit = sm('cbRitual', '👻', 'md_ritual', 'Регрессия');
     const forge = sm('cbForge', '⚒', 'fg_anvil', 'Кузница');
     const list = mk('div', 'bookList', '', '', host);
     const BOOK = [['quests', 'ic_quests', 'Задания', 'quests'], ['inbox', 'q_gift', 'Почта', null], ['events', 'q_event', 'События', 'events'], ['season', 'pr_medal', 'Сезон', 'season'], ['@shop', 'sh_cart', 'Магазин', 'shop'], ['diary', 'st_book', 'Дневник', null]];
@@ -9173,7 +9173,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         btns: [{ t: 'Закрыть' }], onShow: w => w.querySelector('.rowList').addEventListener('click', ev => { const b = ev.target.closest('[data-fg]'); if (!b) return; $('sysOv').classList.remove('show'); U.home(); U.openOld(b.dataset.fg); }) }); });
     // ---------- «?» в разделах (ответ 52) ----------
     const HELP = { up: 'Прокачка: золотом повышайте уровень главного героя и союзников. Каждые несколько уровней — веха ×3 урона. Ранг (потолок уровня) — за осколки Башни. Звёзды — слиянием копий героя и «корма».',
-      art: 'Артефакты: вечные бонусы, переживают ритуал. Покупаются и улучшаются душами. Первый артефакт — за мега-босса 50 этажа.',
+      art: 'Артефакты: вечные бонусы, переживают регрессию. Покупаются и улучшаются душами. Первый артефакт — за мега-босса 50 этажа.',
       bag: 'Сумка: все предметы. Нажмите на предмет — описание, «Использовать», «Продать», «Где добыть». Кости можно продавать пачкой.',
       pets: 'Питомцы: сильно усиливают урон (×5 и больше с эволюцией). Уровень — за золото, эволюция — за фрагменты из Теневой башни.' };
     const qBtn = mk('button', 'secHelp', 'iBtn', '?'); $('sTitle').parentNode.appendChild(qBtn);
@@ -9205,10 +9205,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       { t: 'Улучши артефакт', ok: () => CFG.artifacts.some(a => C.artLevel(s, a.id) >= 2), r: { tickets: 3 }, go: 'art' },
       { t: 'Дойди до 100 этажа', ok: () => best() >= 100, r: { tickets: 10 }, go: 'battle' },
       { t: 'Дойди до 200 этажа', ok: () => best() >= 200, r: { tickets: 10 }, go: 'battle' },
-      { t: 'Проведи первый ритуал', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
+      { t: 'Проведи первую регрессию', ok: () => s.rituals > 0, r: { tickets: 15 }, go: 'ritual' },
     ];
     const NAMES = { ult: 'ульта героя', quests: 'задания', login: 'награда за вход', portal: 'портал призыва', shop: 'магазин', artifacts: 'артефакты', pve: 'PvE', runes: 'руны', forge: 'кузница',
-      ritual: 'ритуал', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
+      ritual: 'регрессия', tree: 'дерево навыков', events: 'события', season: 'сезон', altar: 'алтарь', alchemy: 'алхимия', echo: 'Эхо Башни', curse: 'проклятые этажи', secret: 'скрытые комнаты', totems: 'тотемы', pets: 'питомцы', shadow: 'Теневая башня', bones: 'кости монстров' };
     function nextUnlock() {
       const b = best(); let f = Infinity; for (const k in CFG.unlocks) if (CFG.unlocks[k] > b) f = Math.min(f, CFG.unlocks[k]);
       if (f === Infinity) return null;
@@ -9984,7 +9984,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
     const MORE = [
       ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
-      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Ритуал', () => U.openX('souls')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX('souls')],
     ];
     function renderMore() {
       const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');

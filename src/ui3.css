@@ -301,7 +301,7 @@
   body.animOn:not(.rigOn) #heroAnim { display: block; }
   body.animOn:not(.rigOn) #hero .fig { opacity: 0 !important; }
 
-  /* ===== 0.74: только ГГ на экране боя, книга, ритуал, кузница, квест справа ===== */
+  /* ===== 0.74: только ГГ на экране боя, книга, регрессию, кузница, квест справа ===== */
   body.clean .ally { display: none !important; }
   body.clean #cbPve { top: calc(env(safe-area-inset-top) + 220px); }
   body.clean #cbBook { left: 17px; top: calc(env(safe-area-inset-top) + 274px); }

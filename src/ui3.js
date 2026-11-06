@@ -260,7 +260,7 @@
     // хроника — сцены из docs/CUTSCENES.md (первый цикл); открываются рекордом этажа
     const CHR = [[0, 'Пролог — «Приглашение»'], [1, 'Гнилые катакомбы — «Голодная»'], [50, 'Хранитель Врат'], [51, 'Пепельные шахты — «Пепел миров»'], [101, 'Лес теней — «Тот, кто не ушёл»'],
       [151, 'Ледяная цитадель — «Спасение»'], [201, 'Затопленный храм — «Молитва»'], [251, 'Кровавая арена — «Другие призванные»'], [301, 'Пустотные врата — «Трещина»'],
-      [351, 'Престол Башни — «Трон»'], [400, 'Первый Призыватель'], [-1, 'Первый ритуал — «Жертва»'], [401, 'Ржавые механизмы — «Часовщик»'], [451, 'Небесный сад — «Рай»'],
+      [351, 'Престол Башни — «Трон»'], [400, 'Первый Призыватель'], [-1, 'Первая регрессия — «Жертва»'], [401, 'Ржавые механизмы — «Часовщик»'], [451, 'Небесный сад — «Рай»'],
       [501, 'Склеп королей — «Мой король»'], [551, 'Грибные гроты — «Корни»'], [601, 'Обсидиановая кузня — «Союз»'], [651, 'Зеркальный лабиринт — «Двойник»'],
       [701, 'Чумные палаты — «Переваривание»'], [751, 'Песчаный некрополь — «Доеденный мир»'], [801, 'Грозовой шпиль — «Столкновение»'], [851, 'Сады плоти — «Новое тело»'],
       [901, 'Звёздная обсерватория — «Карта»'], [951, 'Сердце Башни — «Пульс»']];
@@ -278,7 +278,7 @@
           '<button data-pa="ava"><span>🖼 Сменить портрет<small>любой открытый герой</small></span><b>›</b></button></div>';
         h += '<div class="grpT">РЕКОРДЫ</div><div class="statGrid">' +
           [['Рекорд этажа', fmt(s.bestFloor)], ['Время в игре', playTimeTxt(st.playTime)], ['Врагов побеждено', fmt(st.kills)], ['Тапов', fmt(st.taps)],
-           ['Боссов побеждено', fmt(st.bossKills)], ['Ритуалов', fmt(s.rituals)], ['Трофеев боссов', s.trophies.length + ' / ' + C.allTrophies().length], ['Титулов', s.titles.length + ' / ' + C.allTitles().length]]
+           ['Боссов побеждено', fmt(st.bossKills)], ['Регрессий', fmt(s.rituals)], ['Трофеев боссов', s.trophies.length + ' / ' + C.allTrophies().length], ['Титулов', s.titles.length + ' / ' + C.allTitles().length]]
             .map(c => '<div>' + c[0] + '<b>' + c[1] + '</b></div>').join('') + '</div>';
         if (s.trophies.length) h += '<div class="grpT">ТРОФЕИ БОССОВ</div><div class="rowList">' + s.trophies.slice(-12).reverse().map(k => '<div><span>' + (k.endsWith(':f') ? '👑 ' : '🏆 ') + C.trophyName(k) + '</span></div>').join('') + '</div>';
       } else if (pTab === 'tit') {
@@ -286,7 +286,7 @@
         for (const m of C.allTitles()) {
           const own = s.titles.includes(m.title), cur = s.title === m.title;
           h += own ? '<button data-ti="' + esc(m.title) + '" class="' + (cur ? 'on' : '') + '"><span>' + (cur ? '✦ ' : '') + m.title + '<small>' + titleBonusTxt(m) + '</small></span><b>' + (cur ? 'выбран' : 'выбрать') + '</b></button>'
-            : '<div class="lock"><span>🔒 ' + m.title + '<small>' + titleBonusTxt(m) + ' · ' + (m.src === 'ritual' ? 'ритуал №' + m.n : 'достижение «' + m.ach.name + '»') + '</small></span></div>';
+            : '<div class="lock"><span>🔒 ' + m.title + '<small>' + titleBonusTxt(m) + ' · ' + (m.src === 'ritual' ? 'регрессия №' + m.n : 'достижение «' + m.ach.name + '»') + '</small></span></div>';
         }
         const fr = C.prestigeFrames(s);
         h += '</div><div class="grpT">РАМКИ ПОРТРЕТА</div><div class="hint3">Новая рамка — каждые ' + CFG.prestige.frameEvery + ' уровней престижа.</div><div class="rowList">' +
@@ -296,7 +296,7 @@
       } else if (pTab === 'skin') {
         h += '<div class="hint3">Облик главного героя меняется с прогрессом сам. Открытые облики можно посмотреть здесь.</div><div class="rowList">' +
           '<div class="on"><span>⚔ Призванный · тёмная сталь<small>начальный облик</small></span><b>сейчас</b></div>' +
-          (s.skins.includes('eternal') ? '<div><span>✦ Вечный призванный<small>открыт ритуалами</small></span><b>открыт</b></div>' : '<div class="lock"><span>🔒 Вечный призванный<small>награда за ритуалы</small></span></div>') +
+          (s.skins.includes('eternal') ? '<div><span>✦ Вечный призванный<small>открыт регрессиями</small></span><b>открыт</b></div>' : '<div class="lock"><span>🔒 Вечный призванный<small>награда за регрессии</small></span></div>') +
           '<div class="lock"><span>🔒 Новые облики<small>появятся вместе с артом героя</small></span></div></div>';
       } else if (pTab === 'st') {
         renderStats(); const g = $('statsTab').querySelector('.stGrid');
@@ -305,7 +305,7 @@
         const best = s.bestFloor;
         h += '<div class="hint3">Пересмотр катсцен. Картинки появятся после генерации арта — пока текст сцены.</div><div class="rowList">' +
           CHR.map(([f, nm], i) => { const open = f === -1 ? s.rituals > 0 : best >= Math.max(1, f);
-            return open ? '<button data-chr="' + i + '"><span>▶ ' + nm + '</span><b>смотреть</b></button>' : '<div class="lock"><span>🔒 ' + nm + '<small>' + (f === -1 ? 'после первого ритуала' : 'этаж ' + f) + '</small></span></div>'; }).join('') + '</div>';
+            return open ? '<button data-chr="' + i + '"><span>▶ ' + nm + '</span><b>смотреть</b></button>' : '<div class="lock"><span>🔒 ' + nm + '<small>' + (f === -1 ? 'после первой регрессии' : 'этаж ' + f) + '</small></span></div>'; }).join('') + '</div>';
       }
       $('pfBody').innerHTML = h;
     }
