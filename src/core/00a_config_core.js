@@ -122,7 +122,7 @@
     // Цена в золоте растёт с прогрессом: price × золото за обычного врага рекордного этажа. Цена в 💎 постоянная.
     // 💎 кристаллы — донат-валюта; бесплатно немного: за первое прохождение мега-босса (crystals.megaFirst).
     market: {
-      slots: 8, refreshSec: 3 * 3600, refreshCost: 20,
+      slots: 12, refreshSec: 3 * 3600, refreshCost: 20,   // 0.105: 12 = 3 ряда по 4 (решение пользователя — заполнить экран)
       goods: [
         { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
         { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва' },

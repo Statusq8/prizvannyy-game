@@ -77,7 +77,7 @@
   // Сам обновляется раз в refreshSec (now — время в мс из интерфейса); возвращает мс до следующего обновления
   function marketSync(s, now) {
     if (!s.market) s.market = { items: [], next: 0 };
-    if (!s.market.items.length || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
+    if (s.market.items.length !== CONFIG.market.slots || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
     return Math.max(0, s.market.next - now);
   }
   function marketAmount(s, g) {
