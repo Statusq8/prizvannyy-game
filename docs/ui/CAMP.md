@@ -16,7 +16,7 @@
   1. Главный остров — всегда: Штаб (герои, прокачка), Врата Башни (в бой)
   2. Остров Портала — этаж 25
   3. Остров Кузницы (артефакты) — этаж 50
-  4. Остров Фермы и Рынка — этаж ~100 (предложение, уточнить)
+  4. Остров Рынка — этаж ~100
   5. Остров Ритуала — этаж 200
   6. Логово питомцев — этаж 1250
   7. Костяная мастерская — этаж 2000
@@ -43,12 +43,15 @@ references/camp_v2_rejected.png — слишком светло (наш стил
 - **Одна функция = один маленький островок с одним зданием.** Острова НЕ соединены мостами — свободно парят по всему экрану.
 - Острова разнесены так, чтобы **не перекрывали друг друга** и каждый удобно нажимался.
 - Листание вверх-вниз как в Idle Heroes, влево-вправо лёгкий сдвиг. Закрытые острова полностью спрятаны.
-- Высота всей карты лагеря — **максимум 2 экрана**. Все 8 островков (Штаб, Врата, Портал, Кузница, Ферма+Рынок, Ритуал, Питомцы, Кости) должны уместиться в эти 2 экрана: нижний экран — ранние острова, верхний — поздние.
+- Высота всей карты лагеря — **максимум 2 экрана**. Все 8 островков (Штаб, Врата, Портал, Кузница, Рынок, Ритуал, Питомцы, Кости; на старте только Штаб и Врата) должны уместиться в эти 2 экрана: нижний экран — ранние острова, верхний — поздние.
 
 ## Макет v3
 ```
-Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 portrait, dark fantasy manhwa style, night sky with violet moonlight and dark clouds, high top-down isometric camera (about 60 degrees, almost map view). Several SMALL separate floating rock islets scattered across the screen with clear empty sky between them, NOT connected, no bridges, not overlapping. Each islet holds exactly ONE building: center-bottom a slightly bigger islet with a dark stone headquarters hall with a banner; one islet with a dark gate glowing violet leading to the tower; one islet with a summoning portal circle and stone pillars; one islet with a blacksmith forge with orange fire; one islet with a small market stall and a tiny farm patch. Buildings big relative to their islet, readable at phone size. Dark stone, black wood, violet crystals, lanterns, faint mist under the islets, small floating rocks. The dark tower only partly visible at the far right edge. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
+Mobile game town map screen in the layout of Idle Heroes town, vertical 9:16 portrait, dark fantasy manhwa style, night sky with violet moonlight and dark clouds, high top-down isometric camera (about 60 degrees, almost map view). Several SMALL separate floating rock islets scattered across the screen with clear empty sky between them, NOT connected, no bridges, not overlapping. Each islet holds exactly ONE building: center-bottom a slightly bigger islet with a dark stone headquarters hall with a banner; one islet with a dark gate glowing violet leading to the tower; one islet with a summoning portal circle and stone pillars; one islet with a blacksmith forge with orange fire; one islet with a small dark market stall with tents and crates. Buildings big relative to their islet, readable at phone size. Dark stone, black wood, violet crystals, lanterns, faint mist under the islets, small floating rocks. The dark tower only partly visible at the far right edge. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
 ```
+
+## Ферма — убрана (6 ноября)
+Офлайн-награды (12 ч, отряд сам фармит этажи) показываются отчётом при входе в игру. Отдельной фермы нет, Рынок — свой островок.
 
 ## (старое) Следующий шаг — макет лагеря
 ```
