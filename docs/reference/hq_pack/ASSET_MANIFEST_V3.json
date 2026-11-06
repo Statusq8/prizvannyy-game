@@ -1,0 +1,783 @@
+{
+  "screen": "Прокачка",
+  "version": 3,
+  "total_png": 91,
+  "new_sprites": [
+    {
+      "name": "star_unlit_1.png",
+      "source_box": [
+        74,
+        90,
+        153,
+        171
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_unlit_2.png",
+      "source_box": [
+        153,
+        90,
+        232,
+        171
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_unlit_3.png",
+      "source_box": [
+        232,
+        90,
+        311,
+        171
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_unlit_4.png",
+      "source_box": [
+        311,
+        90,
+        390,
+        171
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_unlit_5.png",
+      "source_box": [
+        390,
+        90,
+        469,
+        171
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_gold_1.png",
+      "source_box": [
+        74,
+        175,
+        153,
+        256
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_gold_2.png",
+      "source_box": [
+        153,
+        175,
+        232,
+        256
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_gold_3.png",
+      "source_box": [
+        232,
+        175,
+        311,
+        256
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_gold_4.png",
+      "source_box": [
+        311,
+        175,
+        390,
+        256
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_gold_5.png",
+      "source_box": [
+        390,
+        175,
+        469,
+        256
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_red_1.png",
+      "source_box": [
+        74,
+        258,
+        153,
+        339
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_red_2.png",
+      "source_box": [
+        153,
+        258,
+        232,
+        339
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_red_3.png",
+      "source_box": [
+        232,
+        258,
+        311,
+        339
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_red_4.png",
+      "source_box": [
+        311,
+        258,
+        390,
+        339
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_red_5.png",
+      "source_box": [
+        390,
+        258,
+        469,
+        339
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_purple_1.png",
+      "source_box": [
+        74,
+        340,
+        153,
+        421
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_purple_2.png",
+      "source_box": [
+        153,
+        340,
+        232,
+        421
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_purple_3.png",
+      "source_box": [
+        232,
+        340,
+        311,
+        421
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_purple_4.png",
+      "source_box": [
+        311,
+        340,
+        390,
+        421
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_purple_5.png",
+      "source_box": [
+        390,
+        340,
+        469,
+        421
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_rainbow_1.png",
+      "source_box": [
+        74,
+        424,
+        153,
+        505
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_rainbow_2.png",
+      "source_box": [
+        153,
+        424,
+        232,
+        505
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_rainbow_3.png",
+      "source_box": [
+        232,
+        424,
+        311,
+        505
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_rainbow_4.png",
+      "source_box": [
+        311,
+        424,
+        390,
+        505
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "star_rainbow_5.png",
+      "source_box": [
+        390,
+        424,
+        469,
+        505
+      ],
+      "size": [
+        79,
+        81
+      ]
+    },
+    {
+      "name": "skill_slot_empty.png",
+      "source_box": [
+        542,
+        95,
+        727,
+        284
+      ],
+      "size": [
+        185,
+        189
+      ]
+    },
+    {
+      "name": "skill_slot_plus.png",
+      "source_box": [
+        727,
+        95,
+        919,
+        284
+      ],
+      "size": [
+        192,
+        189
+      ]
+    },
+    {
+      "name": "skill_slot_locked.png",
+      "source_box": [
+        919,
+        95,
+        1110,
+        284
+      ],
+      "size": [
+        191,
+        189
+      ]
+    },
+    {
+      "name": "skill_rank_silver.png",
+      "source_box": [
+        528,
+        385,
+        642,
+        503
+      ],
+      "size": [
+        114,
+        118
+      ]
+    },
+    {
+      "name": "skill_rank_blue.png",
+      "source_box": [
+        648,
+        385,
+        762,
+        503
+      ],
+      "size": [
+        114,
+        118
+      ]
+    },
+    {
+      "name": "skill_rank_purple.png",
+      "source_box": [
+        768,
+        385,
+        882,
+        503
+      ],
+      "size": [
+        114,
+        118
+      ]
+    },
+    {
+      "name": "skill_rank_gold.png",
+      "source_box": [
+        888,
+        385,
+        1002,
+        503
+      ],
+      "size": [
+        114,
+        118
+      ]
+    },
+    {
+      "name": "skill_rank_red.png",
+      "source_box": [
+        1008,
+        385,
+        1122,
+        503
+      ],
+      "size": [
+        114,
+        118
+      ]
+    },
+    {
+      "name": "faction_shadow.png",
+      "source_box": [
+        21,
+        619,
+        144,
+        747
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_light.png",
+      "source_box": [
+        157,
+        619,
+        280,
+        747
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_demons.png",
+      "source_box": [
+        293,
+        619,
+        416,
+        747
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_nature.png",
+      "source_box": [
+        429,
+        619,
+        552,
+        747
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_elements.png",
+      "source_box": [
+        21,
+        795,
+        144,
+        923
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_undead.png",
+      "source_box": [
+        157,
+        795,
+        280,
+        923
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_machines.png",
+      "source_box": [
+        293,
+        795,
+        416,
+        923
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "faction_void.png",
+      "source_box": [
+        429,
+        795,
+        552,
+        923
+      ],
+      "size": [
+        123,
+        128
+      ]
+    },
+    {
+      "name": "stat_attack.png",
+      "source_box": [
+        1181,
+        85,
+        1272,
+        140
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_health.png",
+      "source_box": [
+        1181,
+        142,
+        1272,
+        197
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_defense.png",
+      "source_box": [
+        1181,
+        199,
+        1272,
+        254
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_speed.png",
+      "source_box": [
+        1181,
+        256,
+        1272,
+        311
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_effect_chance.png",
+      "source_box": [
+        1181,
+        313,
+        1272,
+        368
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_resistance.png",
+      "source_box": [
+        1181,
+        370,
+        1272,
+        425
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "stat_critical_damage.png",
+      "source_box": [
+        1181,
+        427,
+        1272,
+        482
+      ],
+      "size": [
+        91,
+        55
+      ]
+    },
+    {
+      "name": "badge_sword.png",
+      "source_box": [
+        1151,
+        541,
+        1241,
+        640
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_shield.png",
+      "source_box": [
+        1245,
+        541,
+        1335,
+        640
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_heart.png",
+      "source_box": [
+        1339,
+        541,
+        1429,
+        640
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_target.png",
+      "source_box": [
+        1433,
+        541,
+        1523,
+        640
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_swirl.png",
+      "source_box": [
+        1151,
+        643,
+        1241,
+        742
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_boots.png",
+      "source_box": [
+        1245,
+        643,
+        1335,
+        742
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_star.png",
+      "source_box": [
+        1339,
+        643,
+        1429,
+        742
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "badge_crown.png",
+      "source_box": [
+        1433,
+        643,
+        1523,
+        742
+      ],
+      "size": [
+        90,
+        99
+      ]
+    },
+    {
+      "name": "slot_chains.png",
+      "source_box": [
+        1133,
+        797,
+        1260,
+        942
+      ],
+      "size": [
+        127,
+        145
+      ]
+    },
+    {
+      "name": "slot_lock.png",
+      "source_box": [
+        1266,
+        797,
+        1393,
+        942
+      ],
+      "size": [
+        127,
+        145
+      ]
+    },
+    {
+      "name": "slot_disabled.png",
+      "source_box": [
+        1399,
+        797,
+        1526,
+        942
+      ],
+      "size": [
+        127,
+        145
+      ]
+    }
+  ],
+  "notes": [
+    "Карточка героя: внутренняя область альфа 155, рамка сохранена.",
+    "Иконки выделены из утверждённого листа; прозрачность извлечена по яркости, ручная доработка краёв может потребоваться.",
+    "Референс-листы оставлены для сравнения, не размещать их как UI-слои.",
+    "Числа, имена, уровень, стоимость, звёзды и показатели выводить кодом.",
+    "В кнопке Улучшить положение справа, по центру карточки.",
+    "Нет кнопки Освободить героя или фракционных кнопок справа."
+  ],
+  "unexpected_non_rgba": []
+}

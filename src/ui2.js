@@ -133,7 +133,48 @@
       return '<div class="ln" style="font-size:11px;color:#c9b8dd">до ×' + CFG.milestoneMult + ': ' + fmt(nx - lv) + ' ур.</div><div class="msBar"><i style="width:' + (p * 100).toFixed(0) + '%"></i></div>';
     }
     const gainOf = html => { const m = /→ <b>([^<]+)<\/b>/.exec(html || ''); return m ? m[1] : ''; };
+    // 0.84: Штаб — карточки по пакету пользователя (docs/reference/hq_pack, assets/hq, src/hq.js): рамка ранга поверх портрета, звёзды картинками, кнопка с ценой
+    const HQ_FR = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'GOD'];
+    const HQ_FA = { 'Свет': 'light', 'Буря': 'elements', 'Лёд': 'elements', 'Пламя': 'elements', 'Нежить': 'undead', 'Кровь': 'demons', 'Война': 'machines', 'Дикий лес': 'nature', 'Тени': 'shadow', 'Бездна': 'void' };
+    const HQ_ST = ['gold', 'red', 'purple', 'rainbow'];
+    function hqStars(n) {
+      if (!n) return '';
+      const A = window.HQ_ART, t = Math.min(3, Math.floor((n - 1) / 5)), k = n - t * 5, base = t ? HQ_ST[t - 1] : 'unlit';
+      let h = '<div class="hqSt">'; for (let i = 0; i < 5; i++) h += '<img src="' + A['st_' + (i < k ? HQ_ST[t] : base)] + '" alt="">'; return h + '</div>';
+    }
+    function hqHtml() {
+      const A = window.HQ_ART, RNr = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+      const QM = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
+      let h = '<div class="hqQty"><img src="' + A.nav_qty + '" alt="">' + QM.map(([v], i) => '<button data-ms="' + v + '" class="' + (mult === v ? 'on' : '') + '" style="left:' + (2 + i * 24.2) + '%"></button>').join('') + '</div>';
+      const btn = (key, src) => {
+        const t = src.innerHTML, m = /^(.*?)<span>(.*)<\/span>$/.exec(t) || [0, t, ''];
+        return '<button class="hqBtn' + (src.disabled ? ' off' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '><img src="' + A[src.disabled ? 'btn_off' : 'btn_up'] + '" alt=""><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
+      };
+      const card = (fr, pt, attrs, name, fa, lines, stars, b, off) => '<div class="hqCard' + (off ? ' off' : '') + '"><div class="hqPt"' + attrs + '><div class="fg">' + pt + '</div><img class="hqFr" src="' + A['fr_' + fr] + '" alt="">' + stars + '</div>' +
+        '<div class="hqInf"><div class="nm">' + (fa && A['fa_' + fa] ? '<img src="' + A['fa_' + fa] + '" alt="">' : '') + '<span>' + name + '</span></div>' + lines + '</div>' + b + '</div>';
+      const r = C.rankLabel(s.heroRank);
+      h += card(HQ_FR[Math.min(8, Math.max(0, (r.rank || 1) - 1))], heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡', '', 'Призванный', null,
+        '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>', '', btn('hero', el.buyTap));
+      const list = CFG.allies.slice().sort((a, b) => {
+        const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
+        if (ua !== ub) return ua ? -1 : 1;
+        const sa = C.inSquad(s, a.id), sb = C.inSquad(s, b.id);
+        if (sa !== sb) return sa ? -1 : 1;
+        return RANKS.indexOf(b.rarity) - RANKS.indexOf(a.rarity);
+      });
+      for (const a of list) {
+        const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
+        if (CFG.cage && !(lv > 0)) continue;
+        if (!hh.unlocked) continue;     // пакет: без карточек «Освободить героя» — новых героев приводит портал
+        const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
+        const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
+        h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
+          '<div class="ln">Ур. <b>' + fmt(lv) + '</b></div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(dps) + '</b></div>', hqStars(hh.stars), btn(a.id, u.btn), !lv);
+      }
+      return h;
+    }
     function upHtml() {
+      if (window.HQ_ART) return hqHtml();
       // 0.75: карточки «как в Крушителях» (docs/reference/dungeon-crusher/upgrade_card_user.jpg)
       const mlab = (MULTS.find(x => x[0] === mult) || [0, '×1'])[1];
       let h = '<div class="dcTop"><span class="dcTtl">Герои</span><button class="dcMult" data-mc>' + mlab + '</button></div>';
@@ -339,6 +380,7 @@
       const d = b.dataset;
       if (d.ub) { click(); (d.ub === 'hero' ? el.buyTap : allyUi[d.ub].btn).click(); }
       else if (d.mc !== undefined) { click(); $('multCycle').click(); }
+      else if (d.ms) { click(); mult = d.ms === 'max' ? 'max' : +d.ms; const m = MULTS.find(x => x[0] === mult); if (m) $('multCycle').textContent = m[1]; }
       else if (d.sq) { click(); if (C.inSquad(s, d.sq)) C.squadRemove(s, d.sq); else if (!C.squadAdd(s, d.sq)) { toast('Отряд полон<small>в отряде ' + CFG.squadSize + ' героя — уберите одного</small>'); return; } save(); }
       else if (d.bestsq !== undefined) { click(); bestSquad(); save(); toast('Лучший отряд собран<small>самые сильные по DPS</small>'); }
       else if (d.free) { click(); openX('portal'); return; }
