@@ -772,8 +772,10 @@ test('артефакты находятся и улучшаются только
   assert.strictEqual(C.findArtifact(s), null);
   s.souls = 1e6;
   const ids = [];
-  for (let i = 0; i < CFG.artifacts.length; i++) ids.push(C.findArtifact(s));
-  assert.strictEqual(new Set(ids).size, CFG.artifacts.length);
+  const nSoul = CFG.artifacts.filter(a => !a.special && !a.blood).length;
+  for (let i = 0; i < nSoul; i++) ids.push(C.findArtifact(s));
+  assert.strictEqual(new Set(ids).size, nSoul);
+  assert.ok(ids.every(id => !CFG.artifacts.find(a => a.id === id).blood));
   assert.strictEqual(C.findCost(s), null);                 // всё найдено
   assert.strictEqual(C.findArtifact(s), null);
   const before = s.souls, cost = C.upgradeArtCost(s, 'grail');
@@ -2676,4 +2678,28 @@ test('клетка с Шорохом: 3 этаж, 1-я волна, тапами 
     assert.notStrictEqual(s.enemy.name, CAGE.name);   // второй раз клетки нет
     assert.strictEqual(C.deserialize(C.serialize(s)).cageFreed, true);
   } finally { CFG.cage = null; }
+});
+
+test('0.92 витрина артефактов: покупка пустит слот, обновление за треть цены, кровавые — за осколки', () => {
+  let r = 0; const s = C.newState({ rng: () => (r = (r * 9301 + 49297) % 233280) / 233280 });
+  const o = C.shopOffers(s, 'soul');
+  assert.strictEqual(o.length, CFG.artShop.slots); assert.ok(o.every(id => id && !CFG.artifacts.find(a => a.id === id).blood));
+  assert.strictEqual(C.shopBuy(s, 'soul', 0), null);                     // нет душ
+  s.souls = 1000;
+  const cost = C.shopBuyCost(s, 'soul'), id = C.shopBuy(s, 'soul', 0);
+  assert.strictEqual(id, o[0]); assert.strictEqual(s.artifacts[id], 1); assert.strictEqual(s.souls, 1000 - cost);
+  assert.strictEqual(C.shopOffers(s, 'soul')[0], null);                  // слот пуст до обновления
+  const rc = C.shopRefreshCost(s, 'soul'); assert.strictEqual(rc, Math.ceil(C.shopBuyCost(s, 'soul') / CFG.artShop.refreshDiv));
+  const before = s.souls; assert.ok(C.shopRefresh(s, 'soul')); assert.strictEqual(s.souls, before - rc);
+  assert.ok(C.shopOffers(s, 'soul').every(x => x && x !== id));
+  // кровавая ветка
+  const b = C.shopOffers(s, 'blood'); assert.ok(b.every(x => CFG.artifacts.find(a => a.id === x).blood));
+  const sb = s.souls; s.materials.shard = 100;
+  const bid = C.shopBuy(s, 'blood', 1); assert.ok(bid); assert.strictEqual(s.materials.shard, 100 - CFG.artShop.blood.cost); assert.strictEqual(s.souls, sb);
+  s.materials.shard = 1000; const uc = C.upgradeArtCost(s, bid); assert.ok(C.upgradeArtifact(s, bid)); assert.strictEqual(s.materials.shard, 1000 - uc);
+  // сохранение
+  const t2 = C.deserialize(C.serialize(s)); assert.deepStrictEqual(t2.artShop, s.artShop);
+  // всё куплено — витрина пуста, цен нет
+  s.souls = 1e9; for (let k = 0; k < 20; k++) { const off = C.shopOffers(s, 'soul'); const i = off.findIndex(Boolean); if (i < 0) break; C.shopBuy(s, 'soul', i); }
+  assert.strictEqual(C.shopBuyCost(s, 'soul'), null); assert.strictEqual(C.shopRefreshCost(s, 'soul'), null);
 });

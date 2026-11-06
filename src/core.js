@@ -114,6 +114,9 @@
     // уровни переживают ритуал. Действуют на главного героя, союзников и питомца.
     // Единственный источник постоянного роста критов (шанс не выше 50% от всех источников вместе).
     artifactFind: { cost: 3, growth: 1.7 },
+    // 0.92 (как в Крушителях): витрина артефактов — N случайных ненайденных, купленный слот пустеет;
+    // «Обновить» — новые предложения за треть цены следующей покупки; пустая витрина заполняется сама.
+    artShop: { slots: 3, refreshDiv: 3, blood: { cost: 30, growth: 2.2 } },
     artifacts: [
       { id: 'blade',  name: 'Клинок первого призыва', icon: '🗡', kind: 'heroAuto', per: 0.1, cost: 2, growth: 1.25,
         desc: 'Главный герой сам атакует раз в секунду. +10% урона героя за уровень' },
@@ -134,6 +137,17 @@
       // 0.61 (ответы 63, 182): особый артефакт — только за вехи Башни, поиском за души не находится; качается за души
       { id: 'crown',  name: 'Венец Башни',       icon: '👑', kind: 'allDmg', per: 0.5, cost: 5, growth: 1.25, special: true,
         desc: '+50% всего урона за уровень. Только за вехи Башни' },
+      // 0.92: кровавая ветка (как артефакты за сердца в Крушителях) — покупается и качается за осколки Башни, своя витрина
+      { id: 'bkatar', name: 'Кровавый катар',   icon: '🩸', kind: 'tapDmg',  per: 0.6, cost: 20, growth: 1.3, blood: true,
+        desc: '+60% урона главного героя за уровень' },
+      { id: 'bglove', name: 'Кровавая перчатка', icon: '🧤', kind: 'critMult', per: 0.3, cost: 20, growth: 1.3, blood: true,
+        desc: '+0,3 к крит-урону за уровень' },
+      { id: 'bpot',   name: 'Кровавый котёл',   icon: '🍷', kind: 'gold',    per: 0.3, cost: 20, growth: 1.3, blood: true,
+        desc: '+30% золота за уровень' },
+      { id: 'baxe',   name: 'Кровавый топор',   icon: '🪓', kind: 'allyDmg', per: 0.6, cost: 25, growth: 1.3, blood: true,
+        desc: '+60% урона союзников за уровень' },
+      { id: 'bdoll',  name: 'Кровавая кукла',   icon: '🪆', kind: 'allDmg',  per: 0.3, cost: 30, growth: 1.3, blood: true,
+        desc: '+30% всего урона за уровень' },
       { id: 'gate',   name: 'Врата восхождения', icon: '🌀', kind: 'startFloor', per: 1, cost: 1, growth: 1.06, max: 198,
         desc: 'После ритуала новый забег начинается на 1 этаж выше за уровень (всегда ниже 400)' },
     ],
@@ -1455,7 +1469,7 @@
       towerMs: 0,                                // 0.61: до какого этажа выданы вехи Башни
       bestiary: {}, diaryPages: [],              // 0.62: имя врага → побед; биомы с полной страницей
       secrets: [],                               // 0.63: найденные скрытые комнаты { floor, done }
-      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false,           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
+      prestigeClaimed: 0, frame: null, megaSoulsFloor: 0, cageFreed: false, artShop: { soul: [], blood: [] },           // 0.64: до какого уровня престижа забраны награды; выбранная рамка
       presets: [null, null, null],               // 0.54: пресеты отряда { squad, pet } (ответ 186)
       cls: { id: null, spent: {}, changeDay: '' }, // класс главного героя
       booster: { owner: null, movedAt: 0 },      // «Печать силы»: владелец и время последнего переноса
@@ -1638,7 +1652,7 @@
         s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n);
         events.push({ type: 'megaSouls', n });
         if (!foundCount(s) && unlockedAt(s, 'artifacts')) {
-          const pool = CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) === 0);
+          const pool = CONFIG.artifacts.filter(a => !a.special && !a.blood && artLevel(s, a.id) === 0);
           if (pool.length) { const a = pool[Math.floor(s.rng() * pool.length) % pool.length]; s.artifacts[a.id] = 1; events.push({ type: 'freeArtifact', id: a.id, name: a.name }); }
         }
       }
@@ -2736,20 +2750,57 @@
   }
 
   // ---------- артефакты за души ----------
-  function foundCount(s) { return CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) > 0).length; }
+  function foundCount(s) { return CONFIG.artifacts.filter(a => !a.special && !a.blood && artLevel(s, a.id) > 0).length; }
   function findCost(s) {
-    const f = CONFIG.artifactFind, n = CONFIG.artifacts.filter(a => !a.special).length;
+    const f = CONFIG.artifactFind, n = CONFIG.artifacts.filter(a => !a.special && !a.blood).length;
     return foundCount(s) >= n ? null : Math.ceil(f.cost * Math.pow(f.growth, foundCount(s)));
   }
   // Найти случайный ещё не найденный артефакт
   function findArtifact(s) {
     const cost = findCost(s);
     if (cost == null || B.lt(s.souls, cost)) return null;
-    const pool = CONFIG.artifacts.filter(a => !a.special && artLevel(s, a.id) === 0);
+    const pool = CONFIG.artifacts.filter(a => !a.special && !a.blood && artLevel(s, a.id) === 0);
     const a = pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))];
     s.souls = B.sub(s.souls, cost);
     s.artifacts[a.id] = 1;
     return a.id;
+  }
+  // ---------- 0.92: витрина артефактов (ветки 'soul' и 'blood') ----------
+  function shopPool(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) === 0); }
+  function shopFound(s, br) { return CONFIG.artifacts.filter(a => !a.special && !!a.blood === (br === 'blood') && artLevel(s, a.id) > 0).length; }
+  function shopBuyCost(s, br) {
+    if (!shopPool(s, br).length) return null;
+    if (br !== 'blood') return findCost(s);
+    const b = CONFIG.artShop.blood; return Math.ceil(b.cost * Math.pow(b.growth, shopFound(s, br)));
+  }
+  function shopRefreshCost(s, br) { const c = shopBuyCost(s, br); return c == null ? null : Math.max(1, Math.ceil(c / CONFIG.artShop.refreshDiv)); }
+  function shopRoll(s, br) {
+    const pool = shopPool(s, br).map(a => a.id), out = [];
+    while (out.length < CONFIG.artShop.slots && pool.length) out.push(pool.splice(Math.min(pool.length - 1, Math.floor(s.rng() * pool.length)), 1)[0]);
+    while (out.length < CONFIG.artShop.slots) out.push(null);
+    s.artShop[br] = out;
+  }
+  // Текущие предложения; пустая (или устаревшая) витрина заполняется бесплатно
+  function shopOffers(s, br) {
+    if (!s.artShop) s.artShop = { soul: [], blood: [] };
+    let o = (s.artShop[br] || []).map(id => (id && artLevel(s, id) === 0 ? id : null));
+    if (!o.some(Boolean) && shopPool(s, br).length) { shopRoll(s, br); o = s.artShop[br]; } else s.artShop[br] = o;
+    return o.slice();
+  }
+  function payShop(s, br, cost) {
+    if (br === 'blood') { if (s.materials.shard < cost) return false; s.materials.shard -= cost; return true; }
+    if (B.lt(s.souls, cost)) return false; s.souls = B.sub(s.souls, cost); return true;
+  }
+  function shopBuy(s, br, slot) {
+    const o = shopOffers(s, br), id = o[slot], cost = shopBuyCost(s, br);
+    if (!id || cost == null || !payShop(s, br, cost)) return null;
+    s.artifacts[id] = 1; s.artShop[br][slot] = null;
+    return id;
+  }
+  function shopRefresh(s, br) {
+    const cost = shopRefreshCost(s, br);
+    if (cost == null || !payShop(s, br, cost)) return false;
+    shopRoll(s, br); return true;
   }
   function upgradeArtCost(s, id) {
     const a = artDef(id), lv = artLevel(s, id);
@@ -2758,7 +2809,9 @@
   }
   function upgradeArtifact(s, id) {
     const cost = upgradeArtCost(s, id);
-    if (cost == null || B.lt(s.souls, cost)) return false;
+    if (cost == null) return false;
+    if (artDef(id).blood) { if (s.materials.shard < cost) return false; s.materials.shard -= cost; s.artifacts[id]++; return true; }
+    if (B.lt(s.souls, cost)) return false;
     s.souls = B.sub(s.souls, cost);
     s.artifacts[id]++;
     return true;
@@ -3020,7 +3073,7 @@
       counters: { ...s.counters },
       event: { week: s.event.week, id: s.event.id, points: s.event.points, lanterns: s.event.lanterns, ms: Object.keys(s.event.ms).map(Number), bought: { ...s.event.bought } },
       inbox: s.inbox.map(x => ({ id: x.id, title: x.title, reward: { ...x.reward } })), inboxSeq: s.inboxSeq,
-      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed,
+      titles: [...s.titles], title: s.title, skins: [...s.skins], favs: [...s.favs], trophies: [...s.trophies], echo: { ...s.echo }, curse: s.curse ? { ...s.curse } : null, potions: { ...s.potions }, towerMs: s.towerMs, bestiary: { ...s.bestiary }, diaryPages: [...s.diaryPages], secrets: s.secrets.map(x => ({ ...x })), prestigeClaimed: s.prestigeClaimed, frame: s.frame, megaSoulsFloor: s.megaSoulsFloor, cageFreed: s.cageFreed, artShop: { soul: [...(s.artShop ? s.artShop.soul : [])], blood: [...(s.artShop ? s.artShop.blood : [])] },
       presets: s.presets.map(p => p ? { squad: [...p.squad], pet: p.pet } : null),
       cls: { id: s.cls.id, spent: { ...s.cls.spent }, changeDay: s.cls.changeDay }, booster: { ...s.booster },
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
@@ -3276,6 +3329,8 @@
     s.secrets = d.secrets.filter(x => x && int(x.floor, 1) && isSecretFloor(x.floor)).map(x => ({ floor: x.floor, done: !!x.done }));
     if (!int(d.prestigeClaimed, 0)) return null;
     s.megaSoulsFloor = +d.megaSoulsFloor > 0 ? +d.megaSoulsFloor : 0;
+    { const ok = id => id === null || !!(artDef(id) && !artDef(id).special); const sh = d.artShop || {};
+      s.artShop = { soul: Array.isArray(sh.soul) ? sh.soul.filter(ok).slice(0, CONFIG.artShop.slots) : [], blood: Array.isArray(sh.blood) ? sh.blood.filter(ok).slice(0, CONFIG.artShop.slots) : [] }; }
     s.cageFreed = d.cageFreed != null ? !!d.cageFreed : Math.max(+d.maxFloor || 0, +d.bestFloor || 0) > (CONFIG.cage ? CONFIG.cage.floor : 0);   // старые сохранения дальше 3 этажа — уже свободен
     s.prestigeClaimed = d.prestigeClaimed; s.frame = CONFIG.prestige.frames.includes(d.frame) ? d.frame : null;
     s.potions = {}; for (const p of CONFIG.alchemy.potions) { const v = +d.potions[p.id]; if (v > 0 && isFinite(v)) s.potions[p.id] = Math.min(v, CONFIG.alchemy.maxSec); }
@@ -3363,7 +3418,7 @@
     damageMult, critChance, critMult, softcap,
     trialRecord, trialSync, useAbility, setAbilityAuto, abilityUnlocked, abilityReady,
     soulMult, permMult, goldMult, bossTime, hasHeroAuto, artLevel, artPower, tapHit, expectedDps,
-    findCost, findArtifact, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
+    findCost, findArtifact, shopOffers, shopBuy, shopRefresh, shopBuyCost, shopRefreshCost, shopFound, upgradeArtCost, upgradeArtifact, foundCount, previewSpend,
     canRitual, ritualStartFloor, ritualSouls, ritual, ritualStartGold,
     runeKind, runeValue, bestRune, runePower, createRune, runeUpCost, upgradeRune, mergeable, mergeRunes,
     totemCount, totemMult, totemUpCost, upgradeTotem, bossDmgMult, shardMult,
