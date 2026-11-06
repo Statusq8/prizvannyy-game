@@ -27,6 +27,14 @@
 Mobile game screen, vertical 9:16 portrait, dark fantasy manhwa style, view of several small floating rock islands stacked vertically in the sky beside a giant dark tower rising into violet clouds. Bottom island (largest): a headquarters house with a banner and a glowing gate leading to the tower. Middle island above it: a glowing violet summoning portal circle with stone pillars. Above it only thick violet clouds, nothing visible inside them. Islands linked by stone bridges and hanging chains, lanterns, small floating rocks, violet magic light. Leave the top 10% and bottom 15% calm for UI. No text, no UI, no characters.
 ```
 
+## Макет v1 — отклонён («надо как в Idle Heroes»)
+references/camp_v1_rejected.png — получилась красивая сцена-открытка, а не игровая карта города.
+
+## Макет v2 — как город Idle Heroes
+```
+Mobile game town map screen in the style of Idle Heroes town, vertical 9:16 portrait, bright detailed hand-painted 2D game art, high top-down isometric camera (about 60 degrees, almost map view), no dramatic perspective. A column of flat floating island plateaus stacked from bottom to top, each island a wide flat area filling most of the screen width with green grass, stone paths, trees, fences and small props. Bottom island: a large headquarters hall with a banner and a big glowing gate to the tower. Island above: a summoning portal with a violet magic circle and stone pillars. Islands connected by short wooden-and-stone bridges. Buildings big, clearly separated, readable at phone size, each with an empty space in front for a name plate. Soft daylight with violet magic accents, the dark tower only partly visible at the far right edge, thick soft clouds at the top hiding everything above. No text, no UI, no characters.
+```
+
 ## (старое) Следующий шаг — макет лагеря
 ```
 Mobile game screen, vertical 9:16 portrait, dark fantasy manhwa style, a small floating rock island in the sky next to a giant dark tower that rises into violet clouds, connected to the tower by a glowing violet portal arch. On the island a cozy hero camp seen from slightly above (isometric-like): a headquarters house with a banner (largest building, center), a glowing violet summoning portal circle with stone pillars, a blacksmith forge with smoke and orange fire, a small farm with crops and a windmill, a market stall with tents and crates, plus 2–3 empty building plots marked with stones for future buildings. Paths, lanterns, small details, floating rocks around the island, violet magic light. Leave the top 10% and bottom 15% of the image calm for UI. No text, no UI, no characters.
