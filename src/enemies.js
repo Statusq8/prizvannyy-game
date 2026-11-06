@@ -4,6 +4,7 @@
     const SPR = /*__ENEMY_SPR__*/{};
     const BY_NAME = { 'Слайм призыва': 'slime', 'Рунная крыса': 'rat', 'Летучая мышь': 'bat', 'Каменный жук': 'beetle', 'Король слаймов': 'slime_king',
       'Павший призванный': 'fallen', 'Каменная горгулья': 'gargoyle', 'Рунный бес': 'imp', 'Теневой волк': 'wolf', 'Каменный страж': 'stone_guard', 'Хранитель Врат': 'warden', 'Клетка с Шорохом': 'cage' };
+    window.ENEMY_SPR = SPR; window.ENEMY_BY_NAME = BY_NAME;   // 0.127: портреты в Дневнике
     const ROW = { idle: [0, 1, 2, 3], hit: [4, 5, 6, 7], die: [8, 9, 10, 11] };
     const FPS = { idle: 6, hit: 20, die: 13 };
     const box = document.createElement('div'); box.className = 'eSpr'; el.enemy.appendChild(box);

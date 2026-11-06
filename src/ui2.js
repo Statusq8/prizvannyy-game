@@ -59,6 +59,7 @@
     function openOld(t) {
       click();
       if (t === 'quests' && window.QS_ART) { openQuests(); return; }
+      if (t === 'diary' && window.DY_ART) { stack.length = 0; page = null; openX('diary'); return; }   // 0.127: новый Дневник
       if (t === 'heroes' && window.HS_ART) { stack.length = 0; page = null; hsSel = null; openX('heroes'); return; }   // 0.122: новый экран Героев   // 0.118: новый экран Заданий
       tab = t; setCollapsed(false);
       document.body.classList.add('oldOpen');
@@ -506,6 +507,8 @@
       $('pgX').classList.toggle('qsl', !!window.QS_ART && xKind === 'quests');
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
       $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
+      $('pgX').classList.toggle('dyl', !!window.DY_ART && xKind === 'diary');
+      if (xKind === 'diary') { aux.style.display = 'none'; $('xTitle').textContent = 'Дневник'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', diaryHtml()); return; }
       if (xKind === 'classes') { aux.style.display = 'none'; $('xTitle').textContent = 'Классы'; const CA = window.CL_ART || {}; setHtml('xTop', '<div class="resPill"><img src="' + CA.pt + '" alt=""><b>' + C.classFree(s) + ' / ' + C.classPoints(s) + '</b></div>'); setHtml('xBody', classesHtml()); return; }
       $('pgX').classList.toggle('hsw', !!window.HS_ART && xKind === 'heroes' && !!hsSel);
       if (xKind === 'heroes') { aux.style.display = 'none'; $('xTitle').textContent = 'Герои'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['crystal', fmt(s.crystals | 0)]])); hsRender(); return; }
@@ -542,6 +545,34 @@
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
 
+    // ---------- 0.127: Дневник по макету; стили и картинки — src/diary.js ----------
+    let dyTab = 'beasts', dyB = 0, dyHall = null;
+    function diaryHtml() {
+      const A = window.DY_ART, M = window.MK_ART || {}, R = window.RG_ART || {}, D = CFG.diary, BS = CFG.biomes;
+      if (dyHall == null) { const e = document.querySelector('#bgHall .img'); dyHall = e ? getComputedStyle(e).backgroundImage.replace(/"/g, "'") : 'none'; }
+      dyB = Math.max(0, Math.min(BS.length - 1, dyB));
+      let h = '<div class="dy"><div class="dTabs"><button class="dTab' + (dyTab === 'beasts' ? ' on' : '') + '" data-dyt="beasts"><img src="' + A.i_beast + '" alt="">Бестиарий</button><button class="dTab' + (dyTab === 'heroes' ? ' on' : '') + '" data-dyt="heroes"><img src="' + A.i_helm + '" alt="">Герои</button></div>';
+      if (dyTab === 'beasts') {
+        const st = Math.max(0, Math.min(BS.length - 6, dyB - 2));
+        h += '<div class="dMed"><button class="dAr l" data-dyb="' + (dyB - 1) + '"></button>' + BS.slice(st, st + 6).map((b, j) => { const i = st + j, seen = C.diaryNames(b).some(n => s.bestiary[n]);
+          return '<button class="dM' + (i === dyB ? ' on' : '') + (seen ? '' : ' lk') + '" data-dyb="' + i + '"><i style="background-image:' + dyHall + ';filter:hue-rotate(' + (b.hue || 0) + 'deg) saturate(1.2)"></i><b></b>' + (s.diaryPages.includes(b.id) ? '<img class="ok" src="' + A.i_check + '" alt="">' : '') + '</button>'; }).join('') +
+          '<button class="dAr r" data-dyb="' + (dyB + 1) + '"></button></div>';
+        const b = BS[dyB], names = C.diaryNames(b), got = names.filter(n => s.bestiary[n]).length, done = s.diaryPages.includes(b.id);
+        h += '<div class="dPage"><div class="dHd">' + (got ? b.name : '???') + '</div><div class="dPan"><img src="' + A.i_gate + '" alt=""><div class="dPr"><small>Записи: ' + got + '/' + names.length + '</small><div class="dBar"><i style="width:calc(' + (got / names.length * 100).toFixed(1) + '% + 1.3cqw)"></i></div></div>' +
+          '<div class="dRw"><img src="' + M.i_ticket + '" alt="">' + D.page.tickets + '<img src="' + R.i_crystal + '" alt="">' + D.page.crystals + '<em class="' + (done ? 'got' : '') + '">' + (done ? 'Получено' : 'Заполните') + '</em></div></div><div class="dGrid">' +
+          names.map((n, i) => { const k = s.bestiary[n] | 0, boss = i >= b.enemies.length, fin = n === b.final, S = window.ENEMY_SPR && window.ENEMY_BY_NAME && window.ENEMY_SPR[window.ENEMY_BY_NAME[n]];
+            const pic = k && S ? '<i style="left:0;width:100%;transform:none;bottom:22%;height:auto;aspect-ratio:' + S.w + '/' + S.h + ';background-image:url(' + S.src + ');background-size:' + S.n * 100 + '% 100%;background-position:0 0"></i>' : '<img src="' + A.i_shadow + '" alt="" style="' + (k ? 'filter:hue-rotate(' + ((b.hue || 0) + i * 40) + 'deg) brightness(1.4)' : '') + '">';
+            return '<div class="dC' + (boss ? ' boss' : '') + (k ? '' : ' lk') + '"><div class="pic">' + pic + '</div><img class="fr" src="' + (boss ? A.card_g : A.card) + '" alt="">' + (fin ? '<i class="cr"></i>' : '') +
+              '<div class="nm">' + (k ? n : '???') + '</div><div class="ct"><img src="' + A.skull + '" alt="">' + fmt(Math.min(k, D.master)) + ' / ' + fmt(D.master) + '</div>' + (k >= D.master ? '<span class="rb">Знаток</span>' : '') + '</div>'; }).join('') + '</div></div>';
+      } else {
+        h += '<div class="dPage" style="margin-top:2.4cqw"><div class="dHd">Герои Башни</div><div class="dGrid"><div class="dNote">Цитата открывается с ★' + D.loreStars[1] + ', полная история — с ★' + D.loreStars[2] + '.</div>' +
+          CFG.allies.filter(a => !a.hidden || s.heroes[a.id].unlocked).map(a => { const lv = C.loreLevel(s, a.id), Ar = HERO_ART[a.id] || {}, v = ALLY_VIS[a.id] || {};
+            const pic = lv >= 0 && Ar.avatar ? '<img src="' + Ar.avatar + '" alt="" style="width:100%;height:100%;top:50%;object-fit:cover">' : lv >= 0 ? '<img src="" alt="" style="display:none"><span style="position:absolute;inset:0;display:grid;place-items:center;font-size:8cqw">' + (v.icon || '❔') + '</span>' : '<img src="' + A.i_shadow + '" alt="">';
+            return '<div class="dH"><div class="dC' + (lv < 0 ? ' lk' : '') + '"><div class="pic">' + pic + '</div><img class="fr" src="' + A.card + '" alt=""></div><div class="tx"><b>' + (lv < 0 ? '???' : a.name) + '</b><small>' + (lv < 0 ? 'Герой ещё не открыт' : a.race + ' · ' + a.side + ' / ' + a.faction) + '</small>' +
+              (lv >= 1 ? '<q>' + a.quote + '</q>' : lv === 0 ? '<q>Цитата — с ★' + D.loreStars[1] + '</q>' : '') + (lv >= 2 ? '<p>' + String(a.story || '').split(/\s*Ульта:/)[0] + '</p>' : '') + '</div></div>'; }).join('') + '</div></div>';
+      }
+      return h + '</div>';
+    }
     // ---------- 0.124: Классы — дерево навыков по макету; стили и картинки — src/classes.js ----------
     let clView = null, clSel = null;
     const CL_POS = [[21, 28.8], [50, 40], [79.3, 28.8], [21, 55.2], [50, 63.5], [79.3, 55.2]];   // b1 b2 b3 / b4 b5 b6 (центры в cqw внутри коробки дерева)
@@ -947,6 +978,8 @@
       else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
         toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.rgback !== undefined) { xBack.click(); return; }
+      else if (d.dyt) { click(); dyTab = d.dyt; }
+      else if (d.dyb !== undefined) { click(); dyB = Math.max(0, Math.min(CFG.biomes.length - 1, +d.dyb)); }
       else if (d.clv) { click(); clView = d.clv; clSel = null; }
       else if (d.cln) { click(); clSel = d.cln; }
       else if (d.clup !== undefined) { if (!C.buyClassNode(s, clSel)) return; click(); save(); }
