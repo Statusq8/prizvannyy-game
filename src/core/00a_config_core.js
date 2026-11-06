@@ -119,17 +119,18 @@
     // старше — только Портал. Купленный герой открыт навсегда; после ритуала его снова нанимают за золото.
     goldHire: { maxRarity: 'B' },
     // 0.102: Рынок как в Idle Heroes — slots случайных товаров, сами обновляются раз в refreshSec, обновить сразу — за 💎.
-    // Цена в золоте растёт с прогрессом: price × золото за обычного врага рекордного этажа. Цена в 💎 постоянная.
-    // 💎 кристаллы — донат-валюта; бесплатно немного: за первое прохождение мега-босса (crystals.megaFirst).
+    // 0.107 (решение пользователя): вместо золота — души. Цена в душах = mega × «души за мега-босса» на рекордном этаже
+    // (растёт с прогрессом, не меньше 1). Цена в 💎 постоянная. 💎 кристаллы — донат-валюта.
     market: {
-      slots: 12, refreshSec: 3 * 3600, refreshCost: 20,   // 0.105: 12 = 3 ряда по 4 (решение пользователя — заполнить экран)
+      slots: 16, refreshSec: 3 * 3600, refreshCost: 20,   // 16 = 4 ряда по 4 (решение пользователя)
       goods: [
-        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'gold', price: 300, w: 3, name: 'Билет призыва' },
+        { id: 'ticket1', kind: 'tickets', n: 1, cur: 'souls', mega: 0.3, w: 3, name: 'Билет призыва' },
         { id: 'ticket5', kind: 'tickets', n: 5, cur: 'crystal', price: 150, w: 2, name: 'Билеты призыва' },
-        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'gold', price: 600, w: 3, name: 'Копия героя' },
+        { id: 'copyLow', kind: 'copy', ranks: ['E', 'D', 'C', 'B'], cur: 'souls', mega: 0.6, w: 3, name: 'Копия героя' },
         { id: 'copyA', kind: 'copy', ranks: ['A'], cur: 'crystal', price: 400, w: 1, name: 'Герой ранга A' },
-        { id: 'shard', kind: 'shard', bosses: 5, cur: 'gold', price: 250, w: 3, name: 'Осколки Башни' },
+        { id: 'shard', kind: 'shard', bosses: 5, cur: 'souls', mega: 0.25, w: 3, name: 'Осколки Башни' },
         { id: 'souls', kind: 'souls', megas: 1, cur: 'crystal', price: 120, w: 1, name: 'Души' },
+        { id: 'potion', kind: 'potion', cur: 'souls', mega: 0.4, w: 3, name: 'Зелье' },   // 0.107: зелье из CONFIG.alchemy.potions
       ],
     },
     crystals: { megaFirst: 20 },

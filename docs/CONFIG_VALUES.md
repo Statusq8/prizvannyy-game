@@ -95,10 +95,10 @@
 | `artifactFind.cost` | `3` |
 | `artifactFind.growth` | `1.7` |
 | `goldHire.maxRarity` | `"B"` |
-| `market.slots` | `12` |
+| `market.slots` | `16` |
 | `market.refreshSec` | `10800` |
 | `market.refreshCost` | `20` |
-| `market.goods` | `[{"id":"ticket1","kind":"tickets","n":1,"cur":"gold","price":300,"w":3,"name":"Билет призыва"},{"id":"ticket5","kind":"tickets","n":5,"cur":"crystal","price"…` |
+| `market.goods` | `[{"id":"ticket1","kind":"tickets","n":1,"cur":"souls","mega":0.3,"w":3,"name":"Билет призыва"},{"id":"ticket5","kind":"tickets","n":5,"cur":"crystal","price"…` |
 | `crystals.megaFirst` | `20` |
 | `artShop.slots` | `3` |
 | `artShop.refreshDiv` | `3` |

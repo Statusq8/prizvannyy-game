@@ -68,9 +68,10 @@
     const G = CONFIG.market.goods, tot = G.reduce((x, g) => x + g.w, 0), items = [];
     for (let i = 0; i < CONFIG.market.slots; i++) {
       let r = s.rng() * tot, g = G[0]; for (const x of G) { r -= x.w; if (r < 0) { g = x; break; } }
-      let hero = null;
+      let hero = null, p = null;
       if (g.kind === 'copy') { const pool = CONFIG.allies.filter(a => !a.hidden && !a.seasonal && g.ranks.includes(a.rarity)); hero = pool.length ? pool[Math.min(pool.length - 1, Math.floor(s.rng() * pool.length))].id : null; }
-      items.push({ g: g.id, hero, sold: false });
+      if (g.kind === 'potion') { const P = CONFIG.alchemy.potions; p = P[Math.min(P.length - 1, Math.floor(s.rng() * P.length))].id; }
+      items.push(p ? { g: g.id, hero, p, sold: false } : { g: g.id, hero, sold: false });
     }
     s.market.items = items;
   }
@@ -80,26 +81,30 @@
     if (s.market.items.length !== CONFIG.market.slots || now >= s.market.next) { marketRoll(s); s.market.next = now + CONFIG.market.refreshSec * 1000; }
     return Math.max(0, s.market.next - now);
   }
+  // Души за одного мега-босса на рекордном этаже — мера цены в душах
+  function soulsPerMega(s) { const f = Math.max(1, s.bestFloor | 0), M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))); }
   function marketAmount(s, g) {
     const f = Math.max(1, s.bestFloor | 0);
     if (g.kind === 'shard') return g.bosses * shardsForBoss(f);
-    if (g.kind === 'souls') { const M = CONFIG.megaSouls; return Math.max(1, Math.ceil(M.base * Math.pow(M.per50, Math.max(0, Math.floor(f / 50) - 1)))) * g.megas; }
+    if (g.kind === 'souls') return soulsPerMega(s) * g.megas;
     return g.n || 1;
   }
-  function marketPrice(s, g) { return g.cur === 'gold' ? B.mul(killGold(Math.max(1, s.bestFloor | 0), false), g.price) : g.price; }
+  function marketPrice(s, g) { return g.cur === 'souls' ? Math.max(1, Math.ceil(g.mega * soulsPerMega(s))) : g.price; }
   function marketBuy(s, i) {
     const it = s.market && s.market.items[i]; if (!it || it.sold) return null;
     const g = marketGood(it.g), price = marketPrice(s, g);
-    if (g.cur === 'gold') { if (B.gt(price, s.gold)) return null; s.gold = B.sub(s.gold, price); }
+    if (g.kind === 'potion') { const pd = potionDef(it.p); if (!pd || (s.potions[pd.id] || 0) + pd.sec > CONFIG.alchemy.maxSec) return null; }
+    if (g.cur === 'souls') { if (B.lt(s.souls, price)) return null; s.souls = B.sub(s.souls, price); }
     else { if ((s.crystals | 0) < price) return null; s.crystals -= price; }
     const n = marketAmount(s, g);
     if (g.kind === 'tickets') s.tickets += n;
     else if (g.kind === 'shard') s.materials.shard += n;
     else if (g.kind === 'souls') { s.souls = B.add(s.souls, n); s.stats.soulsEarned = B.add(s.stats.soulsEarned, n); }
+    else if (g.kind === 'potion') { const pd = potionDef(it.p); s.potions[pd.id] = (s.potions[pd.id] || 0) + pd.sec; }
     let isNew = false;   // как призыв: новый герой открывается, известный даёт копию на звёзды
     if (g.kind === 'copy' && it.hero) { const h = s.heroes[it.hero]; isNew = !h.unlocked; if (isNew) h.unlocked = true; else h.copies++; }
     it.sold = true;
-    return { g: g.id, n, hero: it.hero, isNew };
+    return { g: g.id, n, hero: it.hero, p: it.p || null, isNew };
   }
   function marketRefresh(s) {
     const c = CONFIG.market.refreshCost;
