@@ -35,3 +35,6 @@ Game icon sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) back
 ```
 Vertical 9:16 mobile game background, dark fantasy manhwa style: a dark gothic blacksmith hall, chains hanging from the ceiling, violet crystals at the sides, a stone furnace with roaring orange fire in the middle right, at the bottom a huge dark anvil glowing with orange cracks and runes, sparks and embers in the air. Upper two thirds calmer and darker for an icon grid. No text, no UI, no characters.
 ```
+
+## Собрано — 0.93
+Листы получены и нарезаны (tools/forgecut.py). Экран собран по макету, функция включена.
