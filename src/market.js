@@ -45,6 +45,48 @@
       #pgX.mkl .mkRef img { width: 24px; height: 24px; object-fit: contain; }
       #pgX.mkl .mkRef:disabled { filter: grayscale(.6) brightness(.7); opacity: 1; }
       #pgX.mkl .mkNote { flex: none; margin: 6px 2% 0 auto; width: 60%; text-align: center; font: 600 11px system-ui; color: #b8a8d0; }
+
+      /* 0.104: «точь-в-точь как макет» (references/market_mockup_v1.png, 1055×1491): все размеры — доли ширины экрана (1 px макета = 1/1055 ширины).
+         Экран выше макета: верх фона прижат к верху, торговец и «Обновить» — к низу, лишняя высота — тёмная середина. */
+      #pgX.mkl { container-type: inline-size; background: #16203b url("${A.bg_top}") center top / 100% auto no-repeat !important; }
+      #pgX.mkl::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 57.91cqw; background: url("${A.bg_bot}") center bottom / 100% auto no-repeat; pointer-events: none; z-index: 0; }
+      #pgX.mkl .tower { display: none !important; }
+      #pgX.mkl #xTop { position: absolute; z-index: 2; top: calc(env(safe-area-inset-top) + 0.76cqw); right: 1.33cqw; left: auto; display: flex; gap: 2.46cqw; padding: 0 !important; min-height: 0 !important; }
+      #pgX.mkl #xTop .cur { display: none; }
+      #pgX.mkl .mkPill { height: 4.93cqw; min-width: 0; padding: 0 5.88cqw 0 6.07cqw; font-size: 2.84cqw; }
+      #pgX.mkl .mkPill:first-child { width: 22.37cqw; } #pgX.mkl .mkPill:last-child { width: 19.53cqw; }
+      #pgX.mkl .mkPill img { width: 5.12cqw; height: 5.12cqw; left: -0.38cqw; }
+      #pgX.mkl .pgHead { position: absolute; z-index: 2; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 5.50cqw); height: 15.17cqw; padding: 0 !important; display: block !important; }
+      #pgX.mkl .pgHead .backBtn { position: absolute; left: 2.37cqw; top: 4.45cqw; width: 16.30cqw; height: 6.45cqw; padding: 0 0 0 6.64cqw; }
+      #pgX.mkl .pgHead .backBtn::after { font-size: 2.84cqw; }
+      #pgX.mkl #xTitle { position: absolute; left: 24.83cqw; width: 50.24cqw; top: 0; height: 14.98cqw; margin: 0 !important; padding: 4.36cqw 0 0 !important;
+        font-size: 5.31cqw !important; letter-spacing: .5px; }
+      #pgX.mkl #xAux { display: none !important; }
+      #pgX.mkl #xBody { position: absolute; z-index: 1; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 21.61cqw); bottom: 0; display: block; padding: 0 !important; overflow: hidden auto; }
+      #pgX.mkl .mkTime { width: 45.88cqw; height: 6.07cqw; margin: 0 0 0 27.30cqw; padding: 0 0 0 5.69cqw; font-size: 2.65cqw; gap: 1.14cqw; }
+      #pgX.mkl .mkGrid { margin: 7.58cqw 3.13cqw 0; gap: 1.99cqw 1.71cqw; }
+      #pgX.mkl .mkCard { aspect-ratio: 234 / 340; padding: 1.33cqw 1.14cqw 1.33cqw; }
+      #pgX.mkl .mkNm { height: 4.17cqw; font-size: 2.18cqw; font-weight: 600; }
+      #pgX.mkl .mkIc { width: 16.11cqw; margin-top: 1.33cqw; }
+      #pgX.mkl .mkN { font-size: 2.65cqw; font-weight: 500; }
+      #pgX.mkl .mkBuy { width: 19.91cqw; height: 6.45cqw; flex: none; padding: 0 0 0 4.36cqw; font-size: 2.65cqw; font-weight: 600; }
+      #pgX.mkl .mkBuy img { width: 3.79cqw; height: 3.79cqw; left: 1.52cqw; }
+      #pgX.mkl .mkSold { font-size: 2.84cqw; }
+      #pgX.mkl .mkRefWrap { position: absolute; z-index: 2; left: 40.76cqw; width: 51.75cqw; bottom: calc(env(safe-area-inset-bottom) + 21.71cqw); height: 9.86cqw; }
+      #pgX.mkl .mkRefWrap .mkRef { position: static; width: 100%; height: 100%; margin: 0; padding: 0 0 0 10.43cqw; font-size: 3.79cqw; gap: 2.09cqw; }
+      #pgX.mkl .mkRefWrap .mkRef img { width: 4.36cqw; height: 4.36cqw; }
+      #pgX.mkl .mkNote { display: none; }
+
+      /* 0.104: края плашек не растягиваются (border-image) — иконки часов, стрелок и «+» как на макете */
+      #pgX.mkl .mkTime { background: none; border-style: solid; border-width: 0 2.18cqw 0 6.82cqw; border-image: url("${A.timer}") 0 30 0 92 fill stretch; padding: 0; justify-content: center; }
+      #pgX.mkl .mkRefWrap .mkRef { background: none; border-style: solid; border-width: 0 3.03cqw 0 11.56cqw; border-image: url("${A.refresh}") 0 40 0 150 fill stretch; padding: 0; }
+      #pgX.mkl .mkPill { background: none; border-style: solid; border-width: 0 4.55cqw 0 1.33cqw; border-image: url("${A.pill}") 0 75 0 22 fill stretch; padding: 0 0.95cqw 0 4.55cqw; justify-content: flex-end; }
+      #pgX.mkl .mkPill img { left: -1.71cqw; }
+      #pgX.mkl .pgHead .backBtn { display: flex !important; align-items: center; justify-content: center; padding: 0 0 0 5.31cqw !important; background-size: 100% 100% !important; }
+      #pgX.mkl #xTitle { left: 27.68cqw; width: 44.55cqw; top: -0.76cqw; height: 18.20cqw; padding: 6.64cqw 0 0 !important; background-size: contain !important; background-position: center !important; }
+      #pgX.mkl #xTitle { display: block !important; line-height: 1 !important; overflow: visible !important; text-align: center; padding: 8.34cqw 0 0 !important; white-space: nowrap; }
+      #pgX.mkl #xTitle { position: absolute !important; left: 27.68cqw !important; width: 44.55cqw !important; top: -0.76cqw !important; height: 18.20cqw !important; min-height: 0 !important; max-height: none !important; }
+      #pgX.mkl .mkIc .rk, #pgX.mkl .mkIc i { display: none !important; }   /* на макете у карточек нет значков ранга — ранг в строке под иконкой */
     `;
     document.head.appendChild(css);
   })();

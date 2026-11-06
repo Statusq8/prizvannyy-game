@@ -538,10 +538,10 @@
         const art = MA && (g.kind === 'tickets' ? (g.n > 1 ? 'i_tickets5' : 'i_ticket') : MKI[g.kind]);
         const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
         h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc' + (a ? ' hero' : '') + '">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
-          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? (s.heroes[a.id].unlocked ? 'копия' : 'новый герой') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
+          '<div class="mkNm">' + (a ? a.name : g.name) + '</div><div class="mkN">' + (a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
           (it.sold ? '<div class="mkSold">' + (MA ? 'Продано' : 'Куплено') + '</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + curI(g) + fmt(price) + '</button>') + '</div>';
       });
-      h += '</div><button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>' + (MA ? 'Обновить ' + curI({ cur: 'crystal' }) + CFG.market.refreshCost : '⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost) + '</button>';
+      h += '</div>' + (MA ? '<div class="mkRefWrap">' : '') + '<button class="mkRef" data-mkr' + ((s.crystals | 0) >= CFG.market.refreshCost ? '' : ' disabled') + '>' + (MA ? 'Обновить ' + curI({ cur: 'crystal' }) + CFG.market.refreshCost : '⟳ Обновить сейчас  💎 ' + CFG.market.refreshCost) + '</button>' + (MA ? '</div>' : '');
       h += '<p class="' + (MA ? 'mkNote' : 'hint3') + '" style="text-align:center">💎 — за первое прохождение мега-боссов; покупка за деньги — в версии для телефона.</p>';
       return h;
     }
