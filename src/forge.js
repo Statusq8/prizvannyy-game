@@ -61,6 +61,10 @@
       .fgPop .row button { flex: 1; height: 44px; border: none; background: ${u('buy')} center / 100% 100% no-repeat; font: 800 13px Georgia, serif; color: #fff; text-shadow: 0 1px 2px #000; }
       .fgPop .row button:disabled { background-image: ${u('buy_off')}; color: #ddd; }
       .fgPop .x { position: absolute; right: 8px; top: 6px; border: none; background: none; font-size: 22px; color: #cbbbe0; }
+      /* 0.114: узкие экраны — колонки не растягиваются под длинное имя */
+      .fgGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .fgOff { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .fgCard { min-width: 0; } .fgCard .nm { text-overflow: ellipsis; }
     `;
     document.head.appendChild(css);
   })();
