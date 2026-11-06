@@ -9283,7 +9283,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const ov = document.createElement('div'); ov.id = 'camp';
     ov.innerHTML = '<div id="campSc"><div id="campMap">' + ISL.map((o, i) =>
       '<button class="cIsl" data-id="' + o.id + '" style="left:' + o.x + '%;top:' + o.y + '%;width:' + o.w + '%;--d:' + (-i * 0.9) + 's"><img src="' + A[o.id] + '" alt="" draggable="false"><span>' + o.name + '</span></button>').join('') +
-      '</div></div><button id="campProf" aria-label="Профиль"></button><button id="campSet" aria-label="Настройки"></button><button id="campBack" aria-label="В бой">В БОЙ</button><button id="campAll" title="тест: показать все острова">все</button>';
+      '</div></div><button id="campProf" aria-label="Профиль"></button><button id="campSet" aria-label="Настройки"></button><button id="campMoreB" aria-label="Ещё">☰</button><div id="campMore"></div><button id="campBack" aria-label="В бой">В БОЙ</button><button id="campAll" title="тест: показать все острова">все</button>';
     document.body.appendChild(ov);
     const sc = $('campSc'), map = $('campMap');
     const css = document.createElement('style');
@@ -9314,6 +9314,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #campProf:active, #campSet:active { transform: scale(.92); }
       #campAll { position: absolute; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 22px); padding: 4px 8px; border-radius: 8px; border: 1px dashed #8a6ab0; background: #12081c99; color: #a890c8; font: 600 11px system-ui; z-index: 2; opacity: .6; }
       #campAll.on { opacity: 1; color: #ffe2a0; }
+      /* 0.88: «слишком много кнопок» — боковые кнопки старых функций убраны с экрана боя; пока у функции нет своего островка — маленькая кнопка в лагере */
+      body.hudV3 #cbPve, body.hudV3 #cbMap, body.hudV3 #cbPortal, body.hudV3 #cbBook, body.hudV3 #cbRitual, body.hudV3 #cbForge, body.hudV3 #cbEvent, body.hudV3 #questPanel, body.hudV3 #bookList, body.hudV3 #tbMail { display: none !important; }
+      #campMoreB { position: absolute; left: 12px; bottom: calc(env(safe-area-inset-bottom) + 14px); width: 46px; height: 46px; border-radius: 10px; border: 2px solid #8a6ab0; background: #12081ce0; color: #e8dcf6; font: 800 22px system-ui; z-index: 2; display: none; }
+      #campMoreB.has { display: block; }
+      #campMore { position: absolute; left: 12px; bottom: calc(env(safe-area-inset-bottom) + 68px); display: none; flex-direction: column; gap: 6px; z-index: 3; }
+      #campMore.show { display: flex; }
+      #campMore button { display: flex; align-items: center; gap: 6px; min-width: 140px; padding: 8px 12px; border-radius: 8px; border: 1px solid #8a6ab0; background: #12081cf0; color: #e8dcf6; font: 700 14px system-ui; box-shadow: 0 0 10px #000a; }
+      #campMore button:active { transform: scale(.95); }
       #cbCamp::after { content: ""; position: absolute; inset: 14% 12%; background: url("${A.hq}") center / contain no-repeat; pointer-events: none; filter: drop-shadow(0 0 4px #b14dff); }
       #cbCamp img, #cbCamp > * { display: none !important; }
     `;
@@ -9331,7 +9339,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       }
     }
     function open() {
-      ov.classList.add('show'); pImg(); size(); refresh();
+      ov.classList.add('show'); pImg(); size(); refresh(); renderMore();
       sc.scrollTop = sc.scrollHeight; sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2;
     }
     function close() { ov.classList.remove('show'); }
@@ -9339,6 +9347,18 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     let fromCamp = false;
     document.addEventListener('click', e => { if (fromCamp && e.target.closest('.pg [data-back], .pg .backBtn, #oldBack')) { fromCamp = false; setTimeout(open, 0); } }, true);
     window.U3.camp = open;
+    // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
+    const MORE = [
+      ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Ритуал', () => U.openX('souls')],
+    ];
+    function renderMore() {
+      const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');
+      if ($('campMore').innerHTML !== h) $('campMore').innerHTML = h;
+      $('campMoreB').classList.toggle('has', !!h); if (!h) $('campMore').classList.remove('show');
+    }
+    $('campMoreB').addEventListener('click', () => { U.click(); $('campMore').classList.toggle('show'); });
+    $('campMore').addEventListener('click', e => { const b = e.target.closest('[data-more]'); if (!b) return; U.press(b); $('campMore').classList.remove('show'); close(); fromCamp = true; U.home(); MORE[+b.dataset.more][3](); });
     addEventListener('resize', () => { if (ov.classList.contains('show')) size(); });
     // мышью — перетаскивание (на телефоне листается пальцем само)
     let drag = null, moved = false;
