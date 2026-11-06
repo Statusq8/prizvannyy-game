@@ -9078,7 +9078,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       body.hqV1 #sTop .cur.f i::before { content: "✊"; font-size: 19px; line-height: 26px; }
       body.hqV1 #sTop .cur.g i { background-image: url("${(window.HUD_ART || {}).ic_coin || ''}") !important; }
       body.hqV1 #sTop .cur .plus { display: none !important; }
-      body.hqV1 .hqMat { flex-basis: 100%; order: 9; display: flex; height: 22px; margin-top: 64px; background: #0a060ecc; border-radius: 3px; }
+      body.hqV1 .hqMat { display: none !important; }
+      body.hqV1 .hqNav { display: none !important; }
+      body.hqV1 .hqMatX { flex-basis: 100%; order: 9; display: flex; height: 22px; margin-top: 64px; background: #0a060ecc; border-radius: 3px; }
       body.hqV1 .hqMat span { flex: 1; display: flex; align-items: center; gap: 4px; padding: 0 8px; font: 700 13px system-ui; color: #fff; border-right: 1px solid #2a2232; }
       body.hqV1 .hqMat i { font-style: normal; }
       .hqNav { position: absolute; left: 6px; right: 6px; top: calc(env(safe-area-inset-top) + 42px); height: 60px; display: flex; gap: 6px; align-items: center; z-index: 5; overflow: visible; }
@@ -9097,11 +9099,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       body.hqV1 #sTabs button[data-st="pets"]::before { background-image: ${u('ti_pets')}; }
       body.hqV1 #sTabs .hqBang { position: absolute; right: 3px; top: 1px; display: block !important; width: auto !important; height: auto !important; background: none !important; font: 900 24px/1 Georgia, serif !important; font-style: normal; color: #ffc23a; text-shadow: 0 0 6px #ff8a00, 0 2px 2px #000; animation: hqBang 1s ease-in-out infinite; z-index: 2; }
       @keyframes hqBang { 50% { transform: translateY(-3px); } }
-      body.hqV1 #pgSec .pgHead { display: grid !important; grid-template-columns: 84px 1fr 84px; align-items: center; gap: 6px; padding: 8px 8px 8px; }
-      body.hqV1 #pgSec #sTitle { grid-column: 2; height: 40px; border: none !important; box-shadow: none !important; clip-path: none !important; background: ${u('nav_title')} center / contain no-repeat !important; color: transparent !important; text-shadow: none !important; }
+      body.hqV1 #pgSec .pgHead { display: grid !important; grid-template-columns: 84px 1fr 84px; align-items: center; gap: 6px; padding: 6px 8px 8px; }
+      body.hqV1 #pgSec .pgHead .backBtn { grid-column: 1; grid-row: 1; width: 64px; height: 44px; clip-path: none; border: none !important; box-shadow: none !important; background: ${u('nav_back')} center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; }
+      body.hqV1 #pgSec #sTitle { grid-column: 2; grid-row: 1; height: 40px; border: none !important; box-shadow: none !important; clip-path: none !important; background: ${u('nav_title')} center / contain no-repeat !important; color: transparent !important; text-shadow: none !important; }
       body.hqV1 #pgSec #sTitle::before, body.hqV1 #pgSec #sTitle::after { display: none !important; }
       body.hqV1 #pgSec #secHelp { display: none; }
-      #hqMult { grid-column: 3; height: 38px; display: flex; align-items: stretch; padding: 0; border-radius: 6px; overflow: hidden; border: 2px solid #e0b04a; box-shadow: 0 0 0 2px #0a060e, 0 0 10px #d6a64077; background: linear-gradient(#ffe08a, #c98a1a); }
+      #hqMult { grid-column: 3; grid-row: 1; height: 38px; display: flex; align-items: stretch; padding: 0; border-radius: 6px; overflow: hidden; border: 2px solid #e0b04a; box-shadow: 0 0 0 2px #0a060e, 0 0 10px #d6a64077; background: linear-gradient(#ffe08a, #c98a1a); }
       #hqMult b { color: #2a1404 !important; text-shadow: 0 1px 0 #fff6 !important; font-size: 18px !important; }
       #hqMult b { flex: 1; display: grid; place-items: center; font: 800 16px Georgia, 'Times New Roman', serif; color: #ffd86a; text-shadow: 0 1px 2px #000; }
       #hqMult i { width: 22px; display: grid; place-items: center; font-style: normal; font-size: 11px; color: #2a1a04; background: linear-gradient(#ffe08a, #c98a1a); }
@@ -9139,7 +9142,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     document.head.appendChild(css);
     // «назад» — в одну строку с вкладками (как в Крушителях)
     const pg = $('pgSec'), nav = document.createElement('div'); nav.className = 'hqNav';
-    nav.appendChild(pg.querySelector('.pgHead .backBtn')); nav.appendChild($('sTabs')); pg.appendChild(nav);
+    nav.appendChild($('sTabs')); pg.appendChild(nav);    // 0.84.4: вкладки сверху убраны (пользователь), «назад» — в строке «Герои»
   })();
 
   // ===================== 0.83: Лагерь — летающие островки, как город Idle Heroes (docs/ui/CAMP.md) =====================
