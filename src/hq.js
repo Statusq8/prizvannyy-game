@@ -78,6 +78,20 @@
       .hqBtn span { font: 800 12px system-ui; color: #fff; line-height: 1.2; }
       .hqBtn.off b { color: #cfcfcf; } .hqBtn.off span { color: #bbb; }
       .hqBtn:not(.off):active { transform: scale(.94); }
+      /* 0.115: тоньше рамки (как в «Крушителях»): рамка карточки и портрета — border-image, края вдвое тоньше, узоры не искажаются */
+      body.hqV1 #sBody .hqCard, .hqCard { background: none !important; border-style: solid; border-width: 9px 10px; border-image: ${u('card')} 33 40 fill stretch; padding: 4px 6px 4px 6px !important; min-height: 104px !important; }
+      .hqPt .hqFr { display: none; }
+      .hqPt::after { content: ""; position: absolute; inset: -3% -3%; z-index: 2; pointer-events: none; border-style: solid; border-width: 12px; border-image: var(--fr) 62 fill stretch; background: none; }
+      .hqPt::after { border-image-slice: 62; border-image-outset: 0; }
+      .hqPt .fg { left: 6%; right: 6%; top: 6%; bottom: 6%; }
+      .hqMs { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; height: 20px; padding: 0 8px 0 4px; border-radius: 4px; background: #0a060ecc; border: 1px solid #5a4a6a;
+        font: 800 12px system-ui; color: #fff; text-shadow: 0 1px 2px #000; }
+      .hqMs i { font-style: normal; font-size: 12px; }
+      .hqBtn.hire img { filter: hue-rotate(-80deg) saturate(1.15); }
+      .hqRk { position: absolute; right: -6px; top: -6px; z-index: 3; min-width: 22px; height: 22px; padding: 0 3px; box-sizing: border-box; display: grid; place-items: center;
+        clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: linear-gradient(#2a1c36, #0e0814); outline: none;
+        font: 800 12px Georgia, serif; color: var(--rc, #fff); text-shadow: 0 0 4px var(--rc, #fff), 0 1px 2px #000; box-shadow: inset 0 0 0 2px var(--rc, #888); }
+      .hqBtn.off.hire img { filter: none; }
     `;
     document.head.appendChild(css);
     // «назад» — в одну строку с вкладками (как в Крушителях)

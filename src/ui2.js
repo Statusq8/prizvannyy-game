@@ -145,6 +145,8 @@
       const A = window.HQ_ART, t = Math.min(3, Math.floor((n - 1) / 5)), k = n - t * 5, base = t ? HQ_ST[t - 1] : 'unlit';
       let h = '<div class="hqSt">'; for (let i = 0; i < 5; i++) h += '<img src="' + A['st_' + (i < k ? HQ_ST[t] : base)] + '" alt="">'; return h + '</div>';
     }
+    // 0.115: значок следующей вехи уровня, как в «Крушителях» (иконка + уровень, на котором урон ×milestoneMult)
+    function hqMs(lv, ic) { return '<div class="hqMs" title="на этом уровне урон ×' + CFG.milestoneMult + '"><i>' + ic + '</i>' + fmt(C.nextMilestone(lv)) + '</div>'; }
     function hqHtml() {
       const A = window.HQ_ART, RNr = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
       const QM = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
@@ -154,13 +156,13 @@
       mb.innerHTML = '<b>' + ((MULTS.find(x => x[0] === mult) || MULTS[0])[1]).replace('×', 'x') + '</b>'; mb.style.display = sec === 'up' ? '' : 'none';
       const btn = (key, src) => {
         const t = src.innerHTML, m = /^(.*?)<span>(.*)<\/span>$/.exec(t) || [0, t, ''];
-        return '<button class="hqBtn' + (src.disabled ? ' off' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '><img src="' + A[src.disabled ? 'btn_off' : 'btn_up'] + '" alt=""><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
+        return '<button class="hqBtn' + (src.disabled ? ' off' : '') + (/Нанять/.test(t) ? ' hire' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '><img src="' + A[src.disabled ? 'btn_off' : 'btn_up'] + '" alt=""><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
       };
-      const card = (fr, pt, attrs, name, fa, lines, stars, b, off) => '<div class="hqCard' + (off ? ' off' : '') + '"><div class="hqPt"' + attrs + '><div class="fg">' + pt + '</div><img class="hqFr" src="' + A['fr_' + fr] + '" alt="">' + stars + '</div>' +
+      const card = (fr, pt, attrs, name, fa, lines, stars, b, off) => '<div class="hqCard' + (off ? ' off' : '') + '"><div class="hqPt"' + attrs + ' style="--fr:url(&quot;' + A['fr_' + fr] + '&quot;)"><div class="fg">' + pt + '</div><img class="hqFr" src="' + A['fr_' + fr] + '" alt=""><span class="hqRk" style="' + rvar(fr) + '">' + fr + '</span>' + stars + '</div>' +
         '<div class="hqInf"><div class="nm">' + (fa && A['fa_' + fa] ? '<img src="' + A['fa_' + fa] + '" alt="">' : '') + '<span>' + name + '</span></div>' + lines + '</div>' + b + '</div>';
       const r = C.rankLabel(s.heroRank);
       h += card(HQ_FR[Math.min(8, Math.max(0, (r.rank || 1) - 1))], heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡', '', 'Призванный', null,
-        '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>', '', btn('hero', el.buyTap));
+        '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>' + hqMs(s.tapLevel, '✊'), '', btn('hero', el.buyTap));
       // 0.101 (решение пользователя 06.11): список по возрастанию урона, как в «Крушителях» — сверху слабые, внизу сильные,
       // ниже всех — «Новый герой» из цепочки. Порядок по силе героя (урон на 1 уровне со звёздами и эволюцией), поэтому
       // карточки не прыгают при прокачке; после регрессии все открытые на своих местах — листаешь вниз к сильнейшим.
@@ -174,7 +176,7 @@
         const dps = lv ? B.mul(C.allyDps(s, a.id), C.permMult(s, 'ally')) : C.allyDpsAt(a.id, 1);
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], hh.evo);
         h += card(a.rarity, fig + (C.canStar(s, a.id) ? '<i class="plus">+</i>' : ''), ' data-hv="' + a.id + '"', a.name, HQ_FA[a.faction],
-          '<div class="ln">Ур. <b>' + fmt(lv) + '</b></div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(dps) + '</b></div>', hqStars(hh.stars), btn(a.id, u.btn), !lv);
+          '<div class="ln">Ур. <b>' + fmt(lv) + '</b></div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(dps) + '</b></div>' + hqMs(lv, '🗡'), hqStars(hh.stars), btn(a.id, u.btn), !lv);
       }
       // 0.99: следующий герой цепочки за золото (как в «Крушителях»): один, по возрастанию цены; A+ — только Портал
       const nx = C.chainNext(s);
@@ -183,7 +185,7 @@
         const fig = ALLY_VIS[a.id].avatarImg || allySvg(ALLY_VIS[a.id], 0);
         h += card(a.rarity, fig, '', a.name, HQ_FA[a.faction],
           '<div class="ln">Новый герой</div><div class="ln"><img class="ic" src="' + A.ic_attack + '" alt=""><b>' + fmt(C.allyDpsAt(a.id, 1)) + '</b></div>', '',
-          '<button class="hqBtn' + (can ? '' : ' off') + '" data-chain="1"' + (can ? '' : ' disabled') + '><img src="' + A[can ? 'btn_up' : 'btn_off'] + '" alt=""><b>Нанять</b><span>' + fmt(cost) + '</span></button>', true);
+          '<button class="hqBtn hire' + (can ? '' : ' off') + '" data-chain="1"' + (can ? '' : ' disabled') + '><img src="' + A[can ? 'btn_up' : 'btn_off'] + '" alt=""><b>Нанять</b><span>' + fmt(cost) + '</span></button>', true);
       }
       return h;
     }
@@ -487,31 +489,36 @@
       if (xStack.length) { click(); xKind = xStack.pop(); lastHtml = {}; refresh(); return; }
       back();
     });
+    // 0.115: единая плашка ресурса для Портала, Кузницы, Рынка и Регрессии (одинаковый размер, иконка, «+»)
+    function resPills(list) {
+      const I = Object.assign({}, window.MK_ART || {}, window.RG_ART || {}), P = window.PT_ART || {};
+      const src = { soul: I.i_soul, crystal: I.i_crystal, shard: I.i_shard, ticket: P.ticket };
+      return list.map(([k, v]) => '<div class="resPill">' + (src[k] ? '<img src="' + src[k] + '" alt="">' : '<i>' + ({ lantern: '🏮', soul: '👻', crystal: '💎', shard: '🔹', ticket: '🎟' }[k] || '') + '</i>') + '<b>' + v + '</b></div>').join('');
+    }
     function renderX() {
       const aux = $('xAux');
       $('pgX').classList.toggle('ptl', !!window.PT_ART && xKind === 'portal' && !showHist);
       $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
       $('pgX').classList.toggle('mkl', !!window.MK_ART && xKind === 'market');
       $('pgX').classList.toggle('rgl', !!window.RG_ART && xKind === 'regress');
-      if (xKind === 'regress') { aux.style.display = 'none'; setHtml('xBody', regressHtml()); return; }
+      if (xKind === 'regress') { aux.style.display = 'none'; $('xTitle').textContent = ''; setHtml('xTop', resPills([['soul', fmt(s.souls)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', regressHtml()); return; }
       if (xKind === 'market') {
         $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
         const MA = window.MK_ART;
-        setHtml('xTop', MA ? '<div class="mkPill"><img src="' + MA.i_soul + '" alt="">' + fmt(s.souls) + '</div><div class="mkPill"><img src="' + MA.i_crystal + '" alt="">' + fmt(s.crystals | 0) + '</div>'
-          : cur('👻', fmt(s.souls)) + cur('💎', fmt(s.crystals | 0)));
+        setHtml('xTop', resPills([['soul', fmt(s.souls)], ['crystal', fmt(s.crystals | 0)]]));
         setHtml('xBody', marketHtml());
         return;
       }
       if (xKind === 'forge') {
         $('xTitle').textContent = 'Кузница'; aux.style.display = 'none';
-        setHtml('xTop', '<div class="fgCur"><i>' + (fgBr === 'blood' ? '🔹' : '👻') + '</i>' + fmt(fgBr === 'blood' ? s.materials.shard : s.souls) + '</div>');
+        setHtml('xTop', resPills([fgBr === 'blood' ? ['shard', fmt(s.materials.shard)] : ['soul', fmt(s.souls)]]));
         setHtml('xBody', forgeHtml());
         return;
       }
       if (xKind === 'portal') {
         $('xTitle').textContent = showHist ? 'История призывов' : 'Портал призыва';
         aux.style.display = showHist ? 'none' : ''; aux.textContent = '📜 История';
-        if (window.PT_ART) setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + '<div class="ptTk">' + fmt(s.tickets) + '</div>');
+        if (window.PT_ART) setHtml('xTop', resPills((ban === 'event' ? [['lantern', fmt(s.event.lanterns)]] : []).concat([['ticket', fmt(s.tickets)]])));
         else setHtml('xTop', (ban === 'event' ? cur('🏮', fmt(s.event.lanterns)) : '') + cur('🎟', fmt(s.tickets)));
         setHtml('xBody', showHist ? histHtml() : portalHtml());
       } else if (xKind === 'souls') {
@@ -532,8 +539,6 @@
       const im = n => '<img src="' + A[n] + '" alt="">', row = (ic, t, sub, mk) => '<div class="row"><div class="ic">' + ic + '</div><div class="tx">' + t + (sub ? '<small>' + sub + '</small>' : '') + '</div><img class="mk" src="' + A[mk] + '" alt=""></div>';
       const lightOk = ready && (s.crystals | 0) >= R.light.crystals;
       return '<div class="rg"><div class="rgBg"></div><div class="top">' +
-        '<button class="abs img back" data-rgback aria-label="Назад"></button>' +
-        '<div class="abs pill p1">' + im('i_soul') + fmt(s.souls) + '</div><div class="abs pill p2">' + im('i_crystal') + fmt(s.crystals | 0) + '</div>' +
         '<div class="abs img title">Регрессия</div>' +
         '<div class="abs img panel"></div><div class="abs img hdr">Вы получите:</div>' +
         '<div class="abs gain">' + im('i_soul') + '<b>+' + fmt(souls) + '</b><span>душ</span></div><div class="abs sep"></div>' +
