@@ -64,6 +64,38 @@
       .ptRec { margin-top: 30vh; padding: 16px; border-radius: 10px; background: #0a060ed8; border: 1px solid #6a4a8a; text-align: center; color: #e8dcf6; font: 500 14px/1.4 system-ui; }
       .ptRec b { font: 800 17px Georgia, serif; color: #ffe6a0; }
       .ptRec .soon { color: #ffd36b; font-weight: 800; }
+      /* 0.89: переворот карт по макету пользователя (references/portal_reveal_mockup.png, лист docs/reference/portal/sheet_reveal.png) */
+      #sumFx.ptv .sfBg { background: linear-gradient(#0008, #000c), ${u('bg')} center top / cover no-repeat; animation: none; }
+      #sumFx.ptv .flipGrid { gap: 18px 8px; }
+      #sumFx.ptv .flip { aspect-ratio: .58; }
+      #sumFx.ptv .flip > div { border: none !important; border-radius: 0; box-shadow: none !important; padding: 10% 8% 8%; }
+      #sumFx.ptv .flip .back { background: ${u('card_back')} center / 100% 100% no-repeat !important; font-size: 0; }
+      #sumFx.ptv .flip.rareS .back { animation: rareShake .5s ease-in-out infinite; filter: drop-shadow(0 0 8px #ffb030) drop-shadow(0 0 4px #ffd36b) sepia(.6) saturate(2.2) hue-rotate(-20deg); }
+      #sumFx.ptv .flip.tH .back { filter: drop-shadow(0 0 6px #ff4ad8) drop-shadow(0 0 10px #6af0ff); animation: rareShake .5s ease-in-out infinite, ptHue 1.2s linear infinite; }
+      @keyframes ptHue { to { filter: drop-shadow(0 0 6px #ff4ad8) drop-shadow(0 0 10px #6af0ff) hue-rotate(360deg); } }
+      #sumFx.ptv .flip .front { background: ${u('card_steel')} center / 100% 100% no-repeat !important; overflow: visible; font: 700 9px system-ui; color: #fff; text-shadow: 0 1px 2px #000; }
+      #sumFx.ptv .flip.tS .front { background-image: ${u('card_gold')} !important; }
+      #sumFx.ptv .flip.tH .front { background-image: ${u('card_rainbow')} !important; }
+      #sumFx.ptv .flip .front img { width: 78%; border-radius: 6px; position: relative; z-index: 1; }
+      #sumFx.ptv .flip .front i { position: relative; z-index: 1; font: 800 12px Georgia, serif; }
+      #sumFx.ptv .flip .front .nm { position: relative; z-index: 1; font: 800 10px Georgia, serif; line-height: 1.1; }
+      #sumFx.ptv .flip .front .tag { display: none; }
+      #sumFx.ptv .flip .fxBurst { position: absolute; left: 50%; top: 45%; width: 220%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0); background: ${u('burst_v')} center / contain no-repeat; pointer-events: none; z-index: 0; opacity: 0; }
+      #sumFx.ptv .flip.rareS .fxBurst { background-image: ${u('burst_g')}; }
+      #sumFx.ptv .flip.open .fxBurst { animation: ptBurst .9s ease-out .2s both; }
+      #sumFx.ptv .flip.rareS.open .fxBurst { animation: ptBurstS 1.6s ease-out .2s both; }
+      @keyframes ptBurst { 0% { transform: translate(-50%, -50%) scale(.2); opacity: 0; } 30% { opacity: .9; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+      @keyframes ptBurstS { 0% { transform: translate(-50%, -50%) scale(.2); opacity: 0; } 25% { opacity: 1; } 70% { opacity: .8; } 100% { transform: translate(-50%, -50%) scale(1.25); opacity: .35; } }
+      #sumFx.ptv .flip .nRib { position: absolute; left: 50%; top: -19%; width: 92%; aspect-ratio: 4 / 3; transform: translateX(-50%) scale(0); z-index: 3; display: grid; place-items: center; padding-bottom: 18%; box-sizing: border-box;
+        background: ${u('ribbon')} center / contain no-repeat; font: 900 8px system-ui; font-style: normal; color: #fff3c8; text-shadow: 0 1px 1px #000; }
+      #sumFx.ptv .flip.open .nRib { animation: ptRib .4s ease-out .55s forwards; }
+      @keyframes ptRib { to { transform: translateX(-50%) scale(1); } }
+      #sumFx.ptv .flip .fxShards { position: absolute; inset: -20%; background: ${u('shards')} center / contain no-repeat; opacity: 0; pointer-events: none; z-index: 4; }
+      #sumFx.ptv .flip.dup.open .fxShards { animation: ptShard .9s ease-out .45s both; }
+      @keyframes ptShard { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+      #sumFx.ptv .flip.dup.open .front { animation: none; filter: saturate(.5) brightness(.75); }
+      #sumFx.ptv #sfAgain, #sumFx.ptv #sfOk { width: 150px !important; height: 58px; border: none !important; box-shadow: none !important; background: ${u('btn_blue')} center / 100% 100% no-repeat !important; font: 800 15px Georgia, serif; color: #f6e6c4; text-shadow: 0 1px 2px #000; }
+      #sumFx.ptv #sfOk { background-image: ${u('btn_gold')} !important; }
     `;
     document.head.appendChild(css);
   })();

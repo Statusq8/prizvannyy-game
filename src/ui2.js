@@ -562,11 +562,13 @@
       const quick = setg.qsum === 'on', hiS = RANKS.indexOf('S');
       $('sfStage').innerHTML = '<div style="width:100%"><div class="flipGrid' + (r.length === 1 ? ' one' : '') + '">' + r.map((x, i) => {
         const a = CFG.allies.find(h => h.id === x.id), A = HERO_ART[x.id], v = ALLY_VIS[x.id] || {};
-        return '<div class="flip' + (RANKS.indexOf(x.rarity) >= hiS ? ' rareS' : '') + (x.isNew ? '' : ' dup') + (quick ? ' open' : '') + '" data-fl="' + i + '" style="' + rvar(x.rarity) + ';animation-delay:' + (i * 70) + 'ms">' +
-          '<div class="back">✦</div><div class="front">' + (A && A.avatar ? '<img src="' + A.avatar + '" alt="">' : '<b>' + (v.icon || '✦') + '</b>') + '<i>' + x.rarity + '</i>' + a.name +
-          '<span class="tag" style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'НОВЫЙ' : 'дубликат') + '</span></div></div>'; }).join('') + '</div>' +
+        const ri = RANKS.indexOf(x.rarity), tier = ri >= RANKS.indexOf('SS') ? ' tH' : ri >= hiS ? ' tS' : '';
+        return '<div class="flip' + (ri >= hiS ? ' rareS' : '') + tier + (x.isNew ? ' isNew' : ' dup') + (quick ? ' open' : '') + '" data-fl="' + i + '" style="' + rvar(x.rarity) + ';animation-delay:' + (i * 70) + 'ms">' +
+          '<div class="back">✦</div><div class="front"><span class="fxBurst"></span><span class="fxShards"></span>' + (A && A.avatar ? '<img src="' + A.avatar + '" alt="">' : '<b>' + (v.icon || '✦') + '</b>') + '<i>' + x.rarity + '</i><span class="nm">' + a.name + '</span>' +
+          (x.isNew ? '<em class="nRib">НОВЫЙ</em>' : '') + '<span class="tag" style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'НОВЫЙ' : 'дубликат') + '</span></div></div>'; }).join('') + '</div>' +
         '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
         '<div class="sfDone" style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="upBtn alt" id="sfAgain" style="width:130px">Ещё раз ×' + n + '</button><button class="upBtn gold" id="sfOk" style="width:130px">Готово</button></div></div>';
+      $('sumFx').classList.toggle('ptv', !!window.PT_ART);
       click();
     }
     function flipOpen(card) {

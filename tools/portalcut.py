@@ -29,3 +29,20 @@ def cut(src, names):
 cut('docs/reference/portal/sheet_a.png', A)
 cut('docs/reference/portal/sheet_b.png', B)
 bg = Image.open('docs/reference/portal/bg.png').convert('RGB'); bg.resize((720, round(bg.height * 720 / bg.width)), Image.LANCZOS).save('assets/portal/bg.webp', 'WEBP', quality=80, method=6)
+
+
+# 0.89: переворот карт — лист 3×3 по ячейкам (у вспышек и осколков много мелких частей, пятна не годятся)
+def cells(src, names, ws):
+    rgba = key(np.array(Image.open(src).convert('RGB')))
+    H, Wd = rgba.shape[:2]
+    for i, nm in enumerate(names):
+        r, c = divmod(i, 3)
+        a = rgba[round(r * H / 3):round((r + 1) * H / 3), round(c * Wd / 3):round((c + 1) * Wd / 3)].copy()
+        ys, xs = np.where(a[..., 3] > 16); a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        im = Image.fromarray(a, 'RGBA'); w = ws[i]
+        if im.width > w: im = im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
+        im.save('assets/portal/' + nm + '.webp', 'WEBP', quality=88, method=6); print(nm, im.size)
+
+
+cells('docs/reference/portal/sheet_reveal.png', ['card_back', 'card_steel', 'card_gold', 'card_rainbow', 'burst_v', 'burst_g', 'ribbon', 'shards', 'btn_violet'],
+      [180, 180, 200, 180, 300, 300, 160, 240, 360])
