@@ -20,3 +20,6 @@ Mobile game popup windows, vertical 9:16 portrait, dark fantasy manhwa style, sa
 ```
 Use the attached mockup as the exact style reference — same ornaments, colors and shapes. Game UI asset sheet, dark fantasy manhwa style, flat solid pure green (#00FF00) background, 3x3 grid with wide spacing, each item separate, NO TEXT anywhere: 1) big glowing golden hourglass with violet sand inside a swirling violet clock-face ring with roman numerals; 2) tall ornate window frame, dark violet with gold-violet spiky border and gems (empty); 3) wide title plate with spiky violet-gold ends and a gem on top (empty); 4) wide dark text plate with gold-violet border and pointed ends (empty); 5) big gold button (empty); 6) dark violet button with gold-violet border (empty); 7) small time plate with pointed ends (empty); 8) gold clock icon; 9) small round ornate battle button with a golden hourglass inside a violet-gold ring.
 ```
+
+## Собрано — 0.128
+Лист → tools/ttcut.py → assets/timetravel; всё — src/timetravel.js: кнопка #ttBtn на экране боя (слева сверху, красная точка — бесплатное доступно), окно путешествия, окно отчёта (window.TT_REPORT — им пользуется showReport в template.html для офлайна и путешествия). Прогноза «≈» нет (решение пользователя).
