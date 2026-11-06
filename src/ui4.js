@@ -73,7 +73,7 @@
       const names = []; for (const k in CFG.unlocks) if (CFG.unlocks[k] === f) names.push(NAMES[k] || k);
       return { f, names: [...new Set(names)] };
     }
-    const rTxt = r => r.gold ? '◆ ' + fmt(r.gold) : r.tickets ? '🎟 ' + r.tickets : r.shard ? CFG.materials.shard.icon + ' ' + r.shard : '';
+    const rTxt = r => r.gold ? '◆ ' + fmt(r.gold) : r.tickets ? '🎟 ' + r.tickets + (r.crystals ? ' · 💎 ' + r.crystals : '') : r.crystals ? '💎 ' + r.crystals : r.shard ? CFG.materials.shard.icon + ' ' + r.shard : '';
     const qp = mk('div', 'questPanel', '', '', host);
     let qHtml = '';
     function renderQuest() {

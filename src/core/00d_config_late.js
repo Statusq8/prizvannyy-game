@@ -49,27 +49,27 @@
       ],
     },
     // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)
-    dailyGift: { tickets: 1, shard: 20 },
+    dailyGift: { tickets: 1 },   // 0.116: только билеты и 💎
     // Бонус за вход (по образцу): 30 дней, у каждого своя награда. Пропуск дня не сбрасывает — следующий вход даёт следующий день.
     // После 30-го — по кругу с 1-го. Каждый 7-й, 14-й, 21-й, 28-й и 30-й — крупнее. Числа TBD.
     login: {
+      // 0.116 (решение пользователя): календарь 30 дней — только билеты и немного 💎; крупные дни — 7, 14, 21, 28, 30
       days: [
-        { tickets: 1 }, { shard: 30 }, { essence: 10 }, { tickets: 1 }, { shard: 40 }, { essence: 15 }, { tickets: 3, heart: 1 },
-        { shard: 50 }, { tickets: 1 }, { essence: 20 }, { shard: 60 }, { tickets: 2 }, { essence: 25 }, { tickets: 4, heart: 2 },
-        { shard: 80 }, { tickets: 2 }, { essence: 30 }, { shard: 100 }, { tickets: 2 }, { essence: 35 }, { tickets: 5, heart: 2, shard: 100 },
-        { shard: 120 }, { tickets: 2 }, { essence: 40 }, { shard: 150 }, { tickets: 3 }, { essence: 50 }, { tickets: 6, heart: 3, shard: 150 },
-        { shard: 200 }, { tickets: 10, heart: 5, essence: 100 },
+        { tickets: 1 }, { crystals: 5 }, { tickets: 1 }, { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 5, crystals: 30 },
+        { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 7, crystals: 50 },
+        { tickets: 2 }, { crystals: 10 }, { tickets: 2 }, { tickets: 2 }, { crystals: 15 }, { tickets: 2 }, { tickets: 8, crystals: 70 },
+        { tickets: 2 }, { crystals: 15 }, { tickets: 3 }, { tickets: 2 }, { crystals: 15 }, { tickets: 3 }, { tickets: 10, crystals: 100 },
+        { tickets: 3 }, { tickets: 15, crystals: 150 },
       ],
       big: [7, 14, 21, 28, 30],
     },
     // «Путешествие во времени»: мгновенно прокрутить часы офлайна. Раз в день бесплатно, потом за билеты (реклама — позже, с Android). Числа TBD.
     timeTravel: { hours: 4, freePerDay: 1, ticketCost: 3, paidPerDay: 2 },
     // Сундуки заданий: за выполненные (забранные) ежедневные задания открываются 4 сундука по вехам. Обновляются вместе с днём. Числа TBD.
-    questChests: [
-      { need: 1, reward: { essence: 10 } },
-      { need: 3, reward: { tickets: 1, shard: 30 } },
-      { need: 5, reward: { tickets: 2, essence: 20 } },
-      { need: 6, reward: { tickets: 3, heart: 1 } },
+    questChests: [   // 0.116: 4 ежедневных задания → 3 сундука, только билеты и 💎
+      { need: 1, reward: { crystals: 5 } },
+      { need: 2, reward: { tickets: 1 } },
+      { need: 4, reward: { tickets: 2, crystals: 10 } },
     ],
     // Классы главного героя (GDD §4): только у него. Открываются на этаже unlockFloor (рекорд).
     // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за регрессию. Узел — 1 очко за уровень.

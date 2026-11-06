@@ -1354,7 +1354,7 @@ test('задание «все задания дня» и «Забрать всё
   assert.strictEqual(C.questDone(s, 'd_all'), true);
   const r = C.claimAll(s);
   assert.ok(r.count >= CFG.quests.daily.length);
-  assert.strictEqual(r.reward.heart, undefined); assert.ok(r.reward.shard >= CFG.materials.heartRecipe);   // сердца — осколками (0.51)
+  assert.ok(!r.reward.shard && !r.reward.essence && !r.reward.heart, '0.116: только билеты и 💎'); assert.ok(r.reward.tickets > 0 && r.reward.crystals > 0);
   assert.strictEqual(C.claimAll(s), null);
 });
 
@@ -1964,8 +1964,8 @@ test('ритуальные задания: прогресс с начала за
   const s = C.newState(NOCRIT);
   s.counters.boss = 200; s.maxFloor = s.floor = s.bestFloor = 400;
   assert.ok(C.questClaimable(s, 'r_boss')); assert.ok(C.questClaimable(s, 'r_f400'));
-  const souls0 = s.souls; C.claimQuest(s, 'r_f400');
-  assert.strictEqual(s.souls, souls0 + 5);
+  const cr0 = s.crystals | 0; C.claimQuest(s, 'r_f400');
+  assert.strictEqual(s.crystals, cr0 + CFG.quests.ritual.find(q => q.id === 'r_f400').reward.crystals);
   assert.strictEqual(s.season.xp, CFG.season.questXp.ritual);
   C.ritual(s);
   assert.strictEqual(C.questProgress(s, 'r_boss'), 0);

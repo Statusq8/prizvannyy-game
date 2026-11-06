@@ -570,7 +570,7 @@
     function loginWin(force) {
       const can = C.loginAvailable(s, dayKey()), idx = C.loginDayIndex(s), D = CFG.login.days;
       if (!can && !force) return;
-      const ic = r => r.tickets ? '🎟' : r.shard ? CFG.materials.shard.icon : r.essence ? '✦' : '🎁';
+      const ic = r => r.tickets ? '🎟' : r.crystals ? '💎' : r.shard ? CFG.materials.shard.icon : r.essence ? '✦' : '🎁';
       const week = Math.floor(idx / 7) * 7, days = D.slice(week, week + 7);
       sys({ title: 'НАГРАДА ЗА ВХОД', text: can ? 'День ' + (idx + 1) + ' из ' + D.length + '. Заходите каждый день — к 30-му награды больше.' : 'Сегодняшняя награда уже получена. Завтра — день ' + (idx + 1) + '.',
         html: '<div class="sysGrid">' + days.map((r, i) => { const n = week + i; return '<div style="' + (n < idx ? 'opacity:.4' : n === idx && can ? 'border-color:#e3b6ff;box-shadow:0 0 8px #b14dff' : '') + '"><b>' + (n < idx ? '✓' : ic(r)) + '</b>день ' + (n + 1) + '<br>' + rewardLine(r) + '</div>'; }).join('') + '</div>',

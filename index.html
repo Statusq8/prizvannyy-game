@@ -1792,7 +1792,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 150, forge: 50, ritual: 150, tree: 200,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
-    disabled: ['quests', 'login', 'pve', 'runes', 'tree', 'events', 'season',
+    disabled: ['pve', 'runes', 'tree', 'events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'map', 'prestige', 'bag', 'tutorial'],
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -2076,71 +2076,67 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // Задания (GDD §11): ежедневные, еженедельные, вводные. Прогресс — по счётчикам действий (key) или по значению (value).
     // go — куда ведёт кнопка «Перейти». Награды: tickets 🎟, essence ✦, shard 🔹, heart 🔥. Числа TBD.
     quests: {
+      // 0.116 (решение пользователя): задания дают только билеты 🎟 и немного 💎 (crystals). Задания выключенных PvE убраны.
       daily: [
         { id: 'd_kill',   key: 'kill',    goal: 500,  name: 'Победить врагов',        reward: { tickets: 1 },  go: 'arena' },
-        { id: 'd_boss',   key: 'boss',    goal: 15,   name: 'Победить боссов Башни',  reward: { shard: 20 },   go: 'arena' },
-        { id: 'd_tap',    key: 'tap',     goal: 1500, name: 'Нанести удары тапом',    reward: { essence: 10 }, go: 'arena' },
-        { id: 'd_dun',    key: 'dungeon', goal: 2,    name: 'Пройти подземелья',      reward: { tickets: 1 },  go: 'pve' },
-        { id: 'd_summon', key: 'summon',  goal: 3,    name: 'Призвать героев',        reward: { essence: 15 }, go: 'portal' },
-        { id: 'd_all',    key: 'allDaily', goal: 5,   name: 'Выполнить все задания дня', reward: { heart: 1 } },
+        { id: 'd_boss',   key: 'boss',    goal: 15,   name: 'Победить боссов Башни',  reward: { tickets: 1 },  go: 'arena' },
+        { id: 'd_tap',    key: 'tap',     goal: 1500, name: 'Нанести удары тапом',    reward: { crystals: 5 }, go: 'arena' },
+        { id: 'd_summon', key: 'summon',  goal: 3,    name: 'Призвать героев',        reward: { crystals: 5 }, go: 'portal' },
+        { id: 'd_all',    key: 'allDaily', goal: 4,   name: 'Выполнить все задания дня', reward: { tickets: 2, crystals: 10 } },
       ],
       weekly: [
         { id: 'w_kill',   key: 'kill',     goal: 5000, name: 'Победить врагов',        reward: { tickets: 5 },   go: 'arena' },
-        { id: 'w_boss',   key: 'boss',     goal: 150,  name: 'Победить боссов Башни',  reward: { shard: 200 },   go: 'arena' },
-        { id: 'w_dun',    key: 'dungeon',  goal: 10,   name: 'Пройти подземелья',      reward: { tickets: 3 },   go: 'pve' },
-        { id: 'w_pers',   key: 'personal', goal: 5,    name: 'Победить личных боссов', reward: { heart: 2 },     go: 'pve' },
-        { id: 'w_wave',   key: 'wave',     goal: 100,  name: 'Волны бесконечного подземелья', reward: { essence: 80 }, go: 'pve' },
-        { id: 'w_evo',    key: 'evolve',   goal: 1,    name: 'Эволюционировать героя', reward: { shard: 150 },   go: 'heroes' },
+        { id: 'w_boss',   key: 'boss',     goal: 150,  name: 'Победить боссов Башни',  reward: { tickets: 5 },   go: 'arena' },
+        { id: 'w_summon', key: 'summon',   goal: 30,   name: 'Призвать 30 героев',     reward: { crystals: 30 }, go: 'portal' },
+        { id: 'w_star',   key: 'star',     goal: 3,    name: 'Поднять 3 звезды героям', reward: { tickets: 3, crystals: 20 }, go: 'heroes' },
       ],
       intro: [
         { id: 'i_f10',    value: 'floor', goal: 10,  name: 'Дойти до 10-го этажа',      reward: { tickets: 2 },  go: 'arena' },
-        { id: 'i_hire',   value: 'hired', goal: 4,   name: 'Нанять весь отряд',         reward: { tickets: 1 },  go: 'up' },
-        { id: 'i_summon', key: 'summon',  goal: 1,   name: 'Призвать героя в портале',   reward: { essence: 10 }, go: 'portal' },
-        { id: 'i_f50',    value: 'floor', goal: 50,  name: 'Победить первого финального босса', reward: { shard: 50 }, go: 'arena' },
+        { id: 'i_hire',   value: 'hired', goal: 4,   name: 'Нанять 4 героев',           reward: { tickets: 1 },  go: 'up' },
+        { id: 'i_summon', key: 'summon',  goal: 1,   name: 'Призвать героя в портале',   reward: { crystals: 10 }, go: 'portal' },
+        { id: 'i_f50',    value: 'floor', goal: 50,  name: 'Победить первого мега-босса', reward: { tickets: 3 }, go: 'arena' },
         { id: 'i_star',   key: 'star',    goal: 1,   name: 'Поднять звезду героя',       reward: { tickets: 2 },  go: 'heroes' },
-        { id: 'i_dun',    key: 'dungeon', goal: 1,   name: 'Пройти ежедневное подземелье', reward: { tickets: 1 }, go: 'pve' },
-        { id: 'i_rune',   key: 'rune',    goal: 1,   name: 'Создать руну',               reward: { shard: 30 },   go: 'runes' },
-        { id: 'i_evo',    key: 'evolve',  goal: 1,   name: 'Эволюционировать героя',     reward: { shard: 100 },  go: 'heroes' },
-        { id: 'i_f400',   value: 'floor', goal: 400, name: 'Дойти до 400-го этажа',      reward: { tickets: 10 }, go: 'arena' },
-        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первую регрессию',     reward: { heart: 3 },    go: 'souls' },
+        { id: 'i_f150',   value: 'floor', goal: 150, name: 'Дойти до 150-го этажа',      reward: { tickets: 10 }, go: 'arena' },
+        { id: 'i_ritual', key: 'ritual',  goal: 1,   name: 'Провести первую регрессию',  reward: { tickets: 5, crystals: 30 }, go: 'souls' },
       ],
-      // Регрессияьные (GDD §11): считаются с начала текущего забега, обновляются после каждого регрессии
+      // Задания регрессии (GDD §11): считаются с начала текущего забега, обновляются после каждого регрессии
       ritual: [
-        { id: 'r_f100',  value: 'runFloor', goal: 100, name: 'Забег: дойти до 100-го этажа',  reward: { shard: 60 },   go: 'arena' },
-        { id: 'r_f250',  value: 'runFloor', goal: 250, name: 'Забег: дойти до 250-го этажа',  reward: { tickets: 3 },  go: 'arena' },
-        { id: 'r_f400',  value: 'runFloor', goal: 400, name: 'Забег: дойти до 400-го этажа',  reward: { souls: 5 },    go: 'arena' },
-        { id: 'r_boss',  key: 'boss',       goal: 150, name: 'Забег: победить боссов',         reward: { heart: 1 },    go: 'arena' },
-        { id: 'r_rare',  key: 'rare',       goal: 15,  name: 'Забег: победить редких врагов',  reward: { essence: 25 }, go: 'arena' },
-        { id: 'r_hire',  value: 'runHire',  goal: 8,   name: 'Забег: нанять 8 героев',         reward: { souls: 3 },    go: 'up' },
+        { id: 'r_f100',  value: 'runFloor', goal: 100, name: 'Забег: дойти до 100-го этажа',  reward: { tickets: 2 },   go: 'arena' },
+        { id: 'r_f250',  value: 'runFloor', goal: 250, name: 'Забег: дойти до 250-го этажа',  reward: { tickets: 3 },   go: 'arena' },
+        { id: 'r_f400',  value: 'runFloor', goal: 400, name: 'Забег: дойти до 400-го этажа',  reward: { crystals: 30 }, go: 'arena' },
+        { id: 'r_boss',  key: 'boss',       goal: 150, name: 'Забег: победить боссов',         reward: { tickets: 2 },   go: 'arena' },
+        { id: 'r_rare',  key: 'rare',       goal: 15,  name: 'Забег: победить редких врагов',  reward: { crystals: 10 }, go: 'arena' },
+        { id: 'r_hire',  value: 'runHire',  goal: 8,   name: 'Забег: нанять 8 героев',         reward: { tickets: 2 },   go: 'up' },
       ],
     },
     // Достижения (GDD §7, §12): ступени по счётчикам и рекордам. Каждая ступень — награда и очко достижений;
     // очки — постоянный бонус всего урона (отдельная категория, без критов). Числа TBD.
     // 0.53 (ответ 103 + решение пользователя): последняя ступень каждого достижения даёт титул с небольшим постоянным бонусом
+    // 0.116: награды достижений — только билеты или 💎
     achievements: {
       dmgPerPoint: 0.01,
       list: [
         { id: 'a_kill',   name: 'Истребитель',      icon: '⚔', metric: 'kill',    goals: [100, 1000, 10000, 100000, 1e6],  reward: { tickets: 2 },
           title: { name: 'Истребитель тысяч', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { heart: 1 },
+        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { crystals: 10 },
           title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 3 },
+        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 2 },
           title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
-        { id: 'a_ritual', name: 'Жрец регрессии',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { souls: 5 },
+        { id: 'a_ritual', name: 'Жрец регрессии',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { crystals: 10 },
           title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
-        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { essence: 30 },
+        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { crystals: 10 },
           title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
-        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 5 },
+        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 2 },
           title: { name: 'Собиратель героев', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { shard: 200 },
+        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { crystals: 10 },
           title: { name: 'Мастер эволюции', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { shard: 150 },
+        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { crystals: 10 },
           title: { name: 'Костяной мастер', bonus: { kind: 'gold', per: 0.03 } } },
         { id: 'a_dun',    name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: [10, 100, 1000],                 reward: { tickets: 2 },
           title: { name: 'Покоритель глубин', bonus: { kind: 'gold', per: 0.03 } } },
-        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { essence: 50 },
+        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { crystals: 10 },
           title: { name: 'Бесконечный', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { heart: 2 },
+        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { crystals: 10 },
           title: { name: 'Хранитель тотемов', bonus: { kind: 'gold', per: 0.03 } } },
       ],
     },
@@ -2278,27 +2274,27 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       ],
     },
     // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)
-    dailyGift: { tickets: 1, shard: 20 },
+    dailyGift: { tickets: 1 },   // 0.116: только билеты и 💎
     // Бонус за вход (по образцу): 30 дней, у каждого своя награда. Пропуск дня не сбрасывает — следующий вход даёт следующий день.
     // После 30-го — по кругу с 1-го. Каждый 7-й, 14-й, 21-й, 28-й и 30-й — крупнее. Числа TBD.
     login: {
+      // 0.116 (решение пользователя): календарь 30 дней — только билеты и немного 💎; крупные дни — 7, 14, 21, 28, 30
       days: [
-        { tickets: 1 }, { shard: 30 }, { essence: 10 }, { tickets: 1 }, { shard: 40 }, { essence: 15 }, { tickets: 3, heart: 1 },
-        { shard: 50 }, { tickets: 1 }, { essence: 20 }, { shard: 60 }, { tickets: 2 }, { essence: 25 }, { tickets: 4, heart: 2 },
-        { shard: 80 }, { tickets: 2 }, { essence: 30 }, { shard: 100 }, { tickets: 2 }, { essence: 35 }, { tickets: 5, heart: 2, shard: 100 },
-        { shard: 120 }, { tickets: 2 }, { essence: 40 }, { shard: 150 }, { tickets: 3 }, { essence: 50 }, { tickets: 6, heart: 3, shard: 150 },
-        { shard: 200 }, { tickets: 10, heart: 5, essence: 100 },
+        { tickets: 1 }, { crystals: 5 }, { tickets: 1 }, { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 5, crystals: 30 },
+        { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 1 }, { crystals: 10 }, { tickets: 2 }, { tickets: 7, crystals: 50 },
+        { tickets: 2 }, { crystals: 10 }, { tickets: 2 }, { tickets: 2 }, { crystals: 15 }, { tickets: 2 }, { tickets: 8, crystals: 70 },
+        { tickets: 2 }, { crystals: 15 }, { tickets: 3 }, { tickets: 2 }, { crystals: 15 }, { tickets: 3 }, { tickets: 10, crystals: 100 },
+        { tickets: 3 }, { tickets: 15, crystals: 150 },
       ],
       big: [7, 14, 21, 28, 30],
     },
     // «Путешествие во времени»: мгновенно прокрутить часы офлайна. Раз в день бесплатно, потом за билеты (реклама — позже, с Android). Числа TBD.
     timeTravel: { hours: 4, freePerDay: 1, ticketCost: 3, paidPerDay: 2 },
     // Сундуки заданий: за выполненные (забранные) ежедневные задания открываются 4 сундука по вехам. Обновляются вместе с днём. Числа TBD.
-    questChests: [
-      { need: 1, reward: { essence: 10 } },
-      { need: 3, reward: { tickets: 1, shard: 30 } },
-      { need: 5, reward: { tickets: 2, essence: 20 } },
-      { need: 6, reward: { tickets: 3, heart: 1 } },
+    questChests: [   // 0.116: 4 ежедневных задания → 3 сундука, только билеты и 💎
+      { need: 1, reward: { crystals: 5 } },
+      { need: 2, reward: { tickets: 1 } },
+      { need: 4, reward: { tickets: 2, crystals: 10 } },
     ],
     // Классы главного героя (GDD §4): только у него. Открываются на этаже unlockFloor (рекорд).
     // Очки класса: 1 за каждые pointsPerFloors этажей рекорда + pointsPerRitual за регрессию. Узел — 1 очко за уровень.
@@ -3920,6 +3916,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function grant(s, r) {
     if (r.souls) { s.souls = B.add(s.souls, r.souls); s.stats.soulsEarned = B.add(s.stats.soulsEarned, r.souls); }
     if (r.tickets) s.tickets += r.tickets;
+    if (r.crystals) s.crystals = (s.crystals | 0) + r.crystals;   // 0.116: 💎 из заданий, входа, достижений
     if (r.essence) s.essence += r.essence;
     if (r.shard) s.materials.shard += r.shard;
     if (r.heart) s.materials.shard += heartShards(r.heart);   // 0.51: сердца слиты в осколки
@@ -5825,6 +5822,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       lines.push('<b>Золото:</b> +' + fmt(r.gold) + ' ◆ · врагов ' + fmt(r.kills));
       if (r.shard || r.heart) lines.push('<b>Материалы:</b> +' + fmt(r.shard) + ' ' + M.shard.icon + (r.heart ? ' · +' + r.heart + ' ' + M.heart.icon : ''));
       if (r.tickets) lines.push('<b>Билеты:</b> +' + r.tickets + ' 🎟');
+      if (r.crystals) lines.push('<b>Кристаллы:</b> +' + r.crystals + ' 💎');
     }
     // 0.55 (ответ 189): умный отчёт — что теперь можно купить или сделать
     const na = C.nowAffordable(s), nm = id => id === 'hero' ? 'Призванный' : CFG.allies.find(a => a.id === id).name, can = [];
@@ -6508,7 +6506,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function rewardLine(r) {
     const M = CFG.materials, p = [];
     if (r.souls) p.push('👻 ' + fmt(r.souls));
-    if (r.tickets) p.push('🎟 ' + r.tickets); if (r.essence) p.push('✦ ' + r.essence);
+    if (r.tickets) p.push('🎟 ' + r.tickets); if (r.crystals) p.push('💎 ' + r.crystals); if (r.essence) p.push('✦ ' + r.essence);
     if (r.shard) p.push(M.shard.icon + ' ' + r.shard); if (r.heart) p.push(M.heart.icon + ' ' + r.heart);
     return p.join(' · ');
   }
@@ -6739,7 +6737,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   let seasonHtml = '';
   function seasonReward(r) {
     const M = CFG.materials, p = [];
-    if (r.tickets) p.push('🎟' + r.tickets); if (r.shard) p.push(M.shard.icon + r.shard); if (r.essence) p.push('✦' + r.essence);
+    if (r.tickets) p.push('🎟' + r.tickets); if (r.crystals) p.push('💎' + r.crystals); if (r.shard) p.push(M.shard.icon + r.shard); if (r.essence) p.push('✦' + r.essence);
     if (r.heart) p.push(M.heart.icon + r.heart); if (r.tokens) p.push('🎭' + r.tokens);
     return p.join(' ');
   }
@@ -6812,6 +6810,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function rewardText(r) {
     const M = CFG.materials, parts = [];
     if (r.tickets) parts.push('🎟 ' + r.tickets);
+    if (r.crystals) parts.push('💎 ' + r.crystals);
     if (r.essence) parts.push('✦ ' + fmt(r.essence));
     if (r.gold) parts.push('◆ ' + fmt(r.gold));
     if (r.shard) parts.push(M.shard.icon + ' ' + fmt(r.shard));
@@ -8669,7 +8668,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     function loginWin(force) {
       const can = C.loginAvailable(s, dayKey()), idx = C.loginDayIndex(s), D = CFG.login.days;
       if (!can && !force) return;
-      const ic = r => r.tickets ? '🎟' : r.shard ? CFG.materials.shard.icon : r.essence ? '✦' : '🎁';
+      const ic = r => r.tickets ? '🎟' : r.crystals ? '💎' : r.shard ? CFG.materials.shard.icon : r.essence ? '✦' : '🎁';
       const week = Math.floor(idx / 7) * 7, days = D.slice(week, week + 7);
       sys({ title: 'НАГРАДА ЗА ВХОД', text: can ? 'День ' + (idx + 1) + ' из ' + D.length + '. Заходите каждый день — к 30-му награды больше.' : 'Сегодняшняя награда уже получена. Завтра — день ' + (idx + 1) + '.',
         html: '<div class="sysGrid">' + days.map((r, i) => { const n = week + i; return '<div style="' + (n < idx ? 'opacity:.4' : n === idx && can ? 'border-color:#e3b6ff;box-shadow:0 0 8px #b14dff' : '') + '"><b>' + (n < idx ? '✓' : ic(r)) + '</b>день ' + (n + 1) + '<br>' + rewardLine(r) + '</div>'; }).join('') + '</div>',
@@ -9244,7 +9243,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const names = []; for (const k in CFG.unlocks) if (CFG.unlocks[k] === f) names.push(NAMES[k] || k);
       return { f, names: [...new Set(names)] };
     }
-    const rTxt = r => r.gold ? '◆ ' + fmt(r.gold) : r.tickets ? '🎟 ' + r.tickets : r.shard ? CFG.materials.shard.icon + ' ' + r.shard : '';
+    const rTxt = r => r.gold ? '◆ ' + fmt(r.gold) : r.tickets ? '🎟 ' + r.tickets + (r.crystals ? ' · 💎 ' + r.crystals : '') : r.crystals ? '💎 ' + r.crystals : r.shard ? CFG.materials.shard.icon + ' ' + r.shard : '';
     const qp = mk('div', 'questPanel', '', '', host);
     let qHtml = '';
     function renderQuest() {
