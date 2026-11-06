@@ -702,7 +702,8 @@
       h += '<div class="ritual' + (ready ? ' ready' : '') + '"><h3>🕯 Ритуал</h3>' +
         (ready ? '<p>Сейчас: <b style="color:#8fe6ff">+' + fmt(C.ritualSouls(s)) + ' душ</b>, новый забег с этажа ' + C.ritualStartFloor(s) + '. Чем выше этаж, тем больше душ. Перед ритуалом делается резервная копия.</p>'
                : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', ритуалов: ' + s.rituals : '') + '.</p>') +
-        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Провести ритуал' : 'Нужен этаж ' + R.floor) + '</button></div>';
+        '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмный ритуал' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
+        (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлый ритуал<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
       h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
       for (const b of CFG.soulTree) {
         const opn = C.branchOpen(s, b);
@@ -717,14 +718,16 @@
       }
       return h;
     }
-    function doRitual() {
+    function doRitual(kind) {
       if (!C.canRitual(s)) return;
-      const souls = C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
-      ask('<b>Ритуал</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
+      const light = kind === 'light';
+      if (light && (s.crystals | 0) < CFG.ritual.light.crystals) return;
+      const souls = light ? B.floor(B.mul(C.ritualSouls(s), CFG.ritual.light.mult)) : C.ritualSouls(s), start = C.ritualStartFloor(s), after = { ...s, souls: B.add(s.souls, souls) };
+      ask('<b>' + (light ? 'Светлый ритуал · 💎 ' + CFG.ritual.light.crystals : 'Тёмный ритуал') + '</b><span class="askList"><b>Получите:</b> +' + fmt(souls) + ' душ (бонус урона ' + pctUp(C.soulMult(s)) + ' → ' + pctUp(C.soulMult(after)) + ')<br>' +
         '<b>Сбросится:</b> золото, уровни удара и героев, найм, этаж — новый забег с этажа ' + start + (C.ritualStartGold(s) ? ' и ◆ ' + fmt(C.ritualStartGold(s)) + ' золота' : '') + '<br>' +
         '<b>Сохранится:</b> дерево душ, герои, звёзды, эволюции, питомцы, материалы, отряд, билеты, эссенция, артефакты, души, рекорды</span>', 'Провести ритуал', () => {
         writeCopy(PRE_RIT);
-        const r = C.ritual(s); if (!r) return;
+        const r = C.ritual(s, light ? 'light' : 'dark'); if (!r) return;
         dmgLog.length = 0; restartAnim('spawn');
         toast('Ритуал проведён<small>+' + fmt(r.souls) + ' 👻 · старт с этажа ' + r.start + '</small>');
         if (r.milestone) setTimeout(() => toast('Новый титул: «' + r.milestone.title + '»<small>+' + Math.round(r.milestone.bonus.per * 100) + '% ' + (r.milestone.bonus.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · награды — в центре наград 📬</small>'), 2500);
@@ -780,7 +783,8 @@
       else if (d.fgt) { click(); if (d.fgt !== 'art') { openOld(d.fgt); return; } }
       else if (d.sbuy) { const [br, i] = d.sbuy.split(':'); const id = C.shopBuy(s, br, +i); if (!id) return; click(); const a = CFG.artifacts.find(x => x.id === id); toast('Артефакт куплен!<small>' + a.icon + ' ' + a.name + '</small>'); save(); }
       else if (d.sref) { if (!C.shopRefresh(s, d.sref)) return; click(); save(); }
-      else if (d.rit !== undefined) { click(); doRitual(); return; }
+      else if (d.rit !== undefined) { click(); doRitual('dark'); return; }
+      else if (d.ritl !== undefined) { click(); doRitual('light'); return; }
       else if (d.tree) { click(); if (C.buyTreeNode(s, d.tree)) save(); }
       else if (d.t2) { click(); const [id, dl] = d.t2.split(':'); tier2[id] = (tier2[id] || 1) + +dl; }
       else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }

@@ -1012,9 +1012,9 @@ test('биомы: по 50 этажей, по кругу после 400, свои
 test('биомы меняют сложность и золото', () => {
   const b = CFG.biomes[5];   // Кровавая арена: 251–300
   const f = 255;
-  const plain = CFG.enemyBaseHp * Math.pow(CFG.enemyHpGrowth, f - 1);
-  assert.strictEqual(C.enemyMaxHp(f, false), Math.ceil(plain * b.hp));
-  assert.strictEqual(C.killGold(f, false), Math.ceil(CFG.goldBase * Math.pow(CFG.goldGrowth, f - 1) * b.gold));
+  const plain = CFG.enemyBaseHp * Math.pow(CFG.enemyHpGrowth, C.floorSteps(f));
+  assert.ok(Math.abs(B.toNum(C.enemyMaxHp(f, false)) / (plain * b.hp) - 1) < 1e-9);
+  assert.ok(Math.abs(B.toNum(C.killGold(f, false)) / (CFG.goldBase * Math.pow(CFG.goldGrowth, C.floorSteps(f)) * b.gold) - 1) < 1e-6);
 });
 
 test('переход в новый биом даёт событие', () => {
@@ -1667,7 +1667,7 @@ test('Башня на этаже 50 000: HP и золото конечны, бо
   const s = C.newState(NOCRIT);
   s.floor = s.maxFloor = s.bestFloor = 50000; C.goToFloor(s, 49999); C.goToFloor(s, 50000);
   assert.ok(isFinite(B.log10(s.enemy.maxHp)));
-  assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + (CFG.floorCurve.knee - 1 + CFG.floorCurve.knee * CFG.floorCurve.slope * Math.log(50000 / CFG.floorCurve.knee)) * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
+  assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + C.floorSteps(50000) * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
   s.tapLevel = 15000; s.souls = B.fromLog10(3600);
   let i = 0; while (s.enemy.alive && i++ < 1000) C.tap(s);
   assert.ok(!s.enemy.alive, 'враг убит');
@@ -2288,11 +2288,12 @@ test('обычные мобы иногда роняют осколки (≈8%, 3
 });
 
 test('кривая дальних этажей: до колена — ×enemyHpGrowth, выше — медленнее, но растёт всегда', () => {
-  const l = f => B.log10(C.enemyMaxHp(f, false)), g = Math.log10(CFG.enemyHpGrowth);
-  assert.ok(Math.abs(l(500) - l(499) - g) < 1e-9);
-  assert.ok(l(2000) - l(1999) < g);
-  assert.ok(l(100000) - l(99999) < l(2000) - l(1999));
-  assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000));
+  const K = CFG.floorCurve.knee, st = f => C.floorSteps(f + 1) - C.floorSteps(f);
+  assert.ok(Math.abs(st(Math.floor(K / 2)) - 1) < 1e-9, 'до колена — полный шаг');
+  assert.ok(st(K + 5) < 1 && st(2 * K) < 1, 'после колена — мягче');
+  assert.ok(st(100000) <= st(2000) + 1e-9, 'дальше не круче');
+  const l = f => B.log10(C.enemyMaxHp(f, false));
+  assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000) && l(100000) > l(2000), 'растёт всегда');
 });
 
 // ---------- 0.51: ранги из обновлений, награды ритуалов ----------
@@ -2777,4 +2778,12 @@ test('Рынок: slots товаров, сам обновляется раз в 
 test('кристаллы: бесплатно немного — за первое прохождение мега-босса', () => {
   const s = C.newState({ rng: () => 0.5 });
   assert.strictEqual(s.crystals, 0); assert.ok(CFG.crystals.megaFirst > 0);
+});
+
+test('0.109: светлый ритуал — за 💎, души ×mult; тёмный — бесплатно', () => {
+  const mk = () => { const s = C.newState({ rng: () => 0.5 }); s.maxFloor = s.bestFloor = s.floor = CFG.ritual.floor + 20; return s; };
+  const a = mk(), base = B.toNum(C.ritualSouls(a)); const ra = C.ritual(a, 'dark'); assert.strictEqual(B.toNum(ra.souls), base); assert.strictEqual(ra.light, false);
+  const b = mk(); b.crystals = 0; assert.strictEqual(C.ritual(b, 'light'), null, 'без 💎 светлый не провести');
+  b.crystals = CFG.ritual.light.crystals; const rb = C.ritual(b, 'light');
+  assert.strictEqual(B.toNum(rb.souls), Math.floor(base * CFG.ritual.light.mult)); assert.strictEqual(b.crystals, 0);
 });

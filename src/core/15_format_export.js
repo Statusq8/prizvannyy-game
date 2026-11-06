@@ -73,7 +73,7 @@
     achDef, achValue, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
-    biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
+    floorSteps, biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     ultDesc, perkList,
     dailyClaimedCount, questChestReady, openQuestChest, questChestsReady,
     loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel,
