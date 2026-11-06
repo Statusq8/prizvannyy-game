@@ -537,7 +537,7 @@
         const pd = it.p ? CFG.alchemy.potions.find(x => x.id === it.p) : null;
         const can = !it.sold && (g.cur === 'souls' ? B.gte(s.souls, price) : (s.crystals | 0) >= price) && !(pd && (s.potions[pd.id] || 0) + pd.sec > CFG.alchemy.maxSec);
         const art = MA && (g.kind === 'tickets' ? (g.n > 1 ? 'i_tickets5' : 'i_ticket') : MKI[g.kind]);
-        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : pd ? '<b class="mkPot">' + pd.icon + '</b>' : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
+        const ic = a ? (ALLY_VIS[a.id].avatarImg || (MA ? '<img src="' + MA.i_hero + '" alt="">' : allySvg(ALLY_VIS[a.id], 0))) : pd ? (MA && MA['p_' + pd.id] ? '<img class="mkPotI" src="' + MA['p_' + pd.id] + '" alt="">' : '<b class="mkPot">' + pd.icon + '</b>') : art ? '<img src="' + MA[art] + '" alt="">' : '<b>' + MK_IC[g.kind] + '</b>';
         h += '<div class="mkCard' + (it.sold ? ' sold' : '') + (g.cur === 'crystal' ? ' cr' : '') + '" style="' + (a ? rvar(a.rarity) : '') + '"><div class="mkIc' + (a ? ' hero' : '') + '">' + ic + (a ? '<span class="rk">' + a.rarity + '</span>' : '') + '</div>' +
           '<div class="mkNm">' + (a ? a.name : pd ? pd.name : g.name) + '</div><div class="mkN">' + (pd ? pd.desc + ' · ' + Math.round(pd.sec / 60) + ' мин' : a ? a.rarity + ' · ' + (s.heroes[a.id].unlocked ? 'копия' : 'новый') : '×' + fmt(C.marketAmount(s, g))) + '</div>' +
           (it.sold ? '<div class="mkSold">' + (MA ? 'Продано' : 'Куплено') + '</div>' : '<button class="mkBuy" data-mkb="' + i + '"' + (can ? '' : ' disabled') + '>' + curI(g) + fmt(price) + '</button>') + '</div>';

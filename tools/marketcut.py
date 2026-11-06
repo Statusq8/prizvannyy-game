@@ -50,3 +50,8 @@ def fade(im, down):
 fade(top, True).resize((720, round(600 * 720 / FW)), Image.LANCZOS).save(OUT + 'bg_top.webp', 'WEBP', quality=82, method=6)
 fade(bot, False).resize((720, round((FH - 880) * 720 / FW)), Image.LANCZOS).save(OUT + 'bg_bot.webp', 'WEBP', quality=82, method=6)
 print('bg_top / bg_bot')
+
+# 0.108: лист C — иконки зелий (3×1, по ячейкам): алчность (gold), ярость (dmg), жатва (shard)
+rgba = key(np.array(Image.open(R + 'sheet_c.png').convert('RGB'))); H, W = rgba.shape[:2]
+for i, nm in enumerate(['p_gold', 'p_dmg', 'p_shard']):
+    save(rgba[:, round(i * W / 3):round((i + 1) * W / 3)].copy(), nm, 220)
