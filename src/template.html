@@ -1033,6 +1033,8 @@
   function load() {
     let raw = null;
     try { raw = localStorage.getItem(SAVE_KEY); if (raw) { const st = C.deserialize(raw); if (st) return st; } } catch (e) {}
+    // 0.94: Android — localStorage пуст (очистили данные WebView), но есть копия в файле приложения
+    if (!raw && window.PZNative) { try { const nb = window.PZNative.restore(); if (nb) { const st = C.deserialize(nb); if (st) { restoredFrom = { kind: 'native', t: Date.now() }; return st; } } } catch (e) {} }
     const list = backupList();
     if (raw && list.length) { try { localStorage.setItem(SAVE_KEY + '_broken', raw); } catch (e) {} }
     if (list.length) { restoredFrom = list[0]; return list[0].st; }
@@ -1049,8 +1051,14 @@
       let oldest = 0, ot = Infinity;
       for (let i = 0; i < BAK_N; i++) { let tt = 0; try { tt = +JSON.parse(localStorage.getItem(BAK_KEY(i)) || '{}').t || 0; } catch (e) {} if (tt < ot) { ot = tt; oldest = i; } }
       writeCopy(BAK_KEY(oldest)); lastBak = Date.now();
+      nativeBackup();
     }
   }
+  // 0.94: копия в файле Android-приложения (раз в 5 минут и при сворачивании)
+  function nativeBackup() { if (window.PZNative && !blockSave) { try { window.PZNative.backup(C.serialize(s)); } catch (e) {} } }
+  // Мост для обёртки Android (android/.../MainActivity.java вызывает PZ.app.saveNow, PZ.ui.modal, PZ.audio)
+  window.PZ = window.PZ || {};
+  window.PZ.app = { saveNow() { save(); nativeBackup(); } };
   function restoreCopy(key) {
     const c = readCopy(key); if (!c) return false;
     writeCopy(SAVE_KEY + '_beforeRestore');                  // текущее состояние не теряется и при откате
@@ -1431,7 +1439,7 @@
   $('awayOk').addEventListener('click', () => $('away').classList.remove('show'));
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); save(); }
+    if (document.hidden) { hiddenAt = Date.now(); save(); nativeBackup(); }
     else if (hiddenAt) { const gap = (Date.now() - hiddenAt) / 1000; hiddenAt = 0; last = performance.now(); applyOffline(gap); }
   });
   window.addEventListener('pagehide', save);
