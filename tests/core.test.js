@@ -2315,7 +2315,7 @@ test('награды 1-го, 10-го и 100-го ритуала: титул, о�
   reach(s, 400); const r = C.ritual(s);
   assert.strictEqual(r.milestone.n, 1);
   assert.deepStrictEqual(s.titles, ['Пробуждённый']); assert.strictEqual(s.title, 'Пробуждённый');
-  assert.ok(s.inbox.some(x => /Ритуал №1/.test(x.title)));
+  assert.ok(s.inbox.some(x => /Регрессия №1/.test(x.title)));
   s.rituals = 99; assert.strictEqual(C.ritualMilestone(s, 100).skin, 'eternal');
   assert.ok(s.skins.includes('eternal'));
   assert.strictEqual(C.setTitle(s, 'Нет такого'), false); assert.ok(C.setTitle(s, 'Вечный призванный'));
