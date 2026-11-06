@@ -570,6 +570,7 @@
     function loginWin(force) {
       const can = C.loginAvailable(s, dayKey()), idx = C.loginDayIndex(s), D = CFG.login.days;
       if (!can && !force) return;
+      if (window.QS_ART && window.U2 && window.U2.openQuests) { window.U2.openQuests('login'); return; }   // 0.118: вкладка «Вход» экрана Заданий
       const ic = r => r.tickets ? '🎟' : r.crystals ? '💎' : r.shard ? CFG.materials.shard.icon : r.essence ? '✦' : '🎁';
       const week = Math.floor(idx / 7) * 7, days = D.slice(week, week + 7);
       sys({ title: 'НАГРАДА ЗА ВХОД', text: can ? 'День ' + (idx + 1) + ' из ' + D.length + '. Заходите каждый день — к 30-му награды больше.' : 'Сегодняшняя награда уже получена. Завтра — день ' + (idx + 1) + '.',

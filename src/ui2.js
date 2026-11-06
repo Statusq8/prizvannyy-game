@@ -58,6 +58,7 @@
     // старые вкладки — внутри полноэкранной страницы
     function openOld(t) {
       click();
+      if (t === 'quests' && window.QS_ART) { openQuests(); return; }   // 0.118: новый экран Заданий
       tab = t; setCollapsed(false);
       document.body.classList.add('oldOpen');
       $('oldTitle').textContent = TAB_NAMES[t] || '';
@@ -501,6 +502,8 @@
       $('pgX').classList.toggle('fgl', !!window.FG_ART && xKind === 'forge');
       $('pgX').classList.toggle('mkl', !!window.MK_ART && xKind === 'market');
       $('pgX').classList.toggle('rgl', !!window.RG_ART && xKind === 'regress');
+      $('pgX').classList.toggle('qsl', !!window.QS_ART && xKind === 'quests');
+      if (xKind === 'quests') { aux.style.display = 'none'; $('xTitle').textContent = 'Задания'; setHtml('xTop', resPills([['crystal', fmt(s.crystals | 0)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', questsHtml()); return; }
       if (xKind === 'regress') { aux.style.display = 'none'; $('xTitle').textContent = ''; setHtml('xTop', resPills([['soul', fmt(s.souls)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', regressHtml()); return; }
       if (xKind === 'market') {
         $('xTitle').textContent = 'Рынок'; aux.style.display = 'none';
@@ -533,6 +536,54 @@
     }
     $('xAux').addEventListener('click', () => { click(); showHist = true; lastHtml = {}; refresh(); });
 
+    // ---------- 0.118: экран Заданий по макету пользователя — разметка; стили и картинки — src/quests.js ----------
+    let qsTab = 'daily';
+    function openQuests(t) { if (t) qsTab = t; stack.length = 0; page = null; openX('quests'); }
+    function questsHtml() {
+      const A = window.QS_ART || {}, M = window.MK_ART || {}, R = window.RG_ART || {}, Q = CFG.quests, today = dayKey();
+      const IC = { kill: A.i_battle, boss: A.i_boss, tap: A.i_tap, summon: A.i_summon, allDaily: A.i_star, star: A.i_star, rare: A.i_boss, ritual: R.i_soul || A.i_scroll,
+        floor: R.i_stairs || A.i_battle, runFloor: R.i_stairs || A.i_battle, hired: R.i_heroes || A.i_scroll, runHire: R.i_heroes || A.i_scroll };
+      const rwi = (k, n) => '<span class="rwi">' + (k === 'tickets' ? '<img src="' + M.i_ticket + '" alt="">' : k === 'crystals' ? '<img src="' + (R.i_crystal || M.i_crystal) + '" alt="">' : '') + '<b>' + fmt(n) + '</b></span>';
+      const rw = r => { const L = Object.keys(r).filter(k => r[k]); return '<div class="rw' + (L.length > 1 ? ' two' : '') + '">' + L.map(k => rwi(k, r[k])).join('') + '</div>'; };
+      const ready = q => C.questProgress(s, q.id) >= q.goal && !s.quests.claimed[q.id];
+      const card = (ic, name, pr, goal, r, btn, got) => '<div class="card' + (got ? ' got' : '') + '"><div class="fr"><img src="' + ic + '" alt=""></div><div class="nm">' + name + '</div>' +
+        '<div class="pb"></div><div class="pf" style="width:' + (33.7 * Math.min(1, pr / goal)).toFixed(2) + 'cqw"></div><div class="pt">' + fmt(Math.min(pr, goal)) + '/' + fmt(goal) + '</div><div class="dv"></div>' + rw(r) + btn + '</div>';
+      const qCard = q => { const pr = C.questProgress(s, q.id), got = !!s.quests.claimed[q.id], done = pr >= q.goal;
+        const btn = got ? '<button class="bt done" disabled>Готово</button>' : done ? '<button class="bt claim" data-qc="' + q.id + '">Забрать</button>' : '<button class="bt go" ' + (q.go ? 'data-qgo="' + q.go + '"' : 'disabled') + '>' + (q.go ? 'Перейти' : 'Идёт') + '</button>';
+        return card(IC[q.key || q.value] || A.i_scroll, q.name, pr, q.goal, q.reward, btn, got); };
+      const AL = CFG.achievements.list, achReady = AL.some(a => C.achClaimable(s, a.id));
+      const QC = CFG.questChests, chestReady = QC.some((c, i) => C.questChestReady(s, i)), canLogin = C.loginAvailable(s, today);
+      const dots = { daily: Q.daily.some(ready) || chestReady, weekly: Q.weekly.some(ready) || Q.ritual.some(ready), ach: achReady || Q.intro.some(ready), login: canLogin };
+      const T = [['daily', 'Ежедневные'], ['weekly', 'Недельные'], ['ach', 'Достижения'], ['login', 'Вход']];
+      let h = '<div class="qs"><div class="tabs">' + T.map(([k, t]) => '<button class="tab' + (k === qsTab ? ' on' : '') + (t.length > 8 ? ' long' : '') + '" data-qt="' + k + '">' + t + (dots[k] ? '<i class="dot"></i>' : '') + '</button>').join('') + '</div>';
+      const left = sec => { const t = Math.max(0, Math.floor(sec)), p = n => String(n).padStart(2, '0'); return (t >= 86400 ? Math.floor(t / 86400) + ' д ' : '') + p(Math.floor(t % 86400 / 3600)) + ':' + p(Math.floor(t % 3600 / 60)) + ':' + p(t % 60); };
+      const now = new Date(), mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((8 - now.getDay()) % 7 || 7));
+      const timer = d => '<div class="grow"></div><div class="timer"><img src="' + M.i_hourglass + '" alt="">Обновятся через ' + left((d - now) / 1000) + '</div>';
+      if (qsTab === 'daily') {
+        const dc = C.dailyClaimedCount(s), n = QC.length, pos = i => 20 + i * 65 / (n - 1);
+        let f = 0; for (let i = 0; i < n; i++) { const lo = i ? QC[i - 1].need : 0; if (dc >= QC[i].need) f = pos(i); else { f = (i ? pos(i - 1) : 0) + (pos(i) - (i ? pos(i - 1) : 0)) * Math.max(0, dc - lo) / (QC[i].need - lo); break; } }
+        const bw = 'calc(100% - 15.2cqw - 1.2cqw)';
+        h += '<div class="board"></div><div class="act"><div class="lb">Выполнено<b>' + dc + '/' + QC[n - 1].need + '</b></div><div class="bar"></div><div class="fill" style="width:calc(' + bw + ' * ' + (f / 100).toFixed(3) + ')"></div>' +
+          QC.map((c, i) => { const o = s.quests.chests[i], r = C.questChestReady(s, i), x = 'calc(15.2cqw + ' + bw + ' * ' + (pos(i) / 100).toFixed(3) + ')';
+            return '<button class="ch' + (o ? ' open' : r ? ' ready' : '') + '" style="left:' + x + ';background-image:url(' + (o ? A.chest_open : A['chest' + Math.min(3, i + 1)]) + ')" data-qch="' + i + '"' + (r ? '' : ' disabled') + '></button><i class="mk" style="left:' + x + '"></i><div class="n" style="left:' + x + '">' + c.need + '</div>'; }).join('') + '</div>';
+        h += '<div class="list">' + Q.daily.map(qCard).join('') + '</div>' + timer(mid);
+      } else if (qsTab === 'weekly') {
+        h += '<div class="board"></div><div class="list">' + Q.weekly.map(qCard).join('') + '</div><div class="sec">Задания регрессии · обновятся после регрессии</div><div class="list">' + Q.ritual.map(qCard).join('') + '</div>' + timer(mon);
+      } else if (qsTab === 'ach') {
+        const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), pts = C.achPoints(s);
+        if (intro.length) h += '<div class="sec">Первые шаги</div><div class="list">' + intro.map(qCard).join('') + '</div>';
+        h += '<div class="sec">Очки достижений: ' + pts + ' · +' + Math.round(pts * CFG.achievements.dmgPerPoint * 100) + '% урона навсегда</div><div class="list">' + AL.map(a => {
+          const t = C.achTier(s, a.id), max = t >= a.goals.length, goal = a.goals[Math.min(t, a.goals.length - 1)], v = C.achValue(s, a), can = C.achClaimable(s, a.id);
+          const btn = max ? '<button class="bt done" disabled>Готово</button>' : can ? '<button class="bt claim" data-qa="' + a.id + '">Забрать</button>' : '<button class="bt go" disabled>Идёт</button>';
+          return card(A.i_cup, a.name + ' <small>' + Math.min(t + (max ? 0 : 1), a.goals.length) + '/' + a.goals.length + '</small>', max ? goal : v, goal, a.reward, btn, max); }).join('') + '</div><div class="grow"></div>';
+      } else {
+        const D = CFG.login.days, idx = C.loginDayIndex(s);
+        h += '<div class="days">' + D.map((r, n) => { const got = n < idx, nw = n === idx && canLogin, k = r.tickets ? 'tickets' : r.crystals ? 'crystals' : Object.keys(r)[0];
+          return '<div class="day' + (got ? ' got' : nw ? ' now' : '') + '"><div class="h">День ' + (n + 1) + '</div>' + rwi(k, r[k]) + (got ? '<i class="ok">✓</i>' : '') + '</div>'; }).join('') + '</div>';
+        h += '<div class="grow"></div><button class="big" data-qlog' + (canLogin ? '' : ' disabled') + '>Забрать</button>' + (canLogin ? '' : '<div class="note">Сегодняшняя награда получена — завтра день ' + Math.min(idx + 1, D.length) + '</div>');
+      }
+      return h + '</div>';
+    }
     // ---------- 0.113: экран Регрессии (ритуала) по макету пользователя — разметка; стили и картинки — src/regress.js ----------
     function regressHtml() {
       const A = window.RG_ART, R = CFG.ritual, ready = C.canRitual(s), souls = ready ? C.ritualSouls(s) : 0, after = { ...s, souls: B.add(s.souls, souls) };
@@ -804,6 +855,15 @@
       else if (d.mkb) { const r = C.marketBuy(s, +d.mkb); if (!r) return; click(); const g = C.marketGood(r.g), a = r.hero && CFG.allies.find(x => x.id === r.hero), pd = r.p && CFG.alchemy.potions.find(x => x.id === r.p);
         toast('Куплено!<small>' + (a ? a.name + (r.isNew ? ' — новый герой' : ' — копия') : pd ? pd.name + ' — ' + pd.desc + ' на ' + Math.round(pd.sec / 60) + ' мин' : g.name + ' ×' + fmt(r.n)) + '</small>'); save(); }
       else if (d.rgback !== undefined) { xBack.click(); return; }
+      else if (d.qt) { click(); qsTab = d.qt; $('xBody').scrollTop = 0; }
+      else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
+      else if (d.qa) { const r = C.claimAch(s, d.qa); if (!r) return; click(); toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); save(); }
+      else if (d.qch) { const r = C.openQuestChest(s, +d.qch); if (!r) return; click(); toast('Сундук открыт<small>' + rewardLine(r) + '</small>'); save(); }
+      else if (d.qlog !== undefined) { const r = C.claimLogin(s, dayKey()); if (!r) return; click(); toast('Награда за вход · день ' + r.day + '<small>' + rewardLine(r.reward) + '</small>'); save(); }
+      else if (d.qgo) { click(); const g = d.qgo;
+        if (g === 'arena') { stack.length = 0; page = null; show(null); return; }
+        if (g === 'portal' || g === 'souls') { openX(g === 'souls' ? 'regress' : g); return; }
+        stack.length = 0; page = null; show(null); if (g === 'up') open('up'); else openOld(g); return; }
       else if (d.mkr !== undefined) { if (!C.marketRefresh(s)) return; click(); save(); }
       else if (d.fgb) { click(); fgBr = d.fgb; }
       else if (d.fgs) { click(); fgSel = d.fgs; }
@@ -840,7 +900,7 @@
     }
     ui2Refresh = refresh;
     // 0.69: доступ для слоя ui3 (экран боя, профиль, настройки)
-    window.U2 = { open, openX, openOld, back, show, click, refresh, press, popBackups, bestSquad,
+    window.U2 = { open, openX, openOld, openQuests, back, show, click, refresh, press, popBackups, bestSquad,
       sec: v => { stack.length = 0; page = null; sec = v; artSel = null; open('sec'); },
       home: () => { stack.length = 0; page = null; },
       get page() { return page; } };
