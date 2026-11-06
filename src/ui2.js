@@ -566,11 +566,11 @@
         return '<div class="flip' + (ri >= hiS ? ' rareS' : '') + tier + (x.isNew ? ' isNew' : ' dup') + (quick ? ' open' : '') + '" data-fl="' + i + '" style="' + rvar(x.rarity) + ';animation-delay:' + (i * 70) + 'ms">' +
           '<div class="back">✦</div><div class="front"><span class="fxBurst"></span><span class="fxShards"></span>' + (A && A.avatar ? '<img src="' + A.avatar + '" alt="">' : '<b>' + (v.icon || '✦') + '</b>') + '<i>' + x.rarity + '</i><span class="nm">' + a.name + '</span>' +
           (x.isNew ? '<em class="nRib">НОВЫЙ</em>' : '') + '<span class="tag" style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'НОВЫЙ' : 'дубликат') + '</span></div></div>'; }).join('') + '</div>' +
-        '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
+        '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick || window.PT_AUTO ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
         '<div class="sfDone" style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="upBtn alt" id="sfAgain" style="width:130px">Ещё раз ×' + n + '</button><button class="upBtn gold" id="sfOk" style="width:130px">Готово</button></div></div>';
       $('sumFx').classList.toggle('ptv', !!window.PT_ART);
-      // 0.90: показ как в Raid: Shadow Legends — по одному герою: билет → круг → луч цвета ранга (нарастает) → вспышка → герой (src/portal.js)
-      if (window.PT_SEQ && !quick) window.PT_SEQ(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
+      // 0.90.1: карты открываются по очереди сами; новые и редкие (S+) — с показом как в Raid (src/portal.js PT_AUTO), дубликаты — простой переворот
+      if (window.PT_AUTO && !quick) window.PT_AUTO(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
         return { rarity: x.rarity, isNew: x.isNew, name: a.name || x.id, role: a.role || '', faction: a.faction || '', art: A.side || A.avatar || A.back || '', artHtml: v.avatarImg || '', icon: v.icon || '✦', rc: RC[x.rarity] || '#b14dff' }; }),
         () => { $('sfStage').querySelectorAll('.flip').forEach(f => f.classList.add('open')); const h = $('flipHint'); if (h) h.textContent = ''; });
       click();

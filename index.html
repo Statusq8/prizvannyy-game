@@ -7598,11 +7598,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         return '<div class="flip' + (ri >= hiS ? ' rareS' : '') + tier + (x.isNew ? ' isNew' : ' dup') + (quick ? ' open' : '') + '" data-fl="' + i + '" style="' + rvar(x.rarity) + ';animation-delay:' + (i * 70) + 'ms">' +
           '<div class="back">✦</div><div class="front"><span class="fxBurst"></span><span class="fxShards"></span>' + (A && A.avatar ? '<img src="' + A.avatar + '" alt="">' : '<b>' + (v.icon || '✦') + '</b>') + '<i>' + x.rarity + '</i><span class="nm">' + a.name + '</span>' +
           (x.isNew ? '<em class="nRib">НОВЫЙ</em>' : '') + '<span class="tag" style="color:' + (x.isNew ? '#6be37a' : '#b9b1c3') + '">' + (x.isNew ? 'НОВЫЙ' : 'дубликат') + '</span></div></div>'; }).join('') + '</div>' +
-        '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
+        '<div class="hint3" style="text-align:center;margin-top:10px" id="flipHint">' + (quick || window.PT_AUTO ? '' : 'Нажимайте на карты, чтобы открыть') + '</div>' +
         '<div class="sfDone" style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="upBtn alt" id="sfAgain" style="width:130px">Ещё раз ×' + n + '</button><button class="upBtn gold" id="sfOk" style="width:130px">Готово</button></div></div>';
       $('sumFx').classList.toggle('ptv', !!window.PT_ART);
-      // 0.90: показ как в Raid: Shadow Legends — по одному герою: билет → круг → луч цвета ранга (нарастает) → вспышка → герой (src/portal.js)
-      if (window.PT_SEQ && !quick) window.PT_SEQ(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
+      // 0.90.1: карты открываются по очереди сами; новые и редкие (S+) — с показом как в Raid (src/portal.js PT_AUTO), дубликаты — простой переворот
+      if (window.PT_AUTO && !quick) window.PT_AUTO(r.map(x => { const a = CFG.allies.find(h => h.id === x.id) || {}, A = HERO_ART[x.id] || {}, v = ALLY_VIS[x.id] || {};
         return { rarity: x.rarity, isNew: x.isNew, name: a.name || x.id, role: a.role || '', faction: a.faction || '', art: A.side || A.avatar || A.back || '', artHtml: v.avatarImg || '', icon: v.icon || '✦', rc: RC[x.rarity] || '#b14dff' }; }),
         () => { $('sfStage').querySelectorAll('.flip').forEach(f => f.classList.add('open')); const h = $('flipHint'); if (h) h.textContent = ''; });
       click();
@@ -9266,7 +9266,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       @keyframes sqBlink { 50% { color: #fff; } }
     `;
     document.head.appendChild(css);
-    let list = [], idx = 0, timers = [], done = null, busy = false;
+    let list = [], idx = 0, timers = [], done = null, busy = false, skipAll = null;
     const T = (f, ms) => timers.push(setTimeout(f, ms));
     const clear = () => { timers.forEach(clearTimeout); timers = []; };
     const cls = (...c) => { ov.className = 'show ' + c.join(' '); };
@@ -9293,11 +9293,28 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     }
     function finish() { clear(); ov.className = ''; const d = done; done = null; d && d(); }
     ov.addEventListener('click', e => {
-      if (e.target.closest('.sqSkip')) { finish(); return; }
+      if (e.target.closest('.sqSkip')) { if (skipAll) skipAll(); else finish(); return; }
       if (busy) { reveal(list[idx]); return; }      // тап во время луча — сразу показать героя
       idx++; play();
     });
-    window.PT_SEQ = (L, cb) => { $('sumFx').appendChild(ov); list = L; idx = 0; done = cb; play(); };
+    window.PT_SEQ = (L, cb) => { $('sumFx').appendChild(ov); list = L; idx = 0; done = cb; ov.querySelector('.sqCnt').style.display = L.length > 1 ? '' : 'none'; play(); };
+    // карты по очереди: дубликат — простой переворот, новый или S+ — показ как в Raid, потом карта открыта
+    let auto = 0;
+    window.PT_AUTO = (L, cb) => {
+      const run = ++auto, cards = () => [...document.querySelectorAll('#sfStage .flip')];
+      let i = 0;
+      const stopAll = () => { auto++; cards().forEach(f => f.classList.add('open')); clear(); ov.className = ''; done = null; cb && cb(); };
+      skipAll = stopAll;
+      function next() {
+        if (run !== auto) return;
+        const c = cards(); if (i >= c.length) { skipAll = null; cb && cb(); return; }
+        const f = c[i], h = L[i]; i++;
+        if (!f || f.classList.contains('open')) { next(); return; }
+        if (h.isNew || R.indexOf(h.rarity) >= R.indexOf('S')) window.PT_SEQ([h], () => { f.classList.add('open'); setTimeout(next, 450); });
+        else { f.classList.add('open'); if (window.U2) window.U2.click(); setTimeout(next, 280); }
+      }
+      setTimeout(next, 600 + L.length * 70);   // после влёта карт
+    };
   })();
 
   // ===================== 0.84: Штаб (прокачка героев) — пакет пользователя Upgrade_UI_Final_v3 (docs/ui/HQ.md, tools/hqprep.py → assets/hq) =====================

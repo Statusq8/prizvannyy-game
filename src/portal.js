@@ -152,7 +152,7 @@
       @keyframes sqBlink { 50% { color: #fff; } }
     `;
     document.head.appendChild(css);
-    let list = [], idx = 0, timers = [], done = null, busy = false;
+    let list = [], idx = 0, timers = [], done = null, busy = false, skipAll = null;
     const T = (f, ms) => timers.push(setTimeout(f, ms));
     const clear = () => { timers.forEach(clearTimeout); timers = []; };
     const cls = (...c) => { ov.className = 'show ' + c.join(' '); };
@@ -179,9 +179,26 @@
     }
     function finish() { clear(); ov.className = ''; const d = done; done = null; d && d(); }
     ov.addEventListener('click', e => {
-      if (e.target.closest('.sqSkip')) { finish(); return; }
+      if (e.target.closest('.sqSkip')) { if (skipAll) skipAll(); else finish(); return; }
       if (busy) { reveal(list[idx]); return; }      // тап во время луча — сразу показать героя
       idx++; play();
     });
-    window.PT_SEQ = (L, cb) => { $('sumFx').appendChild(ov); list = L; idx = 0; done = cb; play(); };
+    window.PT_SEQ = (L, cb) => { $('sumFx').appendChild(ov); list = L; idx = 0; done = cb; ov.querySelector('.sqCnt').style.display = L.length > 1 ? '' : 'none'; play(); };
+    // карты по очереди: дубликат — простой переворот, новый или S+ — показ как в Raid, потом карта открыта
+    let auto = 0;
+    window.PT_AUTO = (L, cb) => {
+      const run = ++auto, cards = () => [...document.querySelectorAll('#sfStage .flip')];
+      let i = 0;
+      const stopAll = () => { auto++; cards().forEach(f => f.classList.add('open')); clear(); ov.className = ''; done = null; cb && cb(); };
+      skipAll = stopAll;
+      function next() {
+        if (run !== auto) return;
+        const c = cards(); if (i >= c.length) { skipAll = null; cb && cb(); return; }
+        const f = c[i], h = L[i]; i++;
+        if (!f || f.classList.contains('open')) { next(); return; }
+        if (h.isNew || R.indexOf(h.rarity) >= R.indexOf('S')) window.PT_SEQ([h], () => { f.classList.add('open'); setTimeout(next, 450); });
+        else { f.classList.add('open'); if (window.U2) window.U2.click(); setTimeout(next, 280); }
+      }
+      setTimeout(next, 600 + L.length * 70);   // после влёта карт
+    };
   })();
