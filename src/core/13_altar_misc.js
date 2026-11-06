@@ -4,8 +4,9 @@
   function trophyName(key) { const [id, k] = key.split(':'), b = CONFIG.biomes.find(x => x.id === id); return k === 'f' ? b.final : b.bosses[+k]; }
   function allTrophies() { const out = []; for (const b of CONFIG.biomes) { b.bosses.forEach((n, i) => out.push(b.id + ':' + i)); out.push(b.id + ':f'); } return out; }
   function trophyBonus(key) { return CONFIG.trophies[key.endsWith(':f') ? 'final' : 'boss']; }
-  function trophyPower(s, kind) { return s.trophies.reduce((t, k) => { const x = trophyBonus(k); return t + (x.kind === kind ? x.per : 0); }, 0); }
+  function trophyPower(s, kind) { if ((CONFIG.disabled || []).includes('trophies')) return 0; return s.trophies.reduce((t, k) => { const x = trophyBonus(k); return t + (x.kind === kind ? x.per : 0); }, 0); }
   function grantTrophy(s, floor, events) {
+    if ((CONFIG.disabled || []).includes('trophies')) return;
     const k = trophyKey(floor);
     if (s.trophies.includes(k)) return null;
     s.trophies.push(k);

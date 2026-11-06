@@ -69,7 +69,7 @@
     const Q = s.quests;
     if (day && Q.day !== day) {
       Q.day = day; Q.dayBase = { ...s.counters }; for (const q of CONFIG.quests.daily) delete Q.claimed[q.id]; Q.chests = {};
-      inboxAdd(s, 'Ежедневный подарок', CONFIG.dailyGift);
+      if (!(CONFIG.disabled || []).includes('dailyGift')) inboxAdd(s, 'Ежедневный подарок', CONFIG.dailyGift);
     }
     if (week && Q.week !== week) { Q.week = week; Q.weekBase = { ...s.counters }; for (const q of CONFIG.quests.weekly) delete Q.claimed[q.id]; }
   }

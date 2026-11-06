@@ -7,7 +7,7 @@
     const rvar = r => '--rc:' + (RC[r] || '#6e6678') + ';--rg:' + (RC[r] || '#6e6678') + '88';
     const SECS = [['up', '⚔', 'Прокачка', '#d6a640'], ['art', '💎', 'Артефакты', '#b14dff'], ['bag', '🎒', 'Сумка', '#3a8fe0'], ['pets', '🐉', 'Питомцы', '#4cbf5a']];
     const MORE = [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['@souls', '👻', 'Души и регрессия'], ['altar', '🕯', 'Алтарь'], ['quests', '📜', 'Задания'],
-      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Резервные копии']];
+      ['season', '🎖', 'Сезон'], ['events', '🏮', 'События'], ['inbox', '📬', 'Награды'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости'], ['stats', '📊', 'Статистика'], ['diary', '📖', 'Дневник'], ['@backup', '💾', 'Резервные копии']];
     let page = null, sec = 'up', artTab = 'got', artSel = null, artN = 1, bagCat = 'all', bagSort = 'rar', bagQ = '', petSel = null, lastHtml = {};
     const stack = [];
     const heroImg = (document.querySelector('#cards .cardIcon img') || {}).src || '';
@@ -88,7 +88,7 @@
       const GR = [['Герои', [['@portal', '🌀', 'Портал'], ['heroes', '🪖', 'Герои и отряд'], ['diary', '📖', 'Дневник']]],
         ['Сила', [['@souls', '👻', 'Души и регрессия'], ['@tree', '✴', 'Дерево навыков'], ['altar', '🕯', 'Алтарь'], ['runes', 'ᚦ', 'Руны'], ['bones', '🦴', 'Кости']]],
         ['Награды', [['quests', '📜', 'Задания'], ['inbox', '📬', 'Почта'], ['@login', '📅', 'Вход 7/30'], ['season', '🎖', 'Сезон'], ['events', '🏮', 'События']]],
-        ['Прочее', [['@shop', '🛒', 'Магазин'], ['@prof', '👤', 'Профиль'], ['@set', '⚙', 'Настройки'], ['@photo', '📷', 'Фоторежим'], ['@backup', '💾', 'Копии']]]];
+        ['Прочее', [['@shop', '🛒', 'Магазин'], ['@prof', '👤', 'Профиль'], ['@set', '⚙', 'Настройки'], ['@backup', '💾', 'Копии']]]];
       for (const [g, list] of GR) h += '<div class="grpT">' + g.toUpperCase() + '</div><div class="mMore">' +
         list.map(([id, ic, nm]) => '<button data-old="' + id + '"><b>' + ic + '</b>' + nm + (navBang[id.replace('@', '')] ? '<i class="bang2">!</i>' : '') + '</button>').join('') + '</div>';
       setHtml('mBody', h);
