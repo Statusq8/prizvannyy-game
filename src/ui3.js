@@ -267,6 +267,7 @@
     function renderProf() {
       $('pfTabs').innerHTML = PT.map(([id, ic, nm]) => '<button data-pt="' + id + '" class="' + (id === pTab ? 'on' : '') + '"><b>' + ic + '</b>' + nm + '</button>').join('');
       const L = C.prestigeLevel(s), a = C.prestigeNeed(L), b = C.prestigeNeed(L + 1), xp = C.prestigeXp(s), p = Math.max(0, Math.min(1, (xp - a) / Math.max(1, b - a)));
+      if (window.PF_ART) { $('pfBody').innerHTML = renderProf2(); return; }   // 0.123: по макету (src/profile.js)
       let h = '';
       if (pTab === 'me') {
         const un = L - s.prestigeClaimed, st = s.stats;
@@ -308,6 +309,50 @@
             return open ? '<button data-chr="' + i + '"><span>▶ ' + nm + '</span><b>смотреть</b></button>' : '<div class="lock"><span>🔒 ' + nm + '<small>' + (f === -1 ? 'после первой регрессии' : 'этаж ' + f) + '</small></span></div>'; }).join('') + '</div>';
       }
       $('pfBody').innerHTML = h;
+    }
+    // 0.123: Профиль по макетам пользователя (docs/ui/PROFILE.md); стили и картинки — src/profile.js
+    function renderProf2() {
+      const P = window.PF_ART, R = window.RG_ART || {}, PT2 = window.PT_ART || {}, st = s.stats;
+      pg.classList.add('pfl');
+      let res = $('pfRes'); if (!res) { res = document.createElement('div'); res.id = 'pfRes'; pg.querySelector('.pgHead').appendChild(res); }
+      res.innerHTML = '<div class="resPill"><img src="' + R.i_crystal + '" alt=""><b>' + fmt(s.crystals | 0) + '</b></div><div class="resPill">' + (PT2.ticket ? '<img src="' + PT2.ticket + '" alt="">' : '<i>🎟</i>') + '<b>' + fmt(s.tickets) + '</b></div>';
+      const im = n => '<img src="' + P[n] + '" alt="">';
+      const T = [['me', 'p_person', 'Игрок'], ['tit', 'p_laurel', 'Титулы'], ['skin', 'p_shirt', 'Облики'], ['st', 'p_bars', 'Статы'], ['chr', 'p_book', 'Хроника']];
+      let h = '<div class="pf"><div class="pTabs">' + T.map(([id, ic, nm]) => '<button class="pTab' + (id === pTab ? ' pOn' : '') + '" data-pt="' + id + '">' + im(ic) + nm + '</button>').join('') + '</div>';
+      const item = (ic, name, sub, btn, lk) => '<div class="pIt' + (lk ? ' lk' : '') + '">' + im(ic) + '<div><b>' + name + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>' + (btn || '') + '</div>';
+      if (pTab === 'me') {
+        h += '<div class="pCard"><div class="pRing"><div class="ava"><img src="' + avatarSrc() + '" alt=""></div><img class="rg" src="' + P.ring + '" alt=""></div>' +
+          '<div class="abs pName">' + esc(prof.name || 'Призванный') + '</div><button class="abs pPen" data-pa="name"></button><i class="abs pSep"></i>' +
+          '<div class="abs pRib">' + (s.title ? esc(s.title) : 'Без титула') + '</div>' +
+          '<button class="abs pB pB1" data-pa="name">' + im('p_pencil') + 'Сменить имя</button><button class="abs pB pB2" data-pa="ava">' + im('p_pic') + 'Сменить аватар</button></div>';
+        const rec = [['p_tower', 'Максимальный этаж', fmt(s.bestFloor)], ['p_hour', 'Время в игре', playTimeTxt(st.playTime)], ['p_skull', 'Побеждено врагов', fmt(st.kills)], ['p_tap', 'Всего тапов', fmt(st.taps)],
+          ['p_boss', 'Побеждено боссов', fmt(st.bossKills)], ['p_vortex', 'Регрессий', fmt(s.rituals)], ['p_starl', 'Получено титулов', s.titles.length + ' / ' + C.allTitles().length], ['p_scroll', 'Очки достижений', fmt(C.achPoints(s))]];
+        h += '<div class="pRec"><div class="pHdr">Рекорды</div><div class="pGrid">' + rec.map(([ic, l, v]) => '<div class="pSt">' + im(ic) + '<small>' + l + '</small><b>' + v + '</b></div>').join('') + '</div></div>';
+      } else if (pTab === 'st') {
+        const row = (ic, l, v) => '<div class="pRow">' + im(ic) + '<span>' + l + '</span><b>' + v + '</b></div>', auto = C.autoDps(s);
+        h += '<div class="pList"><div class="pH2"><span>' + im('p_swords') + 'Бой</span></div>' +
+          row('p_swords', 'Общий DPS', fmt(B.add(liveTapDps, auto))) + row('p_tap', 'Урон от тапа', fmt(C.tapHit(s))) + row('p_claws', 'Авто DPS', fmt(auto)) +
+          row('p_cross', 'Шанс крита', Math.round(C.critChance(s) * 1000) / 10 + '%') + row('p_burst', 'Критический урон', Math.round(C.critMult(s) * 100) + '%') +
+          row('p_coins', 'Золото в минуту', fmt(goldPerMin())) + row('p_soul', 'Души', fmt(s.souls)) + row('p_fast', 'Тапов в секунду (рекорд)', fmt(st.maxTps)) +
+          '<div class="pH2"><span>' + im('p_bars') + 'Прогресс</span></div>' +
+          row('p_skull', 'Побеждено врагов', fmt(st.kills)) + row('p_boss', 'Побеждено боссов', fmt(st.bossKills)) + row('p_tower', 'Лучший этаж', fmt(s.bestFloor)) +
+          row('p_vortex', 'Регрессий', fmt(s.rituals)) + row('p_hour', 'Время в игре', playTimeTxt(st.playTime)) + '</div>';
+      } else if (pTab === 'tit') {
+        h += '<div class="pNote">Бонусы всех полученных титулов действуют всегда. Выбранный — на ленте у портрета.</div><div class="pItems">' + C.allTitles().map(m => {
+          const own = s.titles.includes(m.title), cur = s.title === m.title;
+          return own ? item('p_starl', m.title, titleBonusTxt(m), '<button class="pGo' + (cur ? ' on' : '') + '" data-ti="' + esc(m.title) + '">' + (cur ? 'Выбран' : 'Выбрать') + '</button>')
+            : item('p_lock', m.title, titleBonusTxt(m) + ' · ' + (m.src === 'ritual' ? 'регрессия №' + m.n : 'достижение «' + m.ach.name + '»'), '', true); }).join('') + '</div>';
+      } else if (pTab === 'skin') {
+        h += '<div class="pNote">Облик главного героя меняется с прогрессом сам. Открытые облики — здесь.</div><div class="pItems">' +
+          item('p_shirt', 'Призванный · тёмная сталь', 'начальный облик', '<button class="pGo on" disabled>Сейчас</button>') +
+          (s.skins.includes('eternal') ? item('p_shirt', 'Вечный призванный', 'открыт регрессиями', '<button class="pGo" disabled>Открыт</button>') : item('p_lock', 'Вечный призванный', 'награда за 100-ю регрессию', '', true)) +
+          item('p_lock', 'Новые облики', 'появятся вместе с артом героя', '', true) + '</div>';
+      } else {
+        const best = s.bestFloor;
+        h += '<div class="pNote">Пересмотр сюжетных сцен. Картинки появятся после генерации арта.</div><div class="pItems">' + CHR.map(([f, nm], i) => { const open = f === -1 ? s.rituals > 0 : best >= Math.max(1, f);
+          return open ? item('p_book', nm, f > 0 ? 'этаж ' + f : f === 0 ? 'начало' : 'регрессия', '<button class="pGo" data-chr="' + i + '">Смотреть</button>') : item('p_lock', nm, f === -1 ? 'после первой регрессии' : 'этаж ' + f, '', true); }).join('') + '</div>';
+      }
+      return h + '</div>';
     }
     pg.addEventListener('click', e => {
       const t = e.target.closest('[data-pt]'); if (t) { U.click(); pTab = t.dataset.pt; renderProf(); return; }

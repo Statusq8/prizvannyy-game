@@ -32,3 +32,6 @@ Use the attached mockup as the exact style reference. Game icon sheet, dark fant
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone study room inside the Tower, tall bookshelves on both sides, a large violet stained glass window at the top center, candles and an open book on the left, an astrolabe globe with a violet orb on the right, banners, cracked stone floor at the bottom. Top part detailed, the middle calm and dark for UI panels. No text, no UI.
 ```
+
+## Собрано — 0.123
+Листы → tools/profilecut.py → assets/profile; стили — src/profile.js (#pgProf.pfl); разметка — renderProf2 в src/ui3.js (старые обработчики data-pt/data-pa/data-ti/data-chr те же). Престиж и трофеи убраны; рекорд «Выполнено заданий» → «Очки достижений» (счётчика заданий нет). Титулы, Облики, Хроника — плашки stat во всю ширину с кнопкой.
