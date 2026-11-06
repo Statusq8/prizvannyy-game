@@ -338,3 +338,15 @@
     background: linear-gradient(#ffe08a, #d6a640 50%, #7a5212); border: 2px solid #fff1b8; box-shadow: 0 0 0 1px #000, 0 0 12px #d6a64088; }
   body.clean.oldOpen #panel .claimAll:disabled { background: #2a2234; color: #9a8aa8; border-color: #4e4757; box-shadow: none; }
   body.clean.oldOpen #panel .badge { border-radius: 3px; }
+  /* 0.92: витрина артефактов (как в Крушителях) */
+  .shopBr { margin-bottom: 4px; }
+  .shopHd { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px 6px; font-size: 13px; }
+  .shopHd b { color: #ffe6a0; } .shopHd span { color: #d8c8ec; font-weight: 700; }
+  .shopRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .shopCard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px 6px; border-radius: 8px; text-align: center;
+    background: linear-gradient(#24182f, #120c18); border: 1px solid #6a4a8a; color: #fff; min-height: 150px; }
+  .shopCard .ai { font-size: 30px; line-height: 1.1; }
+  .shopCard .an { font-size: 11px; font-weight: 800; color: #ffe6a0; }
+  .shopCard small { font-size: 10px; color: #cbbbe0; line-height: 1.2; flex: 1; }
+  .shopCard .upBtn { width: 100%; padding: 3px 2px; font-size: 11px; }
+  .shopCard.sold { opacity: .45; justify-content: center; }

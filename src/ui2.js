@@ -219,6 +219,7 @@
       return h;
     }
 
+    function artCan(a, c) { return a.blood ? s.materials.shard >= c : B.gte(s.souls, c); }
     // Артефакты: сетка 4 в ряд, отдельная страница улучшения (×1/×10/×100/MAX)
     function artHtml() {
       if (artSel) {
@@ -228,19 +229,34 @@
           '<div class="detBox" style="' + rvar(lv >= (a.max || 1e9) ? 'S' : 'B') + '"><div class="big">' + a.icon + '</div><h3>' + a.name + '</h3>' +
           '<div class="cmp">Ур. ' + lv + (a.max ? ' / ' + a.max : '') + '</div><p>' + a.desc + '</p>' + (prev ? dpsChange(prev) : '') +
           (c == null ? '<button class="upBtn" disabled style="width:70%;margin-top:10px">Максимум</button>'
-                     : '<button class="upBtn" data-aup="' + a.id + '" style="width:70%;margin-top:10px"' + (B.gte(s.souls, c) ? '' : ' disabled') + '>Улучшить' +
-                       (artN !== 1 ? ' ' + (artN === 'max' ? 'MAX' : '×' + artN) : '') + '<span>👻 ' + fmt(c) + (artN !== 1 ? ' за ур.' : '') + '</span></button>') + '</div>';
+                     : '<button class="upBtn" data-aup="' + a.id + '" style="width:70%;margin-top:10px"' + (artCan(a, c) ? '' : ' disabled') + '>Улучшить' +
+                       (artN !== 1 ? ' ' + (artN === 'max' ? 'MAX' : '×' + artN) : '') + '<span>' + (a.blood ? '🔹 ' : '👻 ') + fmt(c) + (artN !== 1 ? ' за ур.' : '') + '</span></button>') + '</div>';
       }
       const KORD = a => (a.kind || '').replace(/^(all|tap|ally|hero)/, m => ({ all: '0', tap: '1', ally: '2', hero: '3' }[m] || m));
-      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0).sort((x, y) => KORD(x).localeCompare(KORD(y))), not = CFG.artifacts.filter(a => !C.artLevel(s, a.id));
+      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || KORD(x).localeCompare(KORD(y)));
+      // 0.92: витрина как в Крушителях — «Души» и «Кровь» (за осколки)
       let h = '<div class="multRow"><button class="chip' + (artTab === 'got' ? ' on' : '') + '" data-at="got">Полученные (' + got.length + ')</button>' +
-        '<button class="chip' + (artTab === 'not' ? ' on' : '') + '" data-at="not">🔒 Не полученные (' + not.length + ')</button></div>';
-      const fc = C.findCost(s);
-      if (artTab === 'not' && fc != null) h += '<div style="text-align:center;margin-bottom:8px"><button class="upBtn" data-find style="width:auto;padding:4px 16px"' + (B.gte(s.souls, fc) ? '' : ' disabled') + '>Найти артефакт<span>👻 ' + fmt(fc) + '</span></button></div>';
-      h += '<div class="grid4">' + (artTab === 'got' ? got : not).map(a => {
-        const lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), can = c != null && B.gte(s.souls, c);
-        return '<button class="aCell' + (lv ? '' : ' lock') + '" data-art="' + (lv ? a.id : '') + '" style="' + rvar(lv && a.max && lv >= a.max ? 'S' : 'B') + '">' +
-          (lv ? '<span class="lv">Ур. ' + lv + '</span>' : '') + '<span class="ai">' + a.icon + '</span><span class="an">' + (lv ? a.name : a.special ? 'веха Башни' : '???') + '</span>' +
+        '<button class="chip' + (artTab === 'not' ? ' on' : '') + '" data-at="not">⚒ Витрина</button></div>';
+      if (artTab === 'not') {
+        for (const br of ['soul', 'blood']) {
+          const cur = br === 'blood' ? '🔹' : '👻', have = br === 'blood' ? s.materials.shard : s.souls;
+          const bc = C.shopBuyCost(s, br), rc = C.shopRefreshCost(s, br), off = C.shopOffers(s, br);
+          h += '<div class="shopBr"><div class="shopHd"><b>' + (br === 'blood' ? '🩸 Кровавые артефакты' : '👻 Артефакты душ') + '</b><span>' + cur + ' ' + fmt(have) + '</span></div>';
+          if (bc == null) { h += '<p class="hint3" style="text-align:center">Все найдены</p></div>'; continue; }
+          h += '<div class="shopRow">' + off.map((id, i) => {
+            if (!id) return '<div class="shopCard sold"><span class="ai">✔</span><span class="an">Куплено</span></div>';
+            const a = CFG.artifacts.find(x => x.id === id), can = B.gte(have, bc);
+            return '<div class="shopCard"><span class="ai">' + a.icon + '</span><span class="an">' + a.name + '</span><small>' + a.desc + '</small>' +
+              '<button class="upBtn" data-sbuy="' + br + ':' + i + '"' + (can ? '' : ' disabled') + '>Купить<span>' + cur + ' ' + fmt(bc) + '</span></button></div>';
+          }).join('') + '</div>';
+          h += '<div style="text-align:center;margin:6px 0 12px"><button class="upBtn" data-sref="' + br + '" style="width:auto;padding:4px 16px"' + (B.gte(have, rc) ? '' : ' disabled') + '>⟳ Обновить<span>' + cur + ' ' + fmt(rc) + '</span></button></div></div>';
+        }
+        return h;
+      }
+      h += '<div class="grid4">' + got.map(a => {
+        const lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), can = c != null && artCan(a, c);
+        return '<button class="aCell" data-art="' + a.id + '" style="' + rvar(a.max && lv >= a.max ? 'S' : a.blood ? 'SS' : 'B') + '">' +
+          '<span class="lv">Ур. ' + lv + '</span><span class="ai">' + a.icon + '</span><span class="an">' + a.name + '</span>' +
           (can ? '<i class="bang2" style="top:-4px;right:-4px">!</i>' : '') + '</button>';
       }).join('') + '</div>';
       return h;
@@ -399,6 +415,8 @@
         while (k < n && C.upgradeArtifact(s, d.aup)) k++;
         if (k) { save(); toast('Артефакт улучшен<small>+' + k + ' ур.</small>'); }
       }
+      else if (d.sbuy) { const [br, i] = d.sbuy.split(':'); const id = C.shopBuy(s, br, +i); if (id) { click(); const a = CFG.artifacts.find(x => x.id === id); toast('Артефакт куплен!<small>' + a.icon + ' ' + a.name + '</small>'); save(); } }
+      else if (d.sref) { if (C.shopRefresh(s, d.sref)) { click(); save(); } }
       else if (d.find !== undefined) { const id = C.findArtifact(s); if (id) { const a = CFG.artifacts.find(x => x.id === id); toast('Найден артефакт!<small>' + a.icon + ' ' + a.name + '</small>'); save(); } }
       else if (d.item) { click(); popItem(d.item); return; }
       else if (d.bs) { click(); bagSort = d.bs; }
