@@ -108,7 +108,9 @@
       const SECS_ON = SECS.filter(([id]) => id === 'art' ? C.unlockedAt(s, 'artifacts') : id === 'pets' ? C.unlockedAt(s, 'pets') : id === 'bag' ? C.unlockedAt(s, 'bag') : true);
       if (!SECS_ON.some(x => x[0] === sec)) sec = 'up';
       setHtml('sTabs', SECS_ON.map(([id, ic, nm, c]) => '<button data-st="' + id + '" class="' + (id === sec ? 'on' : '') + '" style="--tc:' + c + '"><b>' + ic + '</b>' + nm + '</button>').join(''));
-      const top = sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
+      const top = sec === 'up' && window.HQ_ART ? '<div class="cur d"><i></i>' + (($('tbDps') || {}).textContent || '0') + '</div><div class="cur f"><i></i>' + fmt(C.tapHit(s)) + '</div><div class="cur g"><i></i>' + fmt(s.gold) + '</div>' +
+          '<div class="hqMat"><span><i>' + M.shard.icon + '</i>' + fmt(s.materials.shard) + '</span><span><i>🎟</i>' + fmt(s.tickets) + '</span></div>'
+        : sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
         : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
       setHtml('sTop', top);
       $('sTitle').textContent = sec === 'up' ? 'Герои' : sec === 'art' ? (artSel ? 'Улучшение' : 'Артефакты') : sec === 'bag' ? 'Сумка' : 'Питомцы';
@@ -145,7 +147,10 @@
     function hqHtml() {
       const A = window.HQ_ART, RNr = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
       const QM = [[1, '×1'], [10, '×10'], [100, '×100'], ['max', 'MAX']];
-      let h = '<div class="hqQty"><img src="' + A.nav_qty + '" alt="">' + QM.map(([v], i) => '<button data-ms="' + v + '" class="' + (mult === v ? 'on' : '') + '" style="left:' + (2 + i * 24.2) + '%"></button>').join('') + '</div>';
+      let h = '';
+      let mb = $('hqMult'); if (!mb) { mb = document.createElement('button'); mb.id = 'hqMult'; $('sTitle').parentNode.appendChild(mb);
+        mb.addEventListener('click', () => { click(); const i = (QM.findIndex(x => x[0] === mult) + 1) % QM.length; mult = QM[i][0]; const m = MULTS.find(x => x[0] === mult); if (m) $('multCycle').textContent = m[1]; lastHtml = {}; refresh(); }); }
+      mb.innerHTML = '<b>' + ((QM.find(x => x[0] === mult) || QM[0])[1]) + '</b><i>▼</i>'; mb.style.display = sec === 'up' ? '' : 'none';
       const btn = (key, src) => {
         const t = src.innerHTML, m = /^(.*?)<span>(.*)<\/span>$/.exec(t) || [0, t, ''];
         return '<button class="hqBtn' + (src.disabled ? ' off' : '') + '" data-ub="' + key + '"' + (src.disabled ? ' disabled' : '') + '><img src="' + A[src.disabled ? 'btn_off' : 'btn_up'] + '" alt=""><b>' + m[1] + '</b><span>' + m[2] + '</span></button>';
