@@ -86,7 +86,7 @@
 | `cage.floor` | `3` |
 | `cage.ally` | `"shorokh"` |
 | `cage.taps` | `20` |
-| `cage.name` | `"Клетка с Шорохом"` |
+| `cage.name` | `"Клетка с Тилем"` |
 | `ritual.floor` | `150` |
 | `ritual.soulsBase` | `500` |
 | `ritual.soulsGrowth` | `1.08` |
