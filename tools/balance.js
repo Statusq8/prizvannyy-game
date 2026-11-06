@@ -8,7 +8,7 @@
 const Core = require('../src/core.js'), B = Core.B, CFG = Core.CONFIG, num = x => B.toNum(x);
 const fs = require('fs'), path = require('path');
 
-function bot({ tps = 5, seed = 7, fps = 10, farm = 60 } = {}) {
+function bot({ tps = 5, seed = 7, fps = 10, farm = 60, onManage = null, ritualKind = null } = {}) {
   let sd = seed; const rng = () => { sd = (sd * 1664525 + 1013904223) % 4294967296; return sd / 4294967296; };
   const s = Core.newState({ rng });
   for (const ab of CFG.abilities) Core.setAbilityAuto(s, ab.id, true);
@@ -42,8 +42,9 @@ function bot({ tps = 5, seed = 7, fps = 10, farm = 60 } = {}) {
       }
     }
     // ритуал: открыт и рекорд забега не рос 10 активных минут
+    if (onManage) onManage(s, st);
     if (Core.unlockedAt(s, 'ritual') && Core.canRitual(s) && st.active - st.lastRecordAt > 600) {
-      const r = Core.ritual(s); st.rituals.push({ t: st.t, souls: num(r.souls), start: r.start }); st.lastRecordAt = st.active; st.record = s.maxFloor;
+      const r = Core.ritual(s, ritualKind ? ritualKind(s, st) : 'dark') || Core.ritual(s, 'dark'); st.rituals.push({ t: st.t, souls: num(r.souls), start: r.start, light: !!r.light, record: st.record }); st.lastRecordAt = st.active; st.record = s.maxFloor;
     }
   }
   function note() {
