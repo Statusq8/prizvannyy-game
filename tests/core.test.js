@@ -2540,19 +2540,18 @@ test('вехи Башни: 1000 — герой, 2500 — питомец, 5000 �
 });
 
 // ---------- 0.62: дневник призванного ----------
-test('дневник: победы по видам, страница биома — награда в почту, знаток вида; лор по звёздам; сохраняется', () => {
+test('дневник: победы по видам, страница биома — награда, знаток вида; лор по звёздам; сохраняется', () => {
   const s = C.newState(NOCRIT); s.tapLevel = 1e12;
   const b = CFG.biomes[0], names = C.diaryNames(b);
   for (const n of names.slice(0, -1)) s.bestiary[n] = 1;
   const ev = [];
   for (let f = 1; f <= 50 && !s.diaryPages.length; f++) { reach(s, f); s.enemyIndex = CFG.enemiesPerFloor; C.challengeBoss(s); ev.push(...killCurrent(s)); respawn(s); }
   assert.deepStrictEqual(s.diaryPages, [b.id]);
-  assert.ok(s.inbox.some(x => /Дневник/.test(x.title)));
   assert.ok(ev.some(e => e.type === 'diaryPage'));
-  s.bestiary[b.final] = CFG.diary.master - 1; const e0 = s.essence;        // тысячная победа над видом — эссенция
+  s.bestiary[b.final] = CFG.diary.master - 1; const e0 = s.crystals | 0;        // тысячная победа над видом — 💎 (0.126)
   reach(s, 50); killBoss(s);
   assert.strictEqual(s.bestiary[b.final], CFG.diary.master);
-  assert.strictEqual(s.essence, e0 + CFG.diary.masterReward.essence);
+  assert.strictEqual(s.crystals | 0, e0 + CFG.diary.masterReward.crystals);
   assert.strictEqual(C.loreLevel(s, 'shorokh'), 0); s.heroes.shorokh.stars = 3; assert.strictEqual(C.loreLevel(s, 'shorokh'), 1);
   s.heroes.shorokh.stars = 8; assert.strictEqual(C.loreLevel(s, 'shorokh'), 2); assert.strictEqual(C.loreLevel(s, 'azrael'), -1);
   assert.ok(CFG.allies.every(a => a.story && a.quote));
