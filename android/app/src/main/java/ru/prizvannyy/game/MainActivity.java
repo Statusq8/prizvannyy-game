@@ -74,7 +74,7 @@ public class MainActivity extends Activity {
 
     @Override public void onBackPressed() {
         // «Назад» закрывает окно в игре; если окон нет — сворачивает приложение (не убивает его)
-        web.evaluateJavascript("(function(){try{if(PZ.ui.modal.isOpen){PZ.ui.modal.close();return 1}}catch(e){}return 0})()", v -> {
+        web.evaluateJavascript("(function(){try{return PZ.ui.modal.close()?1:0}catch(e){}return 0})()", v -> {
             if (!"1".equals(v)) moveTaskToBack(true);
         });
     }

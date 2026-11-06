@@ -2,8 +2,8 @@ import groovy.json.JsonSlurper
 
 plugins { id 'com.android.application' }
 
-// Версия берётся из work/version.json (одна версия для веба и APK)
-def ver = new JsonSlurper().parse(file('../../work/version.json')).version
+// Версия — из package.json (одна версия для веба и APK)
+def ver = new JsonSlurper().parse(file('../../package.json')).version
 def parts = ver.tokenize('.').collect { it as int }
 def code = parts[0] * 10000 + parts[1] * 100 + parts[2]
 
@@ -17,18 +17,27 @@ android {
         versionCode code
         versionName ver
     }
+    // Ключ подписи НЕ хранится в репозитории (0.94). Откуда берётся:
+    //  - GitHub Actions: секреты PZ_KEYSTORE_BASE64, PZ_KEYSTORE_PASSWORD, PZ_KEY_PASSWORD (workflow кладёт файл и передаёт путь в PZ_KEYSTORE_PATH);
+    //  - Android Studio: android/local-signing.properties (в .gitignore) с storeFile=, storePassword=, keyPassword=.
+    // Один и тот же ключ для всех сборок — иначе Android не даст поставить обновление поверх и прогресс пропадёт.
+    def lp = new Properties()
+    def lpf = rootProject.file('local-signing.properties')
+    if (lpf.exists()) lpf.withInputStream { lp.load(it) }
+    def ksPath = System.getenv('PZ_KEYSTORE_PATH') ?: lp.getProperty('storeFile')
     signingConfigs {
-        release {
-            // Один и тот же ключ для всех сборок — иначе Android не даст поставить обновление поверх и прогресс пропадёт.
-            storeFile file('../keystore/prizvannyy-release.jks')
-            storePassword System.getenv('PZ_KEYSTORE_PASSWORD') ?: project.findProperty('pzKeystorePassword')
-            keyAlias 'prizvannyy'
-            keyPassword System.getenv('PZ_KEY_PASSWORD') ?: project.findProperty('pzKeyPassword')
+        if (ksPath) {
+            release {
+                storeFile file(ksPath)
+                storePassword System.getenv('PZ_KEYSTORE_PASSWORD') ?: lp.getProperty('storePassword')
+                keyAlias System.getenv('PZ_KEY_ALIAS') ?: lp.getProperty('keyAlias', 'prizvannyy')
+                keyPassword System.getenv('PZ_KEY_PASSWORD') ?: lp.getProperty('keyPassword')
+            }
         }
     }
     buildTypes {
-        release { minifyEnabled false; signingConfig signingConfigs.release }
-        debug { signingConfig signingConfigs.release }
+        // Без ключа release собирается неподписанным (ставить нельзя) — сборка не падает, workflow проверяет ключ заранее.
+        release { minifyEnabled false; if (ksPath) signingConfig signingConfigs.release }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }

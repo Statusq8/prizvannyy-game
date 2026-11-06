@@ -5,3 +5,8 @@ android/app/src/main/assets/index.html
 .gradle/
 __pycache__/
 *.pyc
+
+# ключ подписи и пароли — никогда в репозиторий (0.94)
+*.jks
+*.keystore
+android/local-signing.properties
