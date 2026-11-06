@@ -47,6 +47,8 @@
       #hqMult i { width: 22px; display: grid; place-items: center; font-style: normal; font-size: 11px; color: #2a1a04; background: linear-gradient(#ffe08a, #c98a1a); }
       #hqMult:active { transform: scale(.94); }
       /* карточки */
+      body.hqV1 #pgSec #sBody { padding-left: 0 !important; padding-right: 0 !important; }
+      body.hqV1 #sBody .hqCard { width: 100%; margin-bottom: 2px; grid-template-columns: 104px 1fr 132px; min-height: 120px; padding: 12px 14px 12px 16px; }
       .hqCard { position: relative; display: grid; grid-template-columns: 96px 1fr 128px; align-items: center; gap: 8px; min-height: 112px; margin-bottom: 10px; padding: 10px 12px 10px 14px; box-sizing: border-box;
         background: ${u('card')} center / 100% 100% no-repeat; }
       .hqPt { position: relative; width: 96px; height: 82px; }
