@@ -7315,16 +7315,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const r = C.rankLabel(s.heroRank);
       h += card(HQ_FR[Math.min(8, Math.max(0, (r.rank || 1) - 1))], heroImg ? '<img src="' + heroImg + '" alt="">' : '🗡', '', 'Призванный', null,
         '<div class="ln">Ур. <b>' + fmt(s.tapLevel) + '</b> · ранг ' + RNr[r.rank || 1] + '</div><div class="ln"><i class="dcI">✊</i><b>' + fmt(C.tapHit(s)) + '</b></div>', '', btn('hero', el.buyTap));
-      // 0.100: нанятые — по силе; ненанятые (в том числе после ритуала) — по урону на 1 уровне, сильнейшие сверху:
-      // пролистал и нанял того, кто бьёт сильнее (решение пользователя 06.11)
-      const pw = id => B.log10(B.max(s.allies[id].level > 0 ? C.allyDps(s, id) : B.mul(C.allyDpsAt(id, 1), C.starMult(s, id) * C.evoMult(s, id)), 1e-300));
-      const list = CFG.allies.slice().sort((a, b) => {
-        const ua = s.heroes[a.id].unlocked, ub = s.heroes[b.id].unlocked;
-        if (ua !== ub) return ua ? -1 : 1;
-        const ha = s.allies[a.id].level > 0, hb = s.allies[b.id].level > 0;
-        if (ha !== hb) return ha ? -1 : 1;
-        return pw(b.id) - pw(a.id);
-      });
+      // 0.101 (решение пользователя 06.11): список по возрастанию урона, как в «Крушителях» — сверху слабые, внизу сильные,
+      // ниже всех — «Новый герой» из цепочки. Порядок по силе героя (урон на 1 уровне со звёздами и эволюцией), поэтому
+      // карточки не прыгают при прокачке; после ритуала все открытые на своих местах — листаешь вниз к сильнейшим.
+      const pw = id => B.log10(B.max(B.mul(C.allyDpsAt(id, 1), C.starMult(s, id) * C.evoMult(s, id)), 1e-300));
+      const list = CFG.allies.slice().sort((a, b) => pw(a.id) - pw(b.id));
       for (const a of list) {
         const hh = s.heroes[a.id], lv = s.allies[a.id].level, u = allyUi[a.id];
         // 0.87.1: призванные в портале видны сразу (с кнопкой «Нанять»); стартовые без найма — только если пришли из портала (ответ 7)
