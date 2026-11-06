@@ -27,3 +27,6 @@ Use the attached mockup as the exact style reference. Game icon sheet, dark fant
 ```
 Vertical 2:3 mobile game background, dark fantasy manhwa style: a dark stone library inside the Tower, tall bookshelves on both sides with candles at the top, the middle calm and dark for a big page panel, at the bottom a wooden desk with a big open ancient glowing book in the center, candles on the left, a quill in a violet inkwell on the right. No text, no UI.
 ```
+
+## Собрано — 0.127
+Листы → tools/diarycut.py → assets/diary; стили — src/diary.js; разметка — diaryHtml в src/ui2.js (openX('diary'); openOld('diary') ведёт сюда). Портреты — первый кадр спрайта (window.ENEMY_SPR из enemies.js), остальные — силуэт; медальоны — фон зала с оттенком биома; карточки листаются внутри страницы. Вкладка «Герои» — портрет, раса, цитата (★3), история (★8).

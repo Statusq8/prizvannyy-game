@@ -5,7 +5,7 @@
     const M = window.MK_ART || {}, R = window.RG_ART || {}, P = window.PT_ART || {};
     const back = R.back || P.back, pill = M.pill;
     if (!back || !pill) return;
-    const X = s => ['ptl', 'fgl', 'mkl', 'rgl', 'qsl', 'hsl', 'cll'].map(k => '#pgX.' + k + ' ' + s).join(', ');
+    const X = s => ['ptl', 'fgl', 'mkl', 'rgl', 'qsl', 'hsl', 'cll', 'dyl'].map(k => '#pgX.' + k + ' ' + s).join(', ');
     const css = document.createElement('style');
     css.textContent = `
       ${X('#xTop')} { position: absolute !important; z-index: 6; top: calc(env(safe-area-inset-top) + 8px) !important; right: 8px !important; left: auto !important;
