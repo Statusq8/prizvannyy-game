@@ -97,7 +97,7 @@
         toast('Квест выполнен<small>' + rTxt(q.r) + '</small>'); st.i++; save(); render();
       } else if (k === 'go' && q) {
         U.home();
-        if (q.go === 'up' || q.go === 'art') U.sec(q.go); else if (q.go === 'portal') U.openX('portal'); else if (q.go === 'ritual') U.openX('souls'); else U.show(null);
+        if (q.go === 'up' || q.go === 'art') U.sec(q.go); else if (q.go === 'portal') U.openX('portal'); else if (q.go === 'ritual') U.openX(window.RG_ART ? 'regress' : 'souls'); else U.show(null);
       }
       saveQ(); qHtml = ''; renderQuest();
     });
