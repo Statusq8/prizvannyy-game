@@ -219,7 +219,7 @@
     }
     // Автоатака главного героя (артефакт «Клинок первого призыва»): фиксированная частота, тапы остаются
     if (hasHeroAuto(s) && rule !== 'alliesOnly' && rule !== 'trial') {
-      s.heroAutoAcc += dt * heroAutoTps(s);   // 0.132: меч — 1…10 автотапов/с по уровню
+      s.heroAutoAcc += dt * heroAutoTps(s);   // 0.156: Клинок — 1 удар/с при любом уровне; ульту не заряжает
       while (s.heroAutoAcc >= 1) {
         s.heroAutoAcc -= 1;
         dealDamage(s, tapDamage(s), 'heroAuto', events);

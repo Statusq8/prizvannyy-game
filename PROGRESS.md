@@ -130,4 +130,9 @@
 
 ## 07.11 — тестовая ссылка 0.155
 - index.html вырос до 28 МБ (лимит файла ссылки 20 МБ): `node tools/splitbuild.js` раскладывает сборку в dist/ (index.html + a0.js, a1.js с картинками), публиковать все файлы из dist/. Новая ссылка (slug e9ae32a9-c63e-4f3c-af65-b3459415f2c5): https://claude.ai/artifact/Vre7TeJbiZ8qYEtLTrBoPr
-- APK не собран: GitHub Actions не запускает задачи (биллинг аккаунта).
+- APK: после открытия репозитория (публичный) Actions снова собирают — 0.155 собран.
+
+## 0.156 — исправления механик (задание пользователя, ветка fix/v0.156-mechanics)
+- Криты: база 5%, потолок 50% (было 75%); постоянный шанс/множитель — только артефакты. Крит-пассивки 12 героев заменены (shmyg/beltraks → allyDmg, irene/morrak/noktar → bossDmg, nokt/saya/nyx → tapDmg, nekris → bossTime, veil → gold, malgora/kassian → allDmg); a_crit → bossDmg 0.02, a_tps → tapDmg 0.02.
+- Клинок первого призыва: автоатака всегда 1 удар/с, уровень — только +10% урона героя (heroAutoMaxTps убран); ульту не заряжает.
+- Призыватель c2 «Поток силы»: kind heroAbilityCd, −4%/ур. перезарядки способностей героя; общий предел −80%. 13 сценариев — tests/mechanics.test.js.

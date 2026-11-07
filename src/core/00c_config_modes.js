@@ -90,8 +90,8 @@
           { id: 'a_kill', cat: 'battle', name: 'Истребитель', icon: '⚔', metric: 'kill', goals: geo(100, 3, 15), reward: { tickets: 2 }, bonus: { kind: 'allDmg', per: 0.01 },
             title: { name: 'Истребитель тысяч', bonus: { kind: 'allDmg', per: 0.03 } } },
           { id: 'a_tap', cat: 'battle', name: 'Кулак Башни', icon: '👊', metric: 'tap', goals: geo(500, 3, 15), reward: { tickets: 1 }, bonus: { kind: 'tapDmg', per: 0.02 } },
-          { id: 'a_crit', cat: 'battle', name: 'Меткий глаз', icon: '🎯', metric: 'crits', goals: geo(50, 3, 14), reward: { crystals: 5 }, bonus: { kind: 'critMult', per: 0.02 } },
-          { id: 'a_tps', cat: 'battle', name: 'Шквал', icon: '⚡', metric: 'maxTps', goals: [3, 5, 7, 9, 11, 13, 15, 18, 21, 25], reward: { crystals: 5 }, bonus: { kind: 'critChance', per: 0.001 } },
+          { id: 'a_crit', cat: 'battle', name: 'Меткий глаз', icon: '🎯', metric: 'crits', goals: geo(50, 3, 14), reward: { crystals: 5 }, bonus: { kind: 'bossDmg', per: 0.02 } },   // 0.156: было critMult
+          { id: 'a_tps', cat: 'battle', name: 'Шквал', icon: '⚡', metric: 'maxTps', goals: [3, 5, 7, 9, 11, 13, 15, 18, 21, 25], reward: { crystals: 5 }, bonus: { kind: 'tapDmg', per: 0.02 } },   // 0.156: было critChance
           { id: 'a_boss', cat: 'battle', name: 'Гроза боссов', icon: '👹', metric: 'boss', goals: geo(10, 2.5, 14), reward: { crystals: 10 }, bonus: { kind: 'bossDmg', per: 0.02 },
             title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
           { id: 'a_rare', cat: 'battle', name: 'Охотник за редкими', icon: '💠', metric: 'rare', goals: geo(3, 2.5, 12), reward: { tickets: 2 }, bonus: { kind: 'gold', per: 0.02 } },
