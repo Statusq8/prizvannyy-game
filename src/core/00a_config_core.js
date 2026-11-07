@@ -90,7 +90,7 @@
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     unlockRituals: { tree: 1 },   // 0.145 (решение 07.11): древо «Искры Башни» — после первой регрессии
     disabled: [
-               'altar', 'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
+               'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно

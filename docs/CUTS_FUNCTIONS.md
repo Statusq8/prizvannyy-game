@@ -263,6 +263,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Герой касается первой ветви, она вспыхивает. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Цена (`altar`)
+
+**cut_altar_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a stone altar in crimson light with glowing hero cards lying on it. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Каменный алтарь в багровом свете, на нём лежат светящиеся карточки-копии героев. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_altar_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the cards burn and turn into sparkling magical essence. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Карточки сгорают, превращаясь в сверкающую эссенцию. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_altar_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the essence forms the silhouette of a familiar hero. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Из эссенции складывается силуэт знакомого героя. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)

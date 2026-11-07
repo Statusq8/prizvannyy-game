@@ -659,25 +659,11 @@ test('рецепты: Слеза портала (эссенция → билет
   assert.strictEqual(C.heroTrace(s, 'velma'), false);   // закрытого героя нельзя
 });
 
-test('скрытый герой не выпадает в портале и открывается скрытым рецептом, рецепт повторяемый', () => {
-  const morra = CFG.allies.find(a => a.hidden);
-  assert.ok(morra);
-  const s = C.newState(); s.tickets = 5000; s.pity = { a: -1e9, s: -1e9 };
-  assert.ok(!C.summon(s, 5000).some(x => x.id === morra.id));
-
-  const t = C.newState(NOCRIT);
-  for (const id of morra.recipe) t.heroes[id].copies = 2;
-  const sel = Object.fromEntries(morra.recipe.map(id => [id, 1]));
-  const r1 = C.sacrifice(t, sel);
-  assert.deepStrictEqual(r1.found, [{ id: morra.id, sets: 1, isNew: true }]);
-  assert.strictEqual(t.heroes[morra.id].unlocked, true);
-  assert.strictEqual(t.discovered[morra.id], true);
-  const r2 = C.sacrifice(t, sel);                         // повтор — копия скрытой героини
-  assert.strictEqual(r2.found[0].isNew, false);
-  assert.strictEqual(t.heroes[morra.id].copies, 1);
-  // неполный набор ничего скрытого не даёт
-  for (const id of morra.recipe) t.heroes[id].copies = 1;
-  assert.deepStrictEqual(C.sacrifice(t, { shorokh: 1, kostik: 1 }).found, []);
+test('0.147: скрытых рецептов нет — все герои выпадают в Портале, жертва даёт только эссенцию', () => {
+  assert.strictEqual(CFG.allies.filter(a => a.hidden).length, 0);
+  const s = C.newState(NOCRIT); s.heroes.shorokh.copies = 3;
+  const r = C.sacrifice(s, { shorokh: 3 });
+  assert.ok(r && r.essence > 0); assert.deepStrictEqual(r.found, []);
 });
 
 test('сохранение Алтаря и миграция с 0.7', () => {

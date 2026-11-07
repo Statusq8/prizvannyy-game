@@ -2041,7 +2041,7 @@
           h.recipe.map(id => CFG.allies.find(a => a.id === id).name).join(', ') + '</small></div></div>'
         : '<div class="recipe"><div>??? — скрытый рецепт<small>Говорят, Алтарь откликается, если отдать ему весь первый отряд разом…</small></div></div>';
     }
-    html += alchemyHtml();
+    if (C.unlockedAt(s, 'alchemy')) html += alchemyHtml();   // 0.147: алхимия выключена
     if (html !== altarHtml) { $('altarTab').innerHTML = html; altarHtml = html; }
   }
   // 0.60: алхимия — зелья на время (идёт и офлайн), повтор продлевает до 2 ч
