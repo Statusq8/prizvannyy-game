@@ -508,7 +508,8 @@
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
       $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
       $('pgX').classList.toggle('dyl', !!window.DY_ART && xKind === 'diary');
-      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach' || xKind === 'exp'));   // 0.137: страницы без своего макета — в стиле Настроек
+      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach' || xKind === 'exp' || xKind === 'tree'));   // 0.137: страницы без своего макета — в стиле Настроек
+      if (xKind === 'tree') { aux.style.display = 'none'; $('xTitle').textContent = 'Искры Башни'; setHtml('xTop', resPills([['soul', fmt(s.souls)]])); setHtml('xBody', '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Узлы древа — навсегда, остаются после регрессии. Ветви открываются после 1-й, 2-й и 3-й регрессии.</p></div>' + treeHtml()); return; }
       if (xKind === 'exp') { aux.style.display = 'none'; $('xTitle').textContent = 'Экспедиции'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', expHtml()); return; }
       if (xKind === 'ach') { aux.style.display = 'none'; $('xTitle').textContent = 'Достижения'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', achHtml()); return; }
       if (xKind === 'diary') { aux.style.display = 'none'; $('xTitle').textContent = 'Дневник'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', diaryHtml()); return; }
@@ -993,7 +994,11 @@
                : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', регрессий: ' + s.rituals : '') + '.</p>') +
         '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмная регрессия' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
         (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлая регрессия<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
-      h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
+      return h + treeHtml();
+    }
+    // 0.145: древо «Искры Башни» — отдельный экран openX('tree') (и низ страницы «Души и регрессия»)
+    function treeHtml() {
+      let h = '<div class="secT">Древо «Искры Башни» · за души 👻</div>';
       for (const b of CFG.soulTree) {
         const opn = C.branchOpen(s, b);
         h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ' + (b.rituals === 1 ? 'регрессии' : 'регрессий') + '</small>') + '</div>';

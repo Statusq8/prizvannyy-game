@@ -286,7 +286,7 @@
     return s._pv[kind] || 0;
   }
   function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
-  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime') + passivePower(s, 'bossTime'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + treePower(s, 'bossTime') + passivePower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {

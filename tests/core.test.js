@@ -1107,9 +1107,9 @@ test('дерево душ без критов', () => {
   assert.strictEqual(C.critChance(s), C.critChance(t)); assert.strictEqual(C.critMult(s), C.critMult(t));
 });
 
-test('эффекты дерева: урон героя, союзников, боссы, золото, осколки, уязвимость, перезарядка', () => {
+test('эффекты дерева: урон героя, союзников, боссы, золото, осколки, время на босса, перезарядка', () => {
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
-  s.tree = { fury: 2, spirit: 1, heads: 2, greed: 4, shards: 5, crack: 2, haste: 4 };
+  s.tree = { fury: 2, spirit: 1, heads: 2, greed: 4, shards: 5, grip: 2, haste: 4 };
   assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.6) < 1e-9);
   assert.ok(Math.abs(C.permMult(s, 'ally') / C.permMult(t, 'ally') - 1.3) < 1e-9);
   assert.ok(Math.abs(C.goldMult(s) / C.goldMult(t) - 2) < 1e-9);
@@ -1118,9 +1118,8 @@ test('эффекты дерева: урон героя, союзников, бо
   for (const x of [s, t]) { x.floor = x.maxFloor = 12; C.challengeBoss(x); x.enemy.hp = x.enemy.maxHp = 1e15; }
   const ds = C.tap(s).find(e => e.type === 'hit').dmg, dt = C.tap(t).find(e => e.type === 'hit').dmg;
   assert.ok(Math.abs(ds / dt - 1.6 * 2) < 1e-9);
-  // уязвимость дольше
-  s.enemy.hp = s.enemy.maxHp * 0.4; C.tap(s);
-  assert.strictEqual(s.enemy.vuln, CFG.bossPhases.vulnSec + 2);
+  // 0.145: «Хватка» — +1 с на босса за уровень
+  assert.strictEqual(C.bossTime(s) - C.bossTime(t), 2);
   // перезарядка способности короче
   s.maxFloor = 20; C.useAbility(s, 'flurry');
   assert.ok(Math.abs(s.abilities.flurry.cd - CFG.abilities[0].cooldown * 0.8) < 1e-9);
@@ -2850,4 +2849,12 @@ test('тотемы (0.144): открываются на этаже unlocks.totem
   assert.strictEqual(C.totemCount(s), Math.floor(CFG.unlocks.totems / CFG.biomeFloors));
   assert.ok(C.permMult(s, 'tap') > C.permMult(C.newState(NOCRIT), 'tap'));
   CFG.unlocks = keep;
+});
+
+test('древо «Искры Башни» открывается после первой регрессии; старое «crack» → «grip» (0.145)', () => {
+  const s = C.newState(NOCRIT);
+  assert.strictEqual(C.unlockedAt(s, 'tree'), false);
+  s.rituals = 1; assert.strictEqual(C.unlockedAt(s, 'tree'), true);
+  const d = JSON.parse(C.serialize(s)); d.tree = { crack: 3 };
+  assert.strictEqual(C.deserialize(JSON.stringify(d)).tree.grip, 3);
 });

@@ -190,6 +190,19 @@
         .pg.uni .exP small { font: 400 2.3vw/1.2 Georgia, serif; text-align: center; color: #e6dcf2; }
         .pg.uni .exP.on { border-color: #f6d690; box-shadow: 0 0 10px #f6d690aa; background: #3a2208aa; }
         .pg.uni .exP.busy { opacity: .35; }
+        /* 0.145: древо «Искры Башни» и души */
+        .pg.uni .soulBig { border: 3vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.6vw 1.4vw !important; }
+        .pg.uni .soulBig .n { font: 800 7vw Georgia, serif !important; color: #f6d690 !important; text-shadow: 0 2px 3px #000; }
+        .pg.uni .soulBig p { font: 400 3vw/1.35 Georgia, serif !important; color: #e6dcf2 !important; }
+        .pg.uni .brH { display: flex; align-items: baseline; gap: 2vw; margin: 3vw 1vw 1.4vw; font: 700 3.6vw Georgia, 'Times New Roman', serif; color: #e0b0ff; text-shadow: 0 1px 2px #000, 0 0 8px #a050ff; }
+        .pg.uni .brH small { font: 400 2.8vw Georgia, serif; color: #c8b8dc; }
+        .pg.uni .tNode { border: 3vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.4vw 1vw !important; margin-bottom: 1.2vw !important; }
+        .pg.uni .tNode.lock { opacity: .6; }
+        .pg.uni .tNode .ic { border-radius: 50% !important; border: 0.5vw solid #c8a060 !important; background: radial-gradient(circle at 40% 35%, #5a2a8a, #12061f) !important; }
+        .pg.uni .tNode b { font: 700 3.4vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; }
+        .pg.uni .tNode p { font: 400 2.8vw/1.3 Georgia, serif !important; color: #e6dcf2 !important; }
+        .pg.uni .tNode .upBtn { width: 24vw !important; height: auto !important; min-height: 11vw !important; padding: 1vw !important; line-height: 1.15; font-size: 3vw !important; }
+        .pg.uni .tNode .upBtn span { display: block; font: 700 2.7vw Georgia, serif; color: #ffe8a8; }
         .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
           font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
         .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }

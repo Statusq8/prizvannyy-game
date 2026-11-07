@@ -85,7 +85,7 @@
     // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
     const MORE = [
       ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
-      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')], ['tree', '✴', 'Искры Башни', () => U.openX('tree')],
     ];
     function renderMore() {
       const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');

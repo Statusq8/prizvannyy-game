@@ -85,10 +85,11 @@
     souls: { dpsPerSoul: 0.1 },
     // Регрессия (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
     // 0.74: лесенка открытий функций по рекорду этажа (опрос docs/ui/ANSWERS_UNLOCKS.md, ответ 18). До открытия кнопка скрыта.
-    unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 100, forge: 50, ritual: 150, tree: 200,
+    unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 100, forge: 50, ritual: 150,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000, expedition: 75, map: 30 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
-    disabled: ['tree', 'events', 'season',
+    unlockRituals: { tree: 1 },   // 0.145 (решение 07.11): древо «Искры Башни» — после первой регрессии
+    disabled: ['events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },

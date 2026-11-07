@@ -1789,10 +1789,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     souls: { dpsPerSoul: 0.1 },
     // Регрессия (GDD §7): на этаже 400; каждый следующий — снова достичь 400.
     // 0.74: лесенка открытий функций по рекорду этажа (опрос docs/ui/ANSWERS_UNLOCKS.md, ответ 18). До открытия кнопка скрыта.
-    unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 100, forge: 50, ritual: 150, tree: 200,
+    unlocks: { ult: 5, quests: 5, login: 5, portal: 25, shop: 100, artifacts: 50, pve: 100, runes: 100, forge: 50, ritual: 150,
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000, expedition: 75, map: 30 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
-    disabled: ['tree', 'events', 'season',
+    unlockRituals: { tree: 1 },   // 0.145 (решение 07.11): древо «Искры Башни» — после первой регрессии
+    disabled: ['events', 'season',
                'altar', 'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
@@ -2000,7 +2001,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         { id: 'fury',   name: 'Ярость призванного', icon: '⚔', kind: 'heroDmg',  per: 0.3, cost: 2, growth: 1.3, max: 20, desc: '+30% урона главного героя' },
         { id: 'spirit', name: 'Боевой дух',         icon: '🛡', kind: 'allyDmg',  per: 0.3, cost: 3, growth: 1.3, max: 20, desc: '+30% урона союзников' },
         { id: 'heads',  name: 'Палач',              icon: '🪓', kind: 'bossDmg',  per: 0.5, cost: 5, growth: 1.4, max: 10, desc: '+50% урона по боссам' },
-        { id: 'crack',  name: 'Разлом фаз',         icon: '💥', kind: 'vulnSec',  per: 1,   cost: 8, growth: 1.6, max: 5,  desc: '+1 с уязвимости босса на смене фазы' },
+        { id: 'grip',   name: 'Хватка',             icon: '⏳', kind: 'bossTime', per: 1,   cost: 8, growth: 1.6, max: 5,  desc: '+1 с на босса' },   // 0.145: вместо «Разлома фаз» (фазы выключены)
       ] },
       { id: 'eco', name: 'Ветвь достатка', rituals: 2, nodes: [
         { id: 'greed',  name: 'Жадность',           icon: '◆', kind: 'gold',     per: 0.25, cost: 3, growth: 1.3, max: 20, desc: '+25% золота' },
@@ -3144,7 +3145,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return s._pv[kind] || 0;
   }
   function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
-  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + classPower(s, 'bossTime') + passivePower(s, 'bossTime'); }
+  function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + treePower(s, 'bossTime') + passivePower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
@@ -3300,7 +3301,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые
   function inSquad(s, id) { return !!(s.heroes[id] && s.heroes[id].unlocked && s.allies[id] && s.allies[id].level > 0); }
-  function unlockedAt(s, key) { if (CONFIG.disabled && CONFIG.disabled.includes(key)) return false; const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
+  function unlockedAt(s, key) { if (CONFIG.disabled && CONFIG.disabled.includes(key)) return false; if (CONFIG.unlockRituals && CONFIG.unlockRituals[key] != null) return (s.rituals | 0) >= CONFIG.unlockRituals[key]; const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return B.mul(allyDps(s, id), inSquad(s, id) ? 1 : CONFIG.reserveShare); }
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
@@ -5505,6 +5506,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     s.trial = { week: tri.week, weekBest: tri.weekBest, best: tri.best };
     for (const k in pv.used) if (int(pv.used[k], 0)) s.pve.used[k] = pv.used[k];
     if (!d.tree || typeof d.tree !== 'object') return null;
+    if (d.tree.crack != null && d.tree.grip == null) { d.tree.grip = d.tree.crack; delete d.tree.crack; }   // 0.145
     for (const n of TREE) {
       const lv = d.tree[n.id];
       if (lv === undefined) continue;
@@ -8092,7 +8094,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
       $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
       $('pgX').classList.toggle('dyl', !!window.DY_ART && xKind === 'diary');
-      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach' || xKind === 'exp'));   // 0.137: страницы без своего макета — в стиле Настроек
+      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach' || xKind === 'exp' || xKind === 'tree'));   // 0.137: страницы без своего макета — в стиле Настроек
+      if (xKind === 'tree') { aux.style.display = 'none'; $('xTitle').textContent = 'Искры Башни'; setHtml('xTop', resPills([['soul', fmt(s.souls)]])); setHtml('xBody', '<div class="soulBig"><div class="n">👻 ' + fmt(s.souls) + '</div><p>Узлы древа — навсегда, остаются после регрессии. Ветви открываются после 1-й, 2-й и 3-й регрессии.</p></div>' + treeHtml()); return; }
       if (xKind === 'exp') { aux.style.display = 'none'; $('xTitle').textContent = 'Экспедиции'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', expHtml()); return; }
       if (xKind === 'ach') { aux.style.display = 'none'; $('xTitle').textContent = 'Достижения'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', achHtml()); return; }
       if (xKind === 'diary') { aux.style.display = 'none'; $('xTitle').textContent = 'Дневник'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', diaryHtml()); return; }
@@ -8577,7 +8580,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                : '<p>Откроется на этаже ' + R.floor + '. Сейчас этаж ' + s.maxFloor + ', рекорд ' + s.bestFloor + (s.rituals ? ', регрессий: ' + s.rituals : '') + '.</p>') +
         '<button class="upBtn" data-rit style="width:70%"' + (ready ? '' : ' disabled') + '>' + (ready ? 'Тёмная регрессия' : 'Нужен этаж ' + R.floor) + '<span>бесплатно · 👻 ' + fmt(C.ritualSouls(s)) + '</span></button>' +
         (ready ? '<button class="upBtn" data-ritl style="width:70%;margin-top:6px;background:linear-gradient(#4ad0ff,#1a6ab0)"' + ((s.crystals | 0) >= R.light.crystals ? '' : ' disabled') + '>Светлая регрессия<span>💎 ' + R.light.crystals + ' · 👻 ' + fmt(B.floor(B.mul(C.ritualSouls(s), R.light.mult))) + ' (×' + R.light.mult + ')</span></button>' : '') + '</div>';
-      h += '<div class="secT">Артефакты — в Меню → Артефакты</div>';
+      return h + treeHtml();
+    }
+    // 0.145: древо «Искры Башни» — отдельный экран openX('tree') (и низ страницы «Души и регрессия»)
+    function treeHtml() {
+      let h = '<div class="secT">Древо «Искры Башни» · за души 👻</div>';
       for (const b of CFG.soulTree) {
         const opn = C.branchOpen(s, b);
         h += '<div class="brH">' + b.name + (opn ? '' : '<small>🔒 после ' + b.rituals + ' ' + (b.rituals === 1 ? 'регрессии' : 'регрессий') + '</small>') + '</div>';
@@ -9315,7 +9322,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.143";
+    const VERSION = "0.144";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -11396,6 +11403,19 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         .pg.uni .exP small { font: 400 2.3vw/1.2 Georgia, serif; text-align: center; color: #e6dcf2; }
         .pg.uni .exP.on { border-color: #f6d690; box-shadow: 0 0 10px #f6d690aa; background: #3a2208aa; }
         .pg.uni .exP.busy { opacity: .35; }
+        /* 0.145: древо «Искры Башни» и души */
+        .pg.uni .soulBig { border: 3vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.6vw 1.4vw !important; }
+        .pg.uni .soulBig .n { font: 800 7vw Georgia, serif !important; color: #f6d690 !important; text-shadow: 0 2px 3px #000; }
+        .pg.uni .soulBig p { font: 400 3vw/1.35 Georgia, serif !important; color: #e6dcf2 !important; }
+        .pg.uni .brH { display: flex; align-items: baseline; gap: 2vw; margin: 3vw 1vw 1.4vw; font: 700 3.6vw Georgia, 'Times New Roman', serif; color: #e0b0ff; text-shadow: 0 1px 2px #000, 0 0 8px #a050ff; }
+        .pg.uni .brH small { font: 400 2.8vw Georgia, serif; color: #c8b8dc; }
+        .pg.uni .tNode { border: 3vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.4vw 1vw !important; margin-bottom: 1.2vw !important; }
+        .pg.uni .tNode.lock { opacity: .6; }
+        .pg.uni .tNode .ic { border-radius: 50% !important; border: 0.5vw solid #c8a060 !important; background: radial-gradient(circle at 40% 35%, #5a2a8a, #12061f) !important; }
+        .pg.uni .tNode b { font: 700 3.4vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; }
+        .pg.uni .tNode p { font: 400 2.8vw/1.3 Georgia, serif !important; color: #e6dcf2 !important; }
+        .pg.uni .tNode .upBtn { width: 24vw !important; height: auto !important; min-height: 11vw !important; padding: 1vw !important; line-height: 1.15; font-size: 3vw !important; }
+        .pg.uni .tNode .upBtn span { display: block; font: 700 2.7vw Georgia, serif; color: #ffe8a8; }
         .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
           font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
         .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }
@@ -11623,7 +11643,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
     const MORE = [
       ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
-      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')], ['tree', '✴', 'Искры Башни', () => U.openX('tree')],
     ];
     function renderMore() {
       const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');
@@ -11832,6 +11852,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['w', 'Этаж вдруг украшен фонарями, гремит музыка', [['sys', 'НАЧАЛОСЬ СОБЫТИЕ']]],
         ['l', 'Союзники в смешных шапках', [['Шорох', 'Не спрашивай.']]],
         ['r', 'Герой с подозрением смотрит на фонарь', [['me', 'Праздник. В тюрьме.']]]] },
+      tree: { t: 'Искры', k: 'tree', p: [
+        ['w', 'После регрессии герой стоит в пустом зале, вокруг кружат искры-души', [['sys', 'ОТКРЫТО: ДРЕВО «ИСКРЫ БАШНИ»']]],
+        ['t', 'Искры собираются в светящееся дерево из чистого света, ветви уходят вверх', [['', 'Всё, что Башня забрала, проросло здесь.']]],
+        ['w', 'Герой касается первой ветви, она вспыхивает', [['me', 'В этот раз я начну сильнее.']]]] },
       totems: { t: 'Голоса павших', k: 'totems', p: [
         ['w', 'Зал, где из пола поднимаются каменные идолы с лицами боссов биомов', [['sys', 'ОТКРЫТЫ: ТОТЕМЫ']]],
         ['l', 'Каменное лицо Хранителя Врат открывает светящиеся глаза', [['?', 'Ты победил нас. Теперь мы служим.']]],
@@ -11966,6 +11990,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['.fRoom.cur', 'Здесь ты сейчас. Пройденные этажи можно фармить — награды там меньше.', 0]]],
       ['events', 'Открыты События: временные задачи с особыми наградами.', [CAMP, ...more(2, 'События')]],
       ['mail', 'Открыта Почта: сюда приходят награды.', [CAMP, ...more(1, 'Почта')]],
+      ['tree', 'Открыто древо «Искры Башни»: вечные улучшения за души.', [CAMP, ...more(9, 'Искры Башни'),
+        ['.brH', 'Три ветви: Боевая, Достатка и Тайная. Каждая открывается после новой регрессии.', 0],
+        ['.tNode .upBtn', 'Узлы покупаются за души 👻 и остаются навсегда, даже после регрессии.', 0]]],
       ['totems', 'Открыты Тотемы: каждый пройденный биом оставил тебе тотем — его сила навсегда.', [CAMP, ['.cIsl[data-id="forge"]', 'Тапни по острову Кузницы.', 1],
         ['[data-fgt="runes"]', 'Тотемы лежат во вкладке «Руны». Тапни.', 1],
         ['.totT', 'Тотем — за босса каждого биома. Каждый уровень: +10% всего урона. За 5, 10, 15 и 20 тотемов — ещё ×1,25.', 0]]],

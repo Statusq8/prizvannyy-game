@@ -68,7 +68,6 @@
 | `unlocks.runes` | `100` |
 | `unlocks.forge` | `50` |
 | `unlocks.ritual` | `150` |
-| `unlocks.tree` | `200` |
 | `unlocks.events` | `250` |
 | `unlocks.season` | `250` |
 | `unlocks.altar` | `300` |
@@ -82,7 +81,8 @@
 | `unlocks.bones` | `2000` |
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
-| `disabled` | `["tree","events","season","altar","alchemy","echo","curse","secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","d…` |
+| `unlockRituals.tree` | `1` |
+| `disabled` | `["events","season","altar","alchemy","echo","curse","secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGif…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |

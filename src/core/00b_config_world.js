@@ -94,7 +94,7 @@
         { id: 'fury',   name: 'Ярость призванного', icon: '⚔', kind: 'heroDmg',  per: 0.3, cost: 2, growth: 1.3, max: 20, desc: '+30% урона главного героя' },
         { id: 'spirit', name: 'Боевой дух',         icon: '🛡', kind: 'allyDmg',  per: 0.3, cost: 3, growth: 1.3, max: 20, desc: '+30% урона союзников' },
         { id: 'heads',  name: 'Палач',              icon: '🪓', kind: 'bossDmg',  per: 0.5, cost: 5, growth: 1.4, max: 10, desc: '+50% урона по боссам' },
-        { id: 'crack',  name: 'Разлом фаз',         icon: '💥', kind: 'vulnSec',  per: 1,   cost: 8, growth: 1.6, max: 5,  desc: '+1 с уязвимости босса на смене фазы' },
+        { id: 'grip',   name: 'Хватка',             icon: '⏳', kind: 'bossTime', per: 1,   cost: 8, growth: 1.6, max: 5,  desc: '+1 с на босса' },   // 0.145: вместо «Разлома фаз» (фазы выключены)
       ] },
       { id: 'eco', name: 'Ветвь достатка', rituals: 2, nodes: [
         { id: 'greed',  name: 'Жадность',           icon: '◆', kind: 'gold',     per: 0.25, cost: 3, growth: 1.3, max: 20, desc: '+25% золота' },

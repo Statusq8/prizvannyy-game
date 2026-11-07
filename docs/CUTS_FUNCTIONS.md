@@ -239,6 +239,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Герой с подозрением смотрит на фонарь. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Искры (`tree`)
+
+**cut_tree_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: after a dark ritual the young man stands in an empty hall, sparks of souls swirling around him. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: После регрессии герой стоит в пустом зале, вокруг кружат искры-души. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_tree_2** — размер 1024x1024 (квадрат, крупный план во всю ширину)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the sparks gather into a glowing tree made of pure light, branches reaching upward. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Искры собираются в светящееся дерево из чистого света, ветви уходят вверх. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_tree_3** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man touches the first branch, it flares with light. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой касается первой ветви, она вспыхивает. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)

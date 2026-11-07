@@ -311,6 +311,7 @@
     s.trial = { week: tri.week, weekBest: tri.weekBest, best: tri.best };
     for (const k in pv.used) if (int(pv.used[k], 0)) s.pve.used[k] = pv.used[k];
     if (!d.tree || typeof d.tree !== 'object') return null;
+    if (d.tree.crack != null && d.tree.grip == null) { d.tree.grip = d.tree.crack; delete d.tree.crack; }   // 0.145
     for (const n of TREE) {
       const lv = d.tree[n.id];
       if (lv === undefined) continue;

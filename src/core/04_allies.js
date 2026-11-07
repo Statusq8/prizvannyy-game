@@ -40,7 +40,7 @@
   function allyDps(s, id) { return B.mul(allyDpsAt(id, s.allies[id].level), heroMult(s, id)); }
   // 0.74 (ответы 63–65): в бою только ГГ, бьют ВСЕ нанятые союзники — «отряд» = все нанятые и открытые
   function inSquad(s, id) { return !!(s.heroes[id] && s.heroes[id].unlocked && s.allies[id] && s.allies[id].level > 0); }
-  function unlockedAt(s, key) { if (CONFIG.disabled && CONFIG.disabled.includes(key)) return false; const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
+  function unlockedAt(s, key) { if (CONFIG.disabled && CONFIG.disabled.includes(key)) return false; if (CONFIG.unlockRituals && CONFIG.unlockRituals[key] != null) return (s.rituals | 0) >= CONFIG.unlockRituals[key]; const f = CONFIG.unlocks[key]; return f == null || Math.max(s.bestFloor | 0, s.maxFloor | 0) >= f; }
   // Вклад в общий DPS: отряд — полностью, нанятые резервные — долю, ненанятые — ничего
   function contribDps(s, id) { return B.mul(allyDps(s, id), inSquad(s, id) ? 1 : CONFIG.reserveShare); }
   // Авто-урон в секунду с постоянными множителями (для показа): союзники + автоатака героя
