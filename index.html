@@ -9049,7 +9049,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.137";
+    const VERSION = "0.138";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -11051,6 +11051,27 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         .pg.uni .fRoom .st { font: 400 2.8vw Georgia, serif !important; color: #e0d4ee; }
         .pg.uni .fRoom .zone { font: 700 3.2vw Georgia, serif !important; color: #f6d690 !important; }
         .pg.uni .mapInfo { font: 700 3.6vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; }
+        /* старые вкладки (Награды, События, Сезон, Статистика…) — та же кожа */
+        body.clean.oldOpen #pgOld { height: calc(env(safe-area-inset-top) + 62px) !important; background: #1c033d ${S.bg_top ? 'url("' + S.bg_top + '") center top / 100% auto no-repeat' : ''} !important; box-shadow: 0 2px 10px #000a !important; }
+        body.clean.oldOpen #pgOld .pgHead { background: none !important; border: none !important; box-shadow: none !important; }
+        body.clean.oldOpen #pgOld .backBtn { width: 42px !important; height: 40px !important; padding: 0 !important; border: none !important; box-shadow: none !important; clip-path: none !important;
+          background: ${v('back')} center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; }
+        body.clean.oldOpen #pgOld .backBtn::after, body.clean.oldOpen #pgOld .titlePl::before, body.clean.oldOpen #pgOld .titlePl::after { display: none !important; content: none !important; }
+        body.clean.oldOpen #pgOld .pgHead::after { content: ""; flex: none; width: 42px; }
+        body.clean.oldOpen #pgOld .titlePl { flex: 0 1 min(64vw, 280px); margin: 0 auto; height: 50px; line-height: 50px; padding: 0 18px; box-sizing: border-box; background: ${v('title')} center / 100% 100% no-repeat !important; border: none !important; box-shadow: none !important; clip-path: none !important;
+          font: 800 clamp(15px, 5vw, 21px)/50px Georgia, 'Times New Roman', serif !important; color: #f6dfa6 !important; text-shadow: 0 2px 3px #000, 0 0 10px #a050ff !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        body.clean.oldOpen #panel { top: calc(env(safe-area-inset-top) + 62px) !important; background: ${v('bg_bot')} center bottom / 100% auto no-repeat, linear-gradient(#1c033d, #12022a) !important; font-family: Georgia, 'Times New Roman', serif; }
+        body.clean.oldOpen #panel .secTitle { display: flex; align-items: center; gap: 2.4vw; margin: 3.4vw 0 1.8vw !important; font: 700 3.3vw Georgia, 'Times New Roman', serif !important; letter-spacing: 0 !important; text-transform: none !important; color: #f6d690 !important; text-shadow: 0 1px 2px #000, 0 0 8px #a050ff !important; }
+        body.clean.oldOpen #panel .secTitle::before, body.clean.oldOpen #panel .secTitle::after { content: ""; flex: 1 1 6vw; min-width: 4vw; height: 0.3vw; background: linear-gradient(90deg, #0000, #b070ff 40%, #e0b0ff); }
+        body.clean.oldOpen #panel .secTitle::after { background: linear-gradient(90deg, #e0b0ff, #b070ff 60%, #0000); }
+        body.clean.oldOpen #panel .hRow { border: 2.6vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.4vw 1vw !important; }
+        body.clean.oldOpen #panel .hRow + .hRow { margin-top: 1vw !important; }
+        body.clean.oldOpen #panel .hName { font-family: Georgia, 'Times New Roman', serif; color: #f6d690 !important; text-shadow: 0 1px 2px #000 !important; }
+        body.clean.oldOpen #panel .hSub, body.clean.oldOpen #panel .hint2, body.clean.oldOpen #panel .hint3 { font-family: Georgia, 'Times New Roman', serif; color: #e6dcf2 !important; }
+        body.clean.oldOpen #panel .hBtn, body.clean.oldOpen #panel .pBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; background: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} center / 100% 100% no-repeat !important; font-family: Georgia, 'Times New Roman', serif !important; color: #f3e6d0 !important; text-shadow: 0 1px 2px #000 !important; }
+        body.clean.oldOpen #panel .hBtn.go { background-image: ${A.red ? 'url("' + A.red + '")' : 'none'} !important; color: #fff !important; }
+        body.clean.oldOpen #panel .claimAll { border: none !important; border-radius: 0 !important; box-shadow: none !important; background: ${T.gbtn ? 'url("' + T.gbtn + '")' : 'none'} center / 100% 100% no-repeat !important; font: 800 4.2vw Georgia, 'Times New Roman', serif !important; color: #3a1e00 !important; text-shadow: 0 1px 0 #ffe7a0 !important; }
+        body.clean.oldOpen #panel .claimAll:disabled { filter: grayscale(.9) brightness(.6); }
         .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
           font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
         .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }
