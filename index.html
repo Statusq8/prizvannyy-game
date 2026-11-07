@@ -9048,7 +9048,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.135";
+    const VERSION = "0.136";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -10973,6 +10973,34 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #sysOv .sysBtn:only-child { max-width: 44vw; }
       #sysOv .sysBtn.red { background-image: ${u('red')} !important; color: #fff !important; }
       #sysOv .sysBtn:not(:disabled):active { transform: scale(.96); }
+      /* 0.136: обычные всплывающие окна — та же рамка «Системы», но без глаза и плашки (решение 07.11: окна в одном стиле) */
+      #ui2Pop .box, #modalBox, .askWrap .askBox { position: relative; width: min(84vw, 440px) !important; max-width: none !important; max-height: 86vh; overflow-y: auto; box-sizing: border-box;
+        padding: 4vw 4.4vw 4.4vw !important; border: 5.5vw solid transparent !important; border-image: ${u('win')} 60 stretch !important; border-radius: 0 !important; box-shadow: none !important;
+        background: linear-gradient(#2a1240, #170a28) !important; background-clip: padding-box !important; color: #f3eee8 !important; font-family: Georgia, 'Times New Roman', serif; text-shadow: 0 1px 2px #000; text-align: center; }
+      .askWrap .askBox::before, .askWrap .askBox::after { content: none !important; display: none !important; }
+      #ui2Pop .box .big { width: 21vw; height: 21vw; margin: 0 auto 1vw; display: grid; place-items: center; font-size: 12vw !important; line-height: 1; border-radius: 50%;
+        background: radial-gradient(circle, var(--rg, #b14dff66) 0%, #0000 68%); }
+      #ui2Pop .box .big img { max-width: 100%; max-height: 100%; }
+      #ui2Pop h3, #modalBox h3, .askWrap .askBox #awayTitle { display: flex; align-items: center; justify-content: center; gap: 2vw; margin: 0.6vw 0 2.4vw !important; font: 700 4.4vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; text-shadow: 0 1px 2px #000 !important; }
+      #ui2Pop h3::before, #ui2Pop h3::after, #modalBox h3::before, #modalBox h3::after { content: ""; flex: 1; max-width: 16vw; height: 0.25vw; background: linear-gradient(90deg, #0000, #c8a060); }
+      #ui2Pop h3::after, #modalBox h3::after { background: linear-gradient(90deg, #c8a060, #0000); }
+      #ui2Pop p, #modalBox p, .askWrap .askBox p { font: 400 3.6vw/1.3 Georgia, 'Times New Roman', serif !important; color: #f3eee8 !important; margin: 1vw 0 2.6vw !important; }
+      #ui2Pop .row, .askWrap .askBtns { display: flex; gap: 3vw !important; justify-content: center; flex-wrap: wrap; margin-top: 3vw; }
+      #ui2Pop .row .upBtn, #modalBox .mBtn, .askWrap .mBtn { flex: 1 1 30%; width: auto !important; min-width: 0; max-width: 36vw; height: 11vw !important; min-height: 0 !important; margin: 0 !important; padding: 0 2vw !important;
+        border: none !important; border-radius: 0 !important; box-shadow: none !important; background: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'linear-gradient(#5a3a8a, #2a1a4a)'} center / 100% 100% no-repeat !important;
+        font: 800 3.8vw Georgia, 'Times New Roman', serif !important; color: #f3e6d0 !important; text-shadow: 0 1px 2px #000 !important; }
+      #modalBox .mBtn { max-width: none; margin-top: 2vw !important; width: 100% !important; }
+      #ui2Pop .row .upBtn:not(.alt), .askWrap #awayOk { background-image: ${T.gbtn ? 'url("' + T.gbtn + '")' : 'none'} !important; color: #3a1e00 !important; text-shadow: 0 1px 0 #ffe7a0 !important; }
+      .askWrap #awayOk { width: 60% !important; max-width: none; margin-top: 3vw !important; }
+      #ui2Pop .row .upBtn.red, #modalBox .mBtn.danger, .askWrap .mBtn.danger { background-image: ${u('red')} !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
+      #ui2Pop .row .upBtn:active, #modalBox .mBtn:active, .askWrap .mBtn:active { transform: scale(.96); }
+      #ui2Pop .bakRow { margin: 2vw 0; padding: 2.4vw; border: 1px solid #c8a06055; background: #0006; text-align: left; }
+      #ui2Pop .bakRow b { font: 700 3.4vw Georgia, serif; color: #f6d690; }
+      #ui2Pop .bakRow p { margin: 0.6vw 0 1.6vw !important; font-size: 3.2vw !important; }
+      #ui2Pop .bakRow .upBtn { height: 9vw !important; max-width: none !important; background-image: ${T.gbtn ? 'url("' + T.gbtn + '")' : 'none'} !important; color: #3a1e00 !important; text-shadow: 0 1px 0 #ffe7a0 !important; font: 800 3.4vw Georgia, 'Times New Roman', serif !important; }
+      #ui2Pop .row .upBtn[data-pclose] { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; text-shadow: 0 1px 2px #000 !important; }
+      #ui2Pop.show .box, .askWrap.show .askBox { animation: uWinIn .22s ease-out; }
+      @keyframes uWinIn { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
       /* тост: круглая иконка слева, золотой заголовок, строка ниже */
       body.clean #toast { top: calc(env(safe-area-inset-top) + 58px) !important; width: min(62vw, 340px); min-height: 14vw; max-width: none !important; box-sizing: border-box; padding: 2vw 3vw 2vw 15.5vw !important;
         border: none !important; border-radius: 0 !important; box-shadow: none !important; background: url("${A.chest}") 3.6vw center / 8vw auto no-repeat, url("${A.toast}") center / 100% 100% no-repeat !important;
