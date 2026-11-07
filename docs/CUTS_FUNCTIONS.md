@@ -325,6 +325,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Маленький отряд уходит по туманной тропе между островами. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Карнавал (`season`)
+
+**cut_season_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a tower floor transformed into a dark carnival: masks, lanterns, tents. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Этаж Башни превращается в мрачный карнавал: маски, огни, шатры. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_season_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a fairy girl in a carnival mask sits on top of a tent and waves. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Девушка-фея в маске сидит на шатре и машет герою. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_season_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man adjusts his sword with a confident smirk. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой поправляет меч, усмехается. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Письмо (`mail`)
 
 **cut_mail_1** — размер 1600x900 (широкая, 16:9)

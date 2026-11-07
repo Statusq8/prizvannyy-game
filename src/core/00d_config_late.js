@@ -1,6 +1,7 @@
   // ==== src/core/00d_config_late.js — CONFIG: сезон, события, вход, классы, кости, питомцы, коллекция ====
     season: {
       epoch: '2026-11-02', days: 28,
+      premiumCost: 500,   // 0.146 (решение 07.11): премиум-дорожка пропуска — за 💎 на один сезон
       names: ['Пепельный карнавал', 'Вечная зима'],
       heroes: ['carna', 'yuki'],
       trail: [   // каждое задание считается с момента, когда стало текущим
@@ -39,13 +40,13 @@
       pointsKill: 1, pointsBoss: 10, attempts: 3, fastTime: 25, dungeonLanterns: 60, lanternsPerTier: 4,
       milestones: [                         // по набранным очкам за неделю — награда автоматически в «Награды»
         { at: 200,  reward: { tickets: 2 } }, { at: 600,  reward: { shard: 150 } }, { at: 1200, reward: { heart: 2 } },
-        { at: 2500, reward: { tickets: 5 } }, { at: 5000, reward: { essence: 100, heart: 3 } },
+        { at: 2500, reward: { tickets: 5 } }, { at: 5000, reward: { crystals: 30, heart: 3 } },   // 0.146: эссенция (Алтарь, алхимия выключены) → 💎
       ],
       shop: [                               // обмен 🏮 фонарей, лимит в неделю
         { id: 'tk',  name: '5 билетов',        cost: 120, limit: 4, reward: { tickets: 5 } },
-        { id: 'hr',  name: '2 сердца стража',  cost: 150, limit: 4, reward: { heart: 2 } },
+        { id: 'hr',  name: '2 сердца стража (в осколки)', cost: 150, limit: 4, reward: { heart: 2 } },
         { id: 'sh',  name: '300 осколков',      cost: 80,  limit: 8, reward: { shard: 300 } },
-        { id: 'es',  name: '60 эссенции',       cost: 90,  limit: 4, reward: { essence: 60 } },
+        { id: 'cr',  name: '20 кристаллов',     cost: 90,  limit: 4, reward: { crystals: 20 } },
       ],
     },
     // Центр наград: автоматические выдачи (вехи событий, ежедневный подарок, незабранное по итогам сезона)

@@ -215,6 +215,7 @@
   }
   // Премиум-дорожка: в прототипе включается бесплатно, для проверки (оплаты нет)
   function setPremium(s, on) { s.season.premium = !!on; }
+  function buyPremium(s) { const c = CONFIG.season.premiumCost; if (s.season.premium || (s.crystals | 0) < c) return false; s.crystals -= c; s.season.premium = true; return true; }   // 0.146
   // Догон: ожидаемый уровень = доля прошедших дней сезона × все уровни
   function expectedPassLevel(dayKey) { const S = CONFIG.season, i = seasonInfo(dayKey); return Math.floor(S.passLevels * i.day / S.days); }
   function catchupAvailable(s, dayKey) { return s.season.catchupDay !== dayKey && passLevel(s) < expectedPassLevel(dayKey) && passLevel(s) < CONFIG.season.passLevels; }

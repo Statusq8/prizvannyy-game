@@ -2377,7 +2377,7 @@
     const cu = C.catchupAvailable(s, dayKey());
     html += '<div class="altBtns" style="margin-bottom:6px">' +
       '<button class="hBtn' + (cu ? ' go' : '') + '" data-act="catchup"' + (cu ? '' : ' disabled') + '>Догон +' + S.catchupXp + ' опыта' + (cu ? '' : ' — не нужен') + '</button>' +
-      '<button class="hBtn' + (ss.premium ? ' go' : '') + '" data-act="premium">' + (ss.premium ? 'Премиум включён (тест)' : 'Включить премиум (тест)') + '</button></div>';
+      (ss.premium ? '<button class="hBtn" disabled>Премиум открыт ✓</button>' : '<button class="hBtn go" data-act="premium"' + ((s.crystals | 0) >= S.premiumCost ? '' : ' disabled') + '>Премиум на сезон · 💎 ' + S.premiumCost + '</button>') + '</div>';
     const any = seasonBang() && (() => { for (let l = 1; l <= lv; l++) if (!ss.free[l] || (ss.premium && !ss.paid[l])) return true; return false; })();
     html += '<button class="claimAll" data-act="passAll"' + (any ? '' : ' disabled') + '>' + (any ? 'Забрать награды пропуска' : 'Наград пропуска пока нет') + '</button>';
     html += '<div class="passRow" style="font-size:10px;color:var(--muted);font-weight:800"><span></span><span>БЕСПЛАТНО</span><span>ПРЕМИУМ</span></div>';
@@ -2399,7 +2399,7 @@
       if (r) toast(r.hero ? 'Тропа пройдена!<small>' + CFG.allies.find(a => a.id === r.hero).name + ' присоединяется · 🎭 ' + r.tokens + '</small>' : 'Шаг тропы<small>🎭 ' + r.tokens + ' · опыт ' + r.xp + '</small>');
     } else if (d.act === 'hero') { const id = C.buySeasonHero(s, dk); if (id) toast('Обмен<small>' + CFG.allies.find(a => a.id === id).name + '</small>'); }
     else if (d.act === 'catchup') { if (C.useCatchup(s, dk)) toast('Догон<small>+' + CFG.season.catchupXp + ' опыта пропуска</small>'); }
-    else if (d.act === 'premium') C.setPremium(s, !s.season.premium);
+    else if (d.act === 'premium') { if (!C.buyPremium(s)) { toast('Не хватает 💎<small>нужно ' + CFG.season.premiumCost + '</small>'); return; } toast('Премиум открыт<small>награды премиум-дорожки доступны до конца сезона</small>'); }
     else if (d.act === 'passAll') { const r = C.claimPassAll(s); if (r) toast('Награды пропуска: ' + r.count + '<small>' + seasonReward(r.reward) + '</small>'); }
     else if (d.pass) { const [l, t] = d.pass.split(':'); const r = C.claimPass(s, +l, t); if (r) toast('Уровень ' + l + '<small>' + seasonReward(r) + '</small>'); }
     save(); render();

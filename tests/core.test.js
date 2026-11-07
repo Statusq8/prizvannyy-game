@@ -2858,3 +2858,10 @@ test('древо «Искры Башни» открывается после п�
   const d = JSON.parse(C.serialize(s)); d.tree = { crack: 3 };
   assert.strictEqual(C.deserialize(JSON.stringify(d)).tree.grip, 3);
 });
+
+test('сезон: премиум-дорожка за 💎 (0.146)', () => {
+  const s = C.newState(NOCRIT);
+  s.crystals = CFG.season.premiumCost - 1; assert.strictEqual(C.buyPremium(s), false);
+  s.crystals = CFG.season.premiumCost; assert.ok(C.buyPremium(s)); assert.strictEqual(s.crystals, 0); assert.ok(s.season.premium);
+  assert.strictEqual(C.buyPremium(s), false);
+});

@@ -68,7 +68,7 @@
 | `unlocks.runes` | `100` |
 | `unlocks.forge` | `50` |
 | `unlocks.ritual` | `150` |
-| `unlocks.events` | `250` |
+| `unlocks.events` | `150` |
 | `unlocks.season` | `250` |
 | `unlocks.altar` | `300` |
 | `unlocks.alchemy` | `400` |
@@ -82,7 +82,7 @@
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
 | `unlockRituals.tree` | `1` |
-| `disabled` | `["events","season","altar","alchemy","echo","curse","secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGif…` |
+| `disabled` | `["altar","alchemy","echo","curse","secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGift","transfer","pho…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
@@ -199,7 +199,7 @@
 | `ranks.growth` | `1.07` |
 | `ranks.evoFor` | `{"3":1,"6":2,"9":3}` |
 | `ranks.extra` | `[]` |
-| `season` | список, 18 ключей — см. src/core.js |
+| `season` | список, 19 ключей — см. src/core.js |
 | `events` | список, 9 ключей — см. src/core.js |
 | `dailyGift.tickets` | `1` |
 | `login.days` | `[{"tickets":1},{"crystals":5},{"tickets":1},{"tickets":1},{"crystals":10},{"tickets":2},{"tickets":5,"crystals":30},{"tickets":1},{"crystals":10},{"tickets":…` |
