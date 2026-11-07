@@ -15,7 +15,7 @@
         mods: [
           { id: 'noTap',  name: 'Без тапов',          rule: 'alliesOnly', text: 'тапы не наносят урона — бьёт только отряд' },
           { id: 'tapOnly', name: 'Только тапы',       rule: 'tapOnly',    text: 'отряд не атакует — только удары героя' },
-          { id: 'noUlt',  name: 'Тишина',             rule: 'noUlts',     text: 'ультимейты отряда не срабатывают' },
+          { id: 'noUlt',  name: 'Тишина',             rule: 'noUlts',     text: 'ульта героя не срабатывает' },
           { id: 'hp2',    name: 'Двойная плоть',      hp: 2,              text: 'у врагов ×2 HP' },
           { id: 'fast',   name: 'Спешка',             time: 30,           text: 'всего 30 секунд на всех' },
         ],

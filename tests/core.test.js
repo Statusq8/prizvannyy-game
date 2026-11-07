@@ -2851,3 +2851,11 @@ test('сезон: премиум-дорожка за 💎 (0.146)', () => {
   s.crystals = CFG.season.premiumCost; assert.ok(C.buyPremium(s)); assert.strictEqual(s.crystals, 0); assert.ok(s.season.premium);
   assert.strictEqual(C.buyPremium(s), false);
 });
+
+test('Эхо: «Тишина» блокирует ульту героя (0.149)', () => {
+  const s = C.newState(NOCRIT); s.maxFloor = s.bestFloor = 100;
+  s.mode = { kind: 'echo', rule: 'noUlts' };
+  const id = CFG.abilities[0].id; s.abilities[id].cd = 0;
+  assert.deepStrictEqual(C.useAbility(s, id), []);
+  s.mode = null; assert.ok(C.useAbility(s, id).length || !C.abilityReady(s, id));
+});

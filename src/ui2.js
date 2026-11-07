@@ -1050,6 +1050,12 @@
         '<button class="upBtn" data-m2="endless"' + (!busy && el2 ? '' : ' disabled') + '>Войти</button></div>';
       h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗼</div><div><b>Испытательная башня · ' + tl + '/' + T.attempts + '</b><p>Равные условия: только тапы одной силы, ' + T.time + ' с на стража. Рекорд недели <em>' + s.trial.weekBest + '</em>, за всё время <em>' + s.trial.best + '</em>.</p></div>' +
         '<button class="upBtn" data-m2="trial"' + (!busy && tl ? '' : ' disabled') + '>Войти</button></div>';
+      // 0.149: Эхо Башни — раз в неделю пройденный биом с условием недели
+      const ex = C.unlockedAt(s, 'echo') ? C.echoInfo(s) : null, EC = P.echo;
+      if (ex) { const sh = Math.ceil(C.shardsForBoss(ex.floor) * (ex.won ? EC.repeat.shardMult : EC.first.shardMult) * C.shardMult(s));
+        h += '<div class="pveCard" style="' + rvar('SS') + '"><div class="ic">🔔</div><div><b>Эхо Башни · ' + ex.left + '/' + EC.attempts + '</b><p>' + ex.biome.name + ' · «' + ex.mod.name + '»: ' + ex.mod.text + '. ' + (EC.enemies - 1) + ' врагов + ' + ex.biome.final + ' за ' + ex.time + ' с.</p>' +
+          '<p>Награда: <em>' + (ex.won ? '🔹 ' + fmt(sh) : '🎟 ' + EC.first.tickets + ' · ✦ ' + EC.first.essence + ' · 🔹 ' + fmt(sh) + ' (первая победа недели)') + '</em></p></div>' +
+          '<button class="upBtn" data-m2="echo"' + (!busy && ex.left ? '' : ' disabled') + '>Войти</button></div>'; }
       const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
       const pc = C.personalBuyCost(s);
       h += '<div class="secT">Личные боссы · ' + pl + ' попыт. · ' + P.personal.time + ' с</div>' + (pl ? '' : '<div class="pveCard"><div class="ic">💎</div><div><b>Попытки закончились</b><p>' + P.personal.attempts + ' бесплатно в день' + (pc != null ? ', ещё можно купить: ' + (P.personal.buyMax - (s.pve.used.personalBuy | 0)) : ', куплено максимум — завтра снова') + '</p></div>' + (pc != null ? '<button class="upBtn" data-pbuy' + ((s.crystals | 0) >= pc ? '' : ' disabled') + '>Купить<br>💎 ' + pc + '</button>' : '') + '</div>');

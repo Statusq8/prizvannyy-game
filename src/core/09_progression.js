@@ -147,7 +147,7 @@
   function abilityReady(s, id) { return abilityUnlocked(s, id) && s.abilities[id].cd <= 0; }
   function useAbility(s, id) {
     const def = abilityDef(id);
-    if (!def || !abilityReady(s, id) || modeRule(s) === 'trial') return [];
+    if (!def || !abilityReady(s, id) || modeRule(s) === 'trial' || modeRule(s) === 'noUlts') return [];   // 0.149: «Тишина» — без ульты героя
     const st = s.abilities[id];
     st.cd = def.cooldown * Math.max(0.2, 1 - treePower(s, 'abilityCd')); st.active = def.duration; st.acc = 0;
     return [{ type: 'ability', id, name: def.name }];
