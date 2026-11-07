@@ -99,6 +99,10 @@
     };
     // 0.161: сюжетные сцены (src/cuts_story.js, docs/LORE.md): f — вход на этаж (рекорд ≥ f), w — победа над финальным боссом (bestCleared ≥ w), h — первый призыв героя
     const STORY = window.STORY_CUTS || {};
+    for (const id in STORY) { const sc = STORY[id]; if (!sc.hero) continue;   // сцены героев: имя вместо '@id', заголовок и карточка «ПРИЗВАН»
+      const a = C.CONFIG.allies.find(x => x.id === sc.hero); if (!a) { delete STORY[id]; continue; }
+      sc.t = a.name; for (const pn of sc.p) for (const ln of pn[2]) if (ln[0] === '@' + a.id) ln[0] = a.name;
+      sc.p.push(['w', a.name + ' — ' + a.role, [['sys', 'ПРИЗВАН: ' + a.name.toUpperCase() + ' · ' + a.role + ' · РАНГ ' + a.rarity + ' · ' + a.faction]]]); }
     Object.assign(SCENES, STORY);
     const best = () => Math.max(s.bestFloor | 0, s.maxFloor | 0);
     const met = sc => sc.k ? on(sc.k) : sc.f ? best() >= sc.f : sc.w ? (s.bestCleared | 0) >= sc.w : sc.h ? !!(s.heroes[sc.h] && s.heroes[sc.h].unlocked) : false;
