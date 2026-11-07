@@ -10975,8 +10975,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       #sysOv .sysBtn:not(:disabled):active { transform: scale(.96); }
       /* 0.136: обычные всплывающие окна — та же рамка «Системы», но без глаза и плашки (решение 07.11: окна в одном стиле) */
       #ui2Pop .box, #modalBox, .askWrap .askBox { position: relative; width: min(84vw, 440px) !important; max-width: none !important; max-height: 86vh; overflow-y: auto; box-sizing: border-box;
-        padding: 4vw 4.4vw 4.4vw !important; border: 5.5vw solid transparent !important; border-image: ${u('win')} 60 stretch !important; border-radius: 0 !important; box-shadow: none !important;
-        background: linear-gradient(#2a1240, #170a28) !important; background-clip: padding-box !important; color: #f3eee8 !important; font-family: Georgia, 'Times New Roman', serif; text-shadow: 0 1px 2px #000; text-align: center; }
+        padding: 4vw 4.4vw 4.4vw !important; border: 5.5vw solid transparent !important; border-image: ${u('win')} 60 fill stretch !important; border-radius: 0 !important; box-shadow: none !important;
+        background: none !important; color: #f3eee8 !important; font-family: Georgia, 'Times New Roman', serif; text-shadow: 0 1px 2px #000; text-align: center; }
       .askWrap .askBox::before, .askWrap .askBox::after { content: none !important; display: none !important; }
       #ui2Pop .box .big { width: 21vw; height: 21vw; margin: 0 auto 1vw; display: grid; place-items: center; font-size: 12vw !important; line-height: 1; border-radius: 50%;
         background: radial-gradient(circle, var(--rg, #b14dff66) 0%, #0000 68%); }
