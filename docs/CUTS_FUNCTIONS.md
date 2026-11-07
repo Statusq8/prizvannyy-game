@@ -335,6 +335,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Окно Башни со сбоем. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Проклятие (`curse`)
+
+**cut_curse_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: stairs to a new floor crack with black fissures leaking crimson light. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Лестница на новый этаж покрывается чёрными трещинами, из них сочится багровый свет. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_curse_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a holographic system window glowing red instead of violet (no readable text). No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Окно Башни, красное вместо фиолетового. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_curse_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man smirks but his eyes show worry. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой ухмыляется, но в глазах тревога. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)
