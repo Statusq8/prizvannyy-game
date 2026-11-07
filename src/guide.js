@@ -103,8 +103,10 @@
     const busy = () => document.querySelector('.pg.show, #camp.show, #sysOv.show, #ui2Pop.show, .askWrap.show, #tutOv.show, #proOv, #sumFx.show, #gmPn.show') || document.body.classList.contains('oldOpen');
     setInterval(() => {
       if (cur || busy() || !vis($('cbCamp'))) return;
+      if (window.CUTS && CUTS.playing()) return;
       for (const [k, intro, steps] of GUIDES) {
         if (g.seen[k] || !on(k)) continue;
+        if (window.CUTS && CUTS.pending(k)) return;   // 0.140: сначала кат-сцена этой функции
         cur = { k, intro, steps, i: 0 };
         if (window.U2 && U2.click) U2.click();
         step(); return;
