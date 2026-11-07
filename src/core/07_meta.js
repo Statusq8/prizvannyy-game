@@ -116,9 +116,12 @@
     if (s.pve.day !== dayKey) { s.pve.day = dayKey; s.pve.used = {}; }
   }
   function attemptsLeft(s, key) {
-    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'trial' ? P.trial.attempts : key === 'personal' ? P.personal.attempts : key === 'event' ? CONFIG.events.attempts : P.dailyAttempts;
+    const P = CONFIG.pve, max = key === 'endless' ? P.endless.attempts : key === 'trial' ? P.trial.attempts : key === 'personal' ? P.personal.attempts + (s.pve.used.personalBuy | 0) : key === 'event' ? CONFIG.events.attempts : P.dailyAttempts;
     return Math.max(0, max - (s.pve.used[key] | 0));
   }
+  // 0.143: докупка попыток личных боссов за 💎
+  function personalBuyCost(s) { const P = CONFIG.pve.personal, n = s.pve.used.personalBuy | 0; return n < P.buyMax ? P.buyCost[Math.min(n, P.buyCost.length - 1)] : null; }
+  function buyPersonal(s) { const c = personalBuyCost(s); if (c == null || (s.crystals | 0) < c) return false; s.crystals -= c; s.pve.used.personalBuy = (s.pve.used.personalBuy | 0) + 1; return true; }
   function maxDungeonTier(s) { return Math.max(1, Math.floor(s.bestFloor / CONFIG.pve.tierFloors)); }
   function dungeonDef(id) { return CONFIG.pve.dungeons.find(d => d.id === id); }
   // Фиксированная награда подземелья на уровне tier

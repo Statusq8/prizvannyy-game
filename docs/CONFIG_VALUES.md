@@ -65,7 +65,7 @@
 | `unlocks.shop` | `100` |
 | `unlocks.artifacts` | `50` |
 | `unlocks.pve` | `100` |
-| `unlocks.runes` | `150` |
+| `unlocks.runes` | `100` |
 | `unlocks.forge` | `50` |
 | `unlocks.ritual` | `150` |
 | `unlocks.tree` | `200` |
@@ -81,7 +81,8 @@
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
 | `unlocks.expedition` | `75` |
-| `disabled` | `["pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","bag","tutorial","…` |
+| `unlocks.map` | `30` |
+| `disabled` | `["tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","tro…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
@@ -158,7 +159,7 @@
 | `pve.echo` | `{"attempts":3,"enemies":10,"time":60,"floorPct":0.85,"minFloor":50,"mods":[{"id":"noTap","name":"Без тапов","rule":"alliesOnly","text":"тапы не наносят урона…` |
 | `pve.endless` | `{"attempts":3,"bossEvery":10,"hpMult":3,"bossTime":30,"essenceBase":1,"essenceStep":20}` |
 | `pve.trial` | `{"attempts":3,"tapDmg":1,"hpBase":20,"hpStep":6,"time":15,"essencePer":2}` |
-| `pve.personal` | `{"attempts":3,"time":40,"diffs":[{"id":"normal","name":"Обычный","hp":1,"hearts":1,"shards":2},{"id":"hard","name":"Сложный","hp":5,"hearts":2,"shards":5},{"…` |
+| `pve.personal` | `{"attempts":3,"time":40,"buyMax":7,"buyCost":[10,15,20,30,40,50,60],"diffs":[{"id":"normal","name":"Обычный","hp":1,"hearts":1,"shards":2},{"id":"hard","name…` |
 | `quests` | список, 4 ключей — см. src/core.js |
 | `achievements` | список, 3 ключей — см. src/core.js |
 | `factions` | список, 10 шт. — см. src/core.js |

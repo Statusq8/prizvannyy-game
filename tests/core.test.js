@@ -2827,3 +2827,14 @@ test('экспедиции: доска, условия, герой в одном
   const e = CFG.allies.find(a => a.rarity === 'E'), g = CFG.allies.find(a => a.rarity === 'GOD');
   assert.ok(C.expReqOk(s, { k: 'maxRank', r: 'C' }, [e.id])); assert.ok(!C.expReqOk(s, { k: 'maxRank', r: 'C' }, [e.id, g.id]));
 });
+
+test('личные боссы: 3 бесплатно + до 7 за 💎 в день (0.143)', () => {
+  const s = C.newState(NOCRIT), P = CFG.pve.personal;
+  s.pve.used.personal = P.attempts; assert.strictEqual(C.attemptsLeft(s, 'personal'), 0);
+  s.crystals = 0; assert.strictEqual(C.buyPersonal(s), false);
+  s.crystals = 10000;
+  for (let i = 0; i < P.buyMax; i++) { const c = C.personalBuyCost(s); assert.ok(C.buyPersonal(s)); assert.strictEqual(C.attemptsLeft(s, 'personal'), 1); s.pve.used.personal++; assert.ok(c > 0); }
+  assert.strictEqual(C.personalBuyCost(s), null); assert.strictEqual(C.buyPersonal(s), false);
+  assert.strictEqual(s.crystals, 10000 - P.buyCost.reduce((a, b) => a + b, 0));
+  C.dailyReset(s, 'другой-день'); assert.strictEqual(C.attemptsLeft(s, 'personal'), P.attempts);
+});

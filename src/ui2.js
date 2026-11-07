@@ -1046,7 +1046,8 @@
       h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗼</div><div><b>Испытательная башня · ' + tl + '/' + T.attempts + '</b><p>Равные условия: только тапы одной силы, ' + T.time + ' с на стража. Рекорд недели <em>' + s.trial.weekBest + '</em>, за всё время <em>' + s.trial.best + '</em>.</p></div>' +
         '<button class="upBtn" data-m2="trial"' + (!busy && tl ? '' : ' disabled') + '>Войти</button></div>';
       const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
-      h += '<div class="secT">Личные боссы · ' + pl + '/' + P.personal.attempts + ' в день · ' + P.personal.time + ' с</div>';
+      const pc = C.personalBuyCost(s);
+      h += '<div class="secT">Личные боссы · ' + pl + ' попыт. · ' + P.personal.time + ' с</div>' + (pl ? '' : '<div class="pveCard"><div class="ic">💎</div><div><b>Попытки закончились</b><p>' + P.personal.attempts + ' бесплатно в день' + (pc != null ? ', ещё можно купить: ' + (P.personal.buyMax - (s.pve.used.personalBuy | 0)) : ', куплено максимум — завтра снова') + '</p></div>' + (pc != null ? '<button class="upBtn" data-pbuy' + ((s.crystals | 0) >= pc ? '' : ' disabled') + '>Купить<br>💎 ' + pc + '</button>' : '') + '</div>');
       if (!bosses.length) h += '<div class="pveCard"><div class="ic">?</div><div><b>Пока нет</b><p>Победите финального босса биома (этаж 50) — он станет личным боссом.</p></div></div>';
       for (const b of bosses) h += '<div class="pveCard" style="' + rvar('A') + '"><div class="ic">👹</div><div><b>' + b.name + '</b><p>' + b.biome + ' · этаж ' + b.floor + '</p></div><div></div><div class="diffRow">' +
         P.personal.diffs.map(D => '<button class="upBtn" data-pb2="' + b.id + ':' + D.id + '"' + (!busy && pl ? '' : ' disabled') + '>' + D.name + '<small>' + rewardText(C.personalReward(s, b.floor, D.id)) + '</small></button>').join('') + '</div></div>';
@@ -1119,6 +1120,7 @@
       else if (d.t2) { click(); const [id, dl] = d.t2.split(':'); tier2[id] = (tier2[id] || 1) + +dl; }
       else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }
       else if (d.m2) { click(); goMode(d.m2, {}); }
+      else if (d.pbuy !== undefined) { if (!C.buyPersonal(s)) { toast('Не хватает 💎'); return; } click(); toast('Попытка куплена<small>личный босс ждёт</small>'); save(); }
       else if (d.pb2) { click(); const [id, diff] = d.pb2.split(':'); goMode('personal', { id, diff }); }
       else return;
       render();

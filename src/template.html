@@ -2538,7 +2538,8 @@
       });
       html += '<div class="spare">Всего: ' + parts.join(' ') + '</div>';
     }
-    // тотемы
+    // тотемы (0.143: выключены — раздел не показываем)
+    if (C.unlockedAt(s, 'totems')) {
     const sets = T.collection.filter(n => C.totemCount(s) >= n).length, next = T.collection.find(n => C.totemCount(s) < n);
     html += '<div class="secTitle">ТОТЕМЫ · собрано ' + C.totemCount(s) + '/' + CFG.biomes.length + ' · ' + pct(C.totemMult(s) - 1) + ' всего урона</div>' +
       '<div class="hint2">Тотем биома даёт финальный босс его 50-го этажа (первое прохождение). +' + Math.round(T.dpsPerLevel * 100) + '% урона за каждый уровень тотема' +
@@ -2552,6 +2553,7 @@
         (cst == null ? '<button class="hBtn" disabled>max</button>'
                      : '<button class="hBtn' + (can ? ' go' : '') + '" data-totem="' + b.id + '"' + (can ? '' : ' disabled') + '>⬆ ' + M.shard.icon + fmt(cst.shards) + (cst.hearts ? ' ' + M.heart.icon + cst.hearts : '') + '</button>') + '</div>';
     });
+    }
     if (html !== runesHtml) { $('runesTab').innerHTML = html; runesHtml = html; }
   }
   $('runesTab').addEventListener('click', e => {
