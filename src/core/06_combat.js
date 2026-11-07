@@ -188,7 +188,7 @@
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')));   // готовность копится и сохраняется между врагами
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt);   // готовность копится и сохраняется между врагами
     }
     tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
@@ -212,8 +212,9 @@
       if (st.level <= 0 || rule === 'tapOnly' || rule === 'trial') continue;
       st.cd -= dt;
       if (st.cd <= 0 && s.enemy.alive) {
-        st.cd += a.attackInterval;
-        dealDamage(s, allyDps(s, a.id) * a.attackInterval, a.id, events);
+        const iv = a.attackInterval / (1 + treePower(s, 'allySpeed'));   // 0.156: c2 «Поток силы» — чаще бьют; урон за удар тот же (×скорость уже в permMult)
+        st.cd += iv;
+        dealDamage(s, allyDps(s, a.id) * iv, a.id, events);
       }
       if (!s.enemy.alive) { for (const b of CONFIG.allies) s.allies[b.id].cd = Math.max(s.allies[b.id].cd, 0); return events; }
     }

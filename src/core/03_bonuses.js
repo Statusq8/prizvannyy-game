@@ -292,7 +292,7 @@
   function permMult(s, source) {
     let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + passivePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
     if (source === 'tap' || source === 'heroAuto') m *= (1 + petBonus(s, 'tap')) * (1 + artPower(s, 'tapDmg')) * (1 + passivePower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
-    else m *= (1 + artPower(s, 'allyDmg')) * (1 + passivePower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
+    else m *= (1 + artPower(s, 'allyDmg')) * (1 + passivePower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + treePower(s, 'allySpeed')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
   }
 

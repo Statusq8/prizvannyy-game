@@ -1721,10 +1721,9 @@ test('смена класса раз в день, очки возвращают�
   assert.strictEqual(C.chooseClass(s, 'alch', 'd1'), false);  // вторая — нельзя
   assert.strictEqual(C.bossTime(s), CFG.bossTimeSec);
   assert.strictEqual(C.classFree(s), C.classPoints(s));
-  C.buyClassNode(s, 'c2');
-  s.allies.shorokh.level = 1; s.allies.shorokh.ult = 0;
-  C.tick(s, 1);
-  assert.ok(Math.abs(s.allies.shorokh.ult - 1.04) < 1e-9);
+  const p0 = C.permMult(s, 'ally');
+  C.buyClassNode(s, 'c2');                                    // 0.156: +3% скорости атаки союзников
+  assert.ok(Math.abs(C.permMult(s, 'ally') / p0 - 1.03) < 1e-9);
   assert.ok(C.chooseClass(s, 'alch', 'd2'));
 });
 

@@ -89,7 +89,7 @@
         ] },
         { id: 'caller', name: 'Призыватель', icon: '🔮', desc: 'Сила отряда и ультимейтов', nodes: [
           { id: 'c1', name: 'Узы призыва',     kind: 'allyDmg',   per: 0.25, max: 10, desc: '+25% урона союзников' },
-          { id: 'c2', name: 'Поток силы',      kind: 'ultCharge', per: 0.04, max: 10, desc: '+4% скорости заряда ультимейтов' },
+          { id: 'c2', name: 'Поток силы',      kind: 'allySpeed', per: 0.03, max: 10, desc: '+3% скорости атаки союзников' },
           { id: 'c3', name: 'Стража сна',      kind: 'offlineDmg', per: 0.10, max: 10, desc: '+10% урона отряда офлайн' },
           { id: 'c4', req: 'c1', name: 'Единство',        kind: 'allyDmg',   per: 0.50, max: 10, desc: '+50% урона союзников' },
           { id: 'c5', req: 'c2', name: 'Казна призывателя', kind: 'gold',    per: 0.20, max: 10, desc: '+20% золота' },
