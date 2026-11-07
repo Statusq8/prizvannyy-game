@@ -285,7 +285,7 @@
 
     return s._pv[kind] || 0;
   }
-  function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }
+  function heroAutoTps(s) { return artLevel(s, 'blade') > 0 ? 1 / CONFIG.heroAutoInterval : 0; }   // 0.156: всегда 1 удар/с, уровень Клинка даёт только урон (+10%/ур. через artPower 'heroAuto')
   function bossTime(s) { return CONFIG.bossTimeSec + artPower(s, 'bossTime') + treePower(s, 'bossTime') + passivePower(s, 'bossTime'); }
   function hasHeroAuto(s) { return artLevel(s, 'blade') > 0; }
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
@@ -342,12 +342,12 @@
   // Временный бонус критов от ультимейта (GDD §3: допустим) — не прокачивается, общий предел шанса 50% остаётся
   function critBuffOn(s) { return s.critBuff && s.critBuff.t > 0 ? s.critBuff : null; }
   function critChance(s) {
-    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance') + passivePower(s, 'critChance');
+    let ch = CONFIG.crit.baseChance + artPower(s, 'critChance');   // 0.156: постоянный шанс — только артефакты
     if (s.abilities.hunt.active > 0) ch += abilityDef('hunt').critChanceBonus;
     const cb = critBuffOn(s); if (cb) ch += cb.ch;
     return Math.min(CONFIG.crit.maxChance, ch);
   }
-  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + passivePower(s, 'critMult') + (cb ? cb.dmg : 0); }
+  function critMult(s) { const cb = critBuffOn(s); return CONFIG.crit.baseMult + artPower(s, 'critMult') + (cb ? cb.dmg : 0); }   // 0.156: без пассивок
   function softcap(m, start) { const P = CONFIG.softcap; return m <= start ? m : start * Math.pow(m / start, P.power); }
   function enemyName(floor, index, isBoss) {
     const b = biomeOf(floor);

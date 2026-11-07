@@ -1721,10 +1721,10 @@ test('смена класса раз в день, очки возвращают�
   assert.strictEqual(C.chooseClass(s, 'alch', 'd1'), false);  // вторая — нельзя
   assert.strictEqual(C.bossTime(s), CFG.bossTimeSec);
   assert.strictEqual(C.classFree(s), C.classPoints(s));
-  C.buyClassNode(s, 'c2');
-  s.allies.shorokh.level = 1; s.allies.shorokh.ult = 0;
-  C.tick(s, 1);
-  assert.ok(Math.abs(s.allies.shorokh.ult - 1.04) < 1e-9);
+  C.buyClassNode(s, 'c2');                                  // 0.156: «Поток силы» — −4% перезарядки способностей героя
+  const hunt = CFG.abilities.find(a => a.id === 'hunt'); s.maxFloor = hunt.unlockFloor;
+  C.useAbility(s, 'hunt');
+  assert.ok(Math.abs(s.abilities.hunt.cd - hunt.cooldown * 0.96) < 1e-9);
   assert.ok(C.chooseClass(s, 'alch', 'd2'));
 });
 
@@ -2237,15 +2237,15 @@ test('испытательная башня: 15 с на стража, HP рас�
 });
 
 // ---------- 0.47: временные криты от ультимейтов, защита от неконтролируемого роста ----------
-test('ульта «критов» даёт временный шанс и урон крита; общий предел 75% сохраняется', () => {
+test('ульта «критов» даёт временный шанс и урон крита; общий предел шанса сохраняется', () => {
   const s = C.newState(NOCRIT);
   const a = CFG.allies.find(x => x.id === 'kassian');
   assert.strictEqual(a.ult.kind, 'critBuff'); assert.ok(/крита/.test(C.ultDesc(a)));
   const ch0 = C.critChance(s), m0 = C.critMult(s);
   s.critBuff = { t: 5, ch: a.ult.chance, dmg: a.ult.dmg };
-  assert.ok(Math.abs(C.critChance(s) - Math.min(0.75, ch0 + a.ult.chance)) < 1e-9);
+  assert.ok(Math.abs(C.critChance(s) - Math.min(CFG.crit.maxChance, ch0 + a.ult.chance)) < 1e-9);
   assert.ok(Math.abs(C.critMult(s) - (m0 + a.ult.dmg)) < 1e-9);
-  s.critBuff.ch = 5; assert.strictEqual(C.critChance(s), 0.75);          // предел
+  s.critBuff.ch = 5; assert.strictEqual(C.critChance(s), CFG.crit.maxChance);   // предел 50%
   C.tick(s, 6); assert.strictEqual(C.critChance(s), ch0);               // кончилось
 });
 

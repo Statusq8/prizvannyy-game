@@ -149,7 +149,7 @@
     const def = abilityDef(id);
     if (!def || !abilityReady(s, id) || modeRule(s) === 'trial' || modeRule(s) === 'noUlts') return [];   // 0.149: «Тишина» — без ульты героя
     const st = s.abilities[id];
-    st.cd = def.cooldown * Math.max(0.2, 1 - treePower(s, 'abilityCd')); st.active = def.duration; st.acc = 0;
+    st.cd = def.cooldown * Math.max(0.2, 1 - treePower(s, 'abilityCd') - classPower(s, 'heroAbilityCd')); st.active = def.duration; st.acc = 0;   // 0.156: + «Поток силы» Призывателя; общий предел −80%
     return [{ type: 'ability', id, name: def.name }];
   }
   function setAbilityAuto(s, id, on) { if (abilityDef(id)) s.abilities[id].auto = !!on; }
