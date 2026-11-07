@@ -159,7 +159,7 @@
 | `pve.trial` | `{"attempts":3,"tapDmg":1,"hpBase":20,"hpStep":6,"time":15,"essencePer":2}` |
 | `pve.personal` | `{"attempts":3,"time":40,"diffs":[{"id":"normal","name":"Обычный","hp":1,"hearts":1,"shards":2},{"id":"hard","name":"Сложный","hp":5,"hearts":2,"shards":5},{"…` |
 | `quests` | список, 4 ключей — см. src/core.js |
-| `achievements` | список, 2 ключей — см. src/core.js |
+| `achievements` | список, 3 ключей — см. src/core.js |
 | `factions` | список, 10 шт. — см. src/core.js |
 | `sides.Свет` | `["Свет","Буря","Лёд"]` |
 | `sides.Тьма` | `["Нежить","Кровь","Пламя"]` |

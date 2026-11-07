@@ -256,9 +256,22 @@
 
   // ---------- достижения ----------
   function achDef(id) { return CONFIG.achievements.list.find(a => a.id === id); }
+  // 0.141: цели коллекций по рангам — 1…число героев ранга
+  for (const a of CONFIG.achievements.list) if (!a.goals) { const r = a.metric.slice(4); a.goals = CONFIG.allies.filter(x => x.rarity === r && !x.seasonal).map((x, i) => i + 1); }
+  function achVisible(a) { return a.goals.length > 0 && !(a.need && CONFIG.disabled && CONFIG.disabled.includes(a.need)); }
   function achValue(s, a) {
+    if (a.metric.startsWith('rar:')) { const r = a.metric.slice(4); return CONFIG.allies.filter(x => x.rarity === r && !x.seasonal && s.heroes[x.id].unlocked).length; }
     switch (a.metric) {
-      case 'floor': return s.bestFloor;
+      case 'floor': return Math.max(s.bestFloor | 0, s.maxFloor | 0);
+      case 'tap': return Math.max(s.counters.tap || 0, s.stats.taps || 0);
+      case 'crits': return s.stats.crits || 0;
+      case 'maxTps': return s.stats.maxTps || 0;
+      case 'goldLog': return Math.max(0, Math.floor(B.log10(B.add(s.stats.goldEarned || 0, 1))));
+      case 'soulsLog': return Math.max(0, Math.floor(B.log10(B.add(s.stats.soulsEarned || 0, 1))));
+      case 'playH': return Math.floor((s.stats.playTime || 0) / 3600);
+      case 'heroLv': return +s.tapLevel || 0;
+      case 'allyLv': { let n = 0; for (const id in s.allies) n += s.allies[id].level | 0; return n; }
+      case 'artLv': { let n = 0; for (const id in s.artifacts) n += s.artifacts[id] | 0; return n; }
       case 'heroes': return CONFIG.allies.filter(x => s.heroes[x.id].unlocked).length;
       case 'endless': return s.pve.endlessBest;
       case 'totems': return totemCount(s);
@@ -269,6 +282,8 @@
   function achTier(s, id) { return s.ach[id] | 0; }                  // сколько ступеней уже забрано
   function achClaimable(s, id) { const a = achDef(id), t = achTier(s, id); return t < a.goals.length && achValue(s, a) >= a.goals[t]; }
   function achPoints(s) { let n = 0; for (const id in s.ach) n += s.ach[id]; return n; }
+  // 0.141: бонус достижений — каждая забранная ступень даёт bonus.per своего вида (учитывается вместе с пассивками героев)
+  function achPower(s, kind) { let x = 0; for (const a of CONFIG.achievements.list) if (a.bonus && a.bonus.kind === kind && s.ach[a.id]) x += a.bonus.per * s.ach[a.id]; return x; }
   // ---------- коллекция героев ----------
   function collectionSets(s) {
     return CONFIG.rarities.filter(r => {
@@ -287,7 +302,7 @@
   function claimAch(s, id) {
     const a = achDef(id);
     if (!a || !achClaimable(s, id)) return null;
-    s.ach[id] = achTier(s, id) + 1;
+    s.ach[id] = achTier(s, id) + 1; s._pv = null;
     grant(s, a.reward);
     if (a.title && s.ach[id] === a.goals.length && !s.titles.includes(a.title.name)) { s.titles.push(a.title.name); if (!s.title) s.title = a.title.name; }
     return a.reward;

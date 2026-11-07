@@ -1984,19 +1984,26 @@ test('счётчик редких врагов для ритуального з�
   assert.strictEqual(s.counters.rare, 1);
 });
 
-test('достижения: ступени, награды, очки дают постоянный урон, без критов', () => {
+test('достижения: ступени, награды, у каждого свой бонус за ступень (0.141)', () => {
   const s = C.newState(NOCRIT), t = C.newState(NOCRIT);
+  const kill = CFG.achievements.list.find(x => x.id === 'a_kill');
   assert.strictEqual(C.claimAch(s, 'a_kill'), null);
-  s.counters.kill = 1500;
+  s.counters.kill = kill.goals[1] + 1;
   assert.ok(C.claimAch(s, 'a_kill')); assert.ok(C.claimAch(s, 'a_kill'));
-  assert.strictEqual(C.claimAch(s, 'a_kill'), null);              // 10 000 ещё нет
+  assert.strictEqual(C.claimAch(s, 'a_kill'), null);              // третьей ступени ещё нет
   assert.strictEqual(C.achPoints(s), 2);
-  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - 1.02) < 1e-9);
+  assert.ok(Math.abs(C.achPower(s, 'allDmg') - 2 * kill.bonus.per) < 1e-9);
+  assert.ok(Math.abs(C.permMult(s, 'tap') / C.permMult(t, 'tap') - (1 + 2 * kill.bonus.per)) < 1e-9);
   assert.strictEqual(C.critChance(s), C.critChance(t));
-  s.bestFloor = 1000; s.rituals = 5;
-  const r = C.claimAllAch(s);
-  assert.strictEqual(r.count, 4 + 2);                              // этажи 50/100/400/1000, ритуалы 1/5
-  assert.strictEqual(C.achClaimableCount(s), 0);
+  // бонус золота
+  s.counters.rare = 3; assert.ok(C.claimAch(s, 'a_rare'));
+  assert.ok(C.goldMult(s) > C.goldMult(t));
+  // биомы: пройти 1–2 биома; коллекция ранга E — цели 1…число героев E
+  s.bestFloor = 100; assert.ok(C.claimAch(s, 'a_b1')); assert.ok(C.claimAch(s, 'a_b2')); assert.strictEqual(C.claimAch(s, 'a_b3'), null);
+  const rE = CFG.achievements.list.find(x => x.id === 'a_rE');
+  assert.strictEqual(rE.goals.length, CFG.allies.filter(a => a.rarity === 'E' && !a.seasonal).length);
+  // скрыты, пока функция выключена
+  assert.strictEqual(C.achVisible(CFG.achievements.list.find(x => x.id === 'a_pet')), !CFG.disabled.includes('pets'));
 });
 
 test('сохранение достижений и базы забега; миграция с 0.27', () => {

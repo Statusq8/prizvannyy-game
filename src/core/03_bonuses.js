@@ -280,7 +280,9 @@
     const tier = passiveTier(s, id); return { kind: d[0], name: d[1], tier, value: P.base[d[0]] * (P.rarity[heroRarity(s, id)] || 1) * tier };
   }
   function passivePower(s, kind) {
-    if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; } }
+    if (!s._pv) { s._pv = {}; for (const id in CONFIG.passives.heroes) { const p = heroPassive(s, id); if (p && p.tier) s._pv[p.kind] = (s._pv[p.kind] || 0) + p.value; }
+      for (const k in CONFIG.passives.base) { const v = achPower(s, k); if (v) s._pv[k] = (s._pv[k] || 0) + v; } }   // 0.141: + бонусы достижений
+
     return s._pv[kind] || 0;
   }
   function heroAutoTps(s) { return Math.min(CONFIG.heroAutoMaxTps, artLevel(s, 'blade')); }

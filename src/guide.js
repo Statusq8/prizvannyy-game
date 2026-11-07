@@ -114,3 +114,46 @@
     }, 800);
     window.GUIDE = { reset: () => { g.seen = {}; saveG(); } };
   })();
+
+  // ===================== 0.141: всплывающая плашка «Достижение!» (как в Крушителях) =====================
+  // Ступень выполнена → сверху выезжает плашка с медалью; тап — экран Достижений. Уже готовые на момент запуска — без плашки.
+  (function () {
+    const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+    const L = () => CFG.achievements.list.filter(a => C.achVisible(a));
+    const noted = {}; for (const a of L()) noted[a.id] = C.achClaimable(s, a.id) ? C.achTier(s, a.id) + 1 : C.achTier(s, a.id);
+    const A = window.SY_ART || {};
+    const css = document.createElement('style');
+    css.textContent = `
+      #achPop { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 2vw); z-index: 1300; width: min(84vw, 420px); transform: translate(-50%, -140%); transition: transform .45s cubic-bezier(.2,1.3,.4,1);
+        display: grid; grid-template-columns: 12vw 1fr; gap: 2.4vw; align-items: center; box-sizing: border-box; padding: 0.6vw 2vw; border: 3.4vw solid transparent;
+        border-image: ${A.win ? 'url("' + A.win + '") 60 fill stretch' : 'none'}; background: ${A.win ? 'none' : '#1c033df0'}; cursor: pointer; }
+      #achPop.show { transform: translate(-50%, 0); }
+      #achPop .md { width: 12vw; height: 12vw; display: grid; place-items: center; font-size: 6.4vw; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffe08a, #b8741a 60%, #4a2a08); box-shadow: 0 0 12px #ffd36b; animation: achSpin 1.2s ease-out; }
+      @keyframes achSpin { from { transform: rotateY(540deg) scale(.4); } to { transform: none; } }
+      #achPop b { display: block; font: 800 3vw Georgia, serif; letter-spacing: 0.4vw; color: #f6d690; text-shadow: 0 0 8px #a050ff; }
+      #achPop span { display: block; font: 700 3.6vw Georgia, 'Times New Roman', serif; color: #f3eee8; text-shadow: 0 1px 2px #000; }
+      #achPop small { display: block; font: 400 2.7vw Georgia, serif; color: #8df09a; }
+    `;
+    document.head.appendChild(css);
+    const pop = document.createElement('div'); pop.id = 'achPop'; document.body.appendChild(pop);
+    const q = []; let t = 0;
+    pop.addEventListener('click', e => { e.stopPropagation(); pop.classList.remove('show'); clearTimeout(t); if (window.U2) { U2.click(); if (window.CUTS && CUTS.playing()) return; U2.home && U2.home(); U2.openX('ach'); } });
+    function showNext() {
+      if (pop.classList.contains('show') || !q.length) return;
+      if (document.querySelector('#cutOv.show, #gdOv.show, #proOv')) return;
+      const x = q.length > 3 ? { many: q.splice(0).length } : q.shift();
+      pop.innerHTML = '<div class="md">🏅</div><div><b>ДОСТИЖЕНИЕ!</b>' + (x.many ? '<span>Выполнено ступеней: ' + x.many + '</span><small>тапни, чтобы забрать награды</small>'
+        : '<span>' + x.a.icon + ' ' + x.a.name + ' ' + (ROM[x.t] || x.t + 1) + '</span><small>тапни — забрать награду и бонус</small>') + '</div>';
+      pop.classList.add('show');
+      if (window.U2 && U2.click) U2.click();
+      t = setTimeout(() => { pop.classList.remove('show'); setTimeout(showNext, 600); }, 3200);
+    }
+    setInterval(() => {
+      for (const a of L()) {
+        const tier = C.achTier(s, a.id), ready = C.achClaimable(s, a.id) ? tier + 1 : tier;
+        if (ready > (noted[a.id] | 0)) { noted[a.id] = ready; if (ready > tier) q.push({ a, t: tier }); }
+        else if (ready < (noted[a.id] | 0)) noted[a.id] = ready;
+      }
+      showNext();
+    }, 1000);
+  })();

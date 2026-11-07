@@ -74,32 +74,75 @@
     // очки — постоянный бонус всего урона (отдельная категория, без критов). Числа TBD.
     // 0.53 (ответ 103 + решение пользователя): последняя ступень каждого достижения даёт титул с небольшим постоянным бонусом
     // 0.116: награды достижений — только билеты или 💎
+    // 0.141 (решение 07.11, «как в Крушителях»): отдельный экран, ~60 достижений по разделам, у каждого свой бонус за ступень
+    // (kind — те же виды, что у пассивок героев: allDmg, tapDmg, allyDmg, gold, critChance, critMult, bossDmg, bossTime, shards).
+    // need — ключ функции: пока функция выключена (CONFIG.disabled), достижение скрыто. log — цели и значение в степенях десяти.
     achievements: {
-      dmgPerPoint: 0.01,
-      list: [
-        { id: 'a_kill',   name: 'Истребитель',      icon: '⚔', metric: 'kill',    goals: [100, 1000, 10000, 100000, 1e6],  reward: { tickets: 2 },
-          title: { name: 'Истребитель тысяч', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_boss',   name: 'Гроза боссов',     icon: '👹', metric: 'boss',    goals: [10, 100, 1000, 10000],           reward: { crystals: 10 },
-          title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_floor',  name: 'Восхождение',      icon: '🗼', metric: 'floor',   goals: [50, 100, 400, 1000, 5000, 20000, 100000], reward: { tickets: 2 },
-          title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
-        { id: 'a_ritual', name: 'Жрец регрессии',     icon: '👻', metric: 'ritual',  goals: [1, 5, 20, 100],                  reward: { crystals: 10 },
-          title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
-        { id: 'a_summon', name: 'Призыватель',      icon: '🌀', metric: 'summon',  goals: [10, 100, 1000],                  reward: { crystals: 10 },
-          title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
-        { id: 'a_heroes', name: 'Коллекционер',     icon: '🪖', metric: 'heroes',  goals: [6, 10, 15],                      reward: { tickets: 2 },
-          title: { name: 'Собиратель героев', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_evo',    name: 'Эволюция',         icon: '⬆', metric: 'evolve',  goals: [1, 10, 30],                      reward: { crystals: 10 },
-          title: { name: 'Мастер эволюции', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_bone',   name: 'Костеправ',        icon: '🦴', metric: 'bone',    goals: [1, 50, 500],                     reward: { crystals: 10 },
-          title: { name: 'Костяной мастер', bonus: { kind: 'gold', per: 0.03 } } },
-        { id: 'a_dun',    name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: [10, 100, 1000],                 reward: { tickets: 2 },
-          title: { name: 'Покоритель глубин', bonus: { kind: 'gold', per: 0.03 } } },
-        { id: 'a_wave',   name: 'Бесконечность',    icon: '∞', metric: 'endless', goals: [50, 200, 1000],                   reward: { crystals: 10 },
-          title: { name: 'Бесконечный', bonus: { kind: 'allDmg', per: 0.03 } } },
-        { id: 'a_totem',  name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 20],                      reward: { crystals: 10 },
-          title: { name: 'Хранитель тотемов', bonus: { kind: 'gold', per: 0.03 } } },
-      ],
+      dmgPerPoint: 0,
+      cats: [['battle', 'Бой'], ['tower', 'Башня'], ['heroes', 'Герои'], ['summon', 'Призыв'], ['ritual', 'Регрессия'], ['modes', 'Режимы'], ['biomes', 'Биомы']],
+      list: (() => {
+        const geo = (a, r, n) => { const g = []; let x = a; for (let i = 0; i < n; i++) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(x)) - 1)); g.push(Math.round(x / p) * p); x *= r; } return g; };
+        const T = (n, k) => ({ tickets: n, crystals: k || 0 });
+        const L = [
+          // бой
+          { id: 'a_kill', cat: 'battle', name: 'Истребитель', icon: '⚔', metric: 'kill', goals: geo(100, 3, 15), reward: { tickets: 2 }, bonus: { kind: 'allDmg', per: 0.01 },
+            title: { name: 'Истребитель тысяч', bonus: { kind: 'allDmg', per: 0.03 } } },
+          { id: 'a_tap', cat: 'battle', name: 'Кулак Башни', icon: '👊', metric: 'tap', goals: geo(500, 3, 15), reward: { tickets: 1 }, bonus: { kind: 'tapDmg', per: 0.02 } },
+          { id: 'a_crit', cat: 'battle', name: 'Меткий глаз', icon: '🎯', metric: 'crits', goals: geo(50, 3, 14), reward: { crystals: 5 }, bonus: { kind: 'critMult', per: 0.02 } },
+          { id: 'a_tps', cat: 'battle', name: 'Шквал', icon: '⚡', metric: 'maxTps', goals: [3, 5, 7, 9, 11, 13, 15, 18, 21, 25], reward: { crystals: 5 }, bonus: { kind: 'critChance', per: 0.001 } },
+          { id: 'a_boss', cat: 'battle', name: 'Гроза боссов', icon: '👹', metric: 'boss', goals: geo(10, 2.5, 14), reward: { crystals: 10 }, bonus: { kind: 'bossDmg', per: 0.02 },
+            title: { name: 'Гроза боссов', bonus: { kind: 'allDmg', per: 0.03 } } },
+          { id: 'a_rare', cat: 'battle', name: 'Охотник за редкими', icon: '💠', metric: 'rare', goals: geo(3, 2.5, 12), reward: { tickets: 2 }, bonus: { kind: 'gold', per: 0.02 } },
+          { id: 'a_special', cat: 'battle', name: 'Ярость', icon: '🔥', metric: 'special', goals: geo(10, 3, 12), reward: { tickets: 1 }, bonus: { kind: 'tapDmg', per: 0.02 }, need: 'ult' },
+          // Башня
+          { id: 'a_floor', cat: 'tower', name: 'Восхождение', icon: '🗼', metric: 'floor', goals: [25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 50000, 100000], reward: { tickets: 2 }, bonus: { kind: 'allDmg', per: 0.01 },
+            title: { name: 'Покоритель Башни', bonus: { kind: 'allDmg', per: 0.05 } } },
+          { id: 'a_gold', cat: 'tower', name: 'Казначей', icon: '💰', metric: 'goldLog', log: true, goals: [3, 5, 7, 9, 11, 13, 15, 18, 21, 25, 30, 40, 50, 75, 100], reward: { tickets: 1 }, bonus: { kind: 'gold', per: 0.03 } },
+          { id: 'a_time', cat: 'tower', name: 'Старожил', icon: '🕰', metric: 'playH', goals: [1, 3, 10, 24, 50, 100, 200, 500, 1000], reward: { crystals: 10 }, bonus: { kind: 'gold', per: 0.02 } },
+          { id: 'a_lvl', cat: 'tower', name: 'Сила Призванного', icon: '✊', metric: 'heroLv', goals: geo(25, 2, 14), reward: { tickets: 1 }, bonus: { kind: 'tapDmg', per: 0.02 } },
+          { id: 'a_art', cat: 'tower', name: 'Мастер артефактов', icon: '⚒', metric: 'artLv', goals: geo(10, 2, 12), reward: { crystals: 5 }, bonus: { kind: 'allDmg', per: 0.01 }, need: 'forge' },
+          // герои
+          { id: 'a_heroes', cat: 'heroes', name: 'Коллекционер', icon: '🪖', metric: 'heroes', goals: [5, 8, 12, 16, 20, 25, 30, 35, 40, 45, 52], reward: { tickets: 2 }, bonus: { kind: 'allyDmg', per: 0.02 },
+            title: { name: 'Собиратель героев', bonus: { kind: 'allDmg', per: 0.03 } } },
+          { id: 'a_allyLv', cat: 'heroes', name: 'Наставник', icon: '📈', metric: 'allyLv', goals: geo(50, 2, 14), reward: { tickets: 1 }, bonus: { kind: 'allyDmg', per: 0.02 } },
+          { id: 'a_star', cat: 'heroes', name: 'Звездочёт', icon: '⭐', metric: 'star', goals: geo(5, 2, 12), reward: { crystals: 5 }, bonus: { kind: 'allyDmg', per: 0.02 } },
+          { id: 'a_rank', cat: 'heroes', name: 'Рангомастер', icon: '🎖', metric: 'rank', goals: geo(5, 2, 12), reward: { tickets: 1 }, bonus: { kind: 'allyDmg', per: 0.02 } },
+          { id: 'a_evo', cat: 'heroes', name: 'Эволюция', icon: '⬆', metric: 'evolve', goals: geo(1, 2, 10), reward: { crystals: 10 }, bonus: { kind: 'allyDmg', per: 0.02 },
+            title: { name: 'Мастер эволюции', bonus: { kind: 'allDmg', per: 0.03 } } },
+          { id: 'a_ascend', cat: 'heroes', name: 'Возвышение', icon: '👑', metric: 'ascend', goals: geo(1, 2, 8), reward: { crystals: 20 }, bonus: { kind: 'allDmg', per: 0.02 } },
+          // призыв
+          { id: 'a_summon', cat: 'summon', name: 'Призыватель', icon: '🌀', metric: 'summon', goals: geo(10, 2.5, 14), reward: { crystals: 10 }, bonus: { kind: 'gold', per: 0.02 }, need: 'portal',
+            title: { name: 'Повелитель портала', bonus: { kind: 'gold', per: 0.03 } } },
+          // регрессия
+          { id: 'a_ritual', cat: 'ritual', name: 'Жрец регрессии', icon: '👻', metric: 'ritual', goals: [1, 3, 5, 10, 20, 35, 50, 75, 100, 150, 200, 300], reward: { crystals: 10 }, bonus: { kind: 'gold', per: 0.03 }, need: 'ritual',
+            title: { name: 'Верховный жрец', bonus: { kind: 'gold', per: 0.05 } } },
+          { id: 'a_souls', cat: 'ritual', name: 'Собиратель душ', icon: '🕯', metric: 'soulsLog', log: true, goals: [2, 4, 6, 8, 10, 12, 15, 18, 21, 25, 30], reward: { crystals: 5 }, bonus: { kind: 'shards', per: 0.02 }, need: 'ritual' },
+          // режимы
+          { id: 'a_dun', cat: 'modes', name: 'Покоритель глубин', icon: '🧭', metric: 'dungeon', goals: geo(10, 2.5, 10), reward: { tickets: 2 }, bonus: { kind: 'gold', per: 0.02 }, need: 'pve',
+            title: { name: 'Покоритель глубин', bonus: { kind: 'gold', per: 0.03 } } },
+          { id: 'a_wave', cat: 'modes', name: 'Бесконечность', icon: '∞', metric: 'endless', goals: [50, 100, 200, 300, 500, 750, 1000, 1500, 2000], reward: { crystals: 10 }, bonus: { kind: 'allDmg', per: 0.01 }, need: 'pve',
+            title: { name: 'Бесконечный', bonus: { kind: 'allDmg', per: 0.03 } } },
+          { id: 'a_pers', cat: 'modes', name: 'Палач боссов', icon: '😈', metric: 'personal', goals: geo(3, 2.5, 10), reward: { crystals: 10 }, bonus: { kind: 'bossTime', per: 0.1 }, need: 'pve' },
+          { id: 'a_totem', cat: 'modes', name: 'Хранитель тотемов', icon: '🗿', metric: 'totems', goals: [5, 10, 15, 20], reward: { crystals: 10 }, bonus: { kind: 'gold', per: 0.02 }, need: 'totems',
+            title: { name: 'Хранитель тотемов', bonus: { kind: 'gold', per: 0.03 } } },
+          { id: 'a_bone', cat: 'modes', name: 'Костеправ', icon: '🦴', metric: 'bone', goals: geo(1, 3, 10), reward: { crystals: 10 }, bonus: { kind: 'gold', per: 0.02 }, need: 'bones',
+            title: { name: 'Костяной мастер', bonus: { kind: 'gold', per: 0.03 } } },
+          { id: 'a_rune', cat: 'modes', name: 'Рунный мастер', icon: 'ᚱ', metric: 'rune', goals: geo(5, 2.5, 10), reward: { crystals: 5 }, bonus: { kind: 'allDmg', per: 0.01 }, need: 'runes' },
+          { id: 'a_pet', cat: 'modes', name: 'Укротитель', icon: '🐾', metric: 'petEvo', goals: geo(1, 2, 8), reward: { crystals: 10 }, bonus: { kind: 'allyDmg', per: 0.02 }, need: 'pets' },
+          { id: 'a_curse', cat: 'modes', name: 'Проклятый', icon: '💀', metric: 'curse', goals: geo(5, 2.5, 10), reward: { crystals: 5 }, bonus: { kind: 'bossDmg', per: 0.02 }, need: 'curse' },
+          { id: 'a_echo', cat: 'modes', name: 'Слышащий эхо', icon: '🔔', metric: 'echo', goals: geo(5, 2.5, 10), reward: { crystals: 5 }, bonus: { kind: 'gold', per: 0.02 }, need: 'echo' },
+          { id: 'a_secret', cat: 'modes', name: 'Искатель тайн', icon: '❓', metric: 'secret', goals: geo(1, 2, 8), reward: { crystals: 20 }, bonus: { kind: 'shards', per: 0.02 }, need: 'secret' },
+          { id: 'a_potion', cat: 'modes', name: 'Алхимик', icon: '⚗', metric: 'potion', goals: geo(5, 2.5, 10), reward: { tickets: 1 }, bonus: { kind: 'gold', per: 0.02 }, need: 'alchemy' },
+        ];
+        // коллекции по рангам: собрать героев ранга (цели — 1…все)
+        const R = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'GOD'], RN = { E: 'Новобранцы', D: 'Бойцы', C: 'Ветераны', B: 'Элита', A: 'Герои', S: 'Легенды', SS: 'Мифы', SSS: 'Сказание', GOD: 'Боги' };
+        R.forEach((r, i) => L.push({ id: 'a_r' + r, cat: 'heroes', name: 'Ранг ' + r + ': ' + RN[r], icon: '🃏', metric: 'rar:' + r, goals: null, reward: T(i < 4 ? 2 : 3, i < 4 ? 0 : 10), bonus: { kind: 'allyDmg', per: 0.01 * (1 + Math.floor(i / 3)) } }));
+        // биомы: одна ступень — пройти биом (20 биомов по 50 этажей)
+        const BN = ['Зал призыва', 'Пепельные шахты', 'Лес теней', 'Ледяная цитадель', 'Затопленный храм', 'Кровавая арена', 'Пустотные врата', 'Престол Башни', 'Ржавые механизмы', 'Небесный сад',
+          'Склеп королей', 'Грибные гроты', 'Обсидиановая кузня', 'Зеркальный лабиринт', 'Чумные палаты', 'Песчаный некрополь', 'Грозовой шпиль', 'Сады плоти', 'Звёздная обсерватория', 'Сердце Башни'];
+        BN.forEach((n, i) => L.push({ id: 'a_b' + (i + 1), cat: 'biomes', name: n, icon: '🏔', metric: 'floor', goals: [(i + 1) * 50], reward: T(3, 10 + i * 2), bonus: { kind: i % 2 ? 'gold' : 'allDmg', per: 0.02 } }));
+        return L;
+      })(),
     },
     // Ранги (решение пользователя): 10 рангов × 10 подрангов = 100 ступеней у главного героя и у каждого союзника.
     // Каждая ступень поднимает потолок уровня: от 600 до 15 000 (плавно, кратно 10). Подранг — за осколки,

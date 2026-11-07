@@ -508,7 +508,8 @@
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
       $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
       $('pgX').classList.toggle('dyl', !!window.DY_ART && xKind === 'diary');
-      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls'));   // 0.137: страницы без своего макета — в стиле Настроек
+      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach'));   // 0.137: страницы без своего макета — в стиле Настроек
+      if (xKind === 'ach') { aux.style.display = 'none'; $('xTitle').textContent = 'Достижения'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', achHtml()); return; }
       if (xKind === 'diary') { aux.style.display = 'none'; $('xTitle').textContent = 'Дневник'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', diaryHtml()); return; }
       if (xKind === 'classes') { aux.style.display = 'none'; $('xTitle').textContent = 'Классы'; const CA = window.CL_ART || {}; setHtml('xTop', '<div class="resPill"><img src="' + CA.pt + '" alt=""><b>' + C.classFree(s) + ' / ' + C.classPoints(s) + '</b></div>'); setHtml('xBody', classesHtml()); return; }
       $('pgX').classList.toggle('hsw', !!window.HS_ART && xKind === 'heroes' && !!hsSel);
@@ -677,6 +678,38 @@
     // ---------- 0.118: экран Заданий по макету пользователя — разметка; стили и картинки — src/quests.js ----------
     let qsTab = 'daily';
     function openQuests(t) { if (t) qsTab = t; stack.length = 0; page = null; openX('quests'); }
+    // ---------- 0.141: экран Достижений (решение 07.11, «как в Крушителях»): разделы, ступени, свой бонус у каждого ----------
+    let achCat = 'all';
+    const ACH_KN = { allDmg: 'урон', tapDmg: 'урон тапа', allyDmg: 'урон союзников', gold: 'золото', critChance: 'шанс крита', critMult: 'сила крита', bossDmg: 'урон по боссам', bossTime: 'время на босса', shards: 'осколки' };
+    const achB = (k, v) => k === 'critChance' ? '+' + (v * 100).toFixed(1) + '%' : k === 'bossTime' ? '+' + (+v.toFixed(1)) + ' с' : '+' + Math.round(v * 100) + '%';
+    const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+    function achHtml() {
+      const AC = CFG.achievements, L = AC.list.filter(a => C.achVisible(a));
+      const can = a => C.achClaimable(s, a.id), any = L.some(can);
+      let pts = 0, tot = 0; L.forEach(a => { pts += C.achTier(s, a.id); tot += a.goals.length; });
+      const kinds = Object.keys(ACH_KN).map(k => [k, C.achPower(s, k)]).filter(x => x[1] > 0);
+      let h = '<div class="achSum"><div class="achPts"><b>' + pts + '</b> / ' + tot + '<small>ступеней</small></div><div class="achBon">' +
+        (kinds.length ? kinds.map(([k, v]) => '<span>' + ACH_KN[k] + ' <b>' + achB(k, v) + '</b></span>').join('') : '<span>Забирай ступени — каждая даёт бонус навсегда</span>') + '</div>' +
+        (any ? '<button class="upBtn" data-qaall>Забрать всё</button>' : '') + '</div>';
+      const cats = AC.cats.filter(([c]) => L.some(a => a.cat === c));
+      h += '<div class="achCats"><button class="' + (achCat === 'all' ? 'on' : '') + '" data-acat="all">Все' + (any ? '<i></i>' : '') + '</button>' +
+        cats.map(([c, n]) => '<button class="' + (achCat === c ? 'on' : '') + '" data-acat="' + c + '">' + n + (L.some(a => a.cat === c && can(a)) ? '<i></i>' : '') + '</button>').join('') + '</div>';
+      const order = a => can(a) ? 0 : C.achTier(s, a.id) >= a.goals.length ? 2 : 1;
+      const list = L.filter(a => achCat === 'all' || a.cat === achCat).sort((x, y) => order(x) - order(y));
+      const vf = (a, v) => a.log ? '10^' + v : fmt(v);
+      h += '<div class="achList">' + list.map(a => {
+        const t = C.achTier(s, a.id), n = a.goals.length, max = t >= n, goal = a.goals[Math.min(t, n - 1)], v = C.achValue(s, a), c = can(a);
+        const pr = max ? 1 : Math.min(1, v / goal), cur = a.bonus ? a.bonus.per * t : 0;
+        const rw = Object.keys(a.reward).filter(k => a.reward[k]).map(k => (k === 'tickets' ? '🎟 ' : k === 'crystals' ? '💎 ' : '') + a.reward[k]).join(' · ');
+        return '<div class="achC' + (c ? ' can' : max ? ' max' : '') + '"><div class="achI">' + a.icon + '</div><div class="achM">' +
+          '<div class="achN">' + a.name + ' <em>' + (max ? 'MAX' : ROM[t] || t + 1) + '</em><small>' + Math.min(t, n) + '/' + n + '</small></div>' +
+          '<div class="achBar"><i style="width:' + (pr * 100).toFixed(1) + '%"></i><b>' + (max ? 'всё выполнено' : vf(a, Math.min(v, goal)) + ' / ' + vf(a, goal)) + '</b></div>' +
+          (a.bonus ? '<div class="achL">За ступень: ' + ACH_KN[a.bonus.kind] + ' ' + achB(a.bonus.kind, a.bonus.per) + (t ? ' · сейчас <b>' + achB(a.bonus.kind, cur) + '</b>' : '') + '</div>' : '') +
+          (a.title ? '<div class="achL t">Последняя ступень — титул «' + a.title.name + '»</div>' : '') + '</div>' +
+          '<div class="achR">' + (max ? '<span class="achDone">✓</span>' : '<div class="achRw">' + rw + '</div>' + (c ? '<button class="upBtn" data-qa="' + a.id + '">Забрать</button>' : '<button class="upBtn alt" disabled>Идёт</button>')) + '</div></div>';
+      }).join('') + '</div>';
+      return h;
+    }
     function questsHtml() {
       const A = window.QS_ART || {}, M = window.MK_ART || {}, R = window.RG_ART || {}, Q = CFG.quests, today = dayKey();
       const IC = { kill: A.i_battle, boss: A.i_boss, tap: A.i_tap, summon: A.i_summon, allDaily: A.i_star, star: A.i_star, rare: A.i_boss, ritual: R.i_soul || A.i_scroll,
@@ -710,10 +743,7 @@
       } else if (qsTab === 'ach') {
         const intro = Q.intro.filter(q => !s.quests.claimed[q.id]), pts = C.achPoints(s);
         if (intro.length) h += '<div class="sec">Первые шаги</div><div class="list">' + intro.map(qCard).join('') + '</div>';
-        h += '<div class="sec">Очки достижений: ' + pts + ' · +' + Math.round(pts * CFG.achievements.dmgPerPoint * 100) + '% урона навсегда</div><div class="list">' + AL.map(a => {
-          const t = C.achTier(s, a.id), max = t >= a.goals.length, goal = a.goals[Math.min(t, a.goals.length - 1)], v = C.achValue(s, a), can = C.achClaimable(s, a.id);
-          const btn = max ? '<button class="bt done" disabled>Готово</button>' : can ? '<button class="bt claim" data-qa="' + a.id + '">Забрать</button>' : '<button class="bt go" disabled>Идёт</button>';
-          return card(A.i_cup, a.name + ' <small>' + Math.min(t + (max ? 0 : 1), a.goals.length) + '/' + a.goals.length + '</small>', max ? goal : v, goal, a.reward, btn, max); }).join('') + '</div><div class="grow"></div>';
+        h += '<div class="sec">Достижения: ' + pts + ' ступеней · ' + AL.filter(a => C.achClaimable(s, a.id)).length + ' можно забрать</div><button class="big" data-qgo="ach">Открыть достижения ›</button><div class="grow"></div>';   // 0.141: отдельный экран
       } else {
         const D = CFG.login.days, idx = C.loginDayIndex(s);
         h += '<div class="days">' + D.map((r, n) => { const got = n < idx, nw = n === idx && canLogin, k = r.tickets ? 'tickets' : r.crystals ? 'crystals' : Object.keys(r)[0];
@@ -1014,10 +1044,13 @@
         else if (k === 'evo') { if (!C.evolve(s, hsSel)) return; click(); toast('Эволюция!<small>' + CFG.allies.find(x => x.id === hsSel).name + '</small>'); save(); } }
       else if (d.qt) { click(); qsTab = d.qt; $('xBody').scrollTop = 0; }
       else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
-      else if (d.qa) { const r = C.claimAch(s, d.qa); if (!r) return; click(); toast('Достижение!<small>' + rewardLine(r) + ' · +1 очко</small>'); save(); }
+      else if (d.qa) { const r = C.claimAch(s, d.qa); if (!r) return; click(); toast('Ступень получена<small>' + rewardLine(r) + '</small>'); save(); }
+      else if (d.qaall !== undefined) { const r = C.claimAllAch(s); if (!r) return; click(); toast('Забрано ступеней: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); }
+      else if (d.acat) { click(); achCat = d.acat; $('xBody').scrollTop = 0; }
       else if (d.qch) { const r = C.openQuestChest(s, +d.qch); if (!r) return; click(); toast('Сундук открыт<small>' + rewardLine(r) + '</small>'); save(); }
       else if (d.qlog !== undefined) { const r = C.claimLogin(s, dayKey()); if (!r) return; click(); toast('Награда за вход · день ' + r.day + '<small>' + rewardLine(r.reward) + '</small>'); save(); }
       else if (d.qgo) { click(); const g = d.qgo;
+        if (g === 'ach') { openX('ach'); return; }
         if (g === 'arena') { stack.length = 0; page = null; show(null); return; }
         if (g === 'portal' || g === 'souls') { openX(g === 'souls' ? 'regress' : g); return; }
         stack.length = 0; page = null; show(null); if (g === 'up') open('up'); else openOld(g); return; }
