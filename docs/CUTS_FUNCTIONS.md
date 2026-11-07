@@ -407,6 +407,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Зверёк запрыгивает герою на плечо и скалится на врагов. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Трофеи (`bones`)
+
+**cut_bones_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a defeated boss crumbles to dust, a huge rune-carved bone glows among the ashes. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Поверженный босс рассыпается, среди праха светится огромная кость с рунами. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_bones_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man lifts a skull-helmet and tries it on. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой поднимает череп-шлем, примеряет. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_bones_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: fantasy allies posing in armor made of monster bones. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Союзники в доспехах из костей позируют. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)
