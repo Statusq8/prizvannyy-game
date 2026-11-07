@@ -41,7 +41,7 @@
       const vis = (el, k) => { if (el) el.style.display = on(k) ? '' : 'none'; };
       vis($('cbPortal'), 'portal'); vis($('cbPve'), 'pve'); vis(rit, 'ritual'); vis(forge, 'forge');
       book.style.display = on('quests') ? '' : 'none';
-      vis($('tbMail'), 'mail'); vis($('cbMap'), 'map'); vis($('questPanel'), 'quests');
+      vis($('tbMail'), 'mail'); vis($('cbMap'), 'map'); vis($('shadowTw'), 'pets');   // 0.153: «Теневая башня» = Логово питомцев — часть питомцев vis($('questPanel'), 'quests');
       menuBtn.style.display = s.stats.kills >= 1 ? '' : 'none';   // ответ 7: «Улучшить» — после первого врага
     }
     // ---------- квест справа: задача с наградой + следующая функция (ответы 35–38) ----------

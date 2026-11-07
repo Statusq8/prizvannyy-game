@@ -77,12 +77,11 @@
 | `unlocks.secret` | `750` |
 | `unlocks.totems` | `750` |
 | `unlocks.pets` | `1250` |
-| `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
 | `unlockRituals.tree` | `1` |
-| `disabled` | `["shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGift","transfer","photo","favorites","squad"]` |
+| `disabled` | `["bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGift","transfer","photo","favorites","squad"]` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |
