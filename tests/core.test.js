@@ -1890,16 +1890,18 @@ test('питомец выдаётся за первую победу над бо
   assert.strictEqual(C.setPet(t, 'cave_bat'), false); C.recallPet(t); assert.strictEqual(t.pets.active, null);
 });
 
-test('бонус активного питомца по типу: урон отряда, по боссу, золото, заряд ультов', () => {
+test('бонус активного питомца по типу: урон отряда, по боссу, золото, урон тапа', () => {
   const s = C.newState(NOCRIT);
   const byType = ty => CFG.pets.list.find(p => p.type === ty && p.rank === 'E') || CFG.pets.list.find(p => p.type === ty);
-  for (const ty of ['squad', 'boss', 'gold', 'ult']) {
+  for (const ty of ['squad', 'boss', 'gold', 'tap']) {
     const p = byType(ty); s.pets.forms = { [p.id]: 1 }; s.pets.active = p.id;
     assert.ok(C.petBonus(s, ty) > 0);
-    for (const o of ['squad', 'boss', 'gold', 'ult']) if (o !== ty) assert.strictEqual(C.petBonus(s, o), 0);
+    for (const o of ['squad', 'boss', 'gold', 'tap']) if (o !== ty) assert.strictEqual(C.petBonus(s, o), 0);
   }
   const g = byType('gold'); s.pets.forms = { [g.id]: 1 }; s.pets.active = g.id;
   const m1 = C.goldMult(s); s.pets.active = null; assert.ok(m1 > C.goldMult(s));
+  const t = byType('tap'); s.pets.forms = { [t.id]: 1 }; s.pets.active = t.id;
+  const p1 = C.permMult(s, 'tap'); s.pets.active = null; assert.ok(C.B.gt(p1, C.permMult(s, 'tap')));
 });
 
 test('эволюция питомца за фрагменты: 3 формы, бонус ×2 и ×4; стоимость растёт с рангом', () => {

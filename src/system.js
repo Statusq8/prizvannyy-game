@@ -203,6 +203,8 @@
         .pg.uni .tNode p { font: 400 2.8vw/1.3 Georgia, serif !important; color: #e6dcf2 !important; }
         .pg.uni .tNode .upBtn { width: 24vw !important; height: auto !important; min-height: 11vw !important; padding: 1vw !important; line-height: 1.15; font-size: 3vw !important; }
         .pg.uni .tNode .upBtn span { display: block; font: 700 2.7vw Georgia, serif; color: #ffe8a8; }
+        /* 0.152: Штаб — вкладки кроме «Героев» (Питомцы и др.): заголовок текстом на плашке Настроек */
+        body.hqV1 #pgSec:not([data-sec="up"]) #sTitle { background: ${v('title')} center / 100% 100% no-repeat !important; color: #f6dfa6 !important; font: 800 17px/34px Georgia, 'Times New Roman', serif !important; text-shadow: 0 2px 3px #000, 0 0 8px #a050ff !important; text-align: center; }
         .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
           font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
         .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }

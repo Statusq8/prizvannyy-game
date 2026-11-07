@@ -188,7 +188,7 @@
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')) * (1 + petBonus(s, 'ult')));   // готовность копится и сохраняется между врагами
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')));   // готовность копится и сохраняется между врагами
     }
     tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {

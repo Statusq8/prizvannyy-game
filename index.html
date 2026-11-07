@@ -1794,7 +1794,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     unlockRituals: { tree: 1 },   // 0.145 (решение 07.11): древо «Искры Башни» — после первой регрессии
     disabled: [
-               'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
+               'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -2423,9 +2423,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       // по рангу: удар (доля DPS отряда в секунду), бонус «урон отряда / золото», «урон по боссу», «заряд ультов» — у детёныша
       power: { E: [0.05, 0.10, 0.15, 0.03], D: [0.07, 0.15, 0.22, 0.05], C: [0.10, 0.25, 0.37, 0.07], B: [0.14, 0.40, 0.60, 0.10], A: [0.20, 0.60, 0.90, 0.14],
                S: [0.28, 1.00, 1.50, 0.18], SS: [0.40, 1.50, 2.25, 0.24], SSS: [0.55, 2.50, 3.75, 0.30], GOD: [0.75, 4.00, 6.00, 0.40] },
-      types: ['squad', 'boss', 'gold', 'ult'],
-      typeName: { squad: 'урон отряда', boss: 'урон по боссам', gold: 'золото и добыча', ult: 'заряд ультимейтов' },
-      interval: { squad: 0.8, boss: 1.5, gold: 1.0, ult: 1.2 },
+      types: ['squad', 'boss', 'gold', 'tap'],   // 0.152 (решение 07.11): «заряд ультимейтов» → урон тапа (ульта только у героя)
+      typeName: { squad: 'урон отряда', boss: 'урон по боссам', gold: 'золото и добыча', tap: 'урон тапа' },
+      interval: { squad: 0.8, boss: 1.5, gold: 1.0, tap: 1.2 },
       forms: ['Детёныш', 'Подросший', 'Пиковая форма'],
       formMult: [1, 2, 4], formUlt: [1, 1.5, 2],
       evoCost: [40, 150], rankGrowth: 1.5,            // фрагментов на 2-ю и 3-ю форму для E; ×1,5 за каждый ранг выше
@@ -3151,7 +3151,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   // Постоянный множитель урона по источнику: души × грааль × (герой или союзники)
   function permMult(s, source) {
     let m = (1 + artPower(s, 'allDmg')) * (1 + runePower(s, 'allDmg')) * (1 + titlePower(s, 'allDmg')) * (1 + passivePower(s, 'allDmg')) * (1 + bondPower(s, 'allDmg')) * (1 + trophyPower(s, 'allDmg')) * potionMult(s, 'allDmg') * totemMult(s) * achMult(s) * collectionMult(s) * (1 + petBonus(s, 'squad'));
-    if (source === 'tap' || source === 'heroAuto') m *= (1 + artPower(s, 'tapDmg')) * (1 + passivePower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
+    if (source === 'tap' || source === 'heroAuto') m *= (1 + petBonus(s, 'tap')) * (1 + artPower(s, 'tapDmg')) * (1 + passivePower(s, 'tapDmg')) * (1 + artPower(s, 'heroAuto')) * (1 + treePower(s, 'heroDmg')) * (1 + runePower(s, 'heroDmg')) * boosterMult(s, 'hero') * boneMult(s, 'hero');
     else m *= (1 + artPower(s, 'allyDmg')) * (1 + passivePower(s, 'allyDmg')) * (1 + treePower(s, 'allyDmg')) * (1 + runePower(s, 'allyDmg')) * (1 + eventBuff(s, 'allyDmg')) * collectionAllyMult(s);
     return B.mul(soulMult(s), softcap(m, CONFIG.softcap.start));
   }
@@ -3634,7 +3634,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     if (s.enemy.alive) { s.enemy.mark = Math.max(0, s.enemy.mark - dt); s.enemy.vuln = Math.max(0, s.enemy.vuln - dt); }
     if (CONFIG.allyUlts) for (const a of squadDefs(s)) {
       const st = s.allies[a.id];
-      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')) * (1 + petBonus(s, 'ult')));   // готовность копится и сохраняется между врагами
+      if (st.level > 0) st.ult = Math.min(a.ult.charge, st.ult + dt * (1 + treePower(s, 'ultCharge')));   // готовность копится и сохраняется между врагами
     }
     tickAbilities(s, dt, events);   // перезарядка идёт всегда; шквал и автоиспользование — только по живому врагу
     if (!s.enemy.alive) {
@@ -7705,6 +7705,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         : sec === 'up' ? cur(M.shard.icon, fmt(s.materials.shard)) + cur('◆', fmt(s.gold), true)
         : sec === 'art' ? cur('👻', fmt(s.souls)) : sec === 'bag' ? cur('🎟', fmt(s.tickets)) + cur('◆', fmt(s.gold), true) : cur(M.shard.icon, fmt(s.materials.shard));
       setHtml('sTop', top);
+      $('pgSec').dataset.sec = sec;   // 0.152: на картинке заголовка Штаба написано «Герои» — для других вкладок текстом
       $('sTitle').textContent = sec === 'up' ? 'Герои' : sec === 'art' ? (artSel ? 'Улучшение' : 'Артефакты') : sec === 'bag' ? 'Сумка' : 'Питомцы';
       setHtml('sBody', sec === 'up' ? upHtml() : sec === 'art' ? artHtml() : sec === 'bag' ? bagHtml() : petsHtml());
     }
@@ -9337,7 +9338,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.150";
+    const VERSION = "0.151";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -11431,6 +11432,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         .pg.uni .tNode p { font: 400 2.8vw/1.3 Georgia, serif !important; color: #e6dcf2 !important; }
         .pg.uni .tNode .upBtn { width: 24vw !important; height: auto !important; min-height: 11vw !important; padding: 1vw !important; line-height: 1.15; font-size: 3vw !important; }
         .pg.uni .tNode .upBtn span { display: block; font: 700 2.7vw Georgia, serif; color: #ffe8a8; }
+        /* 0.152: Штаб — вкладки кроме «Героев» (Питомцы и др.): заголовок текстом на плашке Настроек */
+        body.hqV1 #pgSec:not([data-sec="up"]) #sTitle { background: ${v('title')} center / 100% 100% no-repeat !important; color: #f6dfa6 !important; font: 800 17px/34px Georgia, 'Times New Roman', serif !important; text-shadow: 0 2px 3px #000, 0 0 8px #a050ff !important; text-align: center; }
         .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
           font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
         .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }
@@ -11658,7 +11661,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // функции без своего островка — маленькие кнопки внизу лагеря (видны, только когда функция открыта)
     const MORE = [
       ['quests', '📜', 'Задания', () => U.openOld('quests')], ['mail', '✉', 'Почта', () => U.openOld('inbox')], ['events', '🏮', 'События', () => U.openOld('events')],
-      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')], ['tree', '✴', 'Искры Башни', () => U.openX('tree')], ['season', '🎭', 'Сезон', () => U.openOld('season')], ['altar', '🕯', 'Алтарь', () => U.openOld('altar')],
+      ['pve', '⚔', 'Испытания', () => U.openX('pve')], ['map', '🗼', 'Карта', () => U.open('map')], ['ritual', '👻', 'Регрессия', () => U.openX(window.RG_ART ? 'regress' : 'souls')], ['classes', '⚔', 'Классы', () => U.openX('classes')], ['quests', '🏆', 'Достижения', () => U.openX('ach')], ['expedition', '🧭', 'Экспедиции', () => U.openX('exp')], ['tree', '✴', 'Искры Башни', () => U.openX('tree')], ['season', '🎭', 'Сезон', () => U.openOld('season')], ['altar', '🕯', 'Алтарь', () => U.openOld('altar')], ['pets', '🐾', 'Питомцы', () => U.sec('pets')],
     ];
     function renderMore() {
       const h = MORE.filter(m => on(m[0])).map((m, i) => '<button data-more="' + MORE.indexOf(m) + '">' + m[1] + ' ' + m[2] + '</button>').join('');
@@ -11891,6 +11894,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['w', 'В стене этажа проступает едва заметная дверь, светится замочная скважина', [['sys', 'ОТКРЫТЫ: ТАЙНЫЕ ЭТАЖИ']]],
         ['l', 'Герой прикладывает ухо к стене', [['me', 'Там кто-то дышит.']]],
         ['r', 'В темноте за дверью — сундук и огромный силуэт стража', [['', 'Раз в пятьсот этажей Башня что-то прячет.']]]] },
+      pets: { t: 'Не один', k: 'pets', p: [
+        ['w', 'Из-под обломков на героя смотрит маленький пепельный зверёк со светящимися глазами', [['sys', 'ОТКРЫТЫ: ПИТОМЦЫ']]],
+        ['l', 'Зверёк осторожно нюхает протянутую руку', [['me', 'Ну что, пойдёшь со мной?']]],
+        ['r', 'Зверёк запрыгивает герою на плечо и скалится на врагов', [['Шорох', 'Отлично. Теперь нас кормить двоих.']]]] },
       totems: { t: 'Голоса павших', k: 'totems', p: [
         ['w', 'Зал, где из пола поднимаются каменные идолы с лицами боссов биомов', [['sys', 'ОТКРЫТЫ: ТОТЕМЫ']]],
         ['l', 'Каменное лицо Хранителя Врат открывает светящиеся глаза', [['?', 'Ты победил нас. Теперь мы служим.']]],
@@ -12042,6 +12049,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['.alcT', 'Зелья: ×2 золота, ×2 урона, ×2 осколков. Варятся из осколков и эссенции, время складывается до 2 часов.', 0]]],
       ['echo', 'Открыто Эхо Башни: раз в неделю — пройденный биом с особым условием.', [CAMP, ...more(3, 'Испытания'),
         ['.pveCard [data-m2="echo"]', 'Эхо: условие меняется каждую неделю. Первая победа недели — билеты, эссенция и много осколков.', 0]]],
+      ['pets', 'Открыты Питомцы: зверь сражается рядом и усиливает отряд.', [CAMP, ...more(12, 'Питомцы'),
+        ['#sBody', 'Питомцы приходят за победы над боссами этажей и из фрагментов от редких «Хранителей». В бою — один: бьёт сам и даёт бонус. Фрагменты — для эволюции.', 0]]],
       ['totems', 'Открыты Тотемы: каждый пройденный биом оставил тебе тотем — его сила навсегда.', [CAMP, ['.cIsl[data-id="forge"]', 'Тапни по острову Кузницы.', 1],
         ['[data-fgt="runes"]', 'Тотемы лежат во вкладке «Руны». Тапни.', 1],
         ['.totT', 'Тотем — за босса каждого биома. Каждый уровень: +10% всего урона. За 5, 10, 15 и 20 тотемов — ещё ×1,25.', 0]]],

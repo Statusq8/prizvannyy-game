@@ -383,6 +383,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: В темноте за дверью — сундук и огромный силуэт стража. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Не один (`pets`)
+
+**cut_pets_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: from under rubble a small ash-gray creature with glowing eyes looks at the young man. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Из-под обломков на героя смотрит маленький пепельный зверёк со светящимися глазами. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_pets_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the little creature carefully sniffs his outstretched hand. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Зверёк осторожно нюхает протянутую руку. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_pets_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the creature jumps onto his shoulder and bares its teeth at enemies, a sly rogue rolls his eyes nearby. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Зверёк запрыгивает герою на плечо и скалится на врагов. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)
