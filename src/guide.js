@@ -29,11 +29,12 @@
         ['[data-rit]', 'Тёмная регрессия: вернёшься на 1 этаж, но получишь души 👻 для вечных улучшений.', 0]]],
       ['map', 'Открыта Карта Башни: все этажи, стражи и боссы.', [CAMP, ...more(4, 'Карта'),
         ['.fRoom.cur', 'Здесь ты сейчас. Пройденные этажи можно фармить — награды там меньше.', 0]]],
+      ['mail', 'Тебе письмо! Награды за вехи, страницы Дневника и события приходят в Почту.', [CAMP, ...more(1, 'Почта'),
+        ['#panel .claimAll, #panel .secTitle', 'Забирай письма по одному или все сразу.', 0]]],
       ['events', 'Открыты События: каждую неделю — новое, с усилением на всю Башню.', [CAMP, ...more(2, 'События'),
         ['#panel .secTitle', 'Очки события — за врагов и боссов; на вехах награды приходят сами. Фонари 🏮 — из подземелья события, их меняют в лавке.', 0]]],
       ['season', 'Начался Сезон: тропа заданий, боевой пропуск и сезонный герой.', [CAMP, ...more(10, 'Сезон'),
         ['#panel .secTitle', 'Задания тропы и опыт пропуска дают награды. Премиум-дорожка — за 💎 на весь сезон. Жетоны — на сезонного героя.', 0]]],
-      ['mail', 'Открыта Почта: сюда приходят награды.', [CAMP, ...more(1, 'Почта')]],
       ['tree', 'Открыто древо «Искры Башни»: вечные улучшения за души.', [CAMP, ...more(9, 'Искры Башни'),
         ['.brH', 'Три ветви: Боевая, Достатка и Тайная. Каждая открывается после новой регрессии.', 0],
         ['.tNode .upBtn', 'Узлы покупаются за души 👻 и остаются навсегда, даже после регрессии.', 0]]],
@@ -56,7 +57,7 @@
         ['.exOf [data-exsel]', 'Жми «Собрать» и выбери героев. Они продолжат драться в Башне, пока идут в походе.', 0]]],
     ];
     let g = null; try { g = JSON.parse(localStorage.getItem(GK) || 'null'); } catch (e) {}
-    if (!g) { g = { seen: {} }; GUIDES.forEach(([k]) => { if (on(k)) g.seen[k] = 1; }); }
+    if (!g) { g = { seen: {} }; GUIDES.forEach(([k]) => { if (on(k) && k !== 'mail') g.seen[k] = 1; }); }
     const saveG = () => { try { localStorage.setItem(GK, JSON.stringify(g)); } catch (e) {} };
     saveG();
 
@@ -129,6 +130,7 @@
       if (window.CUTS && CUTS.playing()) return;
       for (const [k, intro, steps] of GUIDES) {
         if (g.seen[k] || !on(k)) continue;
+        if (k === 'mail' && !s.inbox.length) continue;   // 0.155: почта открыта с начала — обучение с первым письмом
         if (window.CUTS && CUTS.pending(k)) return;   // 0.140: сначала кат-сцена этой функции
         cur = { k, intro, steps, i: 0 };
         if (window.U2 && U2.click) U2.click();
@@ -160,20 +162,22 @@
     document.head.appendChild(css);
     const pop = document.createElement('div'); pop.id = 'achPop'; document.body.appendChild(pop);
     const q = []; let t = 0;
-    pop.addEventListener('click', e => { e.stopPropagation(); pop.classList.remove('show'); clearTimeout(t); if (window.U2) { U2.click(); if (window.CUTS && CUTS.playing()) return; U2.home && U2.home(); U2.openX(pop.dataset.go || 'ach'); } });
+    pop.addEventListener('click', e => { e.stopPropagation(); pop.classList.remove('show'); clearTimeout(t); if (window.U2) { U2.click(); if (window.CUTS && CUTS.playing()) return; U2.home && U2.home(); const g = pop.dataset.go || 'ach'; if (g === 'mail') U2.openOld('inbox'); else U2.openX(g); } });
     function showNext() {
       if (pop.classList.contains('show') || !q.length) return;
       if (document.querySelector('#cutOv.show, #gdOv.show, #proOv')) return;
       const x = q.length > 3 ? { many: q.splice(0).length } : q.shift();
       pop.innerHTML = '<div class="md">🏅</div><div><b>ДОСТИЖЕНИЕ!</b>' + (x.many ? '<span>Выполнено ступеней: ' + x.many + '</span><small>тапни, чтобы забрать награды</small>'
-        : '<span>' + x.a.icon + ' ' + x.a.name + (x.t >= 0 ? ' ' + (ROM[x.t] || x.t + 1) : '') + '</span><small>' + (x.t >= 0 ? 'тапни — забрать награду и бонус' : 'тапни — забрать добычу') + '</small>') + '</div>';
-      pop.dataset.go = x.t === -1 ? 'exp' : 'ach'; pop.querySelector('b').textContent = x.t === -1 ? 'ЭКСПЕДИЦИЯ' : 'ДОСТИЖЕНИЕ!';
+        : '<span>' + x.a.icon + ' ' + x.a.name + (x.t >= 0 ? ' ' + (ROM[x.t] || x.t + 1) : '') + '</span><small>' + (x.t >= 0 ? 'тапни — забрать награду и бонус' : x.t === -2 ? 'тапни — открыть почту' : 'тапни — забрать добычу') + '</small>') + '</div>';
+      pop.dataset.go = x.t === -1 ? 'exp' : x.t === -2 ? 'mail' : 'ach'; pop.querySelector('b').textContent = x.t === -1 ? 'ЭКСПЕДИЦИЯ' : x.t === -2 ? 'ПИСЬМО' : 'ДОСТИЖЕНИЕ!';
       pop.classList.add('show');
       if (window.U2 && U2.click) U2.click();
       t = setTimeout(() => { pop.classList.remove('show'); setTimeout(showNext, 600); }, 3200);
     }
     const back = {}; for (const r of s.exp.runs) if (Date.now() >= r.end) back[r.uid] = 1;
+    let mailSeen = Math.max(-1, ...s.inbox.map(x => x.id));   // 0.155: новое письмо — плашка
     setInterval(() => {
+      for (const m of s.inbox) if (m.id > mailSeen) { mailSeen = m.id; q.push({ a: { icon: '✉', name: m.title }, t: -2 }); }
       for (const r of s.exp.runs) if (!back[r.uid] && Date.now() >= r.end) { back[r.uid] = 1; q.push({ a: { icon: '🧭', name: 'Отряд вернулся: ' + r.name }, t: -1 }); }
       for (const a of L()) {
         const tier = C.achTier(s, a.id), ready = C.achClaimable(s, a.id) ? tier + 1 : tier;

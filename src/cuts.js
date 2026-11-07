@@ -98,7 +98,7 @@
         ['w', 'Герой ломает печать, внутри — сияющий билет', [['me', 'Хоть кто-то здесь вежлив.']]]] },
     };
     let seen = null; try { seen = JSON.parse(localStorage.getItem(CK) || 'null'); } catch (e) {}
-    if (!seen) { seen = {}; for (const id in SCENES) if (on(SCENES[id].k)) seen[id] = 1; }   // открытое до 0.140 — без сцен
+    if (!seen) { seen = {}; for (const id in SCENES) if (on(SCENES[id].k) && id !== 'mail') seen[id] = 1; }   // открытое до 0.140 — без сцен
     const saveS = () => { try { localStorage.setItem(CK, JSON.stringify(seen)); } catch (e) {} };
     saveS();
 
@@ -179,7 +179,7 @@
     const busy = () => document.querySelector('.pg.show, #camp.show, #sysOv.show, #ui2Pop.show, .askWrap.show, #tutOv.show, #proOv, #sumFx.show, #gdOv.show') || document.body.classList.contains('oldOpen');
     setInterval(() => {
       if (cur || busy() || !vis($('cbCamp'))) return;
-      for (const id in SCENES) if (!seen[id] && on(SCENES[id].k)) { play(id); return; }
+      for (const id in SCENES) if (!seen[id] && on(SCENES[id].k) && (id !== 'mail' || s.inbox.length)) { play(id); return; }
     }, 700);
-    window.CUTS = { play, playing: () => !!cur, pending: k => { for (const id in SCENES) if (SCENES[id].k === k && !seen[id]) return true; return false; }, reset: () => { seen = {}; saveS(); }, SCENES };
+    window.CUTS = { play, playing: () => !!cur, pending: k => { for (const id in SCENES) if (SCENES[id].k === k && !seen[id] && (id !== 'mail' || s.inbox.length)) return true; return false; }, reset: () => { seen = {}; saveS(); }, SCENES };
   })();
