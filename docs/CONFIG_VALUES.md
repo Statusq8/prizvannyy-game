@@ -14,7 +14,7 @@
 | `enemyHpGrowth` | `1.24` |
 | `floorCurve.knee` | `100` |
 | `floorCurve.slope` | `0.99` |
-| `floorCurve.late` | `0.6` |
+| `floorCurve.late` | `1.5` |
 | `bossHpMult` | `6` |
 | `bossTimeSec` | `30` |
 | `goldBase` | `0.25` |
@@ -70,14 +70,14 @@
 | `unlocks.ritual` | `150` |
 | `unlocks.events` | `150` |
 | `unlocks.season` | `250` |
-| `unlocks.altar` | `300` |
-| `unlocks.alchemy` | `400` |
-| `unlocks.echo` | `500` |
-| `unlocks.curse` | `500` |
-| `unlocks.secret` | `750` |
-| `unlocks.totems` | `750` |
-| `unlocks.pets` | `1250` |
-| `unlocks.bones` | `2000` |
+| `unlocks.altar` | `450` |
+| `unlocks.alchemy` | `700` |
+| `unlocks.echo` | `1300` |
+| `unlocks.curse` | `1500` |
+| `unlocks.secret` | `1700` |
+| `unlocks.totems` | `1850` |
+| `unlocks.pets` | `2350` |
+| `unlocks.bones` | `2850` |
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
 | `unlockRituals.tree` | `1` |
@@ -90,9 +90,9 @@
 | `cage.name` | `"Клетка с Тилем"` |
 | `ritual.floor` | `150` |
 | `ritual.soulsBase` | `500` |
-| `ritual.soulsGrowth` | `1.08` |
+| `ritual.soulsGrowth` | `1.31` |
 | `ritual.light` | `{"crystals":100,"mult":2}` |
-| `ritual.soulsKnee` | `1000` |
+| `ritual.soulsKnee` | `1000000` |
 | `ritual.recordBonus` | `1` |
 | `ritual.milestones` | `[{"n":1,"title":"Пробуждённый","bonus":{"kind":"allDmg","per":0.05},"reward":{"tickets":10,"crystals":20}},{"n":10,"title":"Жрец Башни","bonus":{"kind":"gold…` |
 | `artifactFind.cost` | `3` |

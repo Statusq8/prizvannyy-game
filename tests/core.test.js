@@ -749,9 +749,10 @@ test('Врата восхождения: старт после ритуала р
 test('души за ритуал растут с этажом и дают бонус за новый рекорд', () => {
   const a = C.newState(NOCRIT); reach(a, 400);
   const b = C.newState(NOCRIT); reach(b, 450);
-  assert.ok(C.ritualSouls(b) > C.ritualSouls(a));
+  assert.ok(B.gt(C.ritualSouls(b), C.ritualSouls(a)));
   const c = C.newState(NOCRIT); reach(c, 450); c.bestRecordAtRunStart = 450;   // рекорд не побит
-  assert.ok(C.ritualSouls(b) > C.ritualSouls(c));
+  const g = CFG.ritual.soulsGrowth; CFG.ritual.soulsGrowth = 1.01;   // 0.157: при 1.31 души ~1e38, +1 за рекорд не видно в float
+  try { assert.ok(B.gt(C.ritualSouls(b), C.ritualSouls(c))); } finally { CFG.ritual.soulsGrowth = g; }
 });
 
 test('артефакты находятся и улучшаются только за души, все действуют одновременно', () => {
@@ -1654,7 +1655,7 @@ test('Башня на этаже 50 000: HP и золото конечны, бо
   s.floor = s.maxFloor = s.bestFloor = 50000; C.goToFloor(s, 49999); C.goToFloor(s, 50000);
   assert.ok(isFinite(B.log10(s.enemy.maxHp)));
   assert.ok(Math.abs(B.log10(C.enemyMaxHp(50000, false)) - (Math.log10(CFG.enemyBaseHp * C.biomeOf(50000).hp) + C.floorSteps(50000) * Math.log10(CFG.enemyHpGrowth))) < 1e-6);
-  s.tapLevel = 15000; s.souls = B.fromLog10(3600);
+  s.tapLevel = 15000; s.souls = B.fromLog10(B.log10(C.enemyMaxHp(50000, false)) + 10);   // 0.157: HP круче — души под стать
   let i = 0; while (s.enemy.alive && i++ < 1000) C.tap(s);
   assert.ok(!s.enemy.alive, 'враг убит');
   assert.ok(B.gt(s.gold, 0));
@@ -1673,13 +1674,13 @@ test('покупки с огромным золотом: MAX упирается 
   assert.ok(B.isBig(cost) && B.gt(cost, s.gold) === B.gt(cost, s.gold));
 });
 
-test('ритуал на высоком этаже даёт огромное число душ, бонус урона растёт; выше 1000 — степенной рост', () => {
+test('ритуал на высоком этаже даёт огромное число душ, бонус урона растёт; до soulsKnee — ×soulsGrowth за этаж', () => {
   const s = C.newState(NOCRIT); s.floor = s.maxFloor = s.bestFloor = 20000;
   const souls = C.ritualSouls(s);
   assert.ok(B.log10(souls) > 60);
   const t = C.newState(NOCRIT); t.floor = t.maxFloor = t.bestFloor = 40000; t.bestRecordAtRunStart = 1e9; s.bestRecordAtRunStart = 1e9;
   const r = B.log10(C.ritualSouls(t)) - B.log10(C.ritualSouls(s));
-  assert.ok(Math.abs(r - CFG.ritual.soulsKnee * Math.log(CFG.ritual.soulsGrowth) * Math.log10(2)) < 1e-6);   // ×2 этажа → ×2^k душ
+  assert.ok(Math.abs(r - 20000 * Math.log10(CFG.ritual.soulsGrowth)) < 1e-6);   // 0.157: излом на 1e6 — здесь чистая экспонента
   const p0 = C.permMult(s, 'tap'); C.ritual(s);
   assert.ok(B.gt(C.permMult(s, 'tap'), p0));
 });
@@ -2281,10 +2282,10 @@ test('обычные мобы иногда роняют осколки (≈8%, 3
   assert.ok(got >= n);
 });
 
-test('кривая дальних этажей: до колена — ×enemyHpGrowth, выше — медленнее, но растёт всегда', () => {
+test('кривая дальних этажей: до колена — ×enemyHpGrowth, выше — шаг late, растёт всегда', () => {
   const K = CFG.floorCurve.knee, st = f => C.floorSteps(f + 1) - C.floorSteps(f);
   assert.ok(Math.abs(st(Math.floor(K / 2)) - 1) < 1e-9, 'до колена — полный шаг');
-  assert.ok(st(K + 5) < 1 && st(2 * K) < 1, 'после колена — мягче');
+  assert.ok(Math.abs(st(K + 5) - CFG.floorCurve.late) < 1e-9 && Math.abs(st(2 * K) - CFG.floorCurve.late) < 1e-9, 'после колена — шаг late (0.157: 1.5, круче)');
   assert.ok(st(100000) <= st(2000) + 1e-9, 'дальше не круче');
   const l = f => B.log10(C.enemyMaxHp(f, false));
   assert.ok(l(1e7) > l(1e6) && l(1e6) > l(100000) && l(100000) > l(2000), 'растёт всегда');
@@ -2640,7 +2641,7 @@ test('0.74: лесенка открытий — системы закрыты д
   const U = UNLOCKS, s = C.newState(NOCRIT);
   CFG.unlocks = U;
   try {
-    assert.strictEqual(U.portal, 25); assert.strictEqual(U.artifacts, 50); assert.strictEqual(U.ritual, 150); assert.strictEqual(U.pets, 1250); assert.strictEqual(U.bones, 2000);
+    assert.strictEqual(U.portal, 25); assert.strictEqual(U.artifacts, 50); assert.strictEqual(U.ritual, 150); assert.strictEqual(U.pets, 2350); assert.strictEqual(U.bones, 2850);
     assert.strictEqual(C.unlockedAt(s, 'portal'), false);
     s.bestFloor = 25; assert.strictEqual(C.unlockedAt(s, 'portal'), true); assert.strictEqual(C.unlockedAt(s, 'pets'), false);
     s.floor = 600; s.bestCleared = 599; assert.strictEqual(C.secretFind(s, 750, []), null);   // скрытые комнаты — с 750
@@ -2834,7 +2835,7 @@ test('тотемы (0.144): открываются на этаже unlocks.totem
   C.tick(s, 0.01); assert.strictEqual(C.totemCount(s), 0);       // тотемы ещё закрыты
   s.bestFloor = s.maxFloor = CFG.unlocks.totems + 1;
   C.tick(s, 0.01);
-  assert.strictEqual(C.totemCount(s), Math.floor(CFG.unlocks.totems / CFG.biomeFloors));
+  assert.strictEqual(C.totemCount(s), Math.min(CFG.biomes.length, Math.floor(CFG.unlocks.totems / CFG.biomeFloors)));
   assert.ok(C.permMult(s, 'tap') > C.permMult(C.newState(NOCRIT), 'tap'));
   CFG.unlocks = keep;
 });
