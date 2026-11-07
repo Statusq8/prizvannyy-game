@@ -240,7 +240,7 @@
       return h;
     }
 
-    function artCan(a, c) { return a.blood ? s.materials.shard >= c : B.gte(s.souls, c); }
+    function artCan(a, c) { return a.crystal ? (s.crystals | 0) >= c : a.blood ? s.materials.shard >= c : B.gte(s.souls, c); }
     // Артефакты: сетка 4 в ряд, отдельная страница улучшения (×1/×10/×100/MAX)
     function artHtml() {
       if (artSel) {
@@ -251,10 +251,10 @@
           '<div class="cmp">Ур. ' + lv + (a.max ? ' / ' + a.max : '') + '</div><p>' + a.desc + '</p>' + (prev ? dpsChange(prev) : '') +
           (c == null ? '<button class="upBtn" disabled style="width:70%;margin-top:10px">Максимум</button>'
                      : '<button class="upBtn" data-aup="' + a.id + '" style="width:70%;margin-top:10px"' + (artCan(a, c) ? '' : ' disabled') + '>Улучшить' +
-                       (artN !== 1 ? ' ' + (artN === 'max' ? 'MAX' : '×' + artN) : '') + '<span>' + (a.blood ? '🔹 ' : '👻 ') + fmt(c) + (artN !== 1 ? ' за ур.' : '') + '</span></button>') + '</div>';
+                       (artN !== 1 ? ' ' + (artN === 'max' ? 'MAX' : '×' + artN) : '') + '<span>' + (a.crystal ? '💎 ' : a.blood ? '🔹 ' : '👻 ') + fmt(c) + (artN !== 1 ? ' за ур.' : '') + '</span></button>') + '</div>';
       }
       const KORD = a => (a.kind || '').replace(/^(all|tap|ally|hero)/, m => ({ all: '0', tap: '1', ally: '2', hero: '3' }[m] || m));
-      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || KORD(x).localeCompare(KORD(y)));
+      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0 || a.crystal).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || KORD(x).localeCompare(KORD(y)));
       // 0.92: витрина как в Крушителях — «Души» и «Кровь» (за осколки)
       let h = '<div class="multRow"><button class="chip' + (artTab === 'got' ? ' on' : '') + '" data-at="got">Полученные (' + got.length + ')</button>' +
         '<button class="chip' + (artTab === 'not' ? ' on' : '') + '" data-at="not">⚒ Витрина</button></div>';
@@ -433,7 +433,7 @@
       else if (d.art) { click(); artSel = d.art; artN = 1; }
       else if (d.an) { click(); artN = d.an === 'max' ? 'max' : +d.an; }
       else if (d.aup) {
-        click(); const n = artN === 'max' ? 1e4 : artN; let k = 0;
+        click(); const n = (CFG.artifacts.find(x => x.id === d.aup) || {}).crystal ? 1 : artN === 'max' ? 1e4 : artN; let k = 0;
         while (k < n && C.upgradeArtifact(s, d.aup)) k++;
         if (k) { save(); toast('Артефакт улучшен<small>+' + k + ' ур.</small>'); }
       }
@@ -852,7 +852,7 @@
       const FA = window.FG_ART || {}, ic = a => FA['i_' + a.id] ? '<img src="' + FA['i_' + a.id] + '" alt="">' : '<b style="font-size:34px">' + a.icon + '</b>';
       const TABS = [['art', 'artifacts', FA.i_crown ? '<img src="' + FA.i_crown + '" alt="">' : '<b>⚒</b>', 'Артефакты'], ['runes', 'runes', '<b>ᚦ</b>', 'Руны'], ['altar', 'altar', '<b>🕯</b>', 'Алтарь'], ['bones', 'bones', '<b>🦴</b>', 'Кости']];
       let h = '<div class="fgTabs">' + TABS.filter(x => C.unlockedAt(s, x[1])).map(([id, , i, nm]) => '<button data-fgt="' + id + '" class="' + (id === 'art' ? 'on' : '') + '">' + i + nm + '</button>').join('') + '</div>';
-      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || (y.special ? 1 : 0) - (x.special ? 1 : 0));
+      const got = CFG.artifacts.filter(a => C.artLevel(s, a.id) > 0 || a.crystal).sort((x, y) => (x.blood ? 1 : 0) - (y.blood ? 1 : 0) || (y.special ? 1 : 0) - (x.special ? 1 : 0));
       h += '<div class="fgGrid">' + (got.length ? got.map(a => { const c = C.upgradeArtCost(s, a.id);
         return '<button class="fgCell" data-fgs="' + a.id + '">' + ic(a) + '<span class="lv">Ур. ' + C.artLevel(s, a.id) + '</span>' + (c != null && artCan(a, c) ? '<i class="bang2">!</i>' : '') + '</button>'; }).join('')
         : '<div class="fgEmpty">Пока ни одного артефакта. Купи первый на витрине ниже — за души с мега-боссов.</div>') + '</div>';
@@ -873,7 +873,7 @@
         const a = CFG.artifacts.find(x => x.id === fgSel), lv = C.artLevel(s, a.id), c = C.upgradeArtCost(s, a.id), ok = c != null && artCan(a, c);
         h += '<div class="fgPop"><div class="box' + (a.blood ? ' blood' : '') + '"><button class="x" data-fgx>✕</button>' + ic(a) + '<h3>' + a.name + '</h3><div class="lvl">Ур. ' + lv + (a.max ? ' / ' + a.max : '') + '</div><p>' + a.desc + '</p>' +
           (c == null ? '<div class="row"><button disabled>Максимум</button></div>'
-            : '<div class="row"><button data-fgu="1"' + (ok ? '' : ' disabled') + '>Улучшить<br>' + (a.blood ? '🔹 ' : '👻 ') + fmt(c) + '</button><button data-fgu="max"' + (ok ? '' : ' disabled') + '>MAX</button></div>') + '</div></div>';
+            : '<div class="row"><button data-fgu="1"' + (ok ? '' : ' disabled') + '>Улучшить<br>' + (a.crystal ? '💎 ' : a.blood ? '🔹 ' : '👻 ') + fmt(c) + '</button>' + (a.crystal ? '' : '<button data-fgu="max"' + (ok ? '' : ' disabled') + '>MAX</button>') + '</div>') + '</div></div>';
       }
       return h;
     }

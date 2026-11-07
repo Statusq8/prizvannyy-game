@@ -159,12 +159,14 @@
   }
   function upgradeArtCost(s, id) {
     const a = artDef(id), lv = artLevel(s, id);
+    if (a && a.crystal) return lv < a.costs.length && !(a.max && lv >= a.max) ? a.costs[lv] : null;   // 0.160: за 💎, покупается и с 0 уровня
     if (!a || lv === 0 || (a.max && lv >= a.max)) return null;
     return Math.ceil(a.cost * Math.pow(a.growth, lv - 1));
   }
   function upgradeArtifact(s, id) {
     const cost = upgradeArtCost(s, id);
     if (cost == null) return false;
+    if (artDef(id).crystal) { if ((s.crystals | 0) < cost) return false; s.crystals -= cost; s.artifacts[id] = (s.artifacts[id] | 0) + 1; return true; }
     if (artDef(id).blood) { if (s.materials.shard < cost) return false; s.materials.shard -= cost; s.artifacts[id]++; return true; }
     if (B.lt(s.souls, cost)) return false;
     s.souls = B.sub(s.souls, cost);

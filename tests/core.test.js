@@ -2875,3 +2875,15 @@ test('0.159: 💎 → билеты портала и путешествия во
   assert.strictEqual(C.travelCost(s, 'd1'), 0);                      // бесплатное путешествие не тронуто
   assert.strictEqual(C.travelCrystalCost(s, 'd2'), L[0]);            // новый день — снова
 });
+
+test('0.160: меч-автотап за 💎 — покупка с 0 уровня, до 10, не выпадает за души', () => {
+  const s = C.newState(NOCRIT), A = CFG.artifacts.find(a => a.id === 'blade');
+  assert.strictEqual(C.upgradeArtCost(s, 'blade'), A.costs[0]);
+  assert.strictEqual(C.upgradeArtifact(s, 'blade'), false);              // нет 💎
+  s.crystals = 1e5; s.souls = 0;
+  for (let i = 0; i < 10; i++) assert.ok(C.upgradeArtifact(s, 'blade'));
+  assert.strictEqual(C.artLevel(s, 'blade'), 10); assert.strictEqual(C.upgradeArtCost(s, 'blade'), null);
+  assert.strictEqual(s.crystals, 1e5 - A.costs.reduce((x, y) => x + y, 0));
+  assert.strictEqual(C.heroAutoTps(s), 10);
+  assert.ok(A.special);                                                   // special — не выпадает и нет на витрине
+});
