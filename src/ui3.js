@@ -320,7 +320,7 @@
       const P = window.PF_ART, R = window.RG_ART || {}, PT2 = window.PT_ART || {}, st = s.stats;
       pg.classList.add('pfl');
       let res = $('pfRes'); if (!res) { res = document.createElement('div'); res.id = 'pfRes'; pg.querySelector('.pgHead').appendChild(res); }
-      res.innerHTML = '<div class="resPill"><img src="' + R.i_crystal + '" alt=""><b>' + fmt(s.crystals | 0) + '</b></div><div class="resPill">' + (PT2.ticket ? '<img src="' + PT2.ticket + '" alt="">' : '<i>🎟</i>') + '<b>' + fmt(s.tickets) + '</b></div>';
+      res.innerHTML = '<div class="resPill"><img src="' + R.i_crystal + '" alt=""><b>' + fmt(s.crystals | 0) + '</b></div><div class="resPill" data-tk>' + (PT2.ticket ? '<img src="' + PT2.ticket + '" alt="">' : '<i>🎟</i>') + '<b>' + fmt(s.tickets) + '</b></div>';
       const im = n => '<img src="' + P[n] + '" alt="">';
       const T = [['me', 'p_person', 'Игрок'], ['tit', 'p_laurel', 'Титулы'], ['skin', 'p_shirt', 'Облики'], ['st', 'p_bars', 'Статы'], ['chr', 'p_book', 'Хроника']];
       let h = '<div class="pf"><div class="pTabs">' + T.map(([id, ic, nm]) => '<button class="pTab' + (id === pTab ? ' pOn' : '') + '" data-pt="' + id + '">' + im(ic) + nm + '</button>').join('') + '</div>';

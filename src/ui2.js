@@ -25,8 +25,16 @@
       } catch (e) {}
     }
     function setHtml(id, html) { if (lastHtml[id] !== html) { $(id).innerHTML = html; lastHtml[id] = html; } }
-    function cur(icon, val, gold) { return '<div class="cur' + (gold ? ' g' : '') + '"><i>' + icon + '</i>' + val + '<b class="plus" data-shop>+</b></div>'; }
-    document.addEventListener('click', e => { if (e.target.closest('.pgTop [data-shop]') && window.U3 && window.U3.menuAct) { click(); window.U3.menuAct('shop'); } });
+    function cur(icon, val, gold) { return '<div class="cur' + (gold ? ' g' : '') + '"><i>' + icon + '</i>' + val + '<b class="plus" data-shop data-cur="' + icon + '">+</b></div>'; }
+    // 0.159: «+» у 🎟 — окно «Билеты за 💎»; у остальных валют — магазин
+    function ticketWin() {
+      const P = CFG.ticketShop;
+      window.U3.sys({ title: 'БИЛЕТЫ ПОРТАЛА', html: '<p>У вас: 🎟 ' + fmt(s.tickets) + ' · 💎 ' + fmt(s.crystals | 0) + '</p>',
+        btns: P.map((p, i) => ({ t: '<span style="font-size:.85em;line-height:1.15">🎟 ' + p.tickets + '<br>💎 ' + p.crystals + '</span>', dis: (s.crystals | 0) < p.crystals,
+          fn: () => { if (C.buyTickets(s, i)) { save(); render(); toast('+' + p.tickets + ' 🎟'); } } })).concat([{ t: '✕' }]) });
+    }
+    document.addEventListener('click', e => { const b = e.target.closest('.pgTop [data-shop], [data-tk]'); if (!b || !window.U3) return; click();
+      if (b.dataset.cur === '🎟' || 'tk' in b.dataset) ticketWin(); else if (window.U3.menuAct) window.U3.menuAct('shop'); });
     const M = CFG.materials;
 
     // ---------- открытие / закрытие страниц ----------
@@ -497,7 +505,7 @@
     function resPills(list) {
       const I = Object.assign({}, window.MK_ART || {}, window.RG_ART || {}), P = window.PT_ART || {};
       const src = { soul: I.i_soul, crystal: I.i_crystal, shard: I.i_shard, ticket: P.ticket };
-      return list.map(([k, v]) => '<div class="resPill">' + (src[k] ? '<img src="' + src[k] + '" alt="">' : '<i>' + ({ lantern: '🏮', soul: '👻', crystal: '💎', shard: '🔹', ticket: '🎟' }[k] || '') + '</i>') + '<b>' + v + '</b></div>').join('');
+      return list.map(([k, v]) => '<div class="resPill"' + (k === 'ticket' ? ' data-tk' : '') + '>' + (src[k] ? '<img src="' + src[k] + '" alt="">' : '<i>' + ({ lantern: '🏮', soul: '👻', crystal: '💎', shard: '🔹', ticket: '🎟' }[k] || '') + '</i>') + '<b>' + v + '</b></div>').join('');
     }
     function renderX() {
       const aux = $('xAux');

@@ -207,6 +207,8 @@
 | `timeTravel.freePerDay` | `1` |
 | `timeTravel.ticketCost` | `3` |
 | `timeTravel.paidPerDay` | `2` |
+| `timeTravel.crystalCosts` | `[100,200,300]` |
+| `ticketShop` | `[{"tickets":10,"crystals":100},{"tickets":55,"crystals":500}]` |
 | `questChests` | `[{"need":1,"reward":{"crystals":5}},{"need":2,"reward":{"tickets":1}},{"need":4,"reward":{"tickets":2,"crystals":10}}]` |
 | `classes.unlockFloor` | `100` |
 | `classes.pointsPerFloors` | `25` |

@@ -2862,3 +2862,16 @@ test('Эхо: «Тишина» блокирует ульту героя (0.149)'
   assert.deepStrictEqual(C.useAbility(s, id), []);
   s.mode = null; assert.ok(C.useAbility(s, id).length || !C.abilityReady(s, id));
 });
+
+test('0.159: 💎 → билеты портала и путешествия во времени (до 3 в день, цена растёт)', () => {
+  const s = C.newState(NOCRIT); s.crystals = 120; const t0 = s.tickets;
+  assert.ok(C.buyTickets(s, 0)); assert.strictEqual(s.tickets, t0 + 10); assert.strictEqual(s.crystals, 20);
+  assert.strictEqual(C.buyTickets(s, 0), false); assert.strictEqual(C.buyTickets(s, 9), false);
+  s.allies.shorokh.level = 5; s.crystals = 1000;
+  const L = CFG.timeTravel.crystalCosts;
+  assert.strictEqual(C.travelCrystalCost(s, 'd1'), L[0]);
+  for (const c of L) { const cr = s.crystals; assert.ok(C.timeTravelCrystals(s, 'd1')); assert.strictEqual(s.crystals, cr - c); }
+  assert.strictEqual(C.travelCrystalCost(s, 'd1'), null); assert.strictEqual(C.timeTravelCrystals(s, 'd1'), null);
+  assert.strictEqual(C.travelCost(s, 'd1'), 0);                      // бесплатное путешествие не тронуто
+  assert.strictEqual(C.travelCrystalCost(s, 'd2'), L[0]);            // новый день — снова
+});

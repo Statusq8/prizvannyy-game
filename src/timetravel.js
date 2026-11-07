@@ -50,12 +50,13 @@
     const dk = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
     const im = (src, cls) => src ? '<img src="' + src + '" alt=""' + (cls ? ' class="' + cls + '"' : '') + '>' : '';
     function travelWin() {
-      const T = CFG.timeTravel, k = dk(), tc = C.travelCost(s, k), used = s.travel && s.travel.day === k ? s.travel.used : 0, can = B.gt(C.offlineDps(s), 0);
+      const T = CFG.timeTravel, k = dk(), tc = C.travelCost(s, k), cc = C.travelCrystalCost(s, k), cn = (T.crystalCosts || []).length, cu = s.travel && s.travel.day === k ? (s.travel.cr | 0) : 0, used = s.travel && s.travel.day === k ? s.travel.used : 0, can = B.gt(C.offlineDps(s), 0);
       ov.innerHTML = '<div class="tW"><div class="tTi">Путешествие во времени</div><button class="tX" data-tt="x"></button><div class="tHg"></div>' +
         '<div class="tTx">Получить ' + T.hours + ' ч прогресса сразу</div>' +
-        '<div class="tCnt">Бесплатно: <b>' + Math.max(0, T.freePerDay - used) + '/' + T.freePerDay + '</b> · За билеты: <b>' + Math.max(0, Math.min(T.paidPerDay, T.paidPerDay - (used - T.freePerDay))) + '/' + T.paidPerDay + '</b></div>' +
-        '<div class="tBts"><button class="tB" data-tt="go"' + (can && tc === 0 ? '' : ' disabled') + '>Бесплатно</button><button class="tB v" data-tt="go"' + (can && tc > 0 && s.tickets >= tc ? '' : ' disabled') + '>' + im(MK.i_ticket) + (tc > 0 ? tc : T.ticketCost) + '</button></div>' +
-        (can ? (tc == null ? '<div class="tNo">На сегодня путешествия закончились — завтра снова</div>' : '') : '<div class="tNo">Наймите героев — без них офлайн-прогресса нет</div>') + '</div>';
+        '<div class="tCnt">Бесплатно: <b>' + Math.max(0, T.freePerDay - used) + '/' + T.freePerDay + '</b> · За билеты: <b>' + Math.max(0, Math.min(T.paidPerDay, T.paidPerDay - (used - T.freePerDay))) + '/' + T.paidPerDay + '</b> · За 💎: <b>' + (cn - cu) + '/' + cn + '</b></div>' +
+        '<div class="tBts"><button class="tB" data-tt="go"' + (can && tc === 0 ? '' : ' disabled') + '>Бесплатно</button><button class="tB v" data-tt="go"' + (can && tc > 0 && s.tickets >= tc ? '' : ' disabled') + '>' + im(MK.i_ticket) + (tc > 0 ? tc : T.ticketCost) + '</button>' +
+          (cn ? '<button class="tB v" data-tt="cr"' + (can && cc != null && (s.crystals | 0) >= cc ? '' : ' disabled') + '>💎' + (cc != null ? cc : T.crystalCosts[cn - 1]) + '</button>' : '') + '</div>' +
+        (can ? (tc == null && cc == null ? '<div class="tNo">На сегодня путешествия закончились — завтра снова</div>' : '') : '<div class="tNo">Наймите героев — без них офлайн-прогресса нет</div>') + '</div>';
       ov.classList.add('show');
     }
     function report(r, title) {
@@ -80,7 +81,7 @@
       if (b.disabled) return;
       if (b.dataset.tt === 'x') { ov.classList.remove('show'); return; }
       if (s.mode) { toast('Сначала выйдите из режима'); return; }
-      const r = C.timeTravel(s, dk()); if (!r) return;
+      const r = b.dataset.tt === 'cr' ? C.timeTravelCrystals(s, dk()) : C.timeTravel(s, dk()); if (!r) return;
       ov.classList.remove('show'); report(r, 'Путешествие во времени'); save(); render();
     });
     btn.addEventListener('click', e => { e.stopPropagation(); travelWin(); });

@@ -2338,7 +2338,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       big: [7, 14, 21, 28, 30],
     },
     // «Путешествие во времени»: мгновенно прокрутить часы офлайна. Раз в день бесплатно, потом за билеты (реклама — позже, с Android). Числа TBD.
-    timeTravel: { hours: 4, freePerDay: 1, ticketCost: 3, paidPerDay: 2 },
+    timeTravel: { hours: 4, freePerDay: 1, ticketCost: 3, paidPerDay: 2,
+      crystalCosts: [100, 200, 300] },   // 0.159 (решение 07.11): ещё до 3 путешествий в день за 💎, цена растёт
+    ticketShop: [ { tickets: 10, crystals: 100 }, { tickets: 55, crystals: 500 } ],   // 0.159 (решение 07.11): билеты портала за 💎
     // Сундуки заданий: за выполненные (забранные) ежедневные задания открываются 4 сундука по вехам. Обновляются вместе с днём. Числа TBD.
     questChests: [   // 0.116: 4 ежедневных задания → 3 сундука, только билеты и 💎
       { need: 1, reward: { crystals: 5 } },
@@ -4179,7 +4181,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   }
 
   // ---------- путешествие во времени ----------
-  function travelReset(s, dayKey) { if (s.travel.day !== dayKey) { s.travel.day = dayKey; s.travel.used = 0; } }
+  function travelReset(s, dayKey) { if (s.travel.day !== dayKey) { s.travel.day = dayKey; s.travel.used = 0; s.travel.cr = 0; } }
   // Цена следующего путешествия: 0 — бесплатно, N — билетов, null — на сегодня всё
   function travelCost(s, dayKey) {
     travelReset(s, dayKey);
@@ -4193,6 +4195,19 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     if (cost == null || s.tickets < cost || !B.gt(offlineDps(s), 0)) return null;   // без авто-урона путешествие бесполезно — попытку не тратим
     s.tickets -= cost; s.travel.used++;
     return offlineProgress(s, CONFIG.timeTravel.hours * 3600);
+  }
+  // 0.159: путешествия за 💎 — отдельный дневной счётчик; цена следующего или null
+  function travelCrystalCost(s, dayKey) { travelReset(s, dayKey); const L = CONFIG.timeTravel.crystalCosts || []; const n = s.travel.cr | 0; return n < L.length ? L[n] : null; }
+  function timeTravelCrystals(s, dayKey) {
+    const cost = travelCrystalCost(s, dayKey);
+    if (cost == null || (s.crystals | 0) < cost || !B.gt(offlineDps(s), 0)) return null;
+    s.crystals -= cost; s.travel.cr = (s.travel.cr | 0) + 1;
+    return offlineProgress(s, CONFIG.timeTravel.hours * 3600);
+  }
+  // 0.159: билеты портала за 💎
+  function buyTickets(s, i) {
+    const p = CONFIG.ticketShop[i]; if (!p || (s.crystals | 0) < p.crystals) return false;
+    s.crystals -= p.crystals; s.tickets += p.tickets; return true;
   }
 
   // ---------- сезон и боевой пропуск ----------
@@ -5604,7 +5619,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     floorSteps, biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     ultDesc, perkList,
     dailyClaimedCount, questChestReady, openQuestChest, questChestsReady,
-    loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel,
+    loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel, travelCrystalCost, timeTravelCrystals, buyTickets,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
@@ -7615,8 +7630,16 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       } catch (e) {}
     }
     function setHtml(id, html) { if (lastHtml[id] !== html) { $(id).innerHTML = html; lastHtml[id] = html; } }
-    function cur(icon, val, gold) { return '<div class="cur' + (gold ? ' g' : '') + '"><i>' + icon + '</i>' + val + '<b class="plus" data-shop>+</b></div>'; }
-    document.addEventListener('click', e => { if (e.target.closest('.pgTop [data-shop]') && window.U3 && window.U3.menuAct) { click(); window.U3.menuAct('shop'); } });
+    function cur(icon, val, gold) { return '<div class="cur' + (gold ? ' g' : '') + '"><i>' + icon + '</i>' + val + '<b class="plus" data-shop data-cur="' + icon + '">+</b></div>'; }
+    // 0.159: «+» у 🎟 — окно «Билеты за 💎»; у остальных валют — магазин
+    function ticketWin() {
+      const P = CFG.ticketShop;
+      window.U3.sys({ title: 'БИЛЕТЫ ПОРТАЛА', html: '<p>У вас: 🎟 ' + fmt(s.tickets) + ' · 💎 ' + fmt(s.crystals | 0) + '</p>',
+        btns: P.map((p, i) => ({ t: '<span style="font-size:.85em;line-height:1.15">🎟 ' + p.tickets + '<br>💎 ' + p.crystals + '</span>', dis: (s.crystals | 0) < p.crystals,
+          fn: () => { if (C.buyTickets(s, i)) { save(); render(); toast('+' + p.tickets + ' 🎟'); } } })).concat([{ t: '✕' }]) });
+    }
+    document.addEventListener('click', e => { const b = e.target.closest('.pgTop [data-shop], [data-tk]'); if (!b || !window.U3) return; click();
+      if (b.dataset.cur === '🎟' || 'tk' in b.dataset) ticketWin(); else if (window.U3.menuAct) window.U3.menuAct('shop'); });
     const M = CFG.materials;
 
     // ---------- открытие / закрытие страниц ----------
@@ -8087,7 +8110,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     function resPills(list) {
       const I = Object.assign({}, window.MK_ART || {}, window.RG_ART || {}), P = window.PT_ART || {};
       const src = { soul: I.i_soul, crystal: I.i_crystal, shard: I.i_shard, ticket: P.ticket };
-      return list.map(([k, v]) => '<div class="resPill">' + (src[k] ? '<img src="' + src[k] + '" alt="">' : '<i>' + ({ lantern: '🏮', soul: '👻', crystal: '💎', shard: '🔹', ticket: '🎟' }[k] || '') + '</i>') + '<b>' + v + '</b></div>').join('');
+      return list.map(([k, v]) => '<div class="resPill"' + (k === 'ticket' ? ' data-tk' : '') + '>' + (src[k] ? '<img src="' + src[k] + '" alt="">' : '<i>' + ({ lantern: '🏮', soul: '👻', crystal: '💎', shard: '🔹', ticket: '🎟' }[k] || '') + '</i>') + '<b>' + v + '</b></div>').join('');
     }
     function renderX() {
       const aux = $('xAux');
@@ -9081,7 +9104,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       const P = window.PF_ART, R = window.RG_ART || {}, PT2 = window.PT_ART || {}, st = s.stats;
       pg.classList.add('pfl');
       let res = $('pfRes'); if (!res) { res = document.createElement('div'); res.id = 'pfRes'; pg.querySelector('.pgHead').appendChild(res); }
-      res.innerHTML = '<div class="resPill"><img src="' + R.i_crystal + '" alt=""><b>' + fmt(s.crystals | 0) + '</b></div><div class="resPill">' + (PT2.ticket ? '<img src="' + PT2.ticket + '" alt="">' : '<i>🎟</i>') + '<b>' + fmt(s.tickets) + '</b></div>';
+      res.innerHTML = '<div class="resPill"><img src="' + R.i_crystal + '" alt=""><b>' + fmt(s.crystals | 0) + '</b></div><div class="resPill" data-tk>' + (PT2.ticket ? '<img src="' + PT2.ticket + '" alt="">' : '<i>🎟</i>') + '<b>' + fmt(s.tickets) + '</b></div>';
       const im = n => '<img src="' + P[n] + '" alt="">';
       const T = [['me', 'p_person', 'Игрок'], ['tit', 'p_laurel', 'Титулы'], ['skin', 'p_shirt', 'Облики'], ['st', 'p_bars', 'Статы'], ['chr', 'p_book', 'Хроника']];
       let h = '<div class="pf"><div class="pTabs">' + T.map(([id, ic, nm]) => '<button class="pTab' + (id === pTab ? ' pOn' : '') + '" data-pt="' + id + '">' + im(ic) + nm + '</button>').join('') + '</div>';
@@ -11192,12 +11215,13 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     const dk = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
     const im = (src, cls) => src ? '<img src="' + src + '" alt=""' + (cls ? ' class="' + cls + '"' : '') + '>' : '';
     function travelWin() {
-      const T = CFG.timeTravel, k = dk(), tc = C.travelCost(s, k), used = s.travel && s.travel.day === k ? s.travel.used : 0, can = B.gt(C.offlineDps(s), 0);
+      const T = CFG.timeTravel, k = dk(), tc = C.travelCost(s, k), cc = C.travelCrystalCost(s, k), cn = (T.crystalCosts || []).length, cu = s.travel && s.travel.day === k ? (s.travel.cr | 0) : 0, used = s.travel && s.travel.day === k ? s.travel.used : 0, can = B.gt(C.offlineDps(s), 0);
       ov.innerHTML = '<div class="tW"><div class="tTi">Путешествие во времени</div><button class="tX" data-tt="x"></button><div class="tHg"></div>' +
         '<div class="tTx">Получить ' + T.hours + ' ч прогресса сразу</div>' +
-        '<div class="tCnt">Бесплатно: <b>' + Math.max(0, T.freePerDay - used) + '/' + T.freePerDay + '</b> · За билеты: <b>' + Math.max(0, Math.min(T.paidPerDay, T.paidPerDay - (used - T.freePerDay))) + '/' + T.paidPerDay + '</b></div>' +
-        '<div class="tBts"><button class="tB" data-tt="go"' + (can && tc === 0 ? '' : ' disabled') + '>Бесплатно</button><button class="tB v" data-tt="go"' + (can && tc > 0 && s.tickets >= tc ? '' : ' disabled') + '>' + im(MK.i_ticket) + (tc > 0 ? tc : T.ticketCost) + '</button></div>' +
-        (can ? (tc == null ? '<div class="tNo">На сегодня путешествия закончились — завтра снова</div>' : '') : '<div class="tNo">Наймите героев — без них офлайн-прогресса нет</div>') + '</div>';
+        '<div class="tCnt">Бесплатно: <b>' + Math.max(0, T.freePerDay - used) + '/' + T.freePerDay + '</b> · За билеты: <b>' + Math.max(0, Math.min(T.paidPerDay, T.paidPerDay - (used - T.freePerDay))) + '/' + T.paidPerDay + '</b> · За 💎: <b>' + (cn - cu) + '/' + cn + '</b></div>' +
+        '<div class="tBts"><button class="tB" data-tt="go"' + (can && tc === 0 ? '' : ' disabled') + '>Бесплатно</button><button class="tB v" data-tt="go"' + (can && tc > 0 && s.tickets >= tc ? '' : ' disabled') + '>' + im(MK.i_ticket) + (tc > 0 ? tc : T.ticketCost) + '</button>' +
+          (cn ? '<button class="tB v" data-tt="cr"' + (can && cc != null && (s.crystals | 0) >= cc ? '' : ' disabled') + '>💎' + (cc != null ? cc : T.crystalCosts[cn - 1]) + '</button>' : '') + '</div>' +
+        (can ? (tc == null && cc == null ? '<div class="tNo">На сегодня путешествия закончились — завтра снова</div>' : '') : '<div class="tNo">Наймите героев — без них офлайн-прогресса нет</div>') + '</div>';
       ov.classList.add('show');
     }
     function report(r, title) {
@@ -11222,7 +11246,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       if (b.disabled) return;
       if (b.dataset.tt === 'x') { ov.classList.remove('show'); return; }
       if (s.mode) { toast('Сначала выйдите из режима'); return; }
-      const r = C.timeTravel(s, dk()); if (!r) return;
+      const r = b.dataset.tt === 'cr' ? C.timeTravelCrystals(s, dk()) : C.timeTravel(s, dk()); if (!r) return;
       ov.classList.remove('show'); report(r, 'Путешествие во времени'); save(); render();
     });
     btn.addEventListener('click', e => { e.stopPropagation(); travelWin(); });

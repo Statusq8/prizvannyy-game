@@ -141,7 +141,7 @@
   }
 
   // ---------- путешествие во времени ----------
-  function travelReset(s, dayKey) { if (s.travel.day !== dayKey) { s.travel.day = dayKey; s.travel.used = 0; } }
+  function travelReset(s, dayKey) { if (s.travel.day !== dayKey) { s.travel.day = dayKey; s.travel.used = 0; s.travel.cr = 0; } }
   // Цена следующего путешествия: 0 — бесплатно, N — билетов, null — на сегодня всё
   function travelCost(s, dayKey) {
     travelReset(s, dayKey);
@@ -155,6 +155,19 @@
     if (cost == null || s.tickets < cost || !B.gt(offlineDps(s), 0)) return null;   // без авто-урона путешествие бесполезно — попытку не тратим
     s.tickets -= cost; s.travel.used++;
     return offlineProgress(s, CONFIG.timeTravel.hours * 3600);
+  }
+  // 0.159: путешествия за 💎 — отдельный дневной счётчик; цена следующего или null
+  function travelCrystalCost(s, dayKey) { travelReset(s, dayKey); const L = CONFIG.timeTravel.crystalCosts || []; const n = s.travel.cr | 0; return n < L.length ? L[n] : null; }
+  function timeTravelCrystals(s, dayKey) {
+    const cost = travelCrystalCost(s, dayKey);
+    if (cost == null || (s.crystals | 0) < cost || !B.gt(offlineDps(s), 0)) return null;
+    s.crystals -= cost; s.travel.cr = (s.travel.cr | 0) + 1;
+    return offlineProgress(s, CONFIG.timeTravel.hours * 3600);
+  }
+  // 0.159: билеты портала за 💎
+  function buyTickets(s, i) {
+    const p = CONFIG.ticketShop[i]; if (!p || (s.crystals | 0) < p.crystals) return false;
+    s.crystals -= p.crystals; s.tickets += p.tickets; return true;
   }
 
   // ---------- сезон и боевой пропуск ----------

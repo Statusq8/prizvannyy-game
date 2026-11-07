@@ -62,6 +62,11 @@ function fullBot({ donor = false, seed = 7 } = {}) {
       if (Core.unlockedAt(s, 'echo')) { const ex = Core.echoInfo(s); if (ex && ex.left) runMode('echo', {}); }
       for (const x of s.secrets.filter(x => !x.done)) runMode('secret', { floor: x.floor });
     }
+    // 0.159: путешествия во времени (бесплатное и за 🎟) и 💎 → путешествия, затем остаток 💎 → билеты
+    if (!s.mode) { let n = 0; while (n++ < 3 && Core.travelCost(s, dk) != null && s.tickets >= Core.travelCost(s, dk) && Core.timeTravel(s, dk)); }
+    const keep = 0;   // донатер тоже сначала путешествует; светлая регрессия — из того, что осталось
+    if (!s.mode) { let n = 0; while (n++ < 3) { const c = Core.travelCrystalCost(s, dk); if (c == null || (s.crystals | 0) - c < keep || !Core.timeTravelCrystals(s, dk)) break; } }
+    for (let i = CFG.ticketShop.length - 1; i >= 0; i--) while ((s.crystals | 0) - CFG.ticketShop[i].crystals >= (donor ? CFG.ritual.light.crystals : 0) && Core.buyTickets(s, i));
     if (s.curse && !s.curse.on && s.curse.floor === s.floor) Core.acceptCurse(s);
     Core.claimEverything(s, dk);
   }

@@ -76,7 +76,7 @@
     floorSteps, biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
     ultDesc, perkList,
     dailyClaimedCount, questChestReady, openQuestChest, questChestsReady,
-    loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel,
+    loginDayIndex, loginAvailable, claimLogin, travelCost, timeTravel, travelCrystalCost, timeTravelCrystals, buyTickets,
     serialize, deserialize, fmt,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
