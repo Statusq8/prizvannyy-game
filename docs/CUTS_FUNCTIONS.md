@@ -287,6 +287,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Из эссенции складывается силуэт знакомого героя. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Котёл (`alchemy`)
+
+**cut_alchemy_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a cauldron starts to boil next to a stone altar, multicolored steam swirling above. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Рядом с алтарём закипает котёл, над ним клубится разноцветный пар. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_alchemy_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a small sly rogue sniffs a potion vial and wrinkles his nose. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Шорох нюхает флакон и морщится. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_alchemy_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man drinks a potion in one gulp, his eyes flash gold. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой залпом выпивает зелье, глаза вспыхивают золотом. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)

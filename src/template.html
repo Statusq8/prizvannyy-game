@@ -2047,7 +2047,7 @@
   // 0.60: алхимия — зелья на время (идёт и офлайн), повтор продлевает до 2 ч
   function alchemyHtml() {
     const A = CFG.alchemy, M = CFG.materials;
-    let h = '<div class="secTitle">АЛХИМИЯ · зелья на время</div><div class="hint2">Лишние осколки и эссенция — во временные зелья. Повтор продлевает действие (не дольше ' + dur(A.maxSec) + '). Время идёт и офлайн.</div>';
+    let h = '<div class="secTitle alcT">АЛХИМИЯ · зелья на время</div><div class="hint2">Лишние осколки и эссенция — во временные зелья. Повтор продлевает действие (не дольше ' + dur(A.maxSec) + '). Время идёт и офлайн.</div>';
     for (const p of A.potions) {
       const c = C.potionCost(s, p.id), left = s.potions[p.id] || 0;
       const can = s.materials.shard >= c.shard && s.essence >= c.essence && left + p.sec <= A.maxSec;
