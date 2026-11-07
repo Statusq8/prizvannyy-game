@@ -239,6 +239,37 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Герой с подозрением смотрит на фонарь. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## В путь (`expedition`)
+
+**cut_expedition_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a wooden notice board at the edge of a floating-island camp, covered with notes and maps, misty morning. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: У выхода из лагеря стоит доска, утыканная записками и картами. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_expedition_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a small sly rogue with a living shadow tears a note off the board, determined grin. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Тиль-Шорох срывает записку с доски. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_expedition_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man smiles and nods approvingly. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой улыбается и кивает. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_expedition_4** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a small party of adventurers walks away along a misty path between floating islands. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Маленький отряд уходит по туманной тропе между островами. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Письмо (`mail`)
 
 **cut_mail_1** — размер 1600x900 (широкая, 16:9)

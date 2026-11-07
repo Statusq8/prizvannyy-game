@@ -31,6 +31,9 @@
         ['.fRoom.cur', 'Здесь ты сейчас. Пройденные этажи можно фармить — награды там меньше.', 0]]],
       ['events', 'Открыты События: временные задачи с особыми наградами.', [CAMP, ...more(2, 'События')]],
       ['mail', 'Открыта Почта: сюда приходят награды.', [CAMP, ...more(1, 'Почта')]],
+      ['expedition', 'Открыты Экспедиции: отправляй героев в походы за осколками, билетами и копиями.', [CAMP, ...more(8, 'Экспедиции'),
+        ['.exOf', 'У каждого похода есть условия: фракция, ранг не выше, звёзды. Слабые герои тоже пригодятся!', 0],
+        ['.exOf [data-exsel]', 'Жми «Собрать» и выбери героев. Они продолжат драться в Башне, пока идут в походе.', 0]]],
     ];
     let g = null; try { g = JSON.parse(localStorage.getItem(GK) || 'null'); } catch (e) {}
     if (!g) { g = { seen: {} }; GUIDES.forEach(([k]) => { if (on(k)) g.seen[k] = 1; }); }
@@ -137,18 +140,21 @@
     document.head.appendChild(css);
     const pop = document.createElement('div'); pop.id = 'achPop'; document.body.appendChild(pop);
     const q = []; let t = 0;
-    pop.addEventListener('click', e => { e.stopPropagation(); pop.classList.remove('show'); clearTimeout(t); if (window.U2) { U2.click(); if (window.CUTS && CUTS.playing()) return; U2.home && U2.home(); U2.openX('ach'); } });
+    pop.addEventListener('click', e => { e.stopPropagation(); pop.classList.remove('show'); clearTimeout(t); if (window.U2) { U2.click(); if (window.CUTS && CUTS.playing()) return; U2.home && U2.home(); U2.openX(pop.dataset.go || 'ach'); } });
     function showNext() {
       if (pop.classList.contains('show') || !q.length) return;
       if (document.querySelector('#cutOv.show, #gdOv.show, #proOv')) return;
       const x = q.length > 3 ? { many: q.splice(0).length } : q.shift();
       pop.innerHTML = '<div class="md">🏅</div><div><b>ДОСТИЖЕНИЕ!</b>' + (x.many ? '<span>Выполнено ступеней: ' + x.many + '</span><small>тапни, чтобы забрать награды</small>'
-        : '<span>' + x.a.icon + ' ' + x.a.name + ' ' + (ROM[x.t] || x.t + 1) + '</span><small>тапни — забрать награду и бонус</small>') + '</div>';
+        : '<span>' + x.a.icon + ' ' + x.a.name + (x.t >= 0 ? ' ' + (ROM[x.t] || x.t + 1) : '') + '</span><small>' + (x.t >= 0 ? 'тапни — забрать награду и бонус' : 'тапни — забрать добычу') + '</small>') + '</div>';
+      pop.dataset.go = x.t === -1 ? 'exp' : 'ach'; pop.querySelector('b').textContent = x.t === -1 ? 'ЭКСПЕДИЦИЯ' : 'ДОСТИЖЕНИЕ!';
       pop.classList.add('show');
       if (window.U2 && U2.click) U2.click();
       t = setTimeout(() => { pop.classList.remove('show'); setTimeout(showNext, 600); }, 3200);
     }
+    const back = {}; for (const r of s.exp.runs) if (Date.now() >= r.end) back[r.uid] = 1;
     setInterval(() => {
+      for (const r of s.exp.runs) if (!back[r.uid] && Date.now() >= r.end) { back[r.uid] = 1; q.push({ a: { icon: '🧭', name: 'Отряд вернулся: ' + r.name }, t: -1 }); }
       for (const a of L()) {
         const tier = C.achTier(s, a.id), ready = C.achClaimable(s, a.id) ? tier + 1 : tier;
         if (ready > (noted[a.id] | 0)) { noted[a.id] = ready; if (ready > tier) q.push({ a, t: tier }); }

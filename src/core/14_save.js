@@ -27,7 +27,7 @@
       season: { ...s.season, free: Object.keys(s.season.free).map(Number), paid: Object.keys(s.season.paid).map(Number),
                 trailBase: s.season.trailBase ? { ...s.season.trailBase } : null },
       quests: { day: s.quests.day, week: s.quests.week, dayBase: { ...s.quests.dayBase }, weekBase: { ...s.quests.weekBase }, runBase: { ...s.quests.runBase }, claimed: Object.keys(s.quests.claimed), chests: Object.keys(s.quests.chests).map(Number) },
-      login: { ...s.login }, travel: { ...s.travel },
+      login: { ...s.login }, travel: { ...s.travel }, exp: JSON.parse(JSON.stringify(s.exp)),
       ach: { ...s.ach }, rituals: s.rituals, bestFloor: s.bestFloor, bestRecordAtRunStart: s.bestRecordAtRunStart,
       savedAt: Date.now(),
     });
@@ -244,6 +244,7 @@
         typeof qd.day !== 'string' || typeof qd.week !== 'string') return null;
     s.counters = nums(d.counters);
     s.quests = { day: qd.day, week: qd.week, dayBase: nums(qd.dayBase), weekBase: nums(qd.weekBase), runBase: nums(qd.runBase), claimed: {} };
+    s.exp = expLoad(d.exp);   // 0.142
     for (const a of CONFIG.achievements.list) { const t = d.ach && d.ach[a.id]; if (int(t, 1) && t <= a.goals.length) s.ach[a.id] = t; }
     for (const id of qd.claimed) if (questDef(id)) s.quests.claimed[id] = true;
     s.quests.chests = {};

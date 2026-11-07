@@ -2794,3 +2794,36 @@ test('0.109: светлый ритуал — за 💎, души ×mult; тём�
   b.crystals = CFG.ritual.light.crystals; const rb = C.ritual(b, 'light');
   assert.strictEqual(B.toNum(rb.souls), Math.floor(base * CFG.ritual.light.mult)); assert.strictEqual(b.crystals, 0);
 });
+
+test('экспедиции: доска, условия, герой в одном походе, награда по времени, сохранение (0.142)', () => {
+  let x = 0.37; const s = C.newState({ ...NOCRIT, rng: () => (x = (x * 9301 + 49297) % 233280 / 233280) });
+  s.bestFloor = s.maxFloor = 100;
+  const E = CFG.expeditions, offers = C.expRefresh(s, '2026-11-07');
+  assert.strictEqual(offers.length, E.board);
+  CFG.allies.forEach(a => { s.heroes[a.id].unlocked = true; });
+  // подберём героев под условия перебором
+  const pickFor = o => { const L = E.lengths[o.len], ids = CFG.allies.map(a => a.id);
+    for (let t = 0; t < 4000; t++) { const team = []; while (team.length < L.team) { const id = ids[Math.floor(Math.random() * ids.length)]; if (!team.includes(id) && !C.expBusy(s, id)) team.push(id); }
+      if (C.expCheck(s, o.uid, team).ok) return team; } return null; };
+  const o = offers.find(q => !q.req.some(r => r.k === 'stars')) || offers[0];
+  const team = pickFor(o); assert.ok(team, 'нашлась команда');
+  assert.strictEqual(C.expCheck(s, o.uid, team.slice(1)).ok, false);           // мало героев
+  assert.ok(C.expStart(s, o.uid, team, 1000));
+  assert.strictEqual(s.exp.offers.length, E.board);                              // предложение заменено
+  assert.ok(C.expBusy(s, team[0]));
+  const o2 = s.exp.offers[0]; const t2 = [team[0], ...CFG.allies.map(a => a.id).filter(id => !team.includes(id)).slice(0, E.lengths[o2.len].team - 1)];
+  assert.strictEqual(C.expCheck(s, o2.uid, t2).ok, false);                       // герой уже в походе
+  const run = s.exp.runs[0];
+  assert.strictEqual(C.expClaim(s, run.uid, run.end - 1), null);                 // ещё в пути
+  const save = JSON.parse(C.serialize(s)); const m = C.deserialize(JSON.stringify(save));
+  assert.strictEqual(m.exp.runs.length, 1); assert.deepStrictEqual(m.exp.runs[0].heroes, run.heroes);
+  const sh = s.materials.shard, tk = s.tickets, cp = team.reduce((n, id) => n + s.heroes[id].copies, 0);
+  const r = C.expClaim(s, run.uid, run.end);
+  assert.ok(r && r.shard > 0);
+  assert.strictEqual(s.materials.shard, sh + r.shard); assert.strictEqual(s.tickets, tk + r.tickets);
+  assert.strictEqual(team.reduce((n, id) => n + s.heroes[id].copies, 0), cp + r.copies.length);
+  assert.strictEqual(s.exp.runs.length, 0); assert.ok(!C.expBusy(s, team[0]));
+  // условие «ранг не выше»
+  const e = CFG.allies.find(a => a.rarity === 'E'), g = CFG.allies.find(a => a.rarity === 'GOD');
+  assert.ok(C.expReqOk(s, { k: 'maxRank', r: 'C' }, [e.id])); assert.ok(!C.expReqOk(s, { k: 'maxRank', r: 'C' }, [e.id, g.id]));
+});

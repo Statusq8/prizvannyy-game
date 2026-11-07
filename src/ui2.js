@@ -508,7 +508,8 @@
       $('pgX').classList.toggle('hsl', !!window.HS_ART && xKind === 'heroes');
       $('pgX').classList.toggle('cll', !!window.CL_ART && xKind === 'classes');
       $('pgX').classList.toggle('dyl', !!window.DY_ART && xKind === 'diary');
-      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach'));   // 0.137: страницы без своего макета — в стиле Настроек
+      $('pgX').classList.toggle('uni', !!window.ST_ART && (xKind === 'pve' || xKind === 'souls' || xKind === 'ach' || xKind === 'exp'));   // 0.137: страницы без своего макета — в стиле Настроек
+      if (xKind === 'exp') { aux.style.display = 'none'; $('xTitle').textContent = 'Экспедиции'; setHtml('xTop', resPills([['shard', fmt(s.materials.shard)], ['ticket', fmt(s.tickets)]])); setHtml('xBody', expHtml()); return; }
       if (xKind === 'ach') { aux.style.display = 'none'; $('xTitle').textContent = 'Достижения'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', achHtml()); return; }
       if (xKind === 'diary') { aux.style.display = 'none'; $('xTitle').textContent = 'Дневник'; setHtml('xTop', resPills([['ticket', fmt(s.tickets)], ['crystal', fmt(s.crystals | 0)]])); setHtml('xBody', diaryHtml()); return; }
       if (xKind === 'classes') { aux.style.display = 'none'; $('xTitle').textContent = 'Классы'; const CA = window.CL_ART || {}; setHtml('xTop', '<div class="resPill"><img src="' + CA.pt + '" alt=""><b>' + C.classFree(s) + ' / ' + C.classPoints(s) + '</b></div>'); setHtml('xBody', classesHtml()); return; }
@@ -678,6 +679,47 @@
     // ---------- 0.118: экран Заданий по макету пользователя — разметка; стили и картинки — src/quests.js ----------
     let qsTab = 'daily';
     function openQuests(t) { if (t) qsTab = t; stack.length = 0; page = null; openX('quests'); }
+    // ---------- 0.142: экран Экспедиций (решение 07.11): доска походов с условиями, отряды в пути, выбор героев ----------
+    let expSel = null, expPick = [];
+    const EXP_RC = { E: '#9aa0a8', D: '#6fbf73', C: '#4fb3e8', B: '#5a7cff', A: '#b070ff', S: '#ffb020', SS: '#ff5a3a', SSS: '#ff3ad0', GOD: '#fff3a0' };
+    const expTime = ms => { const t = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60; return h ? h + ' ч ' + String(m).padStart(2, '0') + ' мин' : m + ':' + String(sec).padStart(2, '0'); };
+    const expReqTxt = q => q.k === 'side' ? q.n + ' × фракция «' + q.side + '»' : q.k === 'maxRank' ? 'все не выше ранга ' + q.r : q.k === 'stars' ? 'сумма звёзд ≥ ' + q.n : q.n + ' разные фракции';
+    const expAva = id => { const v = ALLY_VIS[id]; return '<div class="exA" style="--rc:' + EXP_RC[C.heroRarity(s, id)] + '">' + (v && v.avatarImg || (v ? allySvg(v, 0) : '')) + '</div>'; };
+    const expRw = r => [r.shard ? '🔹 ' + fmt(r.shard) : '', r.tickets ? '🎟 ' + r.tickets : '', r.crystals ? '💎 ' + r.crystals : '', r.copies ? '🃏 копии ×' + r.copies : ''].filter(Boolean).join(' · ');
+    function expAuto(o) {   // слабейшие подходящие: перебор по возрастанию силы, жадно под условия
+      const L = CFG.expeditions.lengths[o.len], R = CFG.rarities;
+      const pool = CFG.allies.filter(a => s.heroes[a.id].unlocked && !C.expBusy(s, a.id)).sort((a, b) => R.indexOf(C.heroRarity(s, a.id)) - R.indexOf(C.heroRarity(s, b.id)) || (s.heroes[b.id].stars | 0) - (s.heroes[a.id].stars | 0));
+      for (let t = 0; t < 600; t++) {
+        const team = [], need = o.req.find(q => q.k === 'side');
+        if (need) for (const a of pool) if (team.length < need.n && a.side === need.side) team.push(a.id);
+        const rest = t ? pool.slice().sort(() => Math.random() - 0.5) : pool;
+        for (const a of rest) { if (team.length >= L.team) break; if (!team.includes(a.id)) team.push(a.id); }
+        if (team.length === L.team && C.expCheck(s, o.uid, team).ok) return team;
+      }
+      return null;
+    }
+    function expHtml() {
+      const E = CFG.expeditions, now = Date.now(), offers = C.expRefresh(s, dayKey());
+      let h = '<div class="secT">Отряды в пути · ' + s.exp.runs.length + ' / ' + E.slots + '</div>';
+      h += s.exp.runs.length ? s.exp.runs.map(r => { const done = now >= r.end, L = E.lengths[r.len];
+        return '<div class="exRun' + (done ? ' done' : '') + '"><div class="exH"><b>' + r.name + '</b><span>' + L.h + ' ч</span></div><div class="exTeam">' + r.heroes.map(expAva).join('') + '</div>' +
+          '<div class="achBar"><i style="width:' + Math.min(100, (now - r.start) / (r.end - r.start) * 100).toFixed(1) + '%"></i><b>' + (done ? 'вернулись!' : 'осталось ' + expTime(r.end - now)) + '</b></div>' +
+          '<div class="exF"><span>' + expRw(C.expReward(s, r)) + '</span>' + (done ? '<button class="upBtn" data-exclaim="' + r.uid + '">Забрать</button>' : '') + '</div></div>'; }).join('')
+        : '<div class="exEmpty">Никого нет в пути. Выбери поход ниже — герои продолжат драться в Башне.</div>';
+      h += '<div class="secT">Доска походов · обновится завтра</div>';
+      h += offers.map(o => { const L = E.lengths[o.len], open = expSel === o.uid, chk = open ? C.expCheck(s, o.uid, expPick) : null;
+        const reqH = o.req.map(q => '<li class="' + (open ? (C.expReqOk(s, q, expPick) ? 'ok' : 'no') : '') + '">' + expReqTxt(q) + '</li>').join('');
+        let c = '<div class="exOf' + (open ? ' open' : '') + '"><div class="exH"><b>' + o.name + '</b><span>' + L.h + ' ч · ' + L.team + ' героя' + (L.team > 4 ? 'ев' : '') + '</span></div><ul class="exReq">' + reqH + '</ul>' +
+          '<div class="exF"><span>' + expRw(C.expReward(s, { len: o.len })) + '</span>' + (open ? '' : '<button class="upBtn alt" data-exrr="' + o.uid + '" title="Сменить за билет">🎟 Сменить</button><button class="upBtn" data-exsel="' + o.uid + '"' + (s.exp.runs.length >= E.slots ? ' disabled' : '') + '>Собрать</button>') + '</div>';
+        if (open) {
+          const pool = CFG.allies.filter(a => s.heroes[a.id].unlocked).sort((a, b) => CFG.rarities.indexOf(C.heroRarity(s, a.id)) - CFG.rarities.indexOf(C.heroRarity(s, b.id)));
+          c += '<div class="exPick">' + pool.map(a => { const busy = C.expBusy(s, a.id), on = expPick.includes(a.id);
+            return '<button class="exP' + (on ? ' on' : '') + (busy ? ' busy' : '') + '" data-expick="' + a.id + '"' + (busy ? ' disabled' : '') + '>' + expAva(a.id) + '<i>' + C.heroRarity(s, a.id) + '</i><small>' + a.name + '<br>' + a.side + ' · ★' + (s.heroes[a.id].stars | 0) + '</small></button>'; }).join('') + '</div>' +
+            '<div class="exF"><span>' + expPick.length + ' / ' + L.team + (chk && !chk.ok && expPick.length === L.team ? ' · ' + chk.why : '') + '</span><button class="upBtn alt" data-exauto="' + o.uid + '">Авто</button><button class="upBtn alt" data-excancel>Отмена</button><button class="upBtn" data-exgo="' + o.uid + '"' + (chk && chk.ok ? '' : ' disabled') + '>В путь</button></div>';
+        }
+        return c + '</div>'; }).join('');
+      return h;
+    }
     // ---------- 0.141: экран Достижений (решение 07.11, «как в Крушителях»): разделы, ступени, свой бонус у каждого ----------
     let achCat = 'all';
     const ACH_KN = { allDmg: 'урон', tapDmg: 'урон тапа', allyDmg: 'урон союзников', gold: 'золото', critChance: 'шанс крита', critMult: 'сила крита', bossDmg: 'урон по боссам', bossTime: 'время на босса', shards: 'осколки' };
@@ -1046,6 +1088,15 @@
       else if (d.qc) { const r = C.claimQuest(s, d.qc); if (!r) return; click(); toast('Задание выполнено<small>' + rewardLine(r) + '</small>'); save(); }
       else if (d.qa) { const r = C.claimAch(s, d.qa); if (!r) return; click(); toast('Ступень получена<small>' + rewardLine(r) + '</small>'); save(); }
       else if (d.qaall !== undefined) { const r = C.claimAllAch(s); if (!r) return; click(); toast('Забрано ступеней: ' + r.count + '<small>' + rewardLine(r.reward) + '</small>'); save(); }
+      else if (d.exsel) { click(); expSel = +d.exsel; expPick = []; }
+      else if (d.excancel !== undefined) { click(); expSel = null; expPick = []; }
+      else if (d.expick) { const id = d.expick, i = expPick.indexOf(id), o = s.exp.offers.find(x => x.uid === expSel); if (!o) return; click();
+        if (i >= 0) expPick.splice(i, 1); else if (expPick.length < CFG.expeditions.lengths[o.len].team) expPick.push(id); else toast('Отряд полный<small>сними героя, чтобы взять другого</small>'); }
+      else if (d.exauto) { const o = s.exp.offers.find(x => x.uid === +d.exauto); const t = o && expAuto(o); if (!t) { toast('Не получается собрать<small>не хватает подходящих героев — смени поход</small>'); return; } click(); expPick = t; }
+      else if (d.exgo) { if (!C.expStart(s, +d.exgo, expPick, Date.now())) return; click(); toast('Отряд ушёл в поход<small>герои продолжают драться в Башне</small>'); expSel = null; expPick = []; save(); }
+      else if (d.exrr) { if (!C.expReroll(s, +d.exrr)) { toast('Нужен билет 🎟'); return; } click(); save(); }
+      else if (d.exclaim) { const r = C.expClaim(s, +d.exclaim, Date.now()); if (!r) return; click();
+        toast('Отряд вернулся<small>' + expRw({ shard: r.shard, tickets: r.tickets, crystals: r.crystals }) + (r.copies.length ? ' · копии: ' + r.copies.map(id => CFG.allies.find(a => a.id === id).name).join(', ') : '') + '</small>'); save(); }
       else if (d.acat) { click(); achCat = d.acat; $('xBody').scrollTop = 0; }
       else if (d.qch) { const r = C.openQuestChest(s, +d.qch); if (!r) return; click(); toast('Сундук открыт<small>' + rewardLine(r) + '</small>'); save(); }
       else if (d.qlog !== undefined) { const r = C.claimLogin(s, dayKey()); if (!r) return; click(); toast('Награда за вход · день ' + r.day + '<small>' + rewardLine(r.reward) + '</small>'); save(); }

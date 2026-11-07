@@ -80,6 +80,7 @@
 | `unlocks.pets` | `1250` |
 | `unlocks.shadow` | `1250` |
 | `unlocks.bones` | `2000` |
+| `unlocks.expedition` | `75` |
 | `disabled` | `["pve","runes","tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","map","prestige","bag","tutorial","…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
@@ -227,6 +228,12 @@
 | `ascend.shards` | `500` |
 | `ascend.growth` | `3` |
 | `ascend.dpsMult` | `20` |
+| `expeditions.board` | `4` |
+| `expeditions.slots` | `3` |
+| `expeditions.floorScale` | `500` |
+| `expeditions.rerollTickets` | `1` |
+| `expeditions.lengths` | `[{"h":1,"team":2,"shard":40,"tickets":1,"crystals":0,"copies":0},{"h":4,"team":3,"shard":150,"tickets":2,"crystals":0,"copies":1},{"h":8,"team":4,"shard":320…` |
+| `expeditions.names` | `["Разведка катакомб","Тропа пепла","Охота в Лесу теней","Ледяной перевал","Затонувший алтарь","Арена изгнанных","Шёпот Пустоты","Склеп королей","Ржавый лабир…` |
 | `passives.levelStep` | `50` |
 | `passives.base` | `{"allDmg":0.02,"tapDmg":0.03,"allyDmg":0.03,"gold":0.03,"critChance":0.0005,"critMult":0.02,"bossDmg":0.03,"bossTime":0.02,"shards":0.02}` |
 | `passives.rarity` | `{"E":1,"D":1.1,"C":1.2,"B":1.35,"A":1.5,"S":1.75,"SS":2,"SSS":2.25,"GOD":2.5}` |
