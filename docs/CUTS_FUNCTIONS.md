@@ -359,6 +359,30 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Герой ухмыляется, но в глазах тревога. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Тайник (`secret`)
+
+**cut_secret_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a barely visible door appears in a tower wall, a keyhole glowing. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: В стене этажа проступает едва заметная дверь, светится замочная скважина. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_secret_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man presses his ear to the stone wall, listening. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой прикладывает ухо к стене. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_secret_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: in the darkness behind the door: a treasure chest and a huge silhouette of a guardian. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: В темноте за дверью — сундук и огромный силуэт стража. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## Голоса павших (`totems`)
 
 **cut_totems_1** — размер 1600x900 (широкая, 16:9)

@@ -82,7 +82,7 @@
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
 | `unlockRituals.tree` | `1` |
-| `disabled` | `["secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGift","transfer","photo","favorites","squad"]` |
+| `disabled` | `["pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","dailyGift","transfer","photo","favorites","squad"]` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |

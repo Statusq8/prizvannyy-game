@@ -1056,6 +1056,12 @@
         h += '<div class="pveCard" style="' + rvar('SS') + '"><div class="ic">🔔</div><div><b>Эхо Башни · ' + ex.left + '/' + EC.attempts + '</b><p>' + ex.biome.name + ' · «' + ex.mod.name + '»: ' + ex.mod.text + '. ' + (EC.enemies - 1) + ' врагов + ' + ex.biome.final + ' за ' + ex.time + ' с.</p>' +
           '<p>Награда: <em>' + (ex.won ? '🔹 ' + fmt(sh) : '🎟 ' + EC.first.tickets + ' · ✦ ' + EC.first.essence + ' · 🔹 ' + fmt(sh) + ' (первая победа недели)') + '</em></p></div>' +
           '<button class="upBtn" data-m2="echo"' + (!busy && ex.left ? '' : ' disabled') + '>Войти</button></div>'; }
+      // 0.151: скрытые комнаты (тайные этажи)
+      if (C.unlockedAt(s, 'secret')) { const SC = CFG.secret, sec = s.secrets.filter(x => !x.done);
+        h += '<div class="secT">Скрытые комнаты · найдено ' + s.secrets.length + ' · открыто ' + (s.secrets.length - sec.length) + '</div>';
+        if (!sec.length) h += '<div class="pveCard"><div class="ic">🗝</div><div><b>Тайников пока нет</b><p>На каждые ' + SC.every + ' этажей спрятан тайный этаж — пройди его, и найдёшь комнату со Стражем.</p></div></div>';
+        for (const x of sec) h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗝</div><div><b>Тайник этажа ' + fmt(x.floor) + '</b><p>Страж тайника: ×' + SC.hp + ' HP, ' + SC.time + ' с, попыток сколько угодно.</p><p>Награда: <em>' + rewardText(C.secretReward(s, x.floor)) + '</em></p></div>' +
+          '<button class="upBtn" data-sec2="' + x.floor + '"' + (busy ? ' disabled' : '') + '>Войти</button></div>'; }
       const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
       const pc = C.personalBuyCost(s);
       h += '<div class="secT">Личные боссы · ' + pl + ' попыт. · ' + P.personal.time + ' с</div>' + (pl ? '' : '<div class="pveCard"><div class="ic">💎</div><div><b>Попытки закончились</b><p>' + P.personal.attempts + ' бесплатно в день' + (pc != null ? ', ещё можно купить: ' + (P.personal.buyMax - (s.pve.used.personalBuy | 0)) : ', куплено максимум — завтра снова') + '</p></div>' + (pc != null ? '<button class="upBtn" data-pbuy' + ((s.crystals | 0) >= pc ? '' : ' disabled') + '>Купить<br>💎 ' + pc + '</button>' : '') + '</div>');
@@ -1132,6 +1138,7 @@
       else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }
       else if (d.m2) { click(); goMode(d.m2, {}); }
       else if (d.pbuy !== undefined) { if (!C.buyPersonal(s)) { toast('Не хватает 💎'); return; } click(); toast('Попытка куплена<small>личный босс ждёт</small>'); save(); }
+      else if (d.sec2) { click(); goMode('secret', { floor: +d.sec2 }); }
       else if (d.pb2) { click(); const [id, diff] = d.pb2.split(':'); goMode('personal', { id, diff }); }
       else return;
       render();

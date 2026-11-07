@@ -1794,7 +1794,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     unlockRituals: { tree: 1 },   // 0.145 (решение 07.11): древо «Искры Башни» — после первой регрессии
     disabled: [
-               'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
+               'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -2236,7 +2236,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // 0.63 (ответ 183): скрытые комнаты — в каждом отрезке every этажей один тайный этаж (по номеру отрезка).
     // Первая победа над боссом этого этажа открывает комнату; в ней Страж тайника (hp × босса этажа, time с), попыток сколько угодно,
     // победа — один раз: награда. Найденные комнаты ждут в PvE.
-    secret: { every: 2500, hp: 3, time: 40, reward: { tickets: 15, essence: 150, shardMult: 50 } },
+    secret: { every: 500, hp: 3, time: 40, reward: { tickets: 10, essence: 100, shardMult: 30 } },   // 0.151 (решение 07.11): раз в 500 этажей
     // 0.64 (ответ 188): престиж аккаунта — уровень игрока за всё сделанное (считается из прогресса, регрессию не сбрасывает).
     // Опыт: xp — очки за единицу. Уровень L нужен base·L^power опыта всего. За каждый уровень — reward; каждые frameEvery — рамка.
     prestige: { base: 500, power: 1.5,
@@ -8644,6 +8644,12 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         h += '<div class="pveCard" style="' + rvar('SS') + '"><div class="ic">🔔</div><div><b>Эхо Башни · ' + ex.left + '/' + EC.attempts + '</b><p>' + ex.biome.name + ' · «' + ex.mod.name + '»: ' + ex.mod.text + '. ' + (EC.enemies - 1) + ' врагов + ' + ex.biome.final + ' за ' + ex.time + ' с.</p>' +
           '<p>Награда: <em>' + (ex.won ? '🔹 ' + fmt(sh) : '🎟 ' + EC.first.tickets + ' · ✦ ' + EC.first.essence + ' · 🔹 ' + fmt(sh) + ' (первая победа недели)') + '</em></p></div>' +
           '<button class="upBtn" data-m2="echo"' + (!busy && ex.left ? '' : ' disabled') + '>Войти</button></div>'; }
+      // 0.151: скрытые комнаты (тайные этажи)
+      if (C.unlockedAt(s, 'secret')) { const SC = CFG.secret, sec = s.secrets.filter(x => !x.done);
+        h += '<div class="secT">Скрытые комнаты · найдено ' + s.secrets.length + ' · открыто ' + (s.secrets.length - sec.length) + '</div>';
+        if (!sec.length) h += '<div class="pveCard"><div class="ic">🗝</div><div><b>Тайников пока нет</b><p>На каждые ' + SC.every + ' этажей спрятан тайный этаж — пройди его, и найдёшь комнату со Стражем.</p></div></div>';
+        for (const x of sec) h += '<div class="pveCard" style="' + rvar('S') + '"><div class="ic">🗝</div><div><b>Тайник этажа ' + fmt(x.floor) + '</b><p>Страж тайника: ×' + SC.hp + ' HP, ' + SC.time + ' с, попыток сколько угодно.</p><p>Награда: <em>' + rewardText(C.secretReward(s, x.floor)) + '</em></p></div>' +
+          '<button class="upBtn" data-sec2="' + x.floor + '"' + (busy ? ' disabled' : '') + '>Войти</button></div>'; }
       const bosses = C.personalBosses(s), pl = C.attemptsLeft(s, 'personal');
       const pc = C.personalBuyCost(s);
       h += '<div class="secT">Личные боссы · ' + pl + ' попыт. · ' + P.personal.time + ' с</div>' + (pl ? '' : '<div class="pveCard"><div class="ic">💎</div><div><b>Попытки закончились</b><p>' + P.personal.attempts + ' бесплатно в день' + (pc != null ? ', ещё можно купить: ' + (P.personal.buyMax - (s.pve.used.personalBuy | 0)) : ', куплено максимум — завтра снова') + '</p></div>' + (pc != null ? '<button class="upBtn" data-pbuy' + ((s.crystals | 0) >= pc ? '' : ' disabled') + '>Купить<br>💎 ' + pc + '</button>' : '') + '</div>');
@@ -8720,6 +8726,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       else if (d.dun2) { click(); goMode('dungeon', { id: d.dun2, tier: tier2[d.dun2] }); }
       else if (d.m2) { click(); goMode(d.m2, {}); }
       else if (d.pbuy !== undefined) { if (!C.buyPersonal(s)) { toast('Не хватает 💎'); return; } click(); toast('Попытка куплена<small>личный босс ждёт</small>'); save(); }
+      else if (d.sec2) { click(); goMode('secret', { floor: +d.sec2 }); }
       else if (d.pb2) { click(); const [id, diff] = d.pb2.split(':'); goMode('personal', { id, diff }); }
       else return;
       render();
@@ -9330,7 +9337,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.149";
+    const VERSION = "0.150";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -11880,6 +11887,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['w', 'Лестница на новый этаж покрывается чёрными трещинами, из них сочится багровый свет', [['sys', 'ВНИМАНИЕ: ПРОКЛЯТЫЕ ЭТАЖИ']]],
         ['l', 'Окно Башни, красное вместо фиолетового', [['sys', 'Прими проклятие — получи награду.']]],
         ['r', 'Герой ухмыляется, но в глазах тревога', [['me', 'Риск — это по-нашему.']]]] },
+      secret: { t: 'Тайник', k: 'secret', p: [
+        ['w', 'В стене этажа проступает едва заметная дверь, светится замочная скважина', [['sys', 'ОТКРЫТЫ: ТАЙНЫЕ ЭТАЖИ']]],
+        ['l', 'Герой прикладывает ухо к стене', [['me', 'Там кто-то дышит.']]],
+        ['r', 'В темноте за дверью — сундук и огромный силуэт стража', [['', 'Раз в пятьсот этажей Башня что-то прячет.']]]] },
       totems: { t: 'Голоса павших', k: 'totems', p: [
         ['w', 'Зал, где из пола поднимаются каменные идолы с лицами боссов биомов', [['sys', 'ОТКРЫТЫ: ТОТЕМЫ']]],
         ['l', 'Каменное лицо Хранителя Врат открывает светящиеся глаза', [['?', 'Ты победил нас. Теперь мы служим.']]],
