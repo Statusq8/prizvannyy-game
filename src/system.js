@@ -69,4 +69,54 @@
       body.clean #toast small { margin-top: 0.6vw !important; font: 400 3vw Georgia, serif !important; color: #f3eee8 !important; }
     `;
     document.head.appendChild(css);
+
+    // 0.137: страницы без своего макета (PvE, Древо душ, Карта Башни) — в стиле Настроек (решение 07.11): фон, «Назад», плашка заголовка, шапки разделов, карточки в рамке, кнопки-картинки
+    const S = window.ST_ART, PF = window.PF_ART || {}, RG = window.RG_ART || {};
+    if (S) {
+      const v = n => 'url("' + (S[n] || PF[n] || RG[n] || A[n]) + '")';
+      const pm = $id => { const e = document.getElementById($id); if (e) e.classList.add('uni'); };
+      pm('pgMap');
+      const c2 = document.createElement('style');
+      c2.textContent = `
+        .pg.uni { background: #1c033d ${S.bg_top ? 'url("' + S.bg_top + '") center top / 100% auto no-repeat' : ''} !important; }
+        .pg.uni::before { display: none !important; }
+        .pg.uni::after { content: ""; display: block !important; position: absolute; left: 0; right: 0; bottom: 0; height: 24vw; background: ${v('bg_bot')} center bottom / 100% auto no-repeat; pointer-events: none; z-index: 0; }
+        .pg.uni > * { position: relative; z-index: 1; }
+        .pg.uni .tower { display: none !important; }
+        .pg.uni .pgHead { background: none !important; border: none !important; box-shadow: none !important; min-height: 56px; }
+        .pg.uni .pgHead .backBtn { width: 42px !important; height: 40px !important; padding: 0 !important; border: none !important; box-shadow: none !important; clip-path: none !important;
+          background: ${v('back')} center / contain no-repeat !important; font-size: 0 !important; color: transparent !important; }
+        .pg.uni .pgHead .backBtn::after, .pg.uni .pgHead .titlePl::before, .pg.uni .pgHead .titlePl::after { display: none !important; content: none !important; }
+        .pg.uni .pgHead .titlePl { flex: 0 1 min(64vw, 280px); margin: 0 auto; height: 50px; line-height: 50px; padding: 0 18px; box-sizing: border-box; background: ${v('title')} center / 100% 100% no-repeat !important; border: none !important; box-shadow: none !important; clip-path: none !important;
+          font: 800 clamp(16px, 5.2vw, 22px)/50px Georgia, 'Times New Roman', serif !important; color: #f6dfa6 !important; text-shadow: 0 2px 3px #000, 0 0 10px #a050ff !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pg.uni .pgHead .chip { font-family: Georgia, serif; }
+        .pg.uni .pgHead::after { content: ""; flex: none; width: 42px; }
+        .pg.uni .pgHead:has(.chip:not([style*="none"]))::after { display: none; }
+        /* шапки разделов — как «Звук», «Графика» в Настройках */
+        .pg.uni .secT { display: flex; align-items: center; gap: 2.4vw; margin: 3.4vw 0 1.8vw; padding: 0; font: 700 3.3vw Georgia, 'Times New Roman', serif; letter-spacing: 0; text-transform: none; color: #f6d690; text-shadow: 0 1px 2px #000, 0 0 8px #a050ff; text-align: center; }
+        .pg.uni .secT::before, .pg.uni .secT::after { content: ""; flex: 1 1 6vw; min-width: 4vw; height: 0.3vw; background: linear-gradient(90deg, #0000, #b070ff 40%, #e0b0ff); }
+        .pg.uni .secT::after { background: linear-gradient(90deg, #e0b0ff, #b070ff 60%, #0000); }
+        /* карточки — в рамке длинной панели Настроек */
+        .pg.uni .pveCard { border: 3vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0.6vw 1vw !important; margin-bottom: 1.4vw !important; }
+        .pg.uni .pveCard .ic { border-radius: 50% !important; border: 0.5vw solid #c8a060 !important; background: radial-gradient(circle at 40% 35%, #5a2a8a, #12061f) !important; box-shadow: 0 0 8px #a050ff88; }
+        .pg.uni .pveCard b { font: 700 3.5vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; text-shadow: 0 1px 2px #000; }
+        .pg.uni .pveCard p { font: 400 2.9vw/1.3 Georgia, 'Times New Roman', serif !important; color: #f3eee8 !important; }
+        /* Карта Башни: этажи — карточки в той же рамке, оттенок биома поверх */
+        .pg.uni .fRoom { margin: 0 1.6vw 1.2vw; border: 3.6vw solid transparent !important; border-image: ${v('list')} 45 fill stretch !important; padding: 0 1.6vw 1vw !important; background: none !important; box-shadow: none !important; }
+        .pg.uni .fRoom::before { left: 0; right: 0; top: 0; bottom: 0; background: linear-gradient(hsla(var(--bh, 270), 50%, 30%, .28), hsla(var(--bh, 270), 50%, 10%, .1)); }
+        .pg.uni .fRoom.cur { box-shadow: 0 0 0 0.4vw #ffd36b, 0 0 18px #d6a640aa !important; }
+        .pg.uni .fRoom .no { font: 700 4.2vw Georgia, 'Times New Roman', serif !important; color: #f3eee8; }
+        .pg.uni .fRoom.cur .no { color: #f6d690; }
+        .pg.uni .fRoom.done .no { color: #b9a8cc; }
+        .pg.uni .fRoom .st { font: 400 2.8vw Georgia, serif !important; color: #e0d4ee; }
+        .pg.uni .fRoom .zone { font: 700 3.2vw Georgia, serif !important; color: #f6d690 !important; }
+        .pg.uni .mapInfo { font: 700 3.6vw Georgia, 'Times New Roman', serif !important; color: #f6d690 !important; }
+        .pg.uni .upBtn { border: none !important; border-radius: 0 !important; box-shadow: none !important; clip-path: none !important; background: ${A.red ? 'url("' + A.red + '")' : 'none'} center / 100% 100% no-repeat !important;
+          font: 800 3.6vw Georgia, 'Times New Roman', serif !important; color: #fff !important; text-shadow: 0 1px 2px #000 !important; }
+        .pg.uni .upBtn.alt { background-image: ${T.vbtn ? 'url("' + T.vbtn + '")' : 'none'} !important; color: #f3e6d0 !important; }
+        .pg.uni .upBtn:disabled { filter: grayscale(.8) brightness(.7); }
+        .pg.uni .upBtn:not(:disabled):active { transform: scale(.95); }
+      `;
+      document.head.appendChild(c2);
+    }
   })();
