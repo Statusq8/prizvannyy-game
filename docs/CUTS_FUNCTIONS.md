@@ -239,6 +239,37 @@ Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold
 По-русски: Герой с подозрением смотрит на фонарь. Стиль манхвы, фиолетовые тона, без текста и пузырей.
 
 
+## Голоса павших (`totems`)
+
+**cut_totems_1** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a dark hall where stone idols with faces of fearsome bosses rise from the floor. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Зал, где из пола поднимаются каменные идолы с лицами боссов биомов. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_totems_2** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: close-up: a stone idol face of a skeletal gate guardian opens glowing eyes. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Каменное лицо Хранителя Врат открывает светящиеся глаза. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_totems_3** — размер 1024x1024 (квадрат)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 1:1 square aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: the young man touches an idol, glowing runes run up his arm. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Герой касается идола, по руке бегут руны. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+**cut_totems_4** — размер 1600x900 (широкая, 16:9)
+
+```
+Korean manhwa (webtoon) panel, dark fantasy, purple and violet palette with gold accents, dramatic lighting, clean line art with cel shading, cinematic composition, 16:9 wide aspect ratio. Main character: a young man (former pro gamer) in a dark hooded coat with violet trim, short black messy hair, sharp eyes — keep his face consistent with the attached reference. Scene: a long row of stone totems stretching into the distance, most still dark. No text, no letters, no speech bubbles, no watermark.
+```
+По-русски: Ряд тотемов уходит вдаль, многие ещё тёмные. Стиль манхвы, фиолетовые тона, без текста и пузырей.
+
+
 ## В путь (`expedition`)
 
 **cut_expedition_1** — размер 1600x900 (широкая, 16:9)

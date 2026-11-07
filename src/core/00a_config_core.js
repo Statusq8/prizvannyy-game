@@ -89,7 +89,7 @@
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000, expedition: 75, map: 30 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     disabled: ['tree', 'events', 'season',
-               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
+               'altar', 'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно

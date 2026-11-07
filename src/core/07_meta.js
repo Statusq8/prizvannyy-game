@@ -133,10 +133,10 @@
     while (rt > 0 && !tierOpen(s, rt)) rt--;               // SS/SSS/GOD — только после порогов этажей
     return { runeTier: rt };
   }
-  // Личные боссы — финальные боссы биомов, чей тотем уже получен
+  // Личные боссы — финальные боссы пройденных биомов (0.144: по рекорду, а не по тотему — тотемы открываются позже)
   function personalBosses(s) {
-    const out = [];
-    CONFIG.biomes.forEach((b, i) => { if (s.totems[b.id]) out.push({ id: b.id, name: b.final, floor: (i + 1) * CONFIG.biomeFloors, biome: b.name }); });
+    const out = [], best = Math.max(s.bestFloor | 0, s.maxFloor | 0, s.highestCleared | 0);
+    CONFIG.biomes.forEach((b, i) => { if (s.totems[b.id] || best > (i + 1) * CONFIG.biomeFloors) out.push({ id: b.id, name: b.final, floor: (i + 1) * CONFIG.biomeFloors, biome: b.name }); });
     return out;
   }
   function personalReward(s, floor, diff) {

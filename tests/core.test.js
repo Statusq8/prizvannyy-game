@@ -2838,3 +2838,16 @@ test('личные боссы: 3 бесплатно + до 7 за 💎 в ден
   assert.strictEqual(s.crystals, 10000 - P.buyCost.reduce((a, b) => a + b, 0));
   C.dailyReset(s, 'другой-день'); assert.strictEqual(C.attemptsLeft(s, 'personal'), P.attempts);
 });
+
+test('тотемы (0.144): открываются на этаже unlocks.totems, пройденные биомы дают тотемы задним числом; личные боссы — по рекорду', () => {
+  const keep = CFG.unlocks; CFG.unlocks = { totems: UNLOCKS.totems };
+  const s = C.newState(NOCRIT);
+  s.bestFloor = s.maxFloor = 200;
+  assert.strictEqual(C.personalBosses(s).length, 3);           // биомы 1–3 пройдены (рекорд > 50, 100, 150)
+  C.tick(s, 0.01); assert.strictEqual(C.totemCount(s), 0);       // тотемы ещё закрыты
+  s.bestFloor = s.maxFloor = CFG.unlocks.totems + 1;
+  C.tick(s, 0.01);
+  assert.strictEqual(C.totemCount(s), Math.floor(CFG.unlocks.totems / CFG.biomeFloors));
+  assert.ok(C.permMult(s, 'tap') > C.permMult(C.newState(NOCRIT), 'tap'));
+  CFG.unlocks = keep;
+});

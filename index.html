@@ -1793,7 +1793,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
                events: 250, season: 250, altar: 300, alchemy: 400, echo: 500, curse: 500, secret: 750, totems: 750, pets: 1250, shadow: 1250, bones: 2000, expedition: 75, map: 30 },
     // 0.77: «слишком много функций» — всё выключено, включаем по одной (docs/FEATURES.md). Ключи из unlocks.
     disabled: ['tree', 'events', 'season',
-               'altar', 'alchemy', 'echo', 'curse', 'secret', 'totems', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
+               'altar', 'alchemy', 'echo', 'curse', 'secret', 'pets', 'shadow', 'bones', 'mail', 'prestige', 'bag', 'tutorial', 'bonds',
                'phases', 'trophies', 'dailyGift', 'transfer', 'photo', 'favorites', 'squad'],   // 06.11: нет в GDD — выключено пользователем
     megaSouls: { base: 5, per50: 1.25 },
     // 0.80 (docs/START.md, ответы 7, 8, 11, 12): на 3 этаже, 1-я волна — клетка с Шорохом; разбиваешь тапами → он в отряде бесплатно
@@ -3621,6 +3621,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
   function tick(s, dt) {
     const events = [];
     s._pv = null;   // 0.134: пересчёт пассивок
+    if (totemSync(s)) events.push({ type: 'totemSync' });   // 0.144
     s.stats.playTime += dt;
     const w = s.tpsWin; w.t += dt;
     if (w.t >= 1) { s.stats.maxTps = Math.max(s.stats.maxTps, Math.round(w.n / w.t)); w.t = 0; w.n = 0; }
@@ -3843,10 +3844,10 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     while (rt > 0 && !tierOpen(s, rt)) rt--;               // SS/SSS/GOD — только после порогов этажей
     return { runeTier: rt };
   }
-  // Личные боссы — финальные боссы биомов, чей тотем уже получен
+  // Личные боссы — финальные боссы пройденных биомов (0.144: по рекорду, а не по тотему — тотемы открываются позже)
   function personalBosses(s) {
-    const out = [];
-    CONFIG.biomes.forEach((b, i) => { if (s.totems[b.id]) out.push({ id: b.id, name: b.final, floor: (i + 1) * CONFIG.biomeFloors, biome: b.name }); });
+    const out = [], best = Math.max(s.bestFloor | 0, s.maxFloor | 0, s.highestCleared | 0);
+    CONFIG.biomes.forEach((b, i) => { if (s.totems[b.id] || best > (i + 1) * CONFIG.biomeFloors) out.push({ id: b.id, name: b.final, floor: (i + 1) * CONFIG.biomeFloors, biome: b.name }); });
     return out;
   }
   function personalReward(s, floor, diff) {
@@ -4725,6 +4726,14 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     return r;
   }
   // ---------- тотемы ----------
+  // 0.144: тотемы открылись — выдать тотемы всех уже пройденных биомов (боссы до открытия тоже считаются)
+  function totemSync(s) {
+    if (!unlockedAt(s, 'totems')) return 0;
+    const best = Math.max(s.bestFloor | 0, s.maxFloor | 0, s.highestCleared | 0); let n = 0;
+    if (s._tsb === best) return 0; s._tsb = best;
+    CONFIG.biomes.forEach((b, i) => { if (best > (i + 1) * CONFIG.biomeFloors && !s.totems[b.id]) { s.totems[b.id] = 1; n++; } });
+    return n;
+  }
   function totemUpCost(s, id) {
     const T = CONFIG.totems, lv = s.totems[id];
     if (!lv || lv >= T.maxLevel) return null;
@@ -5583,7 +5592,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
     collectionSets, collectionMult, collectionAllyMult,
-    personalBuyCost, buyPersonal, expRefresh, expReroll, expCheck, expStart, expClaim, expBusy, expReward, expReqOk, expReadyCount, achDef, achValue, achVisible, achPower, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
+    totemSync, personalBuyCost, buyPersonal, expRefresh, expReroll, expCheck, expStart, expClaim, expBusy, expReward, expReqOk, expReadyCount, achDef, achValue, achVisible, achPower, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     floorSteps, biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,
@@ -6013,6 +6022,8 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
       } else if (e.type === 'trophy') {
         const tb = C.trophyBonus(e.key);
         setTimeout(() => toast('🏆 Трофей: ' + e.name + '<small>+' + Math.round(tb.per * 100) + '% ' + (tb.kind === 'gold' ? 'золота' : 'урона') + ' навсегда · Зал трофеев в Статистике</small>'), 1200);
+      } else if (e.type === 'totemSync') {
+        toast('Тотемы пробудились<small>🗿 ' + C.totemCount(s) + ' — за уже пройденные биомы</small>');
       } else if (e.type === 'totem') {
         setTimeout(() => toast('Тотем получен!<small>🗿 ' + e.name + ' · вкладка «Руны»</small>'), 4800);
       } else if (e.type === 'biome') {
@@ -7263,7 +7274,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
     // тотемы (0.143: выключены — раздел не показываем)
     if (C.unlockedAt(s, 'totems')) {
     const sets = T.collection.filter(n => C.totemCount(s) >= n).length, next = T.collection.find(n => C.totemCount(s) < n);
-    html += '<div class="secTitle">ТОТЕМЫ · собрано ' + C.totemCount(s) + '/' + CFG.biomes.length + ' · ' + pct(C.totemMult(s) - 1) + ' всего урона</div>' +
+    html += '<div class="secTitle totT">ТОТЕМЫ · собрано ' + C.totemCount(s) + '/' + CFG.biomes.length + ' · ' + pct(C.totemMult(s) - 1) + ' всего урона</div>' +
       '<div class="hint2">Тотем биома даёт финальный босс его 50-го этажа (первое прохождение). +' + Math.round(T.dpsPerLevel * 100) + '% урона за каждый уровень тотема' +
       (next ? '; при ' + next + ' тотемах — ещё ×' + T.collectionMult : '') + (sets ? '. Бонус коллекции сейчас ×' + Math.pow(T.collectionMult, sets).toFixed(2) : '') + '.</div>';
     CFG.biomes.forEach((b, i) => {
@@ -9304,7 +9315,7 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         '<div class="grpT">ПРОЧЕЕ</div><div class="rowList"><button data-sa="photo"><span>📷 Фоторежим</span><b>›</b></button><button data-sa="tut"><span>🎓 Повторить обучение</span><b>›</b></button>' +
           '<button data-sa="help"><span>✉ Поддержка</span><b>›</b></button><button data-sa="ver"><span>ℹ Версия и что нового<small>' + VERSION + '</small></span><b>›</b></button></div>';
     }
-    const VERSION = "0.142";
+    const VERSION = "0.143";
     sp.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       const d = b.dataset;
@@ -11821,6 +11832,11 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['w', 'Этаж вдруг украшен фонарями, гремит музыка', [['sys', 'НАЧАЛОСЬ СОБЫТИЕ']]],
         ['l', 'Союзники в смешных шапках', [['Шорох', 'Не спрашивай.']]],
         ['r', 'Герой с подозрением смотрит на фонарь', [['me', 'Праздник. В тюрьме.']]]] },
+      totems: { t: 'Голоса павших', k: 'totems', p: [
+        ['w', 'Зал, где из пола поднимаются каменные идолы с лицами боссов биомов', [['sys', 'ОТКРЫТЫ: ТОТЕМЫ']]],
+        ['l', 'Каменное лицо Хранителя Врат открывает светящиеся глаза', [['?', 'Ты победил нас. Теперь мы служим.']]],
+        ['r', 'Герой касается идола, по руке бегут руны', [['me', 'Сила побеждённых… моя.']]],
+        ['w', 'Ряд тотемов уходит вдаль, многие ещё тёмные', [['', 'Каждый новый биом — новый голос.']]]] },
       expedition: { t: 'В путь', k: 'expedition', p: [
         ['w', 'У выхода из лагеря стоит доска, утыканная записками и картами', [['sys', 'ОТКРЫТЫ: ЭКСПЕДИЦИИ']]],
         ['l', 'Тиль-Шорох срывает записку с доски', [['Шорох', 'Сюда сильные не ходят. Значит, пойду я.']]],
@@ -11950,6 +11966,9 @@ body.clean #enemy { margin-bottom: min(30%, 190px); scale: .88; translate: 0 -9%
         ['.fRoom.cur', 'Здесь ты сейчас. Пройденные этажи можно фармить — награды там меньше.', 0]]],
       ['events', 'Открыты События: временные задачи с особыми наградами.', [CAMP, ...more(2, 'События')]],
       ['mail', 'Открыта Почта: сюда приходят награды.', [CAMP, ...more(1, 'Почта')]],
+      ['totems', 'Открыты Тотемы: каждый пройденный биом оставил тебе тотем — его сила навсегда.', [CAMP, ['.cIsl[data-id="forge"]', 'Тапни по острову Кузницы.', 1],
+        ['[data-fgt="runes"]', 'Тотемы лежат во вкладке «Руны». Тапни.', 1],
+        ['.totT', 'Тотем — за босса каждого биома. Каждый уровень: +10% всего урона. За 5, 10, 15 и 20 тотемов — ещё ×1,25.', 0]]],
       ['expedition', 'Открыты Экспедиции: отправляй героев в походы за осколками, билетами и копиями.', [CAMP, ...more(8, 'Экспедиции'),
         ['.exOf', 'У каждого похода есть условия: фракция, ранг не выше, звёзды. Слабые герои тоже пригодятся!', 0],
         ['.exOf [data-exsel]', 'Жми «Собрать» и выбери героев. Они продолжат драться в Башне, пока идут в походе.', 0]]],

@@ -70,7 +70,7 @@
     seasonInfo, seasonReset, passLevel, passReward, claimPass, claimPassAll, setPremium, expectedPassLevel, catchupAvailable, useCatchup,
     trailStep, trailProgress, claimTrail, seasonHeroCost, buySeasonHero,
     collectionSets, collectionMult, collectionAllyMult,
-    personalBuyCost, buyPersonal, expRefresh, expReroll, expCheck, expStart, expClaim, expBusy, expReward, expReqOk, expReadyCount, achDef, achValue, achVisible, achPower, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
+    totemSync, personalBuyCost, buyPersonal, expRefresh, expReroll, expCheck, expStart, expClaim, expBusy, expReward, expReqOk, expReadyCount, achDef, achValue, achVisible, achPower, achTier, achClaimable, achPoints, achMult, claimAch, claimAllAch, achClaimableCount,
     questsReset, questProgress, questDone, questClaimable, claimQuest, claimAll, claimableCount, questDef,
     dailyReset, attemptsLeft, maxDungeonTier, dungeonReward, personalBosses, personalReward, enterMode, leaveMode,
     floorSteps, biomeOf, biomeName, hallOf, biomeCycle, isFinalBoss, isBiomeStart, rollRare, rareDef,

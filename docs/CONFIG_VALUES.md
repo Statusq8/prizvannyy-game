@@ -82,7 +82,7 @@
 | `unlocks.bones` | `2000` |
 | `unlocks.expedition` | `75` |
 | `unlocks.map` | `30` |
-| `disabled` | `["tree","events","season","altar","alchemy","echo","curse","secret","totems","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","tro…` |
+| `disabled` | `["tree","events","season","altar","alchemy","echo","curse","secret","pets","shadow","bones","mail","prestige","bag","tutorial","bonds","phases","trophies","d…` |
 | `megaSouls.base` | `5` |
 | `megaSouls.per50` | `1.25` |
 | `cage.floor` | `3` |

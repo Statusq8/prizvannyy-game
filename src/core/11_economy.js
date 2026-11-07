@@ -34,6 +34,14 @@
     return r;
   }
   // ---------- тотемы ----------
+  // 0.144: тотемы открылись — выдать тотемы всех уже пройденных биомов (боссы до открытия тоже считаются)
+  function totemSync(s) {
+    if (!unlockedAt(s, 'totems')) return 0;
+    const best = Math.max(s.bestFloor | 0, s.maxFloor | 0, s.highestCleared | 0); let n = 0;
+    if (s._tsb === best) return 0; s._tsb = best;
+    CONFIG.biomes.forEach((b, i) => { if (best > (i + 1) * CONFIG.biomeFloors && !s.totems[b.id]) { s.totems[b.id] = 1; n++; } });
+    return n;
+  }
   function totemUpCost(s, id) {
     const T = CONFIG.totems, lv = s.totems[id];
     if (!lv || lv >= T.maxLevel) return null;
